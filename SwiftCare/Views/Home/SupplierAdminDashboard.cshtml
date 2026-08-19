@@ -1,0 +1,437 @@
+﻿@{
+    ViewData["Title"] = "Supplier Admin";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+
+<div class="supplier-dashboard">
+
+    <div class="supplier-dashboard-container">
+
+
+        <!-- =====================================================
+             WELCOME
+             ===================================================== -->
+
+        <section class="supplier-welcome">
+
+            <div class="supplier-welcome-content">
+
+                <h1>
+                    Supplier Admin Dashboard
+                </h1>
+
+                <p>
+                    Manage orders, packaging and deliveries from one place.
+                </p>
+
+                <div class="supplier-status">
+
+                    <span class="supplier-status-dot"></span>
+
+                    Supplier online
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MAIN ACTIONS
+             ===================================================== -->
+
+        <section class="supplier-actions">
+
+
+            <!-- =================================================
+                 ORDERS
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="Orders"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-cart-check-fill"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Orders
+                    </div>
+
+                    <div class="supplier-action-description">
+                        View and manage incoming customer orders.
+                    </div>
+
+                </div>
+
+                <div class="supplier-action-count">
+                    0
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 PACKAGED ORDERS
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="PackagedOrders"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-box-seam-fill"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Packaged Orders
+                    </div>
+
+                    <div class="supplier-action-description">
+                        Prepare and manage orders that are ready for dispatch.
+                    </div>
+
+                </div>
+
+                <div class="supplier-action-count">
+                    0
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 DELIVERIES
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="Deliveries"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Deliveries
+                    </div>
+
+                    <div class="supplier-action-description">
+                        Track outgoing deliveries and their current status.
+                    </div>
+
+                </div>
+
+                <div class="supplier-action-count">
+                    0
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 INVENTORY
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="Inventory"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-boxes"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Inventory
+                    </div>
+
+                    <div class="supplier-action-description">
+                        Monitor products, stock levels and available items.
+                    </div>
+
+                </div>
+
+                <div class="supplier-action-count">
+                    0
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 CUSTOMERS
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="Customers"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-people-fill"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Customers
+                    </div>
+
+                    <div class="supplier-action-description">
+                        View customers and their order information.
+                    </div>
+
+                </div>
+
+                <div class="supplier-action-count">
+                    0
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 SUPPLIER PROFILE
+                 ================================================= -->
+
+            <a asp-controller="Supplier"
+                   asp-action="Profile"
+                   class="supplier-action-card">
+
+                <div class="supplier-action-icon">
+
+                    <i class="bi bi-building"></i>
+
+                </div>
+
+                <div class="supplier-action-content">
+
+                    <div class="supplier-action-title">
+                        Supplier Profile
+                    </div>
+
+                    <div class="supplier-action-description">
+                        Manage your supplier information and business details.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right supplier-action-arrow"></i>
+
+            </a>
+
+        </section>
+
+
+        <!-- =====================================================
+             TODAY'S ACTIVITY
+             ===================================================== -->
+
+        <section class="supplier-section">
+
+            <div class="supplier-section-header">
+
+                <div class="supplier-section-title">
+
+                    <i class="bi bi-activity"></i>
+
+                    Today's Activity
+
+                </div>
+
+                <div class="supplier-date">
+
+                    @DateTime.Now.ToString("dd MMM yyyy")
+
+                </div>
+
+            </div>
+
+
+            <div class="supplier-activity">
+
+
+                <!-- ORDERS -->
+
+                <div class="supplier-activity-item">
+
+                    <div class="supplier-activity-icon">
+
+                        <i class="bi bi-cart-check"></i>
+
+                    </div>
+
+                    <div class="supplier-activity-content">
+
+                        <div class="supplier-activity-title">
+                            New Orders
+                        </div>
+
+                        <div class="supplier-activity-description">
+                            Orders waiting to be processed.
+                        </div>
+
+                    </div>
+
+                    <div class="supplier-activity-status">
+                        View Orders
+                    </div>
+
+                </div>
+
+
+                <!-- PACKAGING -->
+
+                <div class="supplier-activity-item">
+
+                    <div class="supplier-activity-icon">
+
+                        <i class="bi bi-box-seam"></i>
+
+                    </div>
+
+                    <div class="supplier-activity-content">
+
+                        <div class="supplier-activity-title">
+                            Packaging
+                        </div>
+
+                        <div class="supplier-activity-description">
+                            Orders currently being prepared.
+                        </div>
+
+                    </div>
+
+                    <div class="supplier-activity-status">
+                        Packaging
+                    </div>
+
+                </div>
+
+
+                <!-- DELIVERY -->
+
+                <div class="supplier-activity-item">
+
+                    <div class="supplier-activity-icon">
+
+                        <i class="bi bi-truck"></i>
+
+                    </div>
+
+                    <div class="supplier-activity-content">
+
+                        <div class="supplier-activity-title">
+                            Deliveries
+                        </div>
+
+                        <div class="supplier-activity-description">
+                            Orders currently scheduled for delivery.
+                        </div>
+
+                    </div>
+
+                    <div class="supplier-activity-status">
+                        Deliveries
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 QUICK INFORMATION
+                 ================================================= -->
+
+            <div class="supplier-info">
+
+
+                <div class="supplier-info-item">
+
+                    <div class="supplier-info-label">
+                        Pending Orders
+                    </div>
+
+                    <div class="supplier-info-value">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="supplier-info-item">
+
+                    <div class="supplier-info-label">
+                        Packaged
+                    </div>
+
+                    <div class="supplier-info-value">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="supplier-info-item">
+
+                    <div class="supplier-info-label">
+                        Deliveries
+                    </div>
+
+                    <div class="supplier-info-value">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="supplier-info-item">
+
+                    <div class="supplier-info-label">
+                        Low Stock
+                    </div>
+
+                    <div class="supplier-info-value">
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

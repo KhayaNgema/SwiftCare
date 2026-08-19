@@ -1,0 +1,407 @@
+﻿@page
+@model LoginModel
+
+@{
+    ViewData["Title"] = "Log in";
+    Layout = "~/Views/Shared/_NoNavLayout.cshtml";
+
+}
+
+<div class="swiftcare-login-page">
+
+    <div class="swiftcare-login-container">
+
+        <!-- =========================================================
+             LEFT IMAGE PANEL
+             ========================================================= -->
+
+        <div class="swiftcare-login-visual">
+
+            <div class="swiftcare-login-image">
+
+                <div class="swiftcare-login-overlay"></div>
+
+                <div class="swiftcare-login-visual-content">
+
+                    <div class="swiftcare-login-visual-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+
+                    <div class="swiftcare-login-visual-brand">
+                        SwiftCare
+                    </div>
+
+                    <h1>
+                        Compassionate care.
+                        <br />
+                        Smarter management.
+                    </h1>
+
+                    <p>
+                        Manage residents, coordinate care,
+                        support your nursing team and keep
+                        everything organised in one secure place.
+                    </p>
+
+                    <div class="swiftcare-login-visual-line"></div>
+
+                    <div class="swiftcare-login-visual-caption">
+                        <i class="bi bi-shield-check"></i>
+                        Secure healthcare management
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+             RIGHT LOGIN PANEL
+             ========================================================= -->
+
+        <div class="swiftcare-login-form-panel">
+
+            <div class="swiftcare-login-form-content">
+
+                <!-- =================================================
+                     HEADER
+                     ================================================= -->
+
+                <div class="swiftcare-login-header">
+
+                    <div class="swiftcare-login-mobile-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+
+                    <span class="swiftcare-login-welcome">
+                        Welcome back
+                    </span>
+
+                    <h2>
+                        Sign in to SwiftCare
+                    </h2>
+
+                    <p>
+                        Enter your details to access your account.
+                    </p>
+
+                </div>
+
+
+                <!-- =================================================
+                     LOGIN FORM
+                     ================================================= -->
+
+                <form id="account"
+                      method="post"
+                      class="swiftcare-login-form">
+
+                    <!-- Validation -->
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="swiftcare-validation"
+                         role="alert">
+                    </div>
+
+
+                    <!-- =================================================
+                         EMAIL
+                         ================================================= -->
+
+                    <div class="swiftcare-login-field">
+
+                        <label asp-for="Input.Email">
+                            Email address
+                        </label>
+
+                        <div class="swiftcare-input-wrapper">
+
+                            <i class="bi bi-envelope"></i>
+
+                            <input asp-for="Input.Email"
+                                   class="swiftcare-login-input"
+                                   autocomplete="username"
+                                   aria-required="true"
+                                   placeholder="Enter your email address" />
+
+                        </div>
+
+                        <span asp-validation-for="Input.Email"
+                              class="swiftcare-field-error">
+                        </span>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         PASSWORD
+                         ================================================= -->
+
+                    <div class="swiftcare-login-field">
+
+                        <div class="swiftcare-password-label-row">
+
+                            <label asp-for="Input.Password">
+                                Password
+                            </label>
+
+                            <a id="forgot-password"
+                                   asp-page="./ForgotPassword"
+                                   class="swiftcare-forgot-link">
+
+                                Forgot password?
+
+                            </a>
+
+                        </div>
+
+
+                        <div class="swiftcare-input-wrapper">
+
+                            <i class="bi bi-lock"></i>
+
+                            <input asp-for="Input.Password"
+                                   class="swiftcare-login-input swiftcare-password-input"
+                                   autocomplete="current-password"
+                                   aria-required="true"
+                                   placeholder="Enter your password"
+                                   type="password" />
+
+                            <button type="button"
+                                    class="swiftcare-password-toggle"
+                                    id="swiftcare-password-toggle"
+                                    aria-label="Show password">
+
+                                <i class="bi bi-eye"></i>
+
+                            </button>
+
+                        </div>
+
+                        <span asp-validation-for="Input.Password"
+                              class="swiftcare-field-error">
+                        </span>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         REMEMBER ME
+                         ================================================= -->
+
+                    <div class="swiftcare-login-options">
+
+                        <label class="swiftcare-remember">
+
+                            <input class="swiftcare-remember-checkbox"
+                                   asp-for="Input.RememberMe" />
+
+                            <span class="swiftcare-custom-checkbox"></span>
+
+                            <span>
+                                Remember me
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         LOGIN BUTTON
+                         ================================================= -->
+
+                    <button id="login-submit"
+                            type="submit"
+                            class="swiftcare-login-submit">
+
+                        <span>
+                            Log in
+                        </span>
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </button>
+
+
+                    <!-- =================================================
+                         REGISTER
+                         ================================================= -->
+
+                    <div class="swiftcare-register-section">
+
+                        <span>
+                            Don't have an account?
+                        </span>
+
+                        <a asp-page="./Register"
+                               asp-route-returnUrl="@Model.ReturnUrl">
+
+                            Create an account
+
+                        </a>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         EMAIL CONFIRMATION
+                         ================================================= -->
+
+                    <div class="swiftcare-login-secondary-links">
+
+                        <a id="resend-confirmation"
+                               asp-page="./ResendEmailConfirmation">
+
+                            <i class="bi bi-envelope-check"></i>
+
+                            Resend email confirmation
+
+                        </a>
+
+                    </div>
+
+                </form>
+
+
+                <!-- =================================================
+                     EXTERNAL LOGIN
+                     ================================================= -->
+                @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+                {
+
+                    <div class="swiftcare-external-login">
+
+                        <div class="swiftcare-divider">
+
+                            <span>
+                                Or continue with
+                            </span>
+
+                        </div>
+
+
+                        <form id="external-account"
+                              asp-page="./ExternalLogin"
+                              asp-route-returnUrl="@Model.ReturnUrl"
+                              method="post">
+
+                            <div class="swiftcare-external-buttons">
+
+                                @foreach (var provider in Model.ExternalLogins!)
+                                {
+
+                                    <button type="submit"
+                                            class="swiftcare-external-button"
+                                            name="provider"
+                                            value="@provider.Name"
+                                            title="Log in using your @provider.DisplayName account">
+
+                                        <i class="bi bi-box-arrow-in-right"></i>
+
+                                        <span>
+                                            @provider.DisplayName
+                                        </span>
+
+                                    </button>
+
+                                }
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                }
+
+
+                <!-- =================================================
+                     SECURITY FOOTER
+                     ================================================= -->
+
+                <div class="swiftcare-login-security">
+
+                    <i class="bi bi-shield-lock-fill"></i>
+
+                    <span>
+                        Your information is protected with secure authentication.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const passwordInput =
+            document.querySelector(".swiftcare-password-input");
+
+        const passwordToggle =
+            document.getElementById("swiftcare-password-toggle");
+
+
+        if (passwordInput && passwordToggle) {
+
+            passwordToggle.addEventListener("click", function () {
+
+                const icon =
+                    passwordToggle.querySelector("i");
+
+
+                if (passwordInput.type === "password") {
+
+                    passwordInput.type = "text";
+
+                    passwordToggle.setAttribute(
+                        "aria-label",
+                        "Hide password"
+                    );
+
+                    if (icon) {
+                        icon.className = "bi bi-eye-slash";
+                    }
+
+                }
+                else {
+
+                    passwordInput.type = "password";
+
+                    passwordToggle.setAttribute(
+                        "aria-label",
+                        "Show password"
+                    );
+
+                    if (icon) {
+                        icon.className = "bi bi-eye";
+                    }
+
+                }
+
+            });
+
+        }
+
+    });
+
+</script>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}

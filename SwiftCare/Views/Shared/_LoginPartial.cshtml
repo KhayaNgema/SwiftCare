@@ -1,0 +1,154 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<UserBaseModel> SignInManager
+@inject UserManager<UserBaseModel> UserManager
+
+<div class="swiftcare-account-control">
+
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="dropdown">
+
+            <button type="button"
+                    class="swiftcare-account-button dropdown-toggle"
+                    id="swiftcareAccountDropdown"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+
+                <span class="swiftcare-account-icon">
+                    <i class="bi bi-person-fill"></i>
+                </span>
+
+                <span class="swiftcare-account-email">
+                    @User.Identity?.Name
+                </span>
+
+                <i class="bi bi-chevron-down swiftcare-account-chevron"></i>
+
+            </button>
+
+
+            <ul class="dropdown-menu dropdown-menu-end swiftcare-account-dropdown"
+                aria-labelledby="swiftcareAccountDropdown">
+
+                <!-- MY ACCOUNT -->
+
+                <li>
+
+                    <a class="dropdown-item swiftcare-account-item"
+                           asp-area="Identity"
+                           asp-page="/Account/Manage/Index">
+
+                        <i class="bi bi-person-circle"></i>
+
+                        <span>
+                            My Account
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- MY PROFILE -->
+
+                <li>
+
+                    <a class="dropdown-item swiftcare-account-item"
+                           asp-controller="Users"
+                           asp-action="UserProfile">
+
+                        <i class="bi bi-person-vcard"></i>
+
+                        <span>
+                            My Profile
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- SECURITY -->
+
+                <li>
+
+                    <a class="dropdown-item swiftcare-account-item"
+                           asp-controller="Users"
+                           asp-action="PasswordAndSecurity">
+
+                        <i class="bi bi-shield-lock"></i>
+
+                        <span>
+                            Security
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <li>
+                    <hr class="dropdown-divider swiftcare-account-divider">
+                </li>
+
+
+                <!-- LOGOUT -->
+
+                <li>
+
+                    <form asp-area="Identity"
+                          asp-page="/Account/Logout"
+                          asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+
+                        <button type="submit"
+                                class="dropdown-item swiftcare-account-item swiftcare-account-logout">
+
+                            <i class="bi bi-box-arrow-right"></i>
+
+                            <span>
+                                Logout
+                            </span>
+
+                        </button>
+
+                    </form>
+
+                </li>
+
+            </ul>
+
+        </div>
+    }
+    else
+    {
+        <div class="swiftcare-public-actions">
+
+            <a class="swiftcare-register-link"
+                   asp-area="Identity"
+                   asp-page="/Account/Register">
+
+                <i class="bi bi-person-plus"></i>
+
+                <span>
+                    Register
+                </span>
+
+            </a>
+
+
+            <a class="swiftcare-login-button"
+                   asp-area="Identity"
+                   asp-page="/Account/Login">
+
+                <i class="bi bi-box-arrow-in-right"></i>
+
+                <span>
+                    Login
+                </span>
+
+            </a>
+
+        </div>
+    }
+
+</div>

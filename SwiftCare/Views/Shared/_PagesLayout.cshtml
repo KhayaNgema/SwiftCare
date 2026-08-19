@@ -1,0 +1,2431 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SwiftCare.Data
+@using SwiftCare.Models
+@using SwiftCare.Interfaces
+@using Microsoft.EntityFrameworkCore
+
+@inject SignInManager<UserBaseModel> SignInManager
+@inject UserManager<UserBaseModel> UserManager
+@inject SwiftCareDbContext _context
+@inject IEncryptionService EncryptionService
+@inject IWebHostEnvironment WebHostEnvironment
+
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+
+    UserBaseModel? user = null;
+
+    if (isAuthenticated)
+    {
+        user = await UserManager.GetUserAsync(User);
+    }
+
+    var firstName = user?.FirstName ?? "";
+    var lastName = user?.LastName ?? "";
+
+    var userRole = "";
+
+    if (user != null)
+    {
+        userRole = _context.UserRoles
+            .Where(ur => ur.UserId == user.Id)
+            .Join(
+                _context.Roles,
+                ur => ur.RoleId,
+                r => r.Id,
+                (ur, r) => r.Name
+            )
+            .FirstOrDefault() ?? "";
+    }
+
+    var profilePhotoUrl = "";
+
+    if (user != null && !string.IsNullOrEmpty(user.ProfilePicture))
+    {
+        profilePhotoUrl = Url.Content("~/" + user.ProfilePicture);
+    }
+
+    var encryptedUserId = "";
+
+    if (user != null)
+    {
+        encryptedUserId = EncryptionService.Encrypt(user.Id.ToString());
+    }
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta http-equiv="X-UA-Compatible"
+          content="IE=edge" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        @ViewData["Title"] - SwiftCare
+    </title>
+
+
+    <!-- =========================================================
+         BOOTSTRAP
+         ========================================================= -->
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          asp-append-version="true" />
+
+
+    <!-- =========================================================
+         SITE CSS
+         ========================================================= -->
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/SwiftCare.styles.css"
+          asp-append-version="true" />
+
+
+    <!-- =========================================================
+         BOOTSTRAP ICONS
+         ========================================================= -->
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+
+    <!-- =========================================================
+         SELECT2
+         ========================================================= -->
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+
+
+    <!-- =========================================================
+         FONT AWESOME
+         ========================================================= -->
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+
+    <!-- =========================================================
+         FAVICON
+         ========================================================= -->
+
+    <link rel="icon"
+          href="~/favicon.ico"
+          type="image/x-icon" />
+
+
+    @RenderSection("Styles", required: false)
+
+
+    <!-- =========================================================
+         SWIFTCARE LAYOUT FIX
+         ========================================================= -->
+
+
+</head>
+
+
+<body class="@(isAuthenticated ? "scx-authenticated" : "scx-public")">
+
+
+    <!-- =========================================================
+         FIXED TOP NAVIGATION
+         ========================================================= -->
+
+    <header>
+
+        <nav id="swiftcare-topbar">
+
+            <div class="swiftcare-topbar-container">
+
+
+                <!-- =================================================
+                     LEFT SIDE
+                     ================================================= -->
+
+                <div>
+
+                    @if (isAuthenticated)
+                    {
+                        <button type="button"
+                                id="scx-menu-toggle"
+                                aria-label="Toggle sidebar"
+                                aria-expanded="true">
+
+                            <i class="bi bi-layout-sidebar-inset"></i>
+
+                        </button>
+                    }
+
+
+                    <!-- BRAND -->
+
+                    <a class="swiftcare-navbar-brand"
+                       asp-area=""
+                       asp-controller="Home"
+                       asp-action="Index">
+
+                        <div class="swiftcare-facility-brand">
+
+                            <div class="swiftcare-logo">
+
+                                <i class="bi bi-heart-pulse"></i>
+
+                            </div>
+
+                            <div>
+
+                                <div class="swiftcare-facility-name">
+                                    SwiftCare
+                                </div>
+
+                                <div class="swiftcare-facility-subtitle">
+                                    Nursing Home Management
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+
+                <!-- =================================================
+                     RIGHT SIDE
+                     ================================================= -->
+
+                <div class="scx-topbar-account">
+
+                    <partial name="_LoginPartial" />
+
+                </div>
+
+            </div>
+
+        </nav>
+
+
+        @if (isAuthenticated)
+        {
+
+            <!-- =====================================================
+                 MOBILE OVERLAY
+                 ===================================================== -->
+
+            <div id="scx-sidebar-overlay"></div>
+
+
+            <!-- =====================================================
+                 SIDEBAR
+                 ===================================================== -->
+
+            <div id="scx-sidebar-shell">
+
+                <aside id="scx-sidebar">
+
+
+                    <!-- =================================================
+                         PROFILE
+                         ================================================= -->
+
+                    <div class="scx-sidebar-profile">
+
+                        @if (!string.IsNullOrEmpty(profilePhotoUrl))
+                        {
+
+                            <img src="@profilePhotoUrl"
+                                 alt="Profile Photo"
+                                 class="scx-profile-image" />
+
+                        }
+                        else
+                        {
+
+                            <div class="scx-profile-placeholder">
+
+                                <i class="bi bi-person-fill"></i>
+
+                            </div>
+
+                        }
+
+
+                        <div class="scx-profile-name">
+
+                            @firstName @lastName
+
+                        </div>
+
+
+                        <div class="scx-profile-role">
+
+                            @userRole
+
+                        </div>
+
+
+                        @if (!string.IsNullOrEmpty(encryptedUserId))
+                        {
+
+                            <a class="scx-profile-button"
+                               asp-controller="Users"
+                               asp-action="UserProfile"
+                               asp-route-userId="@encryptedUserId">
+
+                                <i class="bi bi-person-circle"></i>
+
+                                <span>
+                                    My Profile
+                                </span>
+
+                                <i class="bi bi-arrow-right"></i>
+
+                            </a>
+
+                        }
+
+                    </div>
+
+
+                    <!-- =================================================
+                         NAVIGATION
+                         ================================================= -->
+
+                    <ul class="scx-sidebar-nav">
+
+
+                        @* =================================================
+                           ADMINISTRATOR
+                           ================================================= *@
+
+                        @if (User.IsInRole("Administrator"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Residents">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>Residents</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Staff & Users">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Users"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-people-fill"></i>
+
+                                    <span>Staff & Users</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Equipment">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-box-seam-fill"></i>
+
+                                    <span>Equipment</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Care Management">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-admin-care-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-heart-pulse-fill"></i>
+
+                                        <span>Care Management</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-admin-care-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care overview
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Daily care
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care records
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Reports & Analytics">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-admin-reports-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-bar-chart-fill"></i>
+
+                                        <span>Reports & Analytics</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-admin-reports-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Reports"
+                                           asp-action="Index">
+                                            Reports
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Reports"
+                                           asp-action="Feedback">
+                                            Feedback
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Security">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-admin-security-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-shield-lock-fill"></i>
+
+                                        <span>Security</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-admin-security-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Users"
+                                           asp-action="PasswordAndSecurity">
+                                            Account & Security
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="PrivacyPolicy">
+                                            Privacy Policy
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Activity Logs">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="ActivityLogs"
+                                   asp-action="MyActivityLogs">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>Activity Logs</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           HEAD NURSE
+                           ================================================= *@
+
+                        else if (User.IsInRole("Head Nurse"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Residents">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>Residents</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Staff & Users">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Users"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-people-fill"></i>
+
+                                    <span>Staff & Users</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Equipment">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-box-seam"></i>
+
+                                    <span>Equipment</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Care Management">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-head-care-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-heart-pulse-fill"></i>
+
+                                        <span>Care Management</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-head-care-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care overview
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Daily care
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care records
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Reports">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Reports"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-bar-chart-fill"></i>
+
+                                    <span>Reports</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Activity Logs">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="ActivityLogs"
+                                   asp-action="MyActivityLogs">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>Activity Logs</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           NURSE
+                           ================================================= *@
+
+                        else if (User.IsInRole("Nurse"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Residents">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>Residents</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Care Management">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-nurse-care-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-heart-pulse-fill"></i>
+
+                                        <span>Care Management</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-nurse-care-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Daily care
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care records
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Equipment">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-box-seam-fill"></i>
+
+                                    <span>Equipment</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Activity">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="ActivityLogs"
+                                   asp-action="MyActivityLogs">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>My Activity</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           DOCTOR
+                           ================================================= *@
+
+                        else if (User.IsInRole("Doctor"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Residents">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>Residents</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Care Management">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-doctor-care-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-heart-pulse-fill"></i>
+
+                                        <span>Care Management</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-doctor-care-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care overview
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Home"
+                                           asp-action="Index">
+                                            Care records
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Reports">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Reports"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-bar-chart-fill"></i>
+
+                                    <span>Reports</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           RESIDENT
+                           ================================================= *@
+
+                        else if (User.IsInRole("Resident"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Care">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-heart-pulse-fill"></i>
+
+                                    <span>My Care</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Information">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Users"
+                                   asp-action="UserProfile"
+                                   asp-route-userId="@encryptedUserId">
+
+                                    <i class="bi bi-person-circle"></i>
+
+                                    <span>My Information</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           NEXT OF KIN
+                           ================================================= *@
+
+                        else if (User.IsInRole("NextOfKin"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Resident">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>Resident</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Care Updates">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-heart-pulse"></i>
+
+                                    <span>Care Updates</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+                        @* =================================================
+   DRIVER
+   ================================================= *@
+
+                        else if (User.IsInRole("Driver"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Deliveries">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-truck"></i>
+
+                                    <span>My Deliveries</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Assigned Jobs">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-clipboard-check-fill"></i>
+
+                                    <span>Assigned Jobs</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Vehicle">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-truck-front-fill"></i>
+
+                                    <span>Vehicle</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Delivery History">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>Delivery History</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Queries"
+                                       asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+   SUPPLIER ADMIN
+   ================================================= *@
+
+                        else if (User.IsInRole("Supplier Admin"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Suppliers">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-building-fill"></i>
+
+                                    <span>Suppliers</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Drivers">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-person-badge-fill"></i>
+
+                                    <span>Drivers</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Deliveries">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-truck"></i>
+
+                                    <span>Deliveries</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Orders">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-box-seam-fill"></i>
+
+                                    <span>Orders</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Reports">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Reports"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-bar-chart-fill"></i>
+
+                                    <span>Reports</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Queries"
+                                       asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+   MAINTENANCE PERSON
+   ================================================= *@
+
+                        else if (User.IsInRole("Maintanance Person"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Maintenance">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-tools"></i>
+
+                                    <span>Maintenance</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Maintenance Requests">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-wrench-adjustable-circle-fill"></i>
+
+                                    <span>Maintenance Requests</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Equipment">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-box-seam-fill"></i>
+
+                                    <span>Equipment</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Work History">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Home"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>Work History</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Queries"
+                                       asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        @* =================================================
+                           FALLBACK
+                           ================================================= *@
+
+                        else
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                   asp-controller="Queries"
+                                   asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+                        }
+
+
+                        <!-- =================================================
+                             COMMON SECURITY
+                             ================================================= -->
+
+                        <li class="scx-sidebar-divider"></li>
+
+
+                        <li class="scx-nav-item"
+                            data-tooltip="Security">
+
+                            <div class="scx-nav-parent"
+                                 data-submenu="scx-common-security-submenu">
+
+                                <div class="scx-nav-link">
+
+                                    <i class="bi bi-shield-lock-fill"></i>
+
+                                    <span>Security</span>
+
+                                </div>
+
+                                <div class="scx-nav-arrow">
+
+                                    <i class="bi bi-chevron-down"></i>
+
+                                </div>
+
+                            </div>
+
+
+                            <ul id="scx-common-security-submenu"
+                                class="scx-submenu">
+
+                                <li>
+
+                                    <a asp-controller="Users"
+                                       asp-action="PasswordAndSecurity">
+
+                                        Account & Security
+
+                                    </a>
+
+                                </li>
+
+
+                                <li>
+
+                                    <a asp-controller="Home"
+                                       asp-action="PrivacyPolicy">
+
+                                        Privacy Policy
+
+                                    </a>
+
+                                </li>
+
+                            </ul>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             LOGOUT
+                             ================================================= -->
+
+                        <li class="scx-sidebar-divider"></li>
+
+
+                        <li class="scx-nav-item"
+                            data-tooltip="Logout">
+
+                            <form asp-area="Identity"
+                                  asp-page="/Account/Logout"
+                                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+
+                                <button type="submit"
+                                        class="scx-sidebar-logout">
+
+                                    <i class="bi bi-box-arrow-right"></i>
+
+                                    <span>
+                                        Logout
+                                    </span>
+
+                                </button>
+
+                            </form>
+
+                        </li>
+
+                    </ul>
+
+                </aside>
+
+            </div>
+
+        }
+
+    </header>
+
+
+    <!-- =========================================================
+         LOADING OVERLAY
+         ========================================================= -->
+
+    <div id="loading-overlay">
+
+        <div class="loading-container">
+
+            <div class="ball-loader">
+
+                <i class="bi bi-heart-pulse-fill ball"
+                   style="--i:0;"></i>
+
+                <i class="bi bi-heart-pulse-fill ball"
+                   style="--i:1;"></i>
+
+                <i class="bi bi-heart-pulse-fill ball"
+                   style="--i:2;"></i>
+
+            </div>
+
+
+            <div class="loading-text">
+                Loading SwiftCare...
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         MAIN PAGE SHELL
+         ========================================================= -->
+
+    <div id="scx-page-content">
+
+        <div class="scx-page-inner">
+
+            <div class="container-fluid"
+                 style="padding-left:10px; padding-right:10px;">
+
+                <main role="main"
+                      class="pb-3">
+
+                    @RenderBody()
+
+                </main>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             FEEDBACK
+             ===================================================== -->
+
+        @if (isAuthenticated)
+        {
+
+            <a asp-controller="Reports"
+               asp-action="TestFeedback"
+               class="floating-button">
+
+                <i class="bi bi-chat-heart-fill"></i>
+
+                <span>
+                    Share Feedback
+                </span>
+
+            </a>
+
+        }
+
+
+        <!-- =====================================================
+             COOKIE BANNER
+             ===================================================== -->
+
+        <div class="cookie-banner"
+             style="display:none;">
+
+            <div class="cookie-content">
+
+                <span class="cookie-message">
+
+                    We use cookies to improve your experience.
+
+                    <a class="cookie-link"
+                       href="/Home/PrivacyPolicy">
+                        Learn more
+                    </a>
+
+                    /
+
+                    <a class="cookie-link"
+                       href="/CookiePreferences/Index">
+                        Manage Cookies
+                    </a>
+
+                </span>
+
+
+                <button class="cookie-button"
+                        id="accept-cookies">
+
+                    Got it!
+
+                </button>
+
+
+                <button class="cookie-button"
+                        id="reject-cookies">
+
+                    Reject
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             FOOTER
+             ===================================================== -->
+
+        <footer class="pages-footer py-4 scx-page-footer">
+
+            <div class="container-fluid">
+
+                <hr />
+
+                <div class="text-center">
+
+                    <p>
+
+                        &copy;
+                        @DateTime.Now.Year
+                        SwiftCare.
+
+                        <span>
+                            Compassionate care,
+                            organised management.
+                        </span>
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+
+    <!-- =========================================================
+         JQUERY
+         ========================================================= -->
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+
+    <!-- =========================================================
+         BOOTSTRAP
+         ========================================================= -->
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- =========================================================
+         SELECT2
+         ========================================================= -->
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+    <!-- =========================================================
+         DEVICE INFO
+         ========================================================= -->
+
+    <script src="/js/deviceInfo.js"></script>
+
+
+    <!-- =========================================================
+         SWIFTCARE SIDEBAR
+         ========================================================= -->
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+
+            /* =====================================================
+               ELEMENTS
+               ===================================================== */
+
+            const menuToggle =
+                document.getElementById("scx-menu-toggle");
+
+            const sidebarShell =
+                document.getElementById("scx-sidebar-shell");
+
+            const sidebarOverlay =
+                document.getElementById("scx-sidebar-overlay");
+
+
+            /* =====================================================
+               SIDEBAR TOGGLE
+               ===================================================== */
+
+            if (menuToggle && sidebarShell) {
+
+                menuToggle.addEventListener("click", function (event) {
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+
+                    /* =============================================
+                       MOBILE
+                       ============================================= */
+
+                    if (window.innerWidth <= 768) {
+
+                        document.body.classList.toggle(
+                            "scx-mobile-sidebar-open"
+                        );
+
+
+                        const mobileOpen =
+                            document.body.classList.contains(
+                                "scx-mobile-sidebar-open"
+                            );
+
+
+                        menuToggle.setAttribute(
+                            "aria-expanded",
+                            mobileOpen.toString()
+                        );
+
+
+                        return;
+                    }
+
+
+                    /* =============================================
+                       DESKTOP
+                       ============================================= */
+
+                    const collapsed =
+                        document.body.classList.toggle(
+                            "scx-sidebar-collapsed"
+                        );
+
+
+                    menuToggle.setAttribute(
+                        "aria-expanded",
+                        (!collapsed).toString()
+                    );
+
+
+                    const icon =
+                        menuToggle.querySelector("i");
+
+
+                    if (icon) {
+
+                        icon.className = collapsed
+                            ? "bi bi-layout-sidebar-inset-reverse"
+                            : "bi bi-layout-sidebar-inset";
+
+                    }
+
+
+                    localStorage.setItem(
+                        "scxSidebarCollapsed",
+                        collapsed ? "true" : "false"
+                    );
+
+                });
+
+
+                /* =================================================
+                   RESTORE SAVED STATE
+                   ================================================= */
+
+                const savedState =
+                    localStorage.getItem(
+                        "scxSidebarCollapsed"
+                    );
+
+
+                if (
+                    savedState === "true" &&
+                    window.innerWidth > 768
+                ) {
+
+                    document.body.classList.add(
+                        "scx-sidebar-collapsed"
+                    );
+
+
+                    menuToggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+
+                    const icon =
+                        menuToggle.querySelector("i");
+
+
+                    if (icon) {
+
+                        icon.className =
+                            "bi bi-layout-sidebar-inset-reverse";
+
+                    }
+
+                }
+
+            }
+
+
+            /* =====================================================
+               MOBILE OVERLAY
+               ===================================================== */
+
+            if (sidebarOverlay) {
+
+                sidebarOverlay.addEventListener(
+                    "click",
+                    function () {
+
+                        document.body.classList.remove(
+                            "scx-mobile-sidebar-open"
+                        );
+
+
+                        if (menuToggle) {
+
+                            menuToggle.setAttribute(
+                                "aria-expanded",
+                                "false"
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            /* =====================================================
+               SUBMENUS
+               ===================================================== */
+
+            const submenuParents =
+                document.querySelectorAll(
+                    ".scx-nav-parent"
+                );
+
+
+            submenuParents.forEach(function (parent) {
+
+                parent.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+
+                        /* =========================================
+                           COLLAPSED DESKTOP
+                           ========================================= */
+
+                        if (
+                            window.innerWidth > 768 &&
+                            document.body.classList.contains(
+                                "scx-sidebar-collapsed"
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const submenuId =
+                            parent.getAttribute(
+                                "data-submenu"
+                            );
+
+
+                        if (!submenuId) {
+                            return;
+                        }
+
+
+                        const submenu =
+                            document.getElementById(
+                                submenuId
+                            );
+
+
+                        if (!submenu) {
+                            return;
+                        }
+
+
+                        const isOpen =
+                            submenu.classList.contains(
+                                "open"
+                            );
+
+
+                        /* =========================================
+                           CLOSE OTHER SUBMENUS
+                           ========================================= */
+
+                        document
+                            .querySelectorAll(
+                                ".scx-submenu.open"
+                            )
+                            .forEach(function (otherMenu) {
+
+                                if (otherMenu !== submenu) {
+
+                                    otherMenu.classList.remove(
+                                        "open"
+                                    );
+
+
+                                    const otherParent =
+                                        document.querySelector(
+                                            '[data-submenu="' +
+                                            otherMenu.id +
+                                            '"]'
+                                        );
+
+
+                                    if (otherParent) {
+
+                                        otherParent.classList.remove(
+                                            "open"
+                                        );
+
+                                    }
+
+                                }
+
+                            });
+
+
+                        /* =========================================
+                           CURRENT SUBMENU
+                           ========================================= */
+
+                        if (isOpen) {
+
+                            submenu.classList.remove(
+                                "open"
+                            );
+
+
+                            parent.classList.remove(
+                                "open"
+                            );
+
+                        }
+                        else {
+
+                            submenu.classList.add(
+                                "open"
+                            );
+
+
+                            parent.classList.add(
+                                "open"
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+            /* =====================================================
+               LOADING OVERLAY
+               ===================================================== */
+
+            window.addEventListener(
+                "load",
+                function () {
+
+                    const loader =
+                        document.getElementById(
+                            "loading-overlay"
+                        );
+
+
+                    if (loader) {
+
+                        loader.style.display = "none";
+
+                    }
+
+                }
+            );
+
+
+            /* =====================================================
+               PAGE NAVIGATION LOADING
+               ===================================================== */
+
+            document.addEventListener(
+                "click",
+                function (event) {
+
+                    const link =
+                        event.target.closest("a");
+
+
+                    if (!link) {
+                        return;
+                    }
+
+
+                    const href =
+                        link.getAttribute("href");
+
+
+                    if (
+                        !href ||
+                        href.startsWith("#") ||
+                        href.startsWith("javascript:") ||
+                        link.target === "_blank"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        link.closest(".scx-nav-parent")
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        link.closest("#scx-menu-toggle")
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const loader =
+                        document.getElementById(
+                            "loading-overlay"
+                        );
+
+
+                    if (loader) {
+
+                        loader.style.display = "flex";
+
+                    }
+
+                }
+            );
+
+
+            /* =====================================================
+               COOKIE FUNCTIONS
+               ===================================================== */
+
+            function getCookie(name) {
+
+                const value =
+                    `; ${document.cookie}`;
+
+
+                const parts =
+                    value.split(`; ${name}=`);
+
+
+                if (parts.length === 2) {
+
+                    return parts
+                        .pop()
+                        .split(";")
+                        .shift();
+
+                }
+
+
+                return null;
+
+            }
+
+
+            function saveCookiePreferences(accepted) {
+
+                document.cookie =
+                    "cookieConsent=" +
+                    accepted +
+                    "; path=/; max-age=" +
+                    (60 * 60 * 24 * 365);
+
+
+                localStorage.setItem(
+                    "cookieConsent",
+                    accepted ? "true" : "false"
+                );
+
+
+                $.ajax({
+
+                    url:
+                        "/CookiePreferences/SavePreferences",
+
+                    type:
+                        "POST",
+
+                    contentType:
+                        "application/json",
+
+                    data:
+                        JSON.stringify({
+
+                            PerformanceCookies:
+                                accepted,
+
+                            FunctionalityCookies:
+                                accepted,
+
+                            TargetingCookies:
+                                accepted
+
+                        }),
+
+                    success:
+                        function (response) {
+
+                            if (
+                                response &&
+                                response.success
+                            ) {
+
+                                $(".cookie-banner").hide();
+
+                            }
+
+                        }
+
+                });
+
+            }
+
+
+            /* =====================================================
+               COOKIE BANNER
+               ===================================================== */
+
+            if (!getCookie("cookieConsent")) {
+
+                $(".cookie-banner").show();
+
+            }
+
+
+            $("#accept-cookies").on(
+                "click",
+                function () {
+
+                    saveCookiePreferences(true);
+
+                }
+            );
+
+
+            $("#reject-cookies").on(
+                "click",
+                function () {
+
+                    saveCookiePreferences(false);
+
+                }
+            );
+
+
+            /* =====================================================
+               RESIZE
+               ===================================================== */
+
+            let resizeTimer;
+
+
+            window.addEventListener(
+                "resize",
+                function () {
+
+                    clearTimeout(resizeTimer);
+
+
+                    resizeTimer = setTimeout(
+                        function () {
+
+                            if (window.innerWidth <= 768) {
+
+                                document.body.classList.remove(
+                                    "scx-sidebar-collapsed"
+                                );
+
+                                return;
+
+                            }
+
+
+                            document.body.classList.remove(
+                                "scx-mobile-sidebar-open"
+                            );
+
+
+                            const savedState =
+                                localStorage.getItem(
+                                    "scxSidebarCollapsed"
+                                );
+
+
+                            if (savedState === "true") {
+
+                                document.body.classList.add(
+                                    "scx-sidebar-collapsed"
+                                );
+
+                            }
+                            else {
+
+                                document.body.classList.remove(
+                                    "scx-sidebar-collapsed"
+                                );
+
+                            }
+
+                        },
+                        100
+                    );
+
+                }
+            );
+
+
+        });
+
+    </script>
+
+
+    @RenderSection(
+        "Scripts",
+        required: false
+    )
+
+</body>
+
+</html>

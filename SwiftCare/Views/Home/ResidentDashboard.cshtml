@@ -1,0 +1,448 @@
+﻿@{
+    ViewData["Title"] = "Resident";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="resident-dashboard">
+
+    <div class="resident-dashboard-container">
+
+
+        <!-- =====================================================
+             WELCOME
+             ===================================================== -->
+
+        <section class="resident-welcome">
+
+            <div class="resident-welcome-content">
+
+                <h1>
+                    Welcome to SwiftCare
+                </h1>
+
+                <p>
+                    View your care, information and important updates.
+                </p>
+
+                <div class="resident-status">
+
+                    <span class="resident-status-dot"></span>
+
+                    Care account active
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MAIN ACTIONS
+             ===================================================== -->
+
+        <section class="resident-actions">
+
+
+            <!-- =================================================
+                 MY CARE
+                 ================================================= -->
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-heart-pulse-fill"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        My Care
+                    </div>
+
+                    <div class="resident-action-description">
+                        View your current care information and daily care activities.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 MY INFORMATION
+                 ================================================= -->
+
+            <a asp-controller="Users"
+                   asp-action="UserProfile"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-person-circle"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        My Information
+                    </div>
+
+                    <div class="resident-action-description">
+                        View and manage your personal information.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 CARE UPDATES
+                 ================================================= -->
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-clipboard2-pulse-fill"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        Care Updates
+                    </div>
+
+                    <div class="resident-action-description">
+                        View recent updates and notes about your care.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 APPOINTMENTS
+                 ================================================= -->
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-calendar-check-fill"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        Appointments
+                    </div>
+
+                    <div class="resident-action-description">
+                        View your upcoming appointments and scheduled activities.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 MEDICATION
+                 ================================================= -->
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-capsule-pill"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        Medication
+                    </div>
+
+                    <div class="resident-action-description">
+                        View your medication information and schedule.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+
+            <!-- =================================================
+                 SUPPORT
+                 ================================================= -->
+
+            <a asp-controller="Queries"
+                   asp-action="SupportQueries"
+                   class="resident-action-card">
+
+                <div class="resident-action-icon">
+
+                    <i class="bi bi-life-preserver"></i>
+
+                </div>
+
+                <div class="resident-action-content">
+
+                    <div class="resident-action-title">
+                        Support
+                    </div>
+
+                    <div class="resident-action-description">
+                        Contact SwiftCare support if you need assistance.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right resident-action-arrow"></i>
+
+            </a>
+
+        </section>
+
+
+        <!-- =====================================================
+             TODAY
+             ===================================================== -->
+
+        <section class="resident-section">
+
+            <div class="resident-section-header">
+
+                <div class="resident-section-title">
+
+                    <i class="bi bi-heart-pulse-fill"></i>
+
+                    Today's Care
+
+                </div>
+
+                <div class="resident-date">
+
+                    @DateTime.Now.ToString("dd MMM yyyy")
+
+                </div>
+
+            </div>
+
+
+            <div class="resident-care">
+
+
+                <!-- MORNING CARE -->
+
+                <div class="resident-care-item">
+
+                    <div class="resident-care-icon">
+
+                        <i class="bi bi-sun-fill"></i>
+
+                    </div>
+
+                    <div class="resident-care-content">
+
+                        <div class="resident-care-title">
+                            Morning Care
+                        </div>
+
+                        <div class="resident-care-description">
+                            Your morning care routine and scheduled activities.
+                        </div>
+
+                    </div>
+
+                    <div class="resident-care-status">
+                        Scheduled
+                    </div>
+
+                </div>
+
+
+                <!-- MEDICATION -->
+
+                <div class="resident-care-item">
+
+                    <div class="resident-care-icon">
+
+                        <i class="bi bi-capsule-pill"></i>
+
+                    </div>
+
+                    <div class="resident-care-content">
+
+                        <div class="resident-care-title">
+                            Medication
+                        </div>
+
+                        <div class="resident-care-description">
+                            Check your medication schedule for today.
+                        </div>
+
+                    </div>
+
+                    <div class="resident-care-status">
+                        Scheduled
+                    </div>
+
+                </div>
+
+
+                <!-- DAILY CHECK -->
+
+                <div class="resident-care-item">
+
+                    <div class="resident-care-icon">
+
+                        <i class="bi bi-clipboard2-check-fill"></i>
+
+                    </div>
+
+                    <div class="resident-care-content">
+
+                        <div class="resident-care-title">
+                            Daily Care Check
+                        </div>
+
+                        <div class="resident-care-description">
+                            Your daily care assessment and wellbeing check.
+                        </div>
+
+                    </div>
+
+                    <div class="resident-care-status">
+                        Scheduled
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 RESIDENT INFORMATION
+                 ================================================= -->
+
+            <div class="resident-information">
+
+
+                <!-- ROOM -->
+
+                <div class="resident-information-card">
+
+                    <div class="resident-information-icon">
+
+                        <i class="bi bi-door-open-fill"></i>
+
+                    </div>
+
+                    <div class="resident-information-label">
+                        Room
+                    </div>
+
+                    <div class="resident-information-value">
+                        Not Assigned
+                    </div>
+
+                </div>
+
+
+                <!-- CARE PLAN -->
+
+                <div class="resident-information-card">
+
+                    <div class="resident-information-icon">
+
+                        <i class="bi bi-heart-pulse-fill"></i>
+
+                    </div>
+
+                    <div class="resident-information-label">
+                        Care Plan
+                    </div>
+
+                    <div class="resident-information-value">
+                        Active
+                    </div>
+
+                </div>
+
+
+                <!-- NEXT APPOINTMENT -->
+
+                <div class="resident-information-card">
+
+                    <div class="resident-information-icon">
+
+                        <i class="bi bi-calendar-event-fill"></i>
+
+                    </div>
+
+                    <div class="resident-information-label">
+                        Next Appointment
+                    </div>
+
+                    <div class="resident-information-value">
+                        None
+                    </div>
+
+                </div>
+
+
+                <!-- SUPPORT -->
+
+                <div class="resident-information-card">
+
+                    <div class="resident-information-icon">
+
+                        <i class="bi bi-headset"></i>
+
+                    </div>
+
+                    <div class="resident-information-label">
+                        Support
+                    </div>
+
+                    <div class="resident-information-value">
+                        Available
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

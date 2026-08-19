@@ -1,0 +1,204 @@
+﻿@{
+    ViewData["Title"] = "Driver";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="driver-dashboard">
+
+    <div class="driver-dashboard-container">
+
+        <!-- =====================================================
+             WELCOME
+             ===================================================== -->
+
+        <section class="driver-welcome">
+
+            <div class="driver-welcome-content">
+
+                <h1>
+                    Driver Dashboard
+                </h1>
+
+                <p>
+                    Manage your trips and transportation tasks from here.
+                </p>
+
+                <div class="driver-status">
+
+                    <span class="driver-status-dot"></span>
+
+                    Ready for duty
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             DRIVER ACTIONS
+             ===================================================== -->
+
+        <section class="driver-actions">
+
+            <!-- MY TRIPS -->
+
+            <a asp-controller="Driver"
+                   asp-action="Trips"
+                   class="driver-action-card">
+
+                <div class="driver-action-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+                <div class="driver-action-content">
+
+                    <div class="driver-action-title">
+                        My Trips
+                    </div>
+
+                    <div class="driver-action-description">
+                        View your assigned trips and transportation details.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right driver-action-arrow"></i>
+
+            </a>
+
+
+            <!-- VEHICLE -->
+
+            <a asp-controller="Driver"
+                   asp-action="Vehicle"
+                   class="driver-action-card">
+
+                <div class="driver-action-icon">
+
+                    <i class="bi bi-car-front-fill"></i>
+
+                </div>
+
+                <div class="driver-action-content">
+
+                    <div class="driver-action-title">
+                        My Vehicle
+                    </div>
+
+                    <div class="driver-action-description">
+                        View your assigned vehicle and vehicle information.
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right driver-action-arrow"></i>
+
+            </a>
+
+        </section>
+
+
+        <!-- =====================================================
+             TODAY
+             ===================================================== -->
+
+        <section class="driver-section">
+
+            <div class="driver-section-header">
+
+                <div class="driver-section-title">
+
+                    <i class="bi bi-calendar-check-fill"></i>
+
+                    Today's Trip
+
+                </div>
+
+                <div class="driver-date">
+
+                    @DateTime.Now.ToString("dd MMM yyyy")
+
+                </div>
+
+            </div>
+
+
+            <!--
+                Replace this empty state with the driver's
+                actual assigned trip when you connect the database.
+            -->
+
+            <div class="driver-empty-state">
+
+                <div class="driver-empty-icon">
+
+                    <i class="bi bi-calendar2-check"></i>
+
+                </div>
+
+                <h3>
+                    No trip assigned
+                </h3>
+
+                <p>
+                    You currently have no scheduled trip for today.
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 QUICK INFORMATION
+                 ================================================= -->
+
+            <div class="driver-info">
+
+                <div class="driver-info-item">
+
+                    <div class="driver-info-label">
+                        Status
+                    </div>
+
+                    <div class="driver-info-value">
+                        Available
+                    </div>
+
+                </div>
+
+
+                <div class="driver-info-item">
+
+                    <div class="driver-info-label">
+                        Vehicle
+                    </div>
+
+                    <div class="driver-info-value">
+                        Not assigned
+                    </div>
+
+                </div>
+
+
+                <div class="driver-info-item">
+
+                    <div class="driver-info-label">
+                        Trips Today
+                    </div>
+
+                    <div class="driver-info-value">
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

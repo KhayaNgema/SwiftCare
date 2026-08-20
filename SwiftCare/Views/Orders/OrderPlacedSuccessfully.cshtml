@@ -1,0 +1,264 @@
+﻿@model SwiftCare.Models.Order
+
+@{
+    ViewData["Title"] = "Order Successfully Placed";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+
+<div class="swift-order-success-page">
+
+    <div class="swift-success-container">
+
+        <div class="swift-success-card">
+
+            <!-- ====================================================
+                 SUCCESS HEADER
+                 ==================================================== -->
+
+            <div class="swift-success-header">
+
+                <div class="swift-success-icon">
+
+                    <i class="fas fa-check"></i>
+
+                </div>
+
+                <h1 class="swift-success-title">
+                    Order Successfully Placed
+                </h1>
+
+                <p class="swift-success-subtitle">
+                    Your equipment request has been received successfully.
+                </p>
+
+            </div>
+
+
+            <div class="swift-success-content">
+
+                <!-- ====================================================
+                     ORDER NUMBER
+                     ==================================================== -->
+
+                <div class="swift-order-number-box">
+
+                    <div class="swift-order-number-label">
+                        Order Number
+                    </div>
+
+                    <div class="swift-order-number">
+                        @Model.OrderNumber
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     ORDER INFORMATION
+                     ==================================================== -->
+
+                <div class="swift-order-grid">
+
+                    <!-- ORDER ITEMS -->
+
+                    <div class="swift-order-section">
+
+                        <div class="swift-section-header">
+
+                            <i class="fas fa-box-open me-2"></i>
+
+                            Equipment Requested
+
+                        </div>
+
+                        <div class="swift-section-body">
+
+                            @if (Model.OrderItems != null &&
+                                 Model.OrderItems.Any())
+                            {
+                                foreach (var item in Model.OrderItems)
+                                {
+                                    <div class="swift-order-item">
+
+                                        <div class="swift-item-icon">
+
+                                            <i class="fas fa-wheelchair"></i>
+
+                                        </div>
+
+                                        <div class="swift-item-info">
+
+                                            <h5 class="swift-item-name">
+
+                                                @item.Equipment?.EquipmentName
+
+                                            </h5>
+
+                                            <p class="swift-item-quantity">
+
+                                                Quantity:
+                                                <strong>
+                                                    @item.Quantity
+                                                </strong>
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">
+                                    No equipment items found.
+                                </p>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ORDER DETAILS -->
+
+                    <div class="swift-order-section">
+
+                        <div class="swift-section-header">
+
+                            <i class="fas fa-file-alt me-2"></i>
+
+                            Order Details
+
+                        </div>
+
+                        <div class="swift-section-body">
+
+                            <div class="swift-info-row">
+
+                                <span class="swift-info-label">
+                                    Order Number
+                                </span>
+
+                                <span class="swift-info-value">
+                                    @Model.OrderNumber
+                                </span>
+
+                            </div>
+
+
+                            <div class="swift-info-row">
+
+                                <span class="swift-info-label">
+                                    Order Date
+                                </span>
+
+                                <span class="swift-info-value">
+                                    @Model.OrderDate.ToString("dd MMM yyyy")
+                                </span>
+
+                            </div>
+
+
+                            <div class="swift-info-row">
+
+                                <span class="swift-info-label">
+                                    Time
+                                </span>
+
+                                <span class="swift-info-value">
+                                    @Model.OrderDate.ToString("HH:mm")
+                                </span>
+
+                            </div>
+
+
+                            <div class="swift-info-row">
+
+                                <span class="swift-info-label">
+                                    Status
+                                </span>
+
+                                <span class="swift-status-badge">
+
+                                    <i class="fas fa-clock"></i>
+
+                                    @Model.Status
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     QR CODE
+                     ==================================================== -->
+
+                <div class="swift-qr-section">
+
+                    <div class="swift-qr-wrapper">
+
+                        @if (ViewBag.QrCode != null)
+                        {
+                            <img src="@ViewBag.QrCode"
+                                 alt="Order QR Code"
+                                 class="swift-qr-image" />
+                        }
+
+                        <div class="swift-qr-title">
+                            Order QR Code
+                        </div>
+
+                        <p class="swift-qr-description">
+                            Keep this QR code available for quick
+                            identification of your equipment order.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ====================================================
+                     ACTION BUTTONS
+                     ==================================================== -->
+
+                <div class="swift-success-actions">
+
+                    <a asp-controller="Orders"
+                           asp-action="MyOrders"
+                           class="swift-action-button swift-primary-button">
+
+                        <i class="fas fa-clipboard-list"></i>
+
+                        My Orders
+
+                    </a>
+
+
+                    <a asp-controller="Equipment"
+                           asp-action="EquipmentList"
+                           class="swift-action-button swift-secondary-button">
+
+                        <i class="fas fa-shopping-cart"></i>
+
+                        Continue Shopping
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

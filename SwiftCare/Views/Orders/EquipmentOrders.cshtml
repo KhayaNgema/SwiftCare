@@ -1,0 +1,813 @@
+﻿@model IEnumerable<SwiftCare.Models.Order>
+@inject SwiftCare.Interfaces.IEncryptionService encryptionService
+
+@{
+    ViewData["Title"] = "Equipment Orders";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <div class="d-flex align-items-center justify-content-between px-3 py-3 mb-4"
+         style="background-color:#071a33;">
+
+        <div class="d-flex align-items-center">
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="text-white text-decoration-none d-inline-flex align-items-center back-link me-3">
+
+                <i class="bi bi-chevron-left me-1"></i>
+
+                Back
+
+            </a>
+
+            <h2 class="mb-0 text-white">
+                Equipment Orders
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         SEARCH / NEW ORDER
+         ============================================================ -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4 px-3">
+
+        <div class="input-group w-50">
+
+            <input type="text"
+                   class="form-control"
+                   placeholder="Search by order number, customer..."
+                   id="orderSearchInput" />
+
+        </div>
+
+
+        @if (User.IsInRole("Administrator"))
+        {
+            <div>
+
+                <a asp-controller="Equipment"
+                       asp-action="EquipmentList"
+                       class="btn btn-primary"
+                       id="addButton">
+
+                    <i class="bi bi-plus-circle me-1"></i>
+
+                    New Order
+
+                </a>
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- ============================================================
+         TEMP DATA MESSAGE
+         ============================================================ -->
+    @if (TempData["Message"] != null)
+    {
+        <div id="tempDataMessage"
+             class="alert alert-success"
+             role="alert">
+
+            @TempData["Message"]
+
+            <span class="close"
+                  aria-label="Close"
+                  style="cursor:pointer; float:right;">
+
+                <span aria-hidden="true">
+                    &times;
+                </span>
+
+            </span>
+
+        </div>
+    }
+
+
+    @if (TempData["Error"] != null)
+    {
+        <div id="tempDataError"
+             class="alert alert-danger"
+             role="alert">
+
+            @TempData["Error"]
+
+            <span class="close"
+                  aria-label="Close"
+                  style="cursor:pointer; float:right;">
+
+                <span aria-hidden="true">
+                    &times;
+                </span>
+
+            </span>
+
+        </div>
+    }
+
+
+    <!-- ============================================================
+         NO ORDERS
+         ============================================================ -->
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+
+            <i class="fas fa-box-open me-2"></i>
+
+            No equipment orders found.
+
+        </div>
+    }
+    else
+    {
+
+        <!-- ========================================================
+             ORDERS TABLE
+             ======================================================== -->
+
+        <div class="table-responsive">
+
+            <table class="table table-striped table-borderless"
+                   id="ordersTable">
+
+                <thead class="custom-thead">
+
+                    <tr style="
+                        color:white;
+                        background-color:#324260;
+                        white-space:nowrap;
+                        ">
+
+                        <th>
+                            Order No.
+                        </th>
+
+                        <th>
+                            Equipment
+                        </th>
+
+                        <th>
+                            Total Quantity
+                        </th>
+
+                        <th>
+                            Order Date
+                        </th>
+
+                        <th>
+                            Last Updated
+                        </th>
+
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+                        var encryptedId =
+                            encryptionService.Encrypt(item.OrderId);
+
+                        var equipmentCount =
+                            item.OrderItems?.Count ?? 0;
+
+                        var totalQuantity =
+                            item.OrderItems?.Sum(
+                                orderItem => orderItem.Quantity
+                            ) ?? 0;
+
+                        <tr>
+
+                            <!-- ORDER NUMBER -->
+
+                            <td>
+
+                                <strong>
+                                    @item.OrderNumber
+                                </strong>
+
+                            </td>
+
+
+                            <!-- NUMBER OF EQUIPMENT TYPES -->
+
+                            <td>
+
+                                <span class="badge bg-secondary">
+
+                                    @equipmentCount
+
+                                </span>
+
+                                @(equipmentCount == 1
+                                    ? "Item"
+                                    : "Items")
+
+                            </td>
+
+
+                            <!-- TOTAL QUANTITY -->
+
+                            <td>
+
+                                <strong>
+                                    @totalQuantity
+                                </strong>
+
+                            </td>
+
+
+                            <!-- ORDER DATE -->
+
+                            <td>
+
+                                @item.OrderDate.ToString("dd/MM/yyyy")
+
+                            </td>
+
+
+                            <!-- LAST UPDATED -->
+
+                            <td>
+
+                                @item.LastUpdated.ToString("dd/MM/yyyy")
+
+                            </td>
+
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (item.Status == SwiftCare.Models.OrderStatus.Pending)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
+                                    </span>
+                                }
+                                else if (item.Status == SwiftCare.Models.OrderStatus.OnTheWay)
+                                {
+                                    <span class="badge bg-primary">
+                                        On The Way
+                                    </span>
+                                }
+                                else if (item.Status == SwiftCare.Models.OrderStatus.Collected)
+                                {
+                                    <span class="badge bg-success">
+                                        Collected
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        @item.Status
+                                    </span>
+                                }
+
+                            </td>
+
+
+                            <!-- ACTION -->
+
+                            <td class="text-end">
+
+                                <button class="btn btn-primary btn-sm action-button"
+                                        type="button"
+                                        data-order-id="@encryptedId"
+                                        data-details-url="@Url.Action(
+                                                                                "OrderDetails",
+                                                                                "Orders",
+                                                                                new { orderId = item.OrderId })"
+                                        data-receive-url="@Url.Action(
+                                                                                "ReceiveOrder",
+                                                                                "Orders",
+                                                                                new { orderId = encryptedId })"
+                                        data-ready-url="@Url.Action(
+                                                                                "MarkAsReady",
+                                                                                "Orders",
+                                                                                new { orderId = item.OrderId })"
+                                        data-on-the-way-url="@Url.Action(
+                                                                                "MarkAsOnTheWay",
+                                                                                "Orders",
+                                                                                new { orderId = item.OrderId })">
+
+                                    <i class="fas fa-ellipsis-v me-1"></i>
+
+                                    Actions
+
+                                </button>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    }
+
+</div>
+
+
+<!-- ================================================================
+     FLOATING ACTION MENU
+     ================================================================ -->
+
+<div id="floatingActionTab"
+     class="card shadow"
+     style="
+    display:none;
+    position:absolute;
+    z-index:9999;
+    min-width:210px;
+    background:white;
+    border:1px solid #ccc;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    ">
+
+    <div class="list-group list-group-flush">
+
+
+        <!-- DETAILS -->
+
+        <a href="#"
+               id="detailsLink"
+               class="list-group-item list-group-item-action">
+
+            <i class="fas fa-info-circle me-2"
+               style="color:#071a33;"></i>
+
+            Order Details
+
+        </a>
+
+
+        <!-- MARK READY -->
+        @if (User.IsInRole("Administrator"))
+        {
+            <a href="#"
+                   id="readyLink"
+                   class="list-group-item list-group-item-action">
+
+                <i class="fas fa-check-circle me-2"
+                   style="color:#198754;"></i>
+
+                Mark As Ready
+
+            </a>
+        }
+
+
+        <!-- ON THE WAY -->
+        @if (User.IsInRole("Administrator") ||
+                     User.IsInRole("Supplier Driver"))
+        {
+            <a href="#"
+                   id="onTheWayLink"
+                   class="list-group-item list-group-item-action">
+
+                <i class="fas fa-truck me-2"
+                   style="color:#0d6efd;"></i>
+
+                Mark As On The Way
+
+            </a>
+        }
+
+
+        <!-- RECEIVE -->
+        @if (User.IsInRole("Administrator") ||
+                     User.IsInRole("Supplier Driver"))
+        {
+            <a href="#"
+                   id="receiveLink"
+                   class="list-group-item list-group-item-action">
+
+                <i class="fas fa-box-open me-2"
+                   style="color:#198754;"></i>
+
+                Receive Order
+
+            </a>
+        }
+
+    </div>
+
+</div>
+
+
+
+    <script>
+
+        $(document).ready(function () {
+
+
+            /* ============================================================
+               TEMP DATA
+               ============================================================ */
+
+            setTimeout(function () {
+
+                $("#tempDataMessage").fadeOut();
+
+                $("#tempDataError").fadeOut();
+
+            }, 7000);
+
+
+            $(document).on(
+                "click",
+                "#tempDataMessage .close, #tempDataError .close",
+                function () {
+
+                    $(this)
+                        .closest(".alert")
+                        .fadeOut();
+
+                }
+            );
+
+
+            /* ============================================================
+               ACTION BUTTON
+               ============================================================ */
+
+            $(document).on(
+                "click",
+                ".action-button",
+                function (e) {
+
+                    e.stopPropagation();
+
+
+                    const button = $(this)[0];
+
+                    const tab =
+                        $("#floatingActionTab");
+
+
+                    /* ----------------------------------------------------
+                       GET URLS
+                       ---------------------------------------------------- */
+
+                    const detailsUrl =
+                        $(this).data("details-url");
+
+                    const receiveUrl =
+                        $(this).data("receive-url");
+
+                    const readyUrl =
+                        $(this).data("ready-url");
+
+                    const onTheWayUrl =
+                        $(this).data("on-the-way-url");
+
+
+                    /* ----------------------------------------------------
+                       SET LINKS
+                       ---------------------------------------------------- */
+
+                    $("#detailsLink")
+                        .attr("href", detailsUrl);
+
+
+                    $("#receiveLink")
+                        .attr("href", receiveUrl);
+
+
+                    /*
+                     * These two actions are POST actions in your
+                     * OrdersController.
+                     *
+                     * We therefore store the URLs rather than directly
+                     * navigating to them.
+                     */
+
+                    $("#readyLink")
+                        .attr("data-url", readyUrl);
+
+
+                    $("#onTheWayLink")
+                        .attr("data-url", onTheWayUrl);
+
+
+                    /* ----------------------------------------------------
+                       POSITION MENU
+                       ---------------------------------------------------- */
+
+                    const rect =
+                        button.getBoundingClientRect();
+
+
+                    const tabWidth =
+                        tab.outerWidth();
+
+
+                    const tabHeight =
+                        tab.outerHeight();
+
+
+                    const offsetX = 10;
+
+                    const offsetY = 8;
+
+
+                    let left =
+                        rect.right + offsetX;
+
+
+                    let top =
+                        rect.top + offsetY;
+
+
+                    if (
+                        left + tabWidth >
+                        window.innerWidth
+                    ) {
+
+                        left =
+                            rect.left -
+                            tabWidth -
+                            offsetX;
+
+                    }
+
+
+                    if (
+                        top + tabHeight >
+                        window.innerHeight
+                    ) {
+
+                        top =
+                            window.innerHeight -
+                            tabHeight -
+                            offsetY;
+
+
+                        if (top < 0) {
+
+                            top = 0;
+
+                        }
+
+                    }
+
+
+                    tab.css({
+
+                        position: "fixed",
+
+                        left:
+                            left + "px",
+
+                        top:
+                            top + "px"
+
+                    });
+
+
+                    tab.fadeIn(150);
+
+                }
+            );
+
+
+            /* ============================================================
+               CLOSE FLOATING MENU
+               ============================================================ */
+
+            $(document).on(
+                "click",
+                function (e) {
+
+                    if (
+                        !$(e.target)
+                            .closest("#floatingActionTab")
+                            .length &&
+
+                        !$(e.target)
+                            .hasClass("action-button")
+                    ) {
+
+                        $("#floatingActionTab")
+                            .fadeOut(100);
+
+                    }
+
+                }
+            );
+
+
+            /* ============================================================
+               SEARCH
+               ============================================================ */
+
+            $("#orderSearchInput").on(
+                "input",
+                function () {
+
+                    var value =
+                        $(this)
+                            .val()
+                            .toLowerCase()
+                            .trim();
+
+
+                    $("#ordersTable tbody tr")
+                        .filter(function () {
+
+                            $(this).toggle(
+
+                                $(this)
+                                    .text()
+                                    .toLowerCase()
+                                    .indexOf(value) > -1
+
+                            );
+
+                        });
+
+                }
+            );
+
+
+            /* ============================================================
+               MARK AS READY
+               ============================================================ */
+
+            $(document).on(
+                "click",
+                "#readyLink",
+                function (e) {
+
+                    e.preventDefault();
+
+                    const url =
+                        $(this).attr("data-url");
+
+
+                    if (!url) {
+                        return;
+                    }
+
+
+                    if (
+                        !confirm(
+                            "Mark this equipment order as ready?"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    submitOrderAction(
+                        url,
+                        "Equipment order marked as ready."
+                    );
+
+                }
+            );
+
+
+            /* ============================================================
+               MARK AS ON THE WAY
+               ============================================================ */
+
+            $(document).on(
+                "click",
+                "#onTheWayLink",
+                function (e) {
+
+                    e.preventDefault();
+
+                    const url =
+                        $(this).attr("data-url");
+
+
+                    if (!url) {
+                        return;
+                    }
+
+
+                    if (
+                        !confirm(
+                            "Mark this equipment order as on the way?"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    submitOrderAction(
+                        url,
+                        "Equipment order is now on the way."
+                    );
+
+                }
+            );
+
+
+            /* ============================================================
+               POST ACTION
+               ============================================================ */
+
+            function submitOrderAction(
+                url,
+                successMessage
+            ) {
+
+                const token =
+                    $('input[name="__RequestVerificationToken"]')
+                        .val();
+
+
+                $.ajax({
+
+                    url: url,
+
+                    type: "POST",
+
+                    headers: {
+
+                        "RequestVerificationToken":
+                            token
+
+                    },
+
+                    success: function (response) {
+
+                        if (
+                            response &&
+                            response.success
+                        ) {
+
+                            location.reload();
+
+                        }
+                        else {
+
+                            alert(
+                                response?.message ||
+                                "Unable to update the order."
+                            );
+
+                        }
+
+                    },
+
+                    error: function (xhr) {
+
+                        console.error(
+                            xhr.responseText
+                        );
+
+
+                        alert(
+                            "Unable to update the equipment order. Please try again."
+                        );
+
+                    }
+
+                });
+
+            }
+
+        });
+
+    </script>

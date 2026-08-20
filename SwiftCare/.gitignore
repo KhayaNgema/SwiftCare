@@ -1,4 +1,4 @@
-# .NET
+# Build output
 bin/
 obj/
 
@@ -7,21 +7,43 @@ obj/
 *.user
 *.suo
 
-# Secrets
-aes-keys.txt
+# Rider
+.idea/
+
+# ASP.NET Core
+wwwroot/lib/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
 
 # Logs
+Logs/
 *.log
 
-# Local databases
-*.db
-*.sqlite
-*.sqlite3
+# Local development settings
+appsettings.Development.json
+appsettings.Local.json
+
+# Azure / Visual Studio local settings
+Properties/serviceDependencies.local.json
+
+# Publish output
+publish/
+PublishOutput/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Environment files
 .env
 .env.*
 
-# Publish
-publish/
-Publish/
+# Secrets
+secrets.json

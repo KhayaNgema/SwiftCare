@@ -1,0 +1,790 @@
+﻿
+@model SwiftCare.Models.Order
+
+@{
+    ViewData["Title"] = "Receive Equipment Order";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+
+<div class="receive-page">
+
+    <!-- HEADER -->
+    <div class="receive-header">
+
+        <div class="receive-header-inner">
+
+            <a asp-controller="Orders"
+               asp-action="Orders"
+               class="receive-back">
+
+                <i class="bi bi-chevron-left"></i>
+                Back
+
+            </a>
+
+            <div>
+
+                <h2 class="receive-title">
+                    Receive Equipment Order
+                </h2>
+
+                <p class="receive-subtitle">
+                    Scan and verify the equipment before completing the order.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="container-fluid px-4 mt-4">
+
+        @if (Model == null)
+        {
+            <div class="empty-order">
+
+                <i class="fas fa-box-open"></i>
+
+                <h4>
+                    Order not found
+                </h4>
+
+                <p class="text-muted">
+                    The equipment order could not be found.
+                </p>
+
+                <a asp-controller="Orders"
+                   asp-action="Orders"
+                   class="btn btn-primary">
+
+                    Back to Orders
+
+                </a>
+
+            </div>
+        }
+        else
+        {
+            <!-- ORDER INFORMATION -->
+
+            <div class="order-info-card">
+
+                <div class="row g-4">
+
+                    <div class="col-6 col-md-3">
+
+                        <div class="order-info-label">
+                            Order Number
+                        </div>
+
+                        <div class="order-info-value">
+                            @Model.OrderNumber
+                        </div>
+
+                    </div>
+
+                    <div class="col-6 col-md-3">
+
+                        <div class="order-info-label">
+                            Order ID
+                        </div>
+
+                        <div class="order-info-value">
+                            #@Model.OrderId
+                        </div>
+
+                    </div>
+
+                    <div class="col-6 col-md-3">
+
+                        <div class="order-info-label">
+                            Order Date
+                        </div>
+
+                        <div class="order-info-value">
+                            @Model.OrderDate.ToString("dd MMM yyyy")
+                        </div>
+
+                    </div>
+
+                    <div class="col-6 col-md-3">
+
+                        <div class="order-info-label">
+                            Status
+                        </div>
+
+                        <div class="order-info-value">
+                            @Model.Status
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <form asp-controller="Orders"
+                  asp-action="ReceiveOrder"
+                  asp-route-orderId="@Model.OrderId"
+                  method="post"
+                  id="receiveOrderForm">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="orderId"
+                       value="@Model.OrderId" />
+
+
+                <div class="row">
+
+                    <!-- SCANNER -->
+
+                    <div class="col-12 col-lg-4">
+
+                        <div class="scanner-card">
+
+                            <h5 class="scanner-title">
+
+                                <i class="fas fa-qrcode me-2"
+                                   style="color:#48AAAD;"></i>
+
+                                Scan Equipment
+
+                            </h5>
+
+                            <p class="scanner-description">
+
+                                Scan the QR code attached to each equipment item.
+                                Each successful scan will update the quantity below.
+
+                            </p>
+
+                            <div id="scanner"></div>
+
+                            <div class="scanner-status"
+                                 id="scannerStatus">
+
+                                <i class="fas fa-camera me-1"></i>
+
+                                Scanner ready
+
+                            </div>
+
+                            <div class="all-complete"
+                                 id="allComplete">
+
+                                <i class="fas fa-check-circle me-1"></i>
+
+                                All equipment has been verified.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- EQUIPMENT -->
+
+                    <div class="col-12 col-lg-8">
+
+                        <h5 class="fw-bold mb-3">
+
+                            Equipment to Receive
+
+                        </h5>
+
+                        @if (Model.OrderItems != null &&
+                             Model.OrderItems.Any())
+                        {
+                            foreach (var item in Model.OrderItems)
+                            {
+                                <div class="equipment-card"
+                                     id="order-item-@item.OrderItemId"
+                                     data-equipment-id="@item.EquipmentId"
+                                     data-required-qty="@item.Quantity"
+                                     data-scanned-count="0">
+
+                                    <div class="d-flex align-items-start gap-3">
+
+                                        <div class="equipment-icon">
+
+                                            <i class="fas fa-wheelchair"></i>
+
+                                        </div>
+
+                                        <div class="flex-grow-1">
+
+                                            <h5 class="equipment-name">
+
+                                                @item.Equipment?.EquipmentName
+
+                                            </h5>
+
+                                            <div class="equipment-quantity">
+
+                                                Required quantity:
+                                                <strong>
+                                                    @item.Quantity
+                                                </strong>
+
+                                            </div>
+
+                                            <div class="scan-progress">
+
+                                                <div class="scan-progress-bar">
+
+                                                    <div class="scan-progress-fill">
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="scan-count">
+
+                                                    Scanned:
+                                                    <span class="scanned-count">
+                                                        0
+                                                    </span>
+                                                    /
+                                                    @item.Quantity
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <i class="fas fa-check-circle check-icon d-none"></i>
+
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-order">
+
+                                <i class="fas fa-box-open"></i>
+
+                                <h5>
+                                    No equipment items
+                                </h5>
+
+                                <p class="text-muted">
+                                    This order contains no equipment items.
+                                </p>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- SUBMIT -->
+
+                <div class="receive-footer">
+
+                    <div class="container-fluid">
+
+                        <button type="submit"
+                                class="receive-button"
+                                id="receiveOrderButton">
+
+                            <i class="fas fa-truck-loading me-2"></i>
+
+                            Receive Equipment Order
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+        }
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <script>
+
+        let html5QrCode = null;
+        let scanningPaused = false;
+
+        /* ============================================================
+           BEEP
+        ============================================================ */
+
+        function playBeep() {
+
+            try {
+
+                const AudioContext =
+                    window.AudioContext ||
+                    window.webkitAudioContext;
+
+                if (!AudioContext) return;
+
+                const audioCtx = new AudioContext();
+
+                const oscillator =
+                    audioCtx.createOscillator();
+
+                const gainNode =
+                    audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = "sine";
+
+                oscillator.frequency.setValueAtTime(
+                    1000,
+                    audioCtx.currentTime
+                );
+
+                gainNode.gain.setValueAtTime(
+                    0.2,
+                    audioCtx.currentTime
+                );
+
+                oscillator.start();
+
+                oscillator.stop(
+                    audioCtx.currentTime + 0.15
+                );
+
+            }
+            catch (error) {
+
+                console.log("Beep unavailable.");
+
+            }
+
+        }
+
+
+        /* ============================================================
+           UPDATE CARD
+        ============================================================ */
+
+        function updateEquipmentCard(card, scannedCount) {
+
+            const requiredQty =
+                parseInt(
+                    card.getAttribute(
+                        "data-required-qty"
+                    )
+                ) || 0;
+
+            card.setAttribute(
+                "data-scanned-count",
+                scannedCount
+            );
+
+            const countElement =
+                card.querySelector(
+                    ".scanned-count"
+                );
+
+            if (countElement) {
+
+                countElement.textContent =
+                    scannedCount;
+
+            }
+
+            const progress =
+                card.querySelector(
+                    ".scan-progress-fill"
+                );
+
+            if (progress && requiredQty > 0) {
+
+                const percentage =
+                    Math.min(
+                        (scannedCount / requiredQty) * 100,
+                        100
+                    );
+
+                progress.style.width =
+                    percentage + "%";
+
+            }
+
+            const checkIcon =
+                card.querySelector(
+                    ".check-icon"
+                );
+
+            if (scannedCount >= requiredQty) {
+
+                card.classList.add(
+                    "completed"
+                );
+
+                if (checkIcon) {
+
+                    checkIcon.classList.remove(
+                        "d-none"
+                    );
+
+                }
+
+            }
+            else {
+
+                card.classList.remove(
+                    "completed"
+                );
+
+                if (checkIcon) {
+
+                    checkIcon.classList.add(
+                        "d-none"
+                    );
+
+                }
+
+            }
+
+            checkAllComplete();
+
+        }
+
+
+        /* ============================================================
+           CHECK EVERYTHING
+        ============================================================ */
+
+        function checkAllComplete() {
+
+            const cards =
+                document.querySelectorAll(
+                    ".equipment-card"
+                );
+
+            if (!cards.length) return;
+
+            let complete = true;
+
+            cards.forEach(card => {
+
+                const required =
+                    parseInt(
+                        card.getAttribute(
+                            "data-required-qty"
+                        )
+                    ) || 0;
+
+                const scanned =
+                    parseInt(
+                        card.getAttribute(
+                            "data-scanned-count"
+                        )
+                    ) || 0;
+
+                if (scanned < required) {
+
+                    complete = false;
+
+                }
+
+            });
+
+            const allComplete =
+                document.getElementById(
+                    "allComplete"
+                );
+
+            if (allComplete) {
+
+                allComplete.style.display =
+                    complete ? "block" : "none";
+
+            }
+
+        }
+
+
+        /* ============================================================
+           QR SCAN
+           
+           QR CODE SHOULD CONTAIN EQUIPMENT ID
+           OR EQUIPMENT NAME.
+        ============================================================ */
+
+        function handleQrCode(decodedText) {
+
+            if (scanningPaused) return;
+
+            const code =
+                decodedText.trim();
+
+            const cards =
+                Array.from(
+                    document.querySelectorAll(
+                        ".equipment-card"
+                    )
+                );
+
+            const matchedCard =
+                cards.find(card => {
+
+                    const equipmentId =
+                        card.getAttribute(
+                            "data-equipment-id"
+                        );
+
+                    return equipmentId === code;
+
+                });
+
+            if (!matchedCard) {
+
+                const status =
+                    document.getElementById(
+                        "scannerStatus"
+                    );
+
+                if (status) {
+
+                    status.innerHTML =
+                        '<i class="fas fa-exclamation-triangle me-1"></i> ' +
+                        'QR code does not match this order.';
+
+                    status.style.background =
+                        "#fff3cd";
+
+                    status.style.color =
+                        "#856404";
+
+                    setTimeout(() => {
+
+                        status.innerHTML =
+                            '<i class="fas fa-camera me-1"></i> Scanner ready';
+
+                        status.style.background =
+                            "#eefafa";
+
+                        status.style.color =
+                            "#337d80";
+
+                    }, 1800);
+
+                }
+
+                scanningPaused = true;
+
+                setTimeout(() => {
+
+                    scanningPaused = false;
+
+                }, 1200);
+
+                return;
+
+            }
+
+            let scannedCount =
+                parseInt(
+                    matchedCard.getAttribute(
+                        "data-scanned-count"
+                    )
+                ) || 0;
+
+            const requiredQty =
+                parseInt(
+                    matchedCard.getAttribute(
+                        "data-required-qty"
+                    )
+                ) || 0;
+
+
+            if (scannedCount < requiredQty) {
+
+                scannedCount++;
+
+                updateEquipmentCard(
+                    matchedCard,
+                    scannedCount
+                );
+
+                playBeep();
+
+                const status =
+                    document.getElementById(
+                        "scannerStatus"
+                    );
+
+                if (status) {
+
+                    status.innerHTML =
+                        '<i class="fas fa-check-circle me-1"></i> Equipment verified';
+
+                    status.style.background =
+                        "#eaf8ee";
+
+                    status.style.color =
+                        "#26783a";
+
+                    setTimeout(() => {
+
+                        status.innerHTML =
+                            '<i class="fas fa-camera me-1"></i> Scanner ready';
+
+                        status.style.background =
+                            "#eefafa";
+
+                        status.style.color =
+                            "#337d80";
+
+                    }, 1200);
+
+                }
+
+            }
+
+            scanningPaused = true;
+
+            setTimeout(() => {
+
+                scanningPaused = false;
+
+            }, 1000);
+
+        }
+
+
+        /* ============================================================
+           START SCANNER
+        ============================================================ */
+
+        function startScanner() {
+
+            const scannerElement =
+                document.getElementById(
+                    "scanner"
+                );
+
+            if (!scannerElement) return;
+
+            html5QrCode =
+                new Html5Qrcode(
+                    "scanner"
+                );
+
+            html5QrCode.start(
+
+                {
+                    facingMode: "environment"
+                },
+
+                {
+                    fps: 10,
+                    qrbox: {
+                        width: 220,
+                        height: 220
+                    }
+                },
+
+                function(decodedText) {
+
+                    handleQrCode(
+                        decodedText
+                    );
+
+                },
+
+                function(errorMessage) {
+
+                    // Normal scanner frame errors are ignored.
+
+                }
+
+            ).catch(function(error) {
+
+                console.error(
+                    "Unable to start scanner:",
+                    error
+                );
+
+                const status =
+                    document.getElementById(
+                        "scannerStatus"
+                    );
+
+                if (status) {
+
+                    status.innerHTML =
+                        '<i class="fas fa-exclamation-triangle me-1"></i> Camera could not be started';
+
+                    status.style.background =
+                        "#f8d7da";
+
+                    status.style.color =
+                        "#842029";
+
+                }
+
+            });
+
+        }
+
+
+        /* ============================================================
+           PREVENT DOUBLE SUBMISSION
+        ============================================================ */
+
+        document
+            .getElementById("receiveOrderForm")
+            ?.addEventListener(
+                "submit",
+                function () {
+
+                    const button =
+                        document.getElementById(
+                            "receiveOrderButton"
+                        );
+
+                    if (!button) return;
+
+                    button.disabled = true;
+
+                    button.innerHTML =
+                        '<i class="fas fa-spinner fa-spin me-2"></i> Receiving Order...';
+
+                }
+            );
+
+
+        /* ============================================================
+           INITIALIZE
+        ============================================================ */
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                startScanner();
+
+            }
+        );
+
+    </script>
+}
+ 

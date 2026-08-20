@@ -10493,3 +10493,2169 @@ body.scx-authenticated #scx-page-content .admin-dashboard {
         display: none;
     }
 }
+
+/* ============================================================
+           PAGE
+           ============================================================ */
+
+.swift-equipment-page {
+    min-height: 100vh;
+    background: #f5f8f6;
+    padding-bottom: 50px;
+}
+
+
+/* ============================================================
+           HEADER
+           ============================================================ */
+
+.swift-equipment-header {
+    background: linear-gradient( 135deg, #123d22, #1d6338 );
+    padding: 20px 30px;
+    box-shadow: 0 5px 20px rgba(18, 61, 34, 0.12);
+}
+
+.swift-equipment-header-inner {
+    max-width: 1400px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.swift-equipment-header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.swift-equipment-back {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+    .swift-equipment-back:hover {
+        color: #dff5e7;
+    }
+
+.swift-equipment-title {
+    color: #fff;
+    margin: 0;
+    font-weight: 800;
+}
+
+.swift-equipment-subtitle {
+    color: rgba(255,255,255,.75);
+    margin: 4px 0 0;
+    font-size: 14px;
+}
+
+
+/* ============================================================
+           CART BUTTON
+           ============================================================ */
+
+.swift-cart-button {
+    border: none;
+    background: #fff;
+    color: #123d22;
+    border-radius: 50px;
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,.12);
+    transition: .2s ease;
+}
+
+    .swift-cart-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,.18);
+    }
+
+.swift-cart-count {
+    min-width: 25px;
+    height: 25px;
+    padding: 0 7px;
+    border-radius: 50px;
+    background: #1d6338;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+
+/* ============================================================
+           TOOLBAR
+           ============================================================ */
+
+.swift-equipment-toolbar {
+    max-width: 1400px;
+    margin: 25px auto;
+    padding: 0 25px;
+}
+
+.swift-equipment-search-group {
+    max-width: 600px;
+    position: relative;
+}
+
+.swift-equipment-search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #819188;
+    z-index: 2;
+}
+
+.swift-equipment-search {
+    width: 100%;
+    border: 1px solid #dbe5de;
+    background: #fff;
+    border-radius: 12px;
+    padding: 13px 15px 13px 44px;
+    outline: none;
+    font-size: 14px;
+    transition: .2s ease;
+}
+
+    .swift-equipment-search:focus {
+        border-color: #2d7b47;
+        box-shadow: 0 0 0 4px rgba(45,123,71,.08);
+    }
+
+
+/* ============================================================
+           EQUIPMENT GRID
+           ============================================================ */
+
+.swift-equipment-grid {
+    max-width: 1400px;
+    margin: auto;
+    padding: 0 25px;
+    display: grid;
+    grid-template-columns: repeat( auto-fill, minmax(250px, 1fr) );
+    gap: 22px;
+}
+
+
+/* ============================================================
+           EQUIPMENT CARD
+           ============================================================ */
+
+.swift-equipment-card {
+    background: #fff;
+    border: 1px solid #e5ece7;
+    border-radius: 17px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(20,55,34,.06);
+    transition: .25s ease;
+}
+
+    .swift-equipment-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(20,55,34,.12);
+    }
+
+
+.swift-equipment-image-wrapper {
+    height: 210px;
+    background: #edf4ef;
+    overflow: hidden;
+}
+
+.swift-equipment-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.swift-equipment-icon-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7e9887;
+    font-size: 45px;
+    background: #edf4ef;
+}
+
+
+.swift-equipment-content {
+    padding: 18px;
+}
+
+.swift-equipment-name {
+    color: #123d22;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.swift-equipment-description {
+    color: #728078;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 42px;
+}
+
+
+.swift-equipment-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.swift-equipment-view-button,
+.swift-equipment-cart-button {
+    flex: 1;
+    border: none;
+    border-radius: 9px;
+    padding: 9px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.swift-equipment-view-button {
+    background: #edf3ef;
+    color: #123d22;
+}
+
+.swift-equipment-cart-button {
+    background: #123d22;
+    color: #fff;
+}
+
+    .swift-equipment-cart-button:hover {
+        background: #1d6338;
+    }
+
+
+/* ============================================================
+           EMPTY EQUIPMENT
+           ============================================================ */
+
+.swift-equipment-empty {
+    max-width: 700px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 40px;
+}
+
+.swift-equipment-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8f1eb;
+    color: #1d6338;
+    font-size: 30px;
+}
+
+.swift-equipment-empty h4 {
+    color: #123d22;
+    font-weight: 800;
+}
+
+.swift-equipment-empty p {
+    color: #718277;
+}
+
+
+/* ============================================================
+           NO SEARCH RESULTS
+           ============================================================ */
+
+.swift-no-equipment-results {
+    display: none;
+    text-align: center;
+    padding: 50px;
+    color: #718277;
+}
+
+
+/* ============================================================
+           MODALS
+           ============================================================ */
+
+.swift-modal {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+.swift-modal-header {
+    background: #123d22;
+    color: #fff;
+    border: none;
+    padding: 18px 22px;
+}
+
+.swift-modal-title {
+    margin: 0;
+    font-weight: 800;
+}
+
+.swift-modal-subtitle {
+    display: block;
+    color: rgba(255,255,255,.7);
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.swift-modal-close {
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 18px;
+}
+
+.swift-modal-body {
+    padding: 25px;
+}
+
+.swift-modal-image-container {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background: #edf4ef;
+}
+
+.swift-modal-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.swift-description-label {
+    color: #123d22;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.swift-description {
+    color: #718277;
+    line-height: 1.7;
+}
+
+.swift-modal-footer {
+    border-top: 1px solid #edf0ed;
+    padding: 15px 22px;
+}
+
+.swift-close-button,
+.swift-add-button {
+    border: none;
+    border-radius: 9px;
+    padding: 10px 18px;
+    font-weight: 700;
+}
+
+.swift-close-button {
+    background: #edf0ed;
+    color: #435148;
+}
+
+.swift-add-button {
+    background: #123d22;
+    color: #fff;
+}
+
+
+/* ============================================================
+           ADD CART PREVIEW
+           ============================================================ */
+
+.swift-cart-preview {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f4f8f5;
+    padding: 15px;
+    border-radius: 13px;
+}
+
+.swift-cart-preview-image,
+.swift-cart-preview-placeholder {
+    width: 75px;
+    height: 75px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #e5eee8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6e8877;
+}
+
+    .swift-cart-preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.swift-cart-preview-name {
+    margin: 0;
+    color: #123d22;
+    font-weight: 800;
+}
+
+.swift-cart-preview-description {
+    margin: 5px 0 0;
+    color: #718277;
+    font-size: 13px;
+}
+
+.quantity-wrapper {
+    margin-top: 22px;
+}
+
+.quantity-label {
+    display: block;
+    font-weight: 700;
+    color: #123d22;
+    margin-bottom: 7px;
+}
+
+.quantity-input {
+    width: 100%;
+    border: 1px solid #d9e3dc;
+    border-radius: 9px;
+    padding: 10px;
+}
+
+
+/* ============================================================
+           CART OVERLAY
+           ============================================================ */
+
+.swift-cart-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8,25,15,.45);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: .25s ease;
+    z-index: 9998;
+}
+
+    .swift-cart-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+
+/* ============================================================
+           CART PANEL
+           ============================================================ */
+
+.swift-cart-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(650px, 95vw);
+    height: 100vh;
+    background: #fff;
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: transform .3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 40px rgba(0,0,0,.15);
+}
+
+    .swift-cart-panel.show {
+        transform: translateX(0);
+    }
+
+
+/* ============================================================
+           CART HEADER
+           ============================================================ */
+
+.swift-cart-header {
+    background: #123d22;
+    color: #fff;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+    .swift-cart-header h4 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 19px;
+    }
+
+.swift-cart-close {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,.12);
+    color: #fff;
+    cursor: pointer;
+}
+
+
+/* ============================================================
+           CART BODY
+           ============================================================ */
+
+.swift-cart-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.swift-cart-content {
+    width: 100%;
+}
+
+
+/* ============================================================
+           CART TABLE
+           ============================================================ */
+
+.swift-cart-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #e5ece7;
+    border-radius: 13px;
+}
+
+.swift-cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 500px;
+}
+
+    .swift-cart-table thead {
+        background: #f3f7f4;
+    }
+
+    .swift-cart-table th {
+        padding: 14px 15px;
+        color: #587062;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        font-weight: 800;
+        border-bottom: 1px solid #e1e9e3;
+    }
+
+    .swift-cart-table td {
+        padding: 14px 15px;
+        border-bottom: 1px solid #edf1ee;
+        vertical-align: middle;
+    }
+
+    .swift-cart-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+
+/* ============================================================
+           CART EQUIPMENT
+           ============================================================ */
+
+.swift-cart-equipment {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.swift-cart-equipment-image {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #edf4ef;
+}
+
+.swift-cart-item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.swift-cart-item-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #789080;
+    font-size: 20px;
+}
+
+.swift-cart-equipment-name {
+    color: #123d22;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.swift-cart-equipment-type {
+    color: #829087;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+
+/* ============================================================
+           CART QUANTITY
+           ============================================================ */
+
+.swift-cart-quantity {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #dce6df;
+    border-radius: 9px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.swift-cart-quantity-btn {
+    width: 32px;
+    height: 34px;
+    border: none;
+    background: #f2f6f3;
+    color: #123d22;
+    cursor: pointer;
+}
+
+    .swift-cart-quantity-btn:hover {
+        background: #e3ece5;
+    }
+
+.swift-cart-quantity-input {
+    width: 48px;
+    height: 34px;
+    border: none;
+    outline: none;
+    text-align: center;
+    font-weight: 700;
+    color: #123d22;
+}
+
+    .swift-cart-quantity-input::-webkit-inner-spin-button,
+    .swift-cart-quantity-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+
+/* ============================================================
+           DELETE
+           ============================================================ */
+
+.swift-cart-actions {
+    text-align: right;
+}
+
+.swift-cart-delete {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: #fff0f0;
+    color: #c84747;
+    cursor: pointer;
+}
+
+    .swift-cart-delete:hover {
+        background: #ffe1e1;
+    }
+
+
+/* ============================================================
+           CART SUMMARY
+           ============================================================ */
+
+.swift-cart-summary {
+    margin-top: 18px;
+    padding: 17px;
+    border-radius: 13px;
+    background: #f3f7f4;
+    border: 1px solid #e1e9e3;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.swift-cart-summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.swift-cart-summary-label {
+    color: #7b8b82;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.swift-cart-summary-item strong {
+    color: #123d22;
+    font-size: 20px;
+}
+
+.swift-cart-summary-divider {
+    width: 1px;
+    height: 35px;
+    background: #d6e1d9;
+}
+
+
+/* ============================================================
+           CLEAR CART
+           ============================================================ */
+
+.swift-clear-cart {
+    width: 100%;
+    margin-top: 15px;
+    border: 1px solid #f0d4d4;
+    background: #fff7f7;
+    color: #c84747;
+    padding: 11px;
+    border-radius: 9px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .swift-clear-cart:hover {
+        background: #fff0f0;
+    }
+
+
+/* ============================================================
+           EMPTY CART
+           ============================================================ */
+
+.swift-cart-empty {
+    text-align: center;
+    padding: 70px 20px;
+}
+
+.swift-cart-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    background: #edf4ef;
+    color: #1d6338;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+}
+
+.swift-cart-empty h5 {
+    color: #123d22;
+    font-weight: 800;
+}
+
+.swift-cart-empty p {
+    color: #7b8b82;
+    font-size: 13px;
+}
+
+
+/* ============================================================
+           CART FOOTER
+           ============================================================ */
+
+.swift-cart-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e8eee9;
+    background: #fff;
+}
+
+
+/* ============================================================
+           RESPONSIVE
+           ============================================================ */
+
+@media (max-width: 768px) {
+
+    .swift-equipment-header {
+        padding: 15px;
+    }
+
+    .swift-equipment-header-inner {
+        align-items: flex-start;
+    }
+
+    .swift-equipment-header-left {
+        gap: 10px;
+    }
+
+    .swift-equipment-title {
+        font-size: 17px;
+    }
+
+    .swift-equipment-subtitle {
+        font-size: 11px;
+    }
+
+    .swift-cart-text {
+        display: none;
+    }
+
+    .swift-equipment-grid {
+        padding: 0 15px;
+        grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) );
+    }
+
+    .swift-equipment-toolbar {
+        padding: 0 15px;
+    }
+
+    .swift-cart-panel {
+        width: 100%;
+    }
+
+    .swift-cart-body {
+        padding: 12px;
+    }
+
+    .swift-cart-table {
+        min-width: 470px;
+    }
+}
+
+.swift-cart-order-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.swift-place-order {
+    flex: 1;
+    border: none;
+    background: #123D22;
+    color: #fff;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+    .swift-place-order:hover {
+        background: #1c6136;
+        transform: translateY(-1px);
+    }
+
+.swift-clear-cart {
+    flex: 1;
+}
+
+@media (max-width: 576px) {
+
+    .swift-cart-order-actions {
+        flex-direction: column;
+    }
+}
+
+.swift-order-success-page {
+    min-height: calc(100vh - 80px);
+    background: #f5f8f7;
+    padding: 45px 25px 60px;
+}
+
+.swift-success-container {
+    max-width: 1050px;
+    margin: 0 auto;
+}
+
+/* ============================================================
+           SUCCESS CARD
+           ============================================================ */
+
+.swift-success-card {
+    background: #ffffff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 15px 45px rgba(0, 35, 20, 0.10);
+    border: 1px solid rgba(0, 65, 35, 0.08);
+}
+
+.swift-success-header {
+    background: linear-gradient( 135deg, #003d24, #006b3f );
+    color: #ffffff;
+    text-align: center;
+    padding: 50px 30px 45px;
+}
+
+.swift-success-icon {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.14);
+    border: 2px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+}
+
+.swift-success-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+
+.swift-success-subtitle {
+    margin: 0;
+    font-size: 16px;
+    color: rgba(255,255,255,0.82);
+}
+
+/* ============================================================
+           CONTENT
+           ============================================================ */
+
+.swift-success-content {
+    padding: 35px;
+}
+
+.swift-order-number-box {
+    background: #f1f8f4;
+    border: 1px solid #d7eadf;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.swift-order-number-label {
+    color: #65756d;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 7px;
+}
+
+.swift-order-number {
+    color: #003d24;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* ============================================================
+           GRID
+           ============================================================ */
+
+.swift-order-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr;
+    gap: 28px;
+    align-items: start;
+}
+
+.swift-order-section {
+    border: 1px solid #e5ebe8;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.swift-section-header {
+    padding: 17px 20px;
+    background: #f7faf8;
+    border-bottom: 1px solid #e5ebe8;
+    font-size: 15px;
+    font-weight: 800;
+    color: #003d24;
+}
+
+.swift-section-body {
+    padding: 20px;
+}
+
+/* ============================================================
+           ORDER ITEMS
+           ============================================================ */
+
+.swift-order-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px 0;
+    border-bottom: 1px solid #edf1ef;
+}
+
+    .swift-order-item:first-child {
+        padding-top: 0;
+    }
+
+    .swift-order-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+.swift-item-icon {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #edf7f1;
+    color: #006b3f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+}
+
+.swift-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.swift-item-name {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 750;
+    color: #18352a;
+}
+
+.swift-item-quantity {
+    margin: 0;
+    color: #74827c;
+    font-size: 13px;
+}
+
+    .swift-item-quantity strong {
+        color: #003d24;
+    }
+
+/* ============================================================
+           ORDER INFO
+           ============================================================ */
+
+.swift-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf1ef;
+}
+
+    .swift-info-row:first-child {
+        padding-top: 0;
+    }
+
+    .swift-info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+.swift-info-label {
+    color: #74827c;
+    font-size: 13px;
+}
+
+.swift-info-value {
+    color: #18352a;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: right;
+}
+
+/* ============================================================
+           STATUS
+           ============================================================ */
+
+.swift-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 50px;
+    background: #fff7df;
+    color: #946c00;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* ============================================================
+           QR CODE
+           ============================================================ */
+
+.swift-qr-section {
+    margin-top: 28px;
+    text-align: center;
+}
+
+.swift-qr-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 22px;
+    border: 1px solid #e1e9e5;
+    border-radius: 18px;
+    background: #ffffff;
+}
+
+.swift-qr-image {
+    width: 190px;
+    height: 190px;
+    object-fit: contain;
+    display: block;
+}
+
+.swift-qr-title {
+    margin-top: 14px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #18352a;
+}
+
+.swift-qr-description {
+    margin: 0;
+    max-width: 260px;
+    color: #7b8882;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+           ACTIONS
+           ============================================================ */
+
+.swift-success-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 35px;
+    padding-top: 30px;
+    border-top: 1px solid #e7ece9;
+}
+
+.swift-action-button {
+    min-width: 190px;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 20px;
+    font-size: 14px;
+    font-weight: 750;
+    text-decoration: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s ease;
+}
+
+.swift-primary-button {
+    background: #006b3f;
+    color: #ffffff;
+}
+
+    .swift-primary-button:hover {
+        background: #004d2d;
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
+.swift-secondary-button {
+    background: #edf4f0;
+    color: #003d24;
+}
+
+    .swift-secondary-button:hover {
+        background: #dfece5;
+        color: #003d24;
+    }
+
+/* ============================================================
+           RESPONSIVE
+           ============================================================ */
+
+@media (max-width: 800px) {
+
+    .swift-order-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .swift-success-content {
+        padding: 22px;
+    }
+
+    .swift-success-title {
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .swift-order-success-page {
+        padding: 20px 12px 40px;
+    }
+
+    .swift-success-header {
+        padding: 38px 20px;
+    }
+
+    .swift-success-icon {
+        width: 75px;
+        height: 75px;
+        font-size: 34px;
+    }
+
+    .swift-success-title {
+        font-size: 23px;
+    }
+
+    .swift-order-number {
+        font-size: 21px;
+    }
+
+    .swift-success-actions {
+        flex-direction: column;
+    }
+
+    .swift-action-button {
+        width: 100%;
+    }
+}
+
+.receive-page {
+    padding-bottom: 120px;
+}
+
+.receive-header {
+    background: linear-gradient(135deg, #48AAAD, #338f92);
+    padding: 22px 30px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,.08);
+}
+
+.receive-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.receive-back {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    .receive-back:hover {
+        color: white;
+        opacity: .85;
+    }
+
+.receive-title {
+    margin: 0;
+    font-weight: 700;
+}
+
+.receive-subtitle {
+    margin: 4px 0 0;
+    opacity: .9;
+}
+
+.order-info-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.07);
+    border: 1px solid #edf0f2;
+}
+
+.order-info-label {
+    color: #777;
+    font-size: .78rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: .5px;
+}
+
+.order-info-value {
+    color: #1f2937;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+.scanner-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.07);
+    border: 1px solid #edf0f2;
+    position: sticky;
+    top: 20px;
+}
+
+.scanner-title {
+    font-weight: 700;
+    color: #263238;
+    margin-bottom: 5px;
+}
+
+.scanner-description {
+    color: #777;
+    font-size: .9rem;
+    margin-bottom: 18px;
+}
+
+#scanner {
+    width: 100%;
+    max-width: 360px;
+    height: 300px;
+    margin: auto;
+    border: 2px solid #48AAAD;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f5f7f8;
+}
+
+.scanner-status {
+    margin-top: 15px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #eefafa;
+    color: #337d80;
+    font-size: .88rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.equipment-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 15px;
+    border: 1px solid #e8ecee;
+    box-shadow: 0 3px 12px rgba(0,0,0,.05);
+    transition: .2s ease;
+    position: relative;
+}
+
+    .equipment-card.completed {
+        background: #edf9f1;
+        border-color: #9bd4ad;
+    }
+
+        .equipment-card.completed .equipment-name {
+            color: #247a3b;
+        }
+
+.equipment-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #eefafa;
+    color: #48AAAD;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.equipment-name {
+    font-weight: 700;
+    color: #263238;
+    margin: 0;
+}
+
+.equipment-quantity {
+    color: #666;
+    font-size: .9rem;
+    margin-top: 5px;
+}
+
+.scan-progress {
+    margin-top: 14px;
+}
+
+.scan-progress-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.scan-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #48AAAD;
+    border-radius: 20px;
+    transition: width .25s ease;
+}
+
+.scan-count {
+    font-size: .85rem;
+    font-weight: 700;
+    color: #48AAAD;
+    margin-top: 7px;
+}
+
+.check-icon {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    color: #299447;
+    font-size: 22px;
+}
+
+.receive-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid #e5e7eb;
+    padding: 15px 25px;
+    box-shadow: 0 -5px 20px rgba(0,0,0,.08);
+    z-index: 1000;
+}
+
+.receive-button {
+    background: #48AAAD;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 25px;
+    font-weight: 700;
+    width: 100%;
+    transition: .2s ease;
+}
+
+    .receive-button:hover {
+        background: #398f92;
+        color: white;
+    }
+
+    .receive-button:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+
+.all-complete {
+    display: none;
+    margin-top: 15px;
+    padding: 12px;
+    background: #eaf8ee;
+    border: 1px solid #b8dfc2;
+    color: #26783a;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.empty-order {
+    padding: 50px 20px;
+    text-align: center;
+    background: white;
+    border-radius: 15px;
+}
+
+    .empty-order i {
+        font-size: 50px;
+        color: #48AAAD;
+        margin-bottom: 15px;
+    }
+
+@media (max-width: 991px) {
+    .scanner-card {
+        position: relative;
+        top: auto;
+        margin-bottom: 25px;
+    }
+}
+
+@media (max-width: 576px) {
+    .receive-header {
+        padding: 18px;
+    }
+
+    .receive-header-inner {
+        gap: 10px;
+    }
+
+    .receive-title {
+        font-size: 1.3rem;
+    }
+
+    .receive-subtitle {
+        font-size: .82rem;
+    }
+
+    #scanner {
+        height: 260px;
+    }
+}
+
+
+:root {
+    --swiftcare-primary: #48AAAD;
+    --swiftcare-primary-dark: #378f92;
+    --swiftcare-light: #f4f8f8;
+    --swiftcare-text: #324260;
+}
+
+.residents-page {
+    padding: 20px;
+}
+
+/* ============================================================
+           PAGE HEADER
+           ============================================================ */
+
+.residents-header {
+    background-color: var(--swiftcare-primary);
+    color: white;
+    padding: 18px 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(72, 170, 173, 0.2);
+}
+
+    .residents-header h2 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .residents-header p {
+        margin: 4px 0 0;
+        opacity: 0.9;
+    }
+
+
+/* ============================================================
+           SEARCH
+           ============================================================ */
+
+.resident-search-container {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+.resident-search {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 15px;
+}
+
+    .resident-search:focus {
+        border-color: var(--swiftcare-primary);
+        box-shadow: 0 0 0 0.2rem rgba(72, 170, 173, 0.15);
+    }
+
+
+/* ============================================================
+           TABLE
+           ============================================================ */
+
+.residents-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.residents-table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+    .residents-table thead {
+        background-color: #324260;
+        color: white;
+    }
+
+        .residents-table thead th {
+            padding: 16px;
+            border: none;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+    .residents-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+        .residents-table tbody tr:hover {
+            background-color: #f3fbfb;
+        }
+
+    .residents-table tbody td {
+        padding: 14px 16px;
+        border-color: #eeeeee;
+    }
+
+
+/* ============================================================
+           PROFILE IMAGE
+           ============================================================ */
+
+.resident-profile {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5f5f5;
+}
+
+.resident-name {
+    font-weight: 600;
+    color: var(--swiftcare-text);
+}
+
+
+/* ============================================================
+           ROOM BADGE
+           ============================================================ */
+
+.room-badge {
+    background-color: #e5f5f5;
+    color: #267d80;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+
+/* ============================================================
+           DETAILS BUTTON
+           ============================================================ */
+
+.btn-resident-details {
+    background-color: var(--swiftcare-primary);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+    .btn-resident-details:hover {
+        background-color: var(--swiftcare-primary-dark);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+
+/* ============================================================
+           EMPTY STATE
+           ============================================================ */
+
+.empty-residents {
+    background: white;
+    border-radius: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+    .empty-residents i {
+        font-size: 55px;
+        color: var(--swiftcare-primary);
+        margin-bottom: 15px;
+    }
+
+
+/* ============================================================
+           RESPONSIVE
+           ============================================================ */
+
+@media (max-width: 768px) {
+
+    .residents-page {
+        padding: 10px;
+    }
+
+    .residents-header {
+        border-radius: 7px;
+        padding: 15px;
+    }
+
+        .residents-header h2 {
+            font-size: 1.4rem;
+        }
+
+    .residents-table thead th,
+    .residents-table tbody td {
+        padding: 12px;
+    }
+}
+
+:root {
+    --swift-primary: #48AAAD;
+    --swift-primary-dark: #3c979a;
+    --swift-dark: #324260;
+    --swift-light: #f5f8fa;
+    --swift-border: #e3e8eb;
+}
+
+.resident-details-page {
+    padding-bottom: 50px;
+}
+
+/* ============================================================
+           PAGE HEADER
+           ============================================================ */
+
+.page-header {
+    background-color: var(--swift-primary);
+    padding: 18px 25px;
+    margin-bottom: 30px;
+}
+
+.back-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+    .back-link:hover {
+        color: white;
+        opacity: 0.85;
+    }
+
+/* ============================================================
+           PROFILE HERO
+           ============================================================ */
+
+.resident-profile-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: 1px solid var(--swift-border);
+    margin-bottom: 25px;
+}
+
+.resident-profile-header {
+    background: linear-gradient(135deg, var(--swift-primary), #3f9ea1);
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: white;
+}
+
+.resident-profile-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid white;
+    background: white;
+}
+
+.resident-profile-name {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.resident-profile-role {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* ============================================================
+           INFORMATION SECTIONS
+           ============================================================ */
+
+.info-section {
+    background: white;
+    border-radius: 15px;
+    border: 1px solid var(--swift-border);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    height: 100%;
+    overflow: hidden;
+}
+
+.info-section-header {
+    background-color: var(--swift-dark);
+    color: white;
+    padding: 15px 20px;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.info-section-body {
+    padding: 20px;
+}
+
+.info-row {
+    padding: 13px 0;
+    border-bottom: 1px solid #edf0f2;
+}
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+.info-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #87929c;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--swift-dark);
+    word-break: break-word;
+}
+
+/* ============================================================
+           EQUIPMENT
+           ============================================================ */
+
+.equipment-empty {
+    text-align: center;
+    padding: 35px 15px;
+    color: #7d8790;
+}
+
+    .equipment-empty i {
+        font-size: 45px;
+        color: var(--swift-primary);
+        margin-bottom: 15px;
+    }
+
+    .equipment-empty h5 {
+        color: var(--swift-dark);
+        font-weight: 700;
+    }
+
+/* ============================================================
+           ACTIONS
+           ============================================================ */
+
+.actions-card {
+    background: white;
+    border: 1px solid var(--swift-border);
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    padding: 20px;
+    margin-top: 25px;
+}
+
+.action-btn {
+    min-height: 55px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-assign-equipment {
+    background-color: var(--swift-primary);
+    color: white;
+    border: none;
+}
+
+    .btn-assign-equipment:hover {
+        background-color: var(--swift-primary-dark);
+        color: white;
+    }
+
+.btn-request-transport {
+    background-color: var(--swift-dark);
+    color: white;
+    border: none;
+}
+
+    .btn-request-transport:hover {
+        background-color: #25334b;
+        color: white;
+    }
+
+@media (max-width: 768px) {
+
+    .resident-profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .resident-profile-name {
+        font-size: 23px;
+    }
+}
+
+/* ============================================================
+           SWIFTCARE TRANSPORT PAGE
+           ============================================================ */
+
+.transport-page {
+    min-height: 100vh;
+    background: #f5f8fc;
+    padding-bottom: 50px;
+}
+
+.transport-header {
+    background: #071a33;
+    padding: 22px 30px;
+    margin-bottom: 30px;
+    border-radius: 0 0 18px 18px;
+}
+
+.back-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+    .back-link:hover {
+        color: #48AAAD;
+    }
+
+/* ============================================================
+           RESIDENT SUMMARY
+           ============================================================ */
+
+.resident-summary {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    border-left: 5px solid #48AAAD;
+}
+
+.resident-image {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid #48AAAD;
+}
+
+.resident-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #071a33;
+    margin-bottom: 10px;
+}
+
+.resident-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.resident-info-item {
+    color: #667085;
+    font-size: 0.95rem;
+}
+
+    .resident-info-item i {
+        color: #48AAAD;
+        margin-right: 5px;
+    }
+
+/* ============================================================
+           FORM CARD
+           ============================================================ */
+
+.transport-form-card {
+    background: white;
+    border-radius: 18px;
+    overflow: visible;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.07);
+    margin-bottom: 30px;
+}
+
+.form-card-header {
+    background: #071a33;
+    padding: 20px 25px;
+    color: white;
+    border-radius: 18px 18px 0 0;
+}
+
+    .form-card-header h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+.form-card-body {
+    padding: 30px;
+}
+
+.form-section-title {
+    color: #071a33;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eef2f6;
+}
+
+    .form-section-title i {
+        color: #48AAAD;
+    }
+
+.form-label {
+    font-weight: 600;
+    color: #344054;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border-radius: 10px;
+    padding: 12px 15px;
+    border: 1px solid #d0d5dd;
+    min-height: 48px;
+}
+
+    .form-control:focus {
+        border-color: #48AAAD;
+        box-shadow: 0 0 0 0.2rem rgba(72,170,173,0.15);
+    }
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.input-group-text {
+    background: #f2fbfb;
+    border-color: #d0d5dd;
+    color: #48AAAD;
+}
+
+/* ============================================================
+           GOOGLE PLACE AUTOCOMPLETE
+           ============================================================ */
+
+.places-wrapper {
+    width: 100%;
+}
+
+    .places-wrapper gmp-place-autocomplete {
+        display: block;
+        width: 100%;
+    }
+
+.place-container {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    background: white;
+    overflow: visible;
+    transition: 0.2s ease;
+}
+
+    .place-container:focus-within {
+        border-color: #48AAAD;
+        box-shadow: 0 0 0 0.2rem rgba(72,170,173,0.15);
+    }
+
+.location-status {
+    font-size: 0.85rem;
+    margin-top: 7px;
+    min-height: 20px;
+}
+
+    .location-status.success {
+        color: #198754;
+    }
+
+    .location-status.error {
+        color: #dc3545;
+    }
+
+/* ============================================================
+           BUTTONS
+           ============================================================ */
+
+.submit-transport-btn {
+    background: #48AAAD;
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+    .submit-transport-btn:hover {
+        background: #399397;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+.cancel-btn {
+    padding: 13px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+
+    .transport-header {
+        padding: 18px 20px;
+    }
+
+    .form-card-body {
+        padding: 20px;
+    }
+
+    .resident-info {
+        justify-content: center;
+    }
+
+    .resident-summary-content {
+        text-align: center;
+    }
+}

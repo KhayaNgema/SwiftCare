@@ -1,0 +1,327 @@
+﻿@model SwiftCare.Models.Resident
+
+@{
+    ViewData["Title"] = "Resident Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+var age = 0;
+
+    if (Model.DateOfBirth != default)
+    {
+        age = DateTime.Today.Year - Model.DateOfBirth.Year;
+
+        if (Model.DateOfBirth.Date > DateTime.Today.AddYears(-age))
+        {
+            age--;
+        }
+    }
+
+    var profileImage = string.IsNullOrWhiteSpace(Model.ProfilePicture)
+        ? Url.Content("~/Images/default_profile_image.jpg")
+        : Url.Content("~/" + Model.ProfilePicture);
+
+
+}
+
+<style>
+    
+</style>
+
+<div class="resident-details-page">
+
+    <!-- ============================================================
+     HEADER
+     ============================================================ -->
+
+    <div class="page-header d-flex align-items-center">
+
+        <a asp-controller="Residents"
+               asp-action="ResidentDetails"
+               class="back-link me-4">
+
+            <i class="bi bi-chevron-left me-1"></i>
+            Back
+
+        </a>
+
+        <h2 class="mb-0 text-white">
+            Resident Details
+        </h2>
+
+    </div>
+
+
+    <div class="container-fluid px-4">
+
+        <!-- ============================================================
+         RESIDENT PROFILE
+         ============================================================ -->
+
+        <div class="resident-profile-card">
+
+            <div class="resident-profile-header">
+
+                <img src="@profileImage"
+                     class="resident-profile-image"
+                     alt="Resident Profile Picture" />
+
+                <div>
+
+                    <div class="resident-profile-name">
+                        @Model.FirstName @Model.LastName
+                    </div>
+
+                    <p class="resident-profile-role">
+
+                        <i class="bi bi-person-fill me-1"></i>
+
+                        Resident
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+         SIDE BY SIDE INFORMATION
+         PROFILE | ACCOMMODATION | EQUIPMENT
+         ============================================================ -->
+
+        <div class="row g-4">
+
+            <!-- ========================================================
+             PROFILE INFORMATION
+             ======================================================== -->
+
+            <div class="col-12 col-lg-4">
+
+                <div class="info-section">
+
+                    <div class="info-section-header">
+
+                        <i class="bi bi-person-circle me-2"></i>
+
+                        Profile Information
+
+                    </div>
+
+                    <div class="info-section-body">
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                Email Address
+                            </div>
+
+                            <div class="info-value">
+                                @(string.IsNullOrWhiteSpace(Model.Email)
+                                    ? "Not provided"
+                                    : Model.Email)
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                Phone Number
+                            </div>
+
+                            <div class="info-value">
+                                @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
+                                    ? "Not provided"
+                                    : Model.PhoneNumber)
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                Date of Birth
+                            </div>
+
+                            <div class="info-value">
+                                @(Model.DateOfBirth == default
+                                    ? "Not provided"
+                                    : Model.DateOfBirth.ToString("dd MMMM yyyy"))
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                Age
+                            </div>
+
+                            <div class="info-value">
+                                @(Model.DateOfBirth == default
+                                    ? "Not provided"
+                                    : $"{age} years old")
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================================================
+             ACCOMMODATION INFORMATION
+             ======================================================== -->
+
+            <div class="col-12 col-lg-4">
+
+                <div class="info-section">
+
+                    <div class="info-section-header">
+
+                        <i class="bi bi-house-door me-2"></i>
+
+                        Accommodation Information
+
+                    </div>
+
+                    <div class="info-section-body">
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                Assigned Room
+                            </div>
+
+                            <div class="info-value">
+
+                                @(Model.RoomNumber != null
+                                    ? Model.RoomNumber.ToString()
+                                    : "No room assigned")
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Additional accommodation information
+                         can be added here when available -->
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================================================
+             ASSIGNED EQUIPMENT
+             ======================================================== -->
+
+            <div class="col-12 col-lg-4">
+
+                <div class="info-section">
+
+                    <div class="info-section-header d-flex align-items-center justify-content-between">
+
+                        <span>
+
+                            <i class="bi bi-box-seam me-2"></i>
+
+                            Assigned Equipment
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="info-section-body">
+
+                        <!--
+                        There is currently no equipment relationship
+                        included in the Resident model provided.
+
+                        Once you add your equipment assignment model,
+                        this section can loop through that data.
+                    -->
+
+                        <div class="equipment-empty">
+
+                            <i class="bi bi-box-seam"></i>
+
+                            <h5>No Equipment Assigned</h5>
+
+                            <p class="mb-0">
+                                This resident currently has no equipment assigned.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+         ACTION BUTTONS
+         ============================================================ -->
+
+        <div class="actions-card">
+
+            <div class="row g-3">
+
+                <!-- ASSIGN NEW EQUIPMENT -->
+
+                <div class="col-12 col-md-6">
+
+                    <a asp-controller="Equipment"
+                           asp-action="AssignEquipment"
+                           asp-route-residentId="@Model.Id"
+                           class="btn action-btn btn-assign-equipment w-100">
+
+                        <i class="bi bi-plus-circle me-2"></i>
+
+                        Assign New Equipment
+
+                    </a>
+
+                </div>
+
+
+                <!-- REQUEST TRANSPORT -->
+
+                <div class="col-12 col-md-6">
+
+                    <a asp-controller="TransportRequests"
+                           asp-action="RequestTransport"
+                           asp-route-residentId="@Model.Id"
+                           class="btn action-btn btn-request-transport w-100">
+
+                        <i class="bi bi-truck me-2"></i>
+
+                        Request Transport
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

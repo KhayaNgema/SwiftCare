@@ -1,0 +1,254 @@
+﻿@model IEnumerable<SwiftCare.Models.CartItem>
+
+<div class="swift-cart-content">
+
+    @if (Model != null && Model.Any())
+    {
+        var totalQuantity = Model.Sum(x => x.Quantity);
+        var totalEquipment = Model.Count();
+
+        <!-- ========================================================
+             CART TABLE
+             ======================================================== -->
+
+        <div class="swift-cart-table-wrapper">
+
+            <table class="swift-cart-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Equipment
+                        </th>
+
+                        <th class="swift-cart-quantity-column">
+                            Quantity
+                        </th>
+
+                        <th class="swift-cart-action-column">
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @foreach (var cartItem in Model)
+                    {
+                        if (cartItem.Equipment == null)
+                        {
+                            continue;
+                        }
+
+                        <tr class="swift-cart-row"
+                            data-cartitemid="@cartItem.CartItemId">
+
+                            <!-- EQUIPMENT -->
+
+                            <td>
+
+                                <div class="swift-cart-equipment">
+
+                                    <div class="swift-cart-equipment-image">
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                            cartItem.Equipment.ImageUrl))
+                                        {
+                                            <img src="~/@cartItem.Equipment.ImageUrl"
+                                                 alt="@cartItem.Equipment.EquipmentName"
+                                                 class="swift-cart-item-image"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                                            <div class="swift-cart-item-placeholder"
+                                                 style="display:none;">
+
+                                                <i class="fas fa-wheelchair"></i>
+
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="swift-cart-item-placeholder">
+
+                                                <i class="fas fa-wheelchair"></i>
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+
+                                    <div class="swift-cart-equipment-info">
+
+                                        <div class="swift-cart-equipment-name">
+
+                                            @cartItem.Equipment.EquipmentName
+
+                                        </div>
+
+                                        <div class="swift-cart-equipment-type">
+
+                                            Nursing Equipment
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- QUANTITY -->
+
+                            <td>
+
+                                <div class="swift-cart-quantity">
+
+                                    <button type="button"
+                                            class="swift-cart-quantity-btn decrease-cart-quantity"
+                                            data-cartitemid="@cartItem.CartItemId">
+
+                                        <i class="fas fa-minus"></i>
+
+                                    </button>
+
+
+                                    <input type="number"
+                                           class="swift-cart-quantity-input quantity-input-cart"
+                                           value="@cartItem.Quantity"
+                                           min="1"
+                                           data-cartitemid="@cartItem.CartItemId" />
+
+
+                                    <button type="button"
+                                            class="swift-cart-quantity-btn increase-cart-quantity"
+                                            data-cartitemid="@cartItem.CartItemId">
+
+                                        <i class="fas fa-plus"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- DELETE -->
+
+                            <td class="swift-cart-actions">
+
+                                <button type="button"
+                                        class="swift-cart-delete delete-cart-item"
+                                        data-cartitemid="@cartItem.CartItemId"
+                                        title="Remove equipment">
+
+                                    <i class="fas fa-trash-alt"></i>
+
+                                </button>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ========================================================
+             CART SUMMARY
+             ======================================================== -->
+
+        <div class="swift-cart-summary">
+
+            <div class="swift-cart-summary-item">
+
+                <span class="swift-cart-summary-label">
+                    Equipment
+                </span>
+
+                <strong>
+                    @totalEquipment
+                </strong>
+
+            </div>
+
+
+            <div class="swift-cart-summary-divider">
+            </div>
+
+
+            <div class="swift-cart-summary-item">
+
+                <span class="swift-cart-summary-label">
+                    Total Quantity
+                </span>
+
+                <strong>
+                    @totalQuantity
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="swift-cart-order-actions">
+
+            <button type="button"
+                    class="swift-clear-cart"
+                    id="clearCartButton">
+
+                <i class="fas fa-trash-alt"></i>
+                Clear Cart
+
+            </button>
+
+            <button type="button"
+                    class="swift-place-order"
+                    id="placeOrderButton">
+
+                <i class="fas fa-check-circle"></i>
+                Place Order
+
+            </button>
+
+        </div>
+
+    }
+    else
+    {
+        <!-- ========================================================
+             EMPTY CART
+             ======================================================== -->
+
+        <div class="swift-cart-empty">
+
+            <div class="swift-cart-empty-icon">
+
+                <i class="fas fa-shopping-cart"></i>
+
+            </div>
+
+
+            <h5>
+                Your cart is empty
+            </h5>
+
+
+            <p>
+                Add equipment to your cart to see it here.
+            </p>
+
+        </div>
+    }
+
+</div>

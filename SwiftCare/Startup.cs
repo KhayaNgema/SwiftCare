@@ -103,12 +103,25 @@ public class Startup
         services.AddScoped<RandomPasswordGeneratorService>();
         services.AddScoped<EmailService>();
         services.AddHttpClient();
-
+        services.AddScoped<OrderNumberGenerator>();
+        services.AddScoped<SmsService>();
+        services.AddScoped<QrCodeService>();
 
         services.AddLogging(logging =>
         {
             logging.AddConsole();
             logging.AddDebug();
+        });
+
+        services.AddDistributedMemoryCache();
+
+        services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(2);
+
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+            options.Cookie.Name = ".SwiftCare.Session";
         });
 
 
@@ -189,7 +202,7 @@ public class Startup
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
-
+        app.UseSession();
         app.UseForwardedHeaders();
 
         app.UseAuthentication();

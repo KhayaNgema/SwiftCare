@@ -1,0 +1,705 @@
+﻿
+@model SwiftCare.Models.Order
+
+@{
+    ViewData["Title"] = "Package Equipment";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<style>
+
+    .modal-content {
+        border-radius: 1.5rem !important;
+        border: 2px solid #48AAAD;
+        box-shadow: 0 6px 15px rgba(72, 170, 173, 0.25);
+        background-color: #f9f9f9;
+    }
+
+    .equipment-order-card {
+        border: none;
+        border-left: 5px solid #48AAAD;
+        border-radius: 12px;
+        transition: 0.2s ease;
+    }
+
+        .equipment-order-card:hover {
+            transform: translateY(-2px);
+        }
+
+    .equipment-image {
+        width: 75px;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #eee;
+    }
+
+    .equipment-placeholder {
+        width: 75px;
+        height: 75px;
+        border-radius: 10px;
+        background: #f1f5f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: #48AAAD;
+    }
+
+    .package-status {
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 20px;
+    }
+
+    .bill-summary-box {
+        position: sticky;
+        bottom: 20px;
+        z-index: 10;
+    }
+
+</style>
+
+
+<form asp-controller="Orders"
+      asp-action="CompletePackaging"
+      asp-route-orderId="@Model.OrderId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden"
+           name="orderId"
+           value="@Model.OrderId" />
+
+
+    <div class="container-fluid">
+
+
+        <!-- ============================================================
+             HEADER
+             ============================================================ -->
+
+        <div class="d-flex align-items-center justify-content-between px-3 py-3 mb-4"
+             style="background-color:#48AAAD;">
+
+            <div class="d-flex align-items-center">
+
+                <a asp-controller="Orders"
+                       asp-action="Orders"
+                       class="text-white d-inline-flex align-items-center me-3"
+                       style="text-decoration:none;">
+
+                    <i class="bi bi-chevron-left me-1"></i>
+
+                    Back
+
+                </a>
+
+
+                <div>
+
+                    <h2 class="mb-0 text-white">
+
+                        Package Equipment
+
+                    </h2>
+
+                    <small class="text-white">
+
+                        Order: @Model.OrderNumber
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             MESSAGE
+             ============================================================ -->
+        @if (TempData["Message"] != null)
+        {
+            <div id="tempDataMessage"
+                 class="alert @(TempData["Message"]!.ToString()!.Contains("successfully")
+                                                      ? "alert-success"
+                                                      : "alert-danger")"
+                 role="alert">
+
+                @TempData["Message"]
+
+                <button type="button"
+                        class="btn-close float-end"
+                        id="closeMessage">
+                </button>
+
+            </div>
+        }
+
+
+        <!-- ============================================================
+             ORDER INFORMATION
+             ============================================================ -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-2">
+
+                        <small class="text-muted">
+                            ORDER NUMBER
+                        </small>
+
+                        <h6 class="mb-0">
+
+                            @Model.OrderNumber
+
+                        </h6>
+
+                    </div>
+
+
+                    <div class="col-md-4 mb-2">
+
+                        <small class="text-muted">
+                            ORDER DATE
+                        </small>
+
+                        <h6 class="mb-0">
+
+                            @Model.OrderDate.ToString("dd MMM yyyy HH:mm")
+
+                        </h6>
+
+                    </div>
+
+
+                    <div class="col-md-4 mb-2">
+
+                        <small class="text-muted">
+                            STATUS
+                        </small>
+
+                        <h6 class="mb-0">
+
+                            @Model.Status
+
+                        </h6>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             EQUIPMENT ITEMS
+             ============================================================ -->
+
+        <div class="row g-3 justify-content-center"
+             style="margin-bottom:100px;">
+
+            @if (Model.OrderItems == null || !Model.OrderItems.Any())
+            {
+                <div class="col-12">
+
+                    <div class="alert alert-info text-center">
+
+                        No equipment items found for this order.
+
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.OrderItems)
+                {
+                    bool isPackaged = item.IsPackaged;
+
+                    <div class="col-12">
+
+                        <div class="card shadow-sm p-3 equipment-order-card">
+
+                            <div class="d-flex align-items-center justify-content-between w-100">
+
+
+                                <!-- EQUIPMENT INFORMATION -->
+
+                                <div class="d-flex align-items-center gap-3 flex-grow-1">
+
+
+                                    <!-- IMAGE -->
+                                    @if (item.Equipment != null &&
+                                                                             !string.IsNullOrWhiteSpace(item.Equipment.ImageUrl))
+                                    {
+                                        <img src="~/@item.Equipment.ImageUrl"
+                                             alt="@item.Equipment.EquipmentName"
+                                             class="equipment-image"
+                                             onerror="this.style.display='none';" />
+                                    }
+                                    else
+                                    {
+                                        <div class="equipment-placeholder">
+
+                                            <i class="fas fa-tools"></i>
+
+                                        </div>
+                                    }
+
+
+                                    <!-- DETAILS -->
+
+                                    <div class="flex-grow-1">
+
+                                        <h5 class="mb-1">
+
+                                            @item.Equipment?.EquipmentName
+
+                                        </h5>
+
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                            item.Equipment?.Description))
+                                        {
+                                            <p class="text-muted mb-2">
+
+                                                @item.Equipment.Description
+
+                                            </p>
+                                        }
+
+
+                                        <div class="d-flex gap-4 flex-wrap">
+
+                                            <span>
+
+                                                <i class="fas fa-shopping-cart me-1"
+                                                   style="color:#48AAAD;"></i>
+
+                                                <strong>
+                                                    Order Qty:
+                                                </strong>
+
+                                                @item.Quantity
+
+                                            </span>
+
+
+                                            @if (isPackaged)
+                                            {
+                                                <span class="package-status bg-success text-white">
+
+                                                    <i class="fas fa-check-circle me-1"></i>
+
+                                                    Packaged
+
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="package-status bg-warning text-dark">
+
+                                                    <i class="fas fa-clock me-1"></i>
+
+                                                    Awaiting Packaging
+
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- PACKAGE BUTTON -->
+
+                                <div class="ms-3">
+
+                                    <button type="button"
+                                            class="btn @(isPackaged
+                                                                                                                                    ? "btn-success"
+                                                                                                                                    : "btn-outline-primary")"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#packageModal-@item.OrderItemId"
+                                        @(isPackaged ? "disabled" : "")>
+
+                                        <i class="fas @(isPackaged
+                                                                                                                               ? "fa-check-circle"
+                                                                                                                               : "fa-box") me-1"></i>
+
+                                        @(isPackaged
+                                            ? "Packaged"
+                                            : "Package")
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ====================================================
+                         PACKAGE CONFIRMATION MODAL
+                         ==================================================== -->
+
+                    <div class="modal fade"
+                         id="packageModal-@item.OrderItemId"
+                         tabindex="-1"
+                         aria-hidden="true">
+
+                        <div class="modal-dialog modal-dialog-centered">
+
+                            <div class="modal-content">
+
+
+                                <div class="modal-header"
+                                     style="background-color:#48AAAD;">
+
+                                    <h5 class="modal-title text-white">
+
+                                        Confirm Equipment Package
+
+                                    </h5>
+
+                                    <button type="button"
+                                            class="btn-close btn-close-white"
+                                            data-bs-dismiss="modal">
+                                    </button>
+
+                                </div>
+
+
+                                <div class="modal-body text-center">
+
+
+                                    @if (item.Equipment != null &&
+                                         !string.IsNullOrWhiteSpace(
+                                             item.Equipment.ImageUrl))
+                                    {
+                                        <img src="~/@item.Equipment.ImageUrl"
+                                             alt="@item.Equipment.EquipmentName"
+                                             class="equipment-image mb-3"
+                                             style="width:120px;
+                                        height:120px;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="equipment-placeholder mx-auto mb-3"
+                                             style="width:120px;
+                                            height:120px;
+                                            font-size:40px;">
+
+                                            <i class="fas fa-tools"></i>
+
+                                        </div>
+                                    }
+
+
+                                    <h4>
+
+                                        @item.Equipment?.EquipmentName
+
+                                    </h4>
+
+
+                                    <p class="text-muted">
+
+                                        Quantity to package:
+
+                                        <strong>
+
+                                            @item.Quantity
+
+                                        </strong>
+
+                                    </p>
+
+
+                                    <div class="alert alert-light">
+
+                                        Order Number:
+
+                                        <strong>
+
+                                            @Model.OrderNumber
+
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="modal-footer justify-content-center">
+
+
+                                    <button type="button"
+                                            class="btn btn-success px-4 package-confirm-btn"
+                                            data-order-item-id="@item.OrderItemId">
+
+                                        <i class="fas fa-box me-1"></i>
+
+                                        Confirm Package
+
+                                    </button>
+
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            data-bs-dismiss="modal">
+
+                                        Cancel
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+            }
+
+        </div>
+
+
+        <!-- ============================================================
+             COMPLETE PACKAGING
+             ============================================================ -->
+        @if (Model.OrderItems != null && Model.OrderItems.Any())
+        {
+            <div class="bill-summary-box bg-white shadow rounded p-3"
+                 style="max-width:400px;
+                margin-left:auto;
+                margin-right:auto;">
+
+                <button type="submit"
+                        id="completePackagingButton"
+                        style="background-color:#48AAAD;
+                    color:white;
+                    width:100%;"
+                        class="btn">
+
+                    <i class="fas fa-boxes fa-lg me-1"></i>
+
+                    Complete Packaging
+
+                </button>
+
+            </div>
+        }
+
+    </div>
+
+</form>
+
+
+@section Scripts {
+
+    <script>
+
+        $(document).ready(function () {
+
+
+            // ========================================================
+            // PACKAGE EQUIPMENT ITEM
+            // ========================================================
+
+            $(document).on(
+                'click',
+                '.package-confirm-btn',
+                function () {
+
+                    var button = $(this);
+
+                    var currentOrderItemId =
+                        button.data('order-item-id');
+
+
+                    button
+                        .prop('disabled', true)
+                        .html(
+                            '<i class="fas fa-spinner fa-spin me-1"></i> Packaging...'
+                        );
+
+
+                    $.ajax({
+
+                        url:
+                            '@Url.Action("PackageOrderItem", "Orders")',
+
+                        type: 'POST',
+
+                        data: {
+
+                            orderItemId:
+                                currentOrderItemId
+
+                        },
+
+                        headers: {
+
+                            'RequestVerificationToken':
+                                $('input[name="__RequestVerificationToken"]').val()
+
+                        },
+
+
+                        success: function (response) {
+
+                            if (
+                                response &&
+                                response.success === false
+                            ) {
+
+                                alert(
+                                    response.message ||
+                                    'Unable to package this equipment item.'
+                                );
+
+                                button
+                                    .prop('disabled', false)
+                                    .html(
+                                        '<i class="fas fa-box me-1"></i> Confirm Package'
+                                    );
+
+                                return;
+
+                            }
+
+
+                            // Close modal
+
+                            var modalElement =
+                                document.getElementById(
+                                    'packageModal-' +
+                                    currentOrderItemId
+                                );
+
+
+                            var modal =
+                                bootstrap.Modal.getInstance(
+                                    modalElement
+                                );
+
+
+                            if (modal) {
+
+                                modal.hide();
+
+                            }
+
+
+                            // Update package button
+
+                            var packageButton =
+                                $('button[data-bs-target="#packageModal-' +
+                                    currentOrderItemId +
+                                    '"]');
+
+
+                            packageButton
+                                .removeClass('btn-outline-primary')
+                                .addClass('btn-success')
+                                .prop('disabled', true)
+                                .html(
+                                    '<i class="fas fa-check-circle me-1"></i> Packaged'
+                                );
+
+
+                            // Update status
+
+                            packageButton
+                                .closest('.equipment-order-card')
+                                .find('.package-status')
+                                .removeClass('bg-warning text-dark')
+                                .addClass('bg-success text-white')
+                                .html(
+                                    '<i class="fas fa-check-circle me-1"></i> Packaged'
+                                );
+
+
+                            button
+                                .html(
+                                    '<i class="fas fa-check-circle me-1"></i> Packaged'
+                                );
+
+                        },
+
+
+                        error: function (xhr) {
+
+                            console.error(
+                                xhr.responseText
+                            );
+
+
+                            alert(
+                                'Failed to package this equipment item. Please try again.'
+                            );
+
+
+                            button
+                                .prop('disabled', false)
+                                .html(
+                                    '<i class="fas fa-box me-1"></i> Confirm Package'
+                                );
+
+                        }
+
+                    });
+
+                }
+            );
+
+
+            // ========================================================
+            // CLOSE MESSAGE
+            // ========================================================
+
+            $('#closeMessage').on(
+                'click',
+                function () {
+
+                    $('#tempDataMessage').fadeOut();
+
+                }
+            );
+
+
+            // ========================================================
+            // AUTO HIDE MESSAGE
+            // ========================================================
+
+            setTimeout(
+                function () {
+
+                    $('#tempDataMessage').fadeOut();
+
+                },
+                7000
+            );
+
+        });
+
+    </script>
+
+}

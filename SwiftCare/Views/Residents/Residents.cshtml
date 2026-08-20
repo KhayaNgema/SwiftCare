@@ -1,72 +1,61 @@
-﻿@model IEnumerable<SwiftCare.Models.Resident>
+﻿
+@model IEnumerable<SwiftCare.Models.Resident>
 
 @{
     ViewData["Title"] = "Residents";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var residentCount = Model?.Count() ?? 0;
 }
-
-
-<div class="container-fluid residents-page">
+<br />
+<div class="sc-residents-page">
 
     <!-- ============================================================
-         HEADER
+         HERO HEADER
          ============================================================ -->
 
-    <div class="residents-header d-flex align-items-center justify-content-between">
+    <div class="sc-residents-hero">
 
-        <div class="d-flex align-items-center">
+        <div class="sc-residents-hero-bg"></div>
 
-            <a asp-controller="Home"
-                   asp-action="Index"
-                   class="text-white text-decoration-none me-3">
+        <div class="sc-residents-hero-content">
 
-                <i class="bi bi-chevron-left fs-4"></i>
+            <div class="sc-residents-heading">
 
-            </a>
+                <a asp-controller="Home"
+                       asp-action="Index"
+                       class="sc-back-button">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
 
-            <div>
-                <h2>
-                    <i class="bi bi-people-fill me-2"></i>
-                    Residents
-                </h2>
+                <div class="sc-residents-title">
 
-                <p>Manage and view all registered residents.</p>
+                    <div class="sc-residents-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div>
+                        <h1>Residents</h1>
+
+                        <p>
+                            View, search and manage all registered residents.
+                        </p>
+                    </div>
+
+                </div>
+
             </div>
 
-        </div>
 
-        <div class="d-none d-md-block">
+            <div class="sc-residents-count">
 
-            <span class="badge bg-light text-dark fs-6">
-                @Model.Count() Residents
-            </span>
+                <div class="sc-count-icon">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
 
-        </div>
-
-    </div>
-
-
-    <!-- ============================================================
-         SEARCH
-         ============================================================ -->
-
-    <div class="resident-search-container">
-
-        <div class="row">
-
-            <div class="col-md-6">
-
-                <div class="input-group">
-
-                    <span class="input-group-text bg-white border-end-0">
-                        <i class="bi bi-search text-muted"></i>
-                    </span>
-
-                    <input type="text"
-                           id="residentSearch"
-                           class="form-control resident-search border-start-0"
-                           placeholder="Search by name, email, phone number or room..." />
-
+                <div>
+                    <span>Total Residents</span>
+                    <strong>@residentCount</strong>
                 </div>
 
             </div>
@@ -77,192 +66,345 @@
 
 
     <!-- ============================================================
-         RESIDENTS TABLE
+         MAIN CONTENT
          ============================================================ -->
-    @if (Model == null || !Model.Any())
-    {
-        <div class="empty-residents">
 
-            <i class="bi bi-people"></i>
+    <div class="sc-residents-content">
 
-            <h4>No Residents Found</h4>
 
-            <p class="text-muted mb-0">
-                There are currently no residents registered in the system.
-            </p>
+        <!-- ========================================================
+             SEARCH PANEL
+             ======================================================== -->
 
-        </div>
-    }
-    else
-    {
-        <div class="residents-table-container">
+        <div class="sc-search-card">
 
-            <div class="table-responsive">
+            <div class="sc-search-card-left">
 
-                <table class="table residents-table" id="residentsTable">
+                <div class="sc-search-heading-icon">
+                    <i class="bi bi-search"></i>
+                </div>
 
-                    <thead>
+                <div>
 
-                        <tr>
+                    <h4>Find a Resident</h4>
 
-                            <th>Profile</th>
+                    <p>
+                        Search by name, email, phone number or room.
+                    </p>
 
-                            <th>Resident Name</th>
+                </div>
 
-                            <th>Email Address</th>
+            </div>
 
-                            <th>Phone Number</th>
 
-                            <th>Date of Birth</th>
+            <div class="sc-search-box">
 
-                            <th>Room</th>
+                <i class="bi bi-search"></i>
 
-                            <th class="text-end">Action</th>
+                <input type="text"
+                       id="residentSearch"
+                       placeholder="Search residents..." />
 
-                        </tr>
+                <button type="button"
+                        id="clearResidentSearch"
+                        class="sc-clear-search"
+                        title="Clear search">
 
-                    </thead>
+                    <i class="bi bi-x-lg"></i>
 
-
-                    <tbody>
-
-                        @foreach (var resident in Model)
-                        {
-                            var profileImage = string.IsNullOrWhiteSpace(resident.ProfilePicture)
-                                ? Url.Content("~/Images/default_profile_image.jpg")
-                                : Url.Content("~/" + resident.ProfilePicture.TrimStart('/'));
-
-                            <tr>
-
-                                <!-- PROFILE IMAGE -->
-
-                                <td>
-
-                                    <img src="@profileImage"
-                                         alt="@resident.FirstName @resident.LastName"
-                                         class="resident-profile"
-                                         onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")'" />
-
-                                </td>
-
-
-                                <!-- NAME -->
-
-                                <td>
-
-                                    <div class="resident-name">
-
-                                        @resident.FirstName @resident.LastName
-
-                                    </div>
-
-                                </td>
-
-
-                                <!-- EMAIL -->
-
-                                <td>
-
-                                    @if (!string.IsNullOrWhiteSpace(resident.Email))
-                                    {
-                                        <span>
-                                            <i class="bi bi-envelope me-1 text-muted"></i>
-                                            @resident.Email
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">Not provided</span>
-                                    }
-
-                                </td>
-
-
-                                <!-- PHONE -->
-
-                                <td>
-
-                                    @if (!string.IsNullOrWhiteSpace(resident.PhoneNumber))
-                                    {
-                                        <span>
-                                            <i class="bi bi-telephone me-1 text-muted"></i>
-                                            @resident.PhoneNumber
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">Not provided</span>
-                                    }
-
-                                </td>
-
-
-                                <!-- DATE OF BIRTH -->
-
-                                <td>
-
-                                    @resident.DateOfBirth.ToString("dd MMM yyyy")
-
-                                </td>
-
-
-                                <!-- ROOM -->
-
-                                <td>
-
-                                    @if (resident.RoomNumber != null)
-                                    {
-                                        <span class="room-badge">
-
-                                            <i class="bi bi-door-open"></i>
-
-                                            @resident.RoomNumber
-
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">
-                                            Not assigned
-                                        </span>
-                                    }
-
-                                </td>
-
-
-                                <!-- ACTION -->
-
-                                <td class="text-end">
-
-                                    <a asp-controller="Residents"
-                                           asp-action="ResidentDetails"
-                                           asp-route-id="@resident.Id"
-                                           class="btn btn-resident-details">
-
-                                        <i class="bi bi-person-lines-fill me-1"></i>
-
-                                        View Details
-
-                                    </a>
-
-                                </td>
-
-                            </tr>
-                        }
-
-                    </tbody>
-
-                </table>
+                </button>
 
             </div>
 
         </div>
-    }
+
+
+        <!-- ========================================================
+             EMPTY STATE
+             ======================================================== -->
+        @if (Model == null || !Model.Any())
+        {
+            <div class="sc-empty-residents">
+
+                <div class="sc-empty-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+
+                <h3>No Residents Found</h3>
+
+                <p>
+                    There are currently no residents registered in the system.
+                </p>
+
+            </div>
+        }
+        else
+        {
+
+            <!-- ====================================================
+                 RESIDENTS GLASS CARD
+                 ==================================================== -->
+
+            <div class="sc-residents-glass">
+
+                <div class="sc-table-header">
+
+                    <div>
+
+                        <h3>Resident Directory</h3>
+
+                        <p>
+                            @residentCount resident@(residentCount == 1 ? "" : "s") currently registered
+                        </p>
+
+                    </div>
+
+
+                    <div class="sc-table-header-icon">
+
+                        <i class="bi bi-person-vcard-fill"></i>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="table sc-residents-table"
+                           id="residentsTable">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Resident</th>
+
+                                <th>Contact Information</th>
+
+                                <th>Date of Birth</th>
+
+                                <th>Room</th>
+
+                                <th class="text-end">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var resident in Model)
+                            {
+                                var profileImage =
+                                    string.IsNullOrWhiteSpace(resident.ProfilePicture)
+                                        ? Url.Content("~/Images/default_profile_image.jpg")
+                                        : Url.Content("~/" + resident.ProfilePicture.TrimStart('/'));
+
+                                <tr>
+
+                                    <!-- =================================================
+                                         RESIDENT
+                                         ================================================= -->
+
+                                    <td>
+
+                                        <div class="sc-resident-profile-cell">
+
+                                            <div class="sc-profile-image-wrapper">
+
+                                                <img src="@profileImage"
+                                                     alt="@resident.FirstName @resident.LastName"
+                                                     class="sc-resident-profile-image"
+                                                     onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")'" />
+
+                                            </div>
+
+
+                                            <div class="sc-resident-info">
+
+                                                <h5>
+                                                    @resident.FirstName @resident.LastName
+                                                </h5>
+
+                                                <span>
+
+                                                    <i class="bi bi-person"></i>
+
+                                                    Resident
+
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================================
+                                         CONTACT
+                                         ================================================= -->
+
+                                    <td>
+
+                                        <div class="sc-contact-info">
+
+                                            @if (!string.IsNullOrWhiteSpace(resident.Email))
+                                            {
+                                                <div class="sc-contact-row">
+
+                                                    <div class="sc-contact-icon">
+
+                                                        <i class="bi bi-envelope"></i>
+
+                                                    </div>
+
+                                                    <span>
+                                                        @resident.Email
+                                                    </span>
+
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(resident.PhoneNumber))
+                                            {
+                                                <div class="sc-contact-row">
+
+                                                    <div class="sc-contact-icon">
+
+                                                        <i class="bi bi-telephone"></i>
+
+                                                    </div>
+
+                                                    <span>
+                                                        @resident.PhoneNumber
+                                                    </span>
+
+                                                </div>
+                                            }
+
+                                            @if (string.IsNullOrWhiteSpace(resident.Email)
+                                                && string.IsNullOrWhiteSpace(resident.PhoneNumber))
+                                            {
+                                                <span class="sc-not-provided">
+
+                                                    Not provided
+
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================================
+                                         DATE OF BIRTH
+                                         ================================================= -->
+
+                                    <td>
+
+                                        <div class="sc-date-info">
+
+                                            <div class="sc-date-icon">
+
+                                                <i class="bi bi-calendar3"></i>
+
+                                            </div>
+
+                                            <span>
+
+                                                @resident.DateOfBirth.ToString("dd MMM yyyy")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================================
+                                         ROOM
+                                         ================================================= -->
+
+                                    <td>
+                                            <div class="sc-room-badge">
+
+                                                <i class="bi bi-door-open-fill"></i>
+
+                                                <span>
+                                                    Room @resident.RoomNumber
+                                                </span>
+
+                                            </div>
+                                    </td>
+
+
+                                    <!-- =================================================
+                                         ACTION
+                                         ================================================= -->
+
+                                    <td class="text-end">
+
+                                        <a asp-controller="Residents"
+                                               asp-action="ResidentDetails"
+                                               asp-route-id="@resident.Id"
+                                               class="sc-details-button">
+
+                                            <span>
+                                                View Details
+                                            </span>
+
+                                            <i class="bi bi-arrow-right"></i>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- ====================================================
+                     NO SEARCH RESULTS
+                     ==================================================== -->
+
+                <div id="noSearchResults"
+                     class="sc-no-search-results"
+                     style="display:none;">
+
+                    <div class="sc-empty-icon">
+
+                        <i class="bi bi-search"></i>
+
+                    </div>
+
+                    <h4>No Residents Found</h4>
+
+                    <p>
+                        Try searching using a different name, email or room.
+                    </p>
+
+                </div>
+
+            </div>
+
+        }
+
+    </div>
 
 </div>
 
-
-@section Scripts {
 
     <script>
 
@@ -271,27 +413,43 @@
             const searchInput =
                 document.getElementById("residentSearch");
 
+            const clearButton =
+                document.getElementById("clearResidentSearch");
+
             const table =
                 document.getElementById("residentsTable");
 
-            if (!searchInput || !table) return;
+            const noResults =
+                document.getElementById("noSearchResults");
 
-            searchInput.addEventListener("keyup", function () {
+
+            if (!searchInput || !table) {
+                return;
+            }
+
+
+            searchInput.addEventListener("input", function () {
 
                 const searchValue =
-                    this.value.toLowerCase();
+                    this.value.toLowerCase().trim();
 
                 const rows =
                     table.querySelectorAll("tbody tr");
 
+                let visibleRows = 0;
+
+
                 rows.forEach(function (row) {
 
                     const rowText =
-                        row.textContent.toLowerCase();
+                        row.textContent
+                            .toLowerCase();
 
                     if (rowText.includes(searchValue)) {
 
                         row.style.display = "";
+
+                        visibleRows++;
 
                     }
                     else {
@@ -302,10 +460,58 @@
 
                 });
 
+
+                if (noResults) {
+
+                    if (visibleRows === 0) {
+
+                        noResults.style.display =
+                            "block";
+
+                    }
+                    else {
+
+                        noResults.style.display =
+                            "none";
+
+                    }
+
+                }
+
+
+                if (clearButton) {
+
+                    clearButton.style.opacity =
+                        searchValue.length > 0
+                            ? "1"
+                            : "0";
+
+                }
+
             });
+
+
+            if (clearButton) {
+
+                clearButton.addEventListener(
+                    "click",
+                    function () {
+
+                        searchInput.value = "";
+
+                        searchInput.dispatchEvent(
+                            new Event("input")
+                        );
+
+                        searchInput.focus();
+
+                    }
+                );
+
+            }
 
         });
 
     </script>
 
-}
+

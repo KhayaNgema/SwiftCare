@@ -406,7 +406,7 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("RequestId")
                         .IsUnique();
 
-                    b.ToTable("Trip");
+                    b.ToTable("Trips");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.UserBaseModel", b =>

@@ -1,0 +1,1246 @@
+﻿@using SwiftCare.Models
+@model SwiftCare.Models.TransportRequest?
+
+@{
+    ViewData["Title"] = "Transport Request Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    // ============================================================
+    // NULL SAFE STATUS VALUES
+    // ============================================================
+
+    var request = Model;
+
+    var statusClass = "status-pending";
+    var statusText = "Unknown";
+
+    if (request != null)
+    {
+        statusClass = request.Status switch
+        {
+            RequestStatus.Pending => "status-pending",
+            RequestStatus.Driver_Assigned => "status-assigned",
+            RequestStatus.Completed => "status-completed",
+            _ => "status-pending"
+        };
+
+        statusText = request.Status switch
+        {
+            RequestStatus.Pending => "Pending",
+            RequestStatus.Driver_Assigned => "Driver Assigned",
+            RequestStatus.Completed => "Completed",
+            _ => request.Status.ToString()
+        };
+    }
+
+
+    // ============================================================
+    // NULL SAFE PROFILE IMAGE
+    // ============================================================
+
+    var profileImage = Url.Content("~/Images/default_profile_image.jpg");
+
+    if (!string.IsNullOrWhiteSpace(request?.Resident?.ProfilePicture))
+    {
+        profileImage = Url.Content(
+            "~/" + request.Resident.ProfilePicture.TrimStart('/')
+        );
+    }
+
+
+    // ============================================================
+    // NULL SAFE RESIDENT NAME
+    // ============================================================
+
+    var residentName = "Resident Not Available";
+
+    if (request?.Resident != null)
+    {
+        var firstName = request.Resident.FirstName ?? "";
+        var lastName = request.Resident.LastName ?? "";
+
+        var fullName = $"{firstName} {lastName}".Trim();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            residentName = fullName;
+        }
+    }
+
+
+    // ============================================================
+    // NULL SAFE NURSE NAME
+    // ============================================================
+
+    var nurseName = "Not Available";
+
+    if (request?.Nurse != null)
+    {
+        var firstName = request.Nurse.FirstName ?? "";
+        var lastName = request.Nurse.LastName ?? "";
+
+        var fullName = $"{firstName} {lastName}".Trim();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            nurseName = fullName;
+        }
+    }
+
+
+    // ============================================================
+    // NULL SAFE DRIVER NAME
+    // ============================================================
+
+    var driverName = "Not Assigned";
+
+    if (request?.Driver != null)
+    {
+        var firstName = request.Driver.FirstName ?? "";
+        var lastName = request.Driver.LastName ?? "";
+
+        var fullName = $"{firstName} {lastName}".Trim();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            driverName = fullName;
+        }
+    }
+}
+
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="transport-details-page">
+
+        <div class="details-card">
+
+            <div class="details-card-header">
+
+                <h4>
+
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+
+                    Transport Request Error
+
+                </h4>
+
+            </div>
+
+
+            <div class="details-card-body">
+
+                <div class="alert alert-danger mb-0">
+
+                    <h5>
+
+                        Unable to Load Transport Request
+
+                    </h5>
+
+
+                    <p>
+
+                        @ViewBag.ErrorMessage
+
+                    </p>
+
+
+                    @if (ViewBag.DebugMessage != null)
+                    {
+                        <hr />
+
+                        <strong>
+
+                            Database Information
+
+                        </strong>
+
+
+                        <p class="mb-0">
+
+                            @ViewBag.DebugMessage
+
+                        </p>
+                    }
+
+
+                    @if (ViewBag.ExceptionMessage != null)
+                    {
+                        <hr />
+
+                        <strong>
+
+                            Exception Message
+
+                        </strong>
+
+
+                        <p>
+
+                            @ViewBag.ExceptionMessage
+
+                        </p>
+                    }
+
+
+                    @if (ViewBag.InnerException != null)
+                    {
+                        <hr />
+
+                        <strong>
+
+                            Inner Exception
+
+                        </strong>
+
+
+                        <p>
+
+                            @ViewBag.InnerException
+
+                        </p>
+                    }
+
+
+                    @if (ViewBag.StackTrace != null)
+                    {
+                        <details class="mt-3">
+
+                            <summary>
+
+                                View Stack Trace
+
+                            </summary>
+
+
+                            <pre class="mt-3"
+                                 style="white-space: pre-wrap; max-height: 400px; overflow: auto;">@ViewBag.StackTrace</pre>
+
+                        </details>
+                    }
+
+
+                    <a asp-controller="TransportRequests"
+                           asp-action="TransportRequests"
+                           class="btn btn-primary mt-3">
+
+                        <i class="bi bi-arrow-left me-2"></i>
+
+                        Back to Transport Requests
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    return;
+}
+
+
+@if (request == null)
+{
+    <div class="transport-details-page">
+
+        <div class="details-card">
+
+            <div class="details-card-body">
+
+                <div class="text-center py-5">
+
+                    <i class="bi bi-truck"
+                       style="font-size: 50px;"></i>
+
+
+                    <h4 class="mt-3">
+
+                        Transport Request Not Found
+
+                    </h4>
+
+
+                    <p>
+
+                        The requested transport request could not be loaded.
+
+                    </p>
+
+
+                    <a asp-controller="TransportRequests"
+                           asp-action="TransportRequests"
+                           class="btn btn-primary">
+
+                        Back to Requests
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    return;
+}
+
+
+<div class="transport-details-page">
+
+    <!-- ============================================================
+         PAGE HEADER
+         ============================================================ -->
+
+    <div class="details-page-header">
+
+        <div>
+
+            <a asp-controller="TransportRequests"
+                   asp-action="TransportRequests"
+                   class="back-button">
+
+                <i class="bi bi-arrow-left"></i>
+
+                Back to Requests
+
+            </a>
+
+
+            <div class="header-title">
+
+                <div class="header-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h2>
+
+                        Transport Request Details
+
+                    </h2>
+
+
+                    <p>
+
+                        Request #@request.RequestId
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <span class="request-status @statusClass">
+
+            @if (request.Status == RequestStatus.Pending)
+            {
+                <i class="bi bi-hourglass-split"></i>
+            }
+            else if (request.Status == RequestStatus.Driver_Assigned)
+            {
+                <i class="bi bi-person-check"></i>
+            }
+            else
+            {
+                <i class="bi bi-check-circle"></i>
+            }
+
+            @statusText
+
+        </span>
+
+    </div>
+
+
+    <!-- ============================================================
+         OVERVIEW
+         ============================================================ -->
+
+    <div class="row g-4 mb-4">
+
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="overview-card">
+
+                <div class="overview-icon">
+
+                    <i class="bi bi-hash"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>Request Number</span>
+
+                    <strong>#@request.RequestId</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="overview-card">
+
+                <div class="overview-icon">
+
+                    <i class="bi bi-calendar-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>Requested On</span>
+
+                    <strong>
+
+                        @request.RequestedAt.ToString("dd MMM yyyy")
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="overview-card">
+
+                <div class="overview-icon">
+
+                    <i class="bi bi-calendar-event"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>Transport Date</span>
+
+                    <strong>
+
+                        @request.RequestedForDate.ToString("dd MMM yyyy")
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="overview-card">
+
+                <div class="overview-icon">
+
+                    <i class="bi bi-clock"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>Transport Time</span>
+
+                    <strong>
+
+                        @request.RequestedForTime.ToString("HH:mm")
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="row g-4">
+
+
+        <!-- ========================================================
+             LEFT COLUMN
+             ======================================================== -->
+
+        <div class="col-12 col-xl-7">
+
+
+            <!-- ====================================================
+                 RESIDENT INFORMATION
+                 ==================================================== -->
+
+            <div class="details-card mb-4">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-person me-2"></i>
+
+                        Resident Information
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+                    <div class="resident-details-profile">
+
+                        <img src="@profileImage"
+                             class="resident-profile-image"
+                             alt="Resident Profile Picture"
+                             onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")';" />
+
+
+                        <div class="resident-profile-info">
+
+                            <h3>
+
+                                @residentName
+
+                            </h3>
+
+
+                            <p>
+
+                                <i class="bi bi-person-vcard me-2"></i>
+
+                                Resident ID:
+
+                                @(string.IsNullOrWhiteSpace(request.RequestedForId)
+                                    ? "Not Available"
+                                    : request.RequestedForId)
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <hr />
+
+
+                    <div class="row g-4">
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-door-open"></i>
+
+                                    Room
+
+                                </span>
+
+
+                                <strong>
+
+                                    @(request.Resident?.RoomNumber != null
+                                        ? request.Resident.RoomNumber.ToString()
+                                        : "Not Assigned")
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-telephone"></i>
+
+                                    Phone Number
+
+                                </span>
+
+
+                                <strong>
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        request.Resident?.PhoneNumber)
+                                        ? "Not Available"
+                                        : request.Resident.PhoneNumber)
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 TRANSPORT INFORMATION
+                 ==================================================== -->
+
+            <div class="details-card mb-4">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-clipboard-check me-2"></i>
+
+                        Transport Information
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+
+                    <div class="detail-section">
+
+                        <span class="detail-label">
+
+                            <i class="bi bi-chat-left-text"></i>
+
+                            Reason for Transport
+
+                        </span>
+
+
+                        <div class="reason-box">
+
+                            @(string.IsNullOrWhiteSpace(request.RequestReason)
+                                ? "No reason provided."
+                                : request.RequestReason)
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="row g-4 mt-2">
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-person-badge"></i>
+
+                                    Requested By
+
+                                </span>
+
+
+                                <strong>
+
+                                    @nurseName
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    Request Created
+
+                                </span>
+
+
+                                <strong>
+
+                                    @request.RequestedAt.ToString(
+                                        "dd MMM yyyy HH:mm")
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 ROUTE INFORMATION
+                 ==================================================== -->
+
+            <div class="details-card">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-sign-turn-right me-2"></i>
+
+                        Route Information
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+
+                    <!-- PICKUP -->
+
+                    <div class="location-detail pickup-location">
+
+                        <div class="location-icon">
+
+                            <i class="bi bi-geo-alt-fill"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Pickup Location
+
+                            </span>
+
+
+                            <strong>
+
+                                @(string.IsNullOrWhiteSpace(
+                                    request.PickUpAddress)
+                                    ? "Pickup address not available"
+                                    : request.PickUpAddress)
+
+                            </strong>
+
+
+                            @if (request.PickUpLatitude.HasValue &&
+                                 request.PickUpLongitude.HasValue)
+                            {
+                                <small>
+
+                                    @request.PickUpLatitude.Value,
+                                    @request.PickUpLongitude.Value
+
+                                </small>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="location-connector">
+
+                        <i class="bi bi-arrow-down"></i>
+
+                    </div>
+
+
+                    <!-- DESTINATION -->
+
+                    <div class="location-detail destination-location">
+
+                        <div class="location-icon">
+
+                            <i class="bi bi-geo-alt-fill"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Destination
+
+                            </span>
+
+
+                            <strong>
+
+                                @(string.IsNullOrWhiteSpace(
+                                    request.DestinationAddress)
+                                    ? "Destination address not available"
+                                    : request.DestinationAddress)
+
+                            </strong>
+
+
+                            @if (request.DestinationLatitude.HasValue &&
+                                 request.DestinationLongitude.HasValue)
+                            {
+                                <small>
+
+                                    @request.DestinationLatitude.Value,
+                                    @request.DestinationLongitude.Value
+
+                                </small>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <hr />
+
+
+                    <div class="row g-4">
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-signpost"></i>
+
+                                    Travel Distance
+
+                                </span>
+
+
+                                <strong>
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        request.TravelDistance)
+                                        ? "Not Calculated"
+                                        : request.TravelDistance)
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-12 col-md-6">
+
+                            <div class="detail-item">
+
+                                <span class="detail-label">
+
+                                    <i class="bi bi-clock"></i>
+
+                                    Estimated Travel Time
+
+                                </span>
+
+
+                                <strong>
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        request.TravelTime)
+                                        ? "Not Calculated"
+                                        : request.TravelTime)
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             RIGHT COLUMN
+             ======================================================== -->
+
+        <div class="col-12 col-xl-5">
+
+
+            <!-- ====================================================
+                 DRIVER
+                 ==================================================== -->
+
+            <div class="details-card mb-4">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-person-check me-2"></i>
+
+                        Driver Assignment
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+                    @if (request.Driver != null)
+                    {
+                        <div class="assigned-person">
+
+                            <div class="assigned-icon">
+
+                                <i class="bi bi-person"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+
+                                    Assigned Driver
+
+                                </span>
+
+
+                                <strong>
+
+                                    @driverName
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="not-assigned-box">
+
+                            <i class="bi bi-person-dash"></i>
+
+
+                            <div>
+
+                                <strong>
+
+                                    No Driver Assigned
+
+                                </strong>
+
+
+                                <p>
+
+                                    A driver has not yet been assigned.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 VEHICLE
+                 ==================================================== -->
+
+            <div class="details-card mb-4">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-car-front me-2"></i>
+
+                        Vehicle Assignment
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+                    @if (request.Vehicle != null)
+                    {
+                        <div class="assigned-person">
+
+                            <div class="assigned-icon">
+
+                                <i class="bi bi-car-front"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+
+                                    Assigned Vehicle
+
+                                </span>
+
+
+                                <strong>
+
+                                    Vehicle #@request.VehicleId
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="not-assigned-box">
+
+                            <i class="bi bi-car-front"></i>
+
+
+                            <div>
+
+                                <strong>
+
+                                    No Vehicle Assigned
+
+                                </strong>
+
+
+                                <p>
+
+                                    A vehicle has not yet been assigned.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 TRIP INFORMATION
+                 ==================================================== -->
+
+            <div class="details-card">
+
+                <div class="details-card-header">
+
+                    <h4>
+
+                        <i class="bi bi-map me-2"></i>
+
+                        Trip Information
+
+                    </h4>
+
+                </div>
+
+
+                <div class="details-card-body">
+
+                    @if (request.Trip != null)
+                    {
+                        <div class="detail-item mb-4">
+
+                            <span class="detail-label">
+
+                                Current Trip Status
+
+                            </span>
+
+
+                            <strong>
+
+                                @request.Trip.Status
+                                .ToString()
+                                .Replace("_", " ")
+
+                            </strong>
+
+                        </div>
+
+
+                        <hr />
+
+
+                        <div class="row g-4">
+
+
+                            <div class="col-12">
+
+                                <div class="detail-item">
+
+                                    <span class="detail-label">
+
+                                        <i class="bi bi-play-circle"></i>
+
+                                        Started At
+
+                                    </span>
+
+
+                                    <strong>
+
+                                        @(request.Trip.StartedAt.HasValue
+                                            ? request.Trip.StartedAt.Value
+                                                .ToString("dd MMM yyyy HH:mm")
+                                            : "Not Started")
+
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-12">
+
+                                <div class="detail-item">
+
+                                    <span class="detail-label">
+
+                                        <i class="bi bi-stop-circle"></i>
+
+                                        Ended At
+
+                                    </span>
+
+
+                                    <strong>
+
+                                        @(request.Trip.EndedAt.HasValue
+                                            ? request.Trip.EndedAt.Value
+                                                .ToString("dd MMM yyyy HH:mm")
+                                            : "Not Ended")
+
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-12">
+
+                                <div class="detail-item">
+
+                                    <span class="detail-label">
+
+                                        <i class="bi bi-crosshair"></i>
+
+                                        Current Driver Location
+
+                                    </span>
+
+
+                                    <strong>
+
+                                        @(request.Trip.CurrentLatitude.HasValue &&
+                                          request.Trip.CurrentLongitude.HasValue
+                                            ? $"{request.Trip.CurrentLatitude.Value}, {request.Trip.CurrentLongitude.Value}"
+                                            : "Location not available")
+
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="not-assigned-box">
+
+                            <i class="bi bi-map"></i>
+
+
+                            <div>
+
+                                <strong>
+
+                                    Trip Not Started
+
+                                </strong>
+
+
+                                <p>
+
+                                    A trip has not yet been created for
+                                    this transport request.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

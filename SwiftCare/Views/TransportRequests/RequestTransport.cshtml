@@ -1,4 +1,5 @@
-﻿@model SwiftCare.ViewModels.RequestViewModel
+﻿
+@model SwiftCare.ViewModels.RequestViewModel
 
 @{
     ViewData["Title"] = "Request Transport";
@@ -6,89 +7,54 @@
 
     var profileImage = string.IsNullOrWhiteSpace(Model.ProfilePicture)
         ? Url.Content("~/Images/default_profile_image.jpg")
-        : Url.Content("~/" + Model.ProfilePicture);
+        : Url.Content("~/" + Model.ProfilePicture.TrimStart('/'));
 }
 
+<link rel="stylesheet" href="~/css/request-transport.css" />
 
-<div class="transport-page">
+<div class="sc-transport-page">
 
     <!-- ============================================================
-         PAGE HEADER
+         HERO HEADER
          ============================================================ -->
 
-    <div class="transport-header d-flex align-items-center">
+    <div class="sc-transport-hero">
 
-        <a asp-controller="Residents"
-               asp-action="ResidentDetails"
-               asp-route-id="@Model.RequestedForId"
-               class="back-link me-4">
+        <div class="sc-transport-hero-content">
 
-            <i class="bi bi-chevron-left me-1"></i>
-            Back
+            <a asp-controller="Residents"
+                   asp-action="ResidentDetails"
+                   asp-route-id="@Model.RequestedForId"
+                   class="sc-transport-back">
 
-        </a>
+                <i class="bi bi-arrow-left"></i>
 
-        <h2 class="mb-0 text-white">
-            Request Transport
-        </h2>
+                <span>Back to Resident</span>
 
-    </div>
+            </a>
 
+            <div class="sc-transport-heading">
 
-    <div class="container-fluid px-4">
+                <div class="sc-transport-heading-icon">
 
-        <!-- ========================================================
-             RESIDENT INFORMATION
-             ======================================================== -->
-
-        <div class="resident-summary">
-
-            <div class="row align-items-center">
-
-                <div class="col-12 col-md-auto text-center mb-3 mb-md-0">
-
-                    <img src="@profileImage"
-                         class="resident-image"
-                         alt="Resident Profile Picture" />
+                    <i class="bi bi-truck"></i>
 
                 </div>
 
+                <div>
 
-                <div class="col resident-summary-content">
+                    <span class="sc-transport-eyebrow">
+                        SWIFTCARE TRANSPORT
+                    </span>
 
-                    <div class="resident-name">
+                    <h1>
+                        Request Transport
+                    </h1>
 
-                        @Model.FirstName @Model.LastName
-
-                    </div>
-
-
-                    <div class="resident-info">
-
-                        <span class="resident-info-item">
-
-                            <i class="bi bi-door-open"></i>
-
-                            Room:
-
-                            @(Model.RoomNo != null
-                                ? Model.RoomNo.ToString()
-                                : "Not Assigned")
-
-                        </span>
-
-
-                        <span class="resident-info-item">
-
-                            <i class="bi bi-telephone"></i>
-
-                            @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
-                                ? "No phone number"
-                                : Model.PhoneNumber)
-
-                        </span>
-
-                    </div>
+                    <p>
+                        Schedule a safe and convenient transport request
+                        for this resident.
+                    </p>
 
                 </div>
 
@@ -96,9 +62,106 @@
 
         </div>
 
+    </div>
+
+
+    <div class="container-fluid sc-transport-container">
+
 
         <!-- ========================================================
-             TRANSPORT REQUEST FORM
+             RESIDENT SUMMARY
+             ======================================================== -->
+
+        <div class="sc-resident-summary">
+
+            <div class="sc-resident-image-wrap">
+
+                <img src="@profileImage"
+                     class="sc-resident-image"
+                     alt="@Model.FirstName @Model.LastName"
+                     onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")'" />
+
+                <div class="sc-resident-online"></div>
+
+            </div>
+
+
+            <div class="sc-resident-summary-content">
+
+                <span class="sc-resident-label">
+                    TRANSPORT REQUEST FOR
+                </span>
+
+                <h2>
+                    @Model.FirstName @Model.LastName
+                </h2>
+
+
+                <div class="sc-resident-meta">
+
+                    <div class="sc-resident-meta-item">
+
+                        <div class="sc-resident-meta-icon">
+
+                            <i class="bi bi-door-open"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>Room</span>
+
+                            <strong>
+                                @(Model.RoomNo != null
+                                    ? Model.RoomNo.ToString()
+                                    : "Not Assigned")
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-resident-meta-item">
+
+                        <div class="sc-resident-meta-icon">
+
+                            <i class="bi bi-telephone"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>Contact</span>
+
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
+                                    ? "Not provided"
+                                    : Model.PhoneNumber)
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-resident-status">
+
+                <i class="bi bi-person-check-fill"></i>
+
+                <span>Resident Selected</span>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             FORM
              ======================================================== -->
 
         <form id="transportRequestForm"
@@ -109,148 +172,232 @@
             @Html.AntiForgeryToken()
 
 
-            <!-- ====================================================
-                 RESIDENT ID
-                 ==================================================== -->
-
-            <input type="hidden"
-                   id="RequestedForId"
-                   name="RequestedForId"
-                   value="@Model.RequestedForId" />
+            <div asp-validation-summary="All"
+                 class="sc-transport-validation"
+                 style="white-space: pre-wrap;">
+            </div>
 
 
             <!-- ====================================================
-                 ACTUAL ADDRESS VALUES SUBMITTED TO MVC
+                 HIDDEN VALUES
                  ==================================================== -->
 
-            <input type="hidden"
-                   asp-for="PickUpAddress"
+            <input asp-for="RequestedForId"
+                   type="hidden"
+                   id="RequestedForId" />
+
+            <input asp-for="PickUpAddress"
+                   type="hidden"
                    id="pickupAddress" />
 
-            <input type="hidden"
-                   asp-for="DestinationAddress"
+            <input asp-for="DestinationAddress"
+                   type="hidden"
                    id="destinationAddress" />
 
-
-            <!-- ====================================================
-                 COORDINATES
-                 These must exist in your ViewModel if you want to
-                 submit coordinates.
-                 ==================================================== -->
-
-            <input type="hidden"
-                   name="PickUpLatitude"
+            <input asp-for="PickUpLatitude"
+                   type="hidden"
                    id="pickupLatitude" />
 
-            <input type="hidden"
-                   name="PickUpLongitude"
+            <input asp-for="PickUpLongitude"
+                   type="hidden"
                    id="pickupLongitude" />
 
-            <input type="hidden"
-                   name="DestinationLatitude"
+            <input asp-for="DestinationLatitude"
+                   type="hidden"
                    id="destinationLatitude" />
 
-            <input type="hidden"
-                   name="DestinationLongitude"
+            <input asp-for="DestinationLongitude"
+                   type="hidden"
                    id="destinationLongitude" />
 
 
-            <div class="transport-form-card">
+            <!-- ====================================================
+                 MAIN FORM CARD
+                 ==================================================== -->
 
-                <div class="form-card-header">
-
-                    <h4>
-
-                        <i class="bi bi-truck me-2"></i>
-
-                        Transport Request Details
-
-                    </h4>
-
-                </div>
+            <div class="sc-transport-form-card">
 
 
-                <div class="form-card-body">
+                <!-- =================================================
+                     CARD HEADER
+                     ================================================= -->
 
+                <div class="sc-transport-form-top">
 
-                    <!-- =================================================
-                         REQUEST INFORMATION
-                         ================================================= -->
+                    <div>
 
-                    <div class="form-section-title">
+                        <span class="sc-form-step">
+                            STEP 1 OF 2
+                        </span>
 
-                        <i class="bi bi-clipboard-check me-2"></i>
+                        <h3>
 
-                        Request Information
+                            <i class="bi bi-clipboard2-check"></i>
+
+                            Transport Details
+
+                        </h3>
+
+                        <p>
+                            Provide the transport schedule and reason
+                            for the request.
+                        </p>
 
                     </div>
 
 
-                    <div class="row g-4">
+                    <div class="sc-form-header-badge">
+
+                        <i class="bi bi-shield-check"></i>
+
+                        <span>Secure Request</span>
+
+                    </div>
+
+                </div>
 
 
-                        <div class="col-12">
-
-                            <label asp-for="RequestReason"
-                                   class="form-label">
-
-                                Reason for Transport
-
-                            </label>
+                <div class="sc-transport-form-body">
 
 
-                            <textarea asp-for="RequestReason"
-                                      class="form-control"
-                                      placeholder="Enter the reason for this transport request..."></textarea>
+                    <!-- =============================================
+                         REQUEST INFORMATION
+                         ============================================= -->
 
+                    <div class="sc-form-section">
 
-                            <span asp-validation-for="RequestReason"
-                                  class="text-danger"></span>
+                        <div class="sc-form-section-heading">
 
-                        </div>
+                            <div class="sc-form-section-icon">
 
+                                <i class="bi bi-card-text"></i>
 
-                        <div class="col-12 col-md-6">
+                            </div>
 
-                            <label asp-for="RequestedForDate"
-                                   class="form-label">
+                            <div>
 
-                                Transport Date
+                                <h4>
+                                    Request Information
+                                </h4>
 
-                            </label>
+                                <p>
+                                    Tell us why and when transport is needed.
+                                </p>
 
-
-                            <input asp-for="RequestedForDate"
-                                   type="date"
-                                   class="form-control" />
-
-
-                            <span asp-validation-for="RequestedForDate"
-                                  class="text-danger"></span>
+                            </div>
 
                         </div>
 
 
-                        <div class="col-12 col-md-6">
-
-                            <label asp-for="RequestedForTime"
-                                   class="form-label">
-
-                                Transport Time
-
-                            </label>
+                        <div class="row g-4">
 
 
-                            <input asp-for="RequestedForTime"
-                                   type="time"
-                                   class="form-control" />
+                            <!-- REQUEST REASON -->
+
+                            <div class="col-12">
+
+                                <div class="sc-field-group">
+
+                                    <label asp-for="RequestReason">
+
+                                        <i class="bi bi-chat-left-text"></i>
+
+                                        Reason for Transport
+
+                                    </label>
 
 
-                            <span asp-validation-for="RequestedForTime"
-                                  class="text-danger"></span>
+                                    <textarea asp-for="RequestReason"
+                                              class="form-control sc-transport-input sc-transport-textarea"
+                                              placeholder="Describe why transport is required..."></textarea>
+
+
+                                    <span asp-validation-for="RequestReason"
+                                          class="text-danger">
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- TRANSPORT DATE -->
+
+                            <div class="col-12 col-md-6">
+
+                                <div class="sc-field-group">
+
+                                    <label asp-for="RequestedForDate">
+
+                                        <i class="bi bi-calendar-event"></i>
+
+                                        Transport Date
+
+                                    </label>
+
+
+                                    <input asp-for="RequestedForDate"
+                                           type="date"
+                                           class="form-control sc-transport-input" />
+
+
+                                    <span asp-validation-for="RequestedForDate"
+                                          class="text-danger">
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- TRANSPORT TIME -->
+
+                            <div class="col-12 col-md-6">
+
+                                <div class="sc-field-group">
+
+                                    <label asp-for="RequestedForTime">
+
+                                        <i class="bi bi-clock"></i>
+
+                                        Transport Time
+
+                                    </label>
+
+
+                                    <input asp-for="RequestedForTime"
+                                           type="time"
+                                           class="form-control sc-transport-input" />
+
+
+                                    <span asp-validation-for="RequestedForTime"
+                                          class="text-danger">
+                                    </span>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
+                    </div>
+
+
+                    <!-- =================================================
+                         ROUTE DIVIDER
+                         ================================================= -->
+
+                    <div class="sc-route-divider">
+
+                        <div></div>
+
+                        <span>
+
+                            <i class="bi bi-arrow-down"></i>
+
+                        </span>
+
+                        <div></div>
 
                     </div>
 
@@ -259,133 +406,166 @@
                          TRANSPORT LOCATIONS
                          ================================================= -->
 
-                    <div class="form-section-title mt-5">
+                    <div class="sc-form-section">
 
-                        <i class="bi bi-geo-alt me-2"></i>
+                        <div class="sc-form-section-heading">
 
-                        Transport Locations
+                            <div class="sc-form-section-icon sc-location-icon">
 
-                    </div>
+                                <i class="bi bi-geo-alt"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4>
+                                    Transport Locations
+                                </h4>
+
+                                <p>
+                                    Select the pickup point and destination.
+                                </p>
+
+                            </div>
+
+                        </div>
 
 
-                    <div class="row g-4">
+                        <div class="row g-4">
 
 
-                        <!-- =============================================
-                             PICKUP
-                             ============================================= -->
+                            <!-- PICKUP -->
 
-                        <div class="col-12 col-md-6">
+                            <div class="col-12 col-lg-6">
 
-                            <label class="form-label">
+                                <div class="sc-location-card sc-pickup-card">
 
-                                Pickup Address
+                                    <div class="sc-location-card-top">
 
-                            </label>
+                                        <div class="sc-location-marker">
+
+                                            <i class="bi bi-record-circle"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <span>
+                                                STARTING POINT
+                                            </span>
+
+                                            <h5>
+                                                Pickup Location
+                                            </h5>
+
+                                        </div>
+
+                                    </div>
 
 
-                            <div class="place-container">
+                                    <div class="sc-place-container">
 
-                                <div class="places-wrapper"
-                                     id="pickupAutocompleteContainer">
+                                        <div class="sc-places-wrapper"
+                                             id="pickupAutocompleteContainer">
+                                        </div>
 
-                                    <!-- Google PlaceAutocompleteElement
-                                         will be inserted here -->
+                                    </div>
+
+
+                                    <div id="pickupStatus"
+                                         class="sc-location-status">
+                                    </div>
 
                                 </div>
 
                             </div>
 
 
-                            <div id="pickupStatus"
-                                 class="location-status"></div>
+                            <!-- DESTINATION -->
+
+                            <div class="col-12 col-lg-6">
+
+                                <div class="sc-location-card sc-destination-card">
+
+                                    <div class="sc-location-card-top">
+
+                                        <div class="sc-location-marker sc-destination-marker">
+
+                                            <i class="bi bi-geo-alt-fill"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <span>
+                                                FINAL DESTINATION
+                                            </span>
+
+                                            <h5>
+                                                Destination
+                                            </h5>
+
+                                        </div>
+
+                                    </div>
 
 
-                            <span asp-validation-for="PickUpAddress"
-                                  class="text-danger"></span>
+                                    <div class="sc-place-container">
 
-                        </div>
+                                        <div class="sc-places-wrapper"
+                                             id="destinationAutocompleteContainer">
+                                        </div>
 
-
-
-                        <!-- =============================================
-                             DESTINATION
-                             ============================================= -->
-
-                        <div class="col-12 col-md-6">
-
-                            <label class="form-label">
-
-                                Destination Address
-
-                            </label>
+                                    </div>
 
 
-                            <div class="place-container">
-
-                                <div class="places-wrapper"
-                                     id="destinationAutocompleteContainer">
-
-                                    <!-- Google PlaceAutocompleteElement
-                                         will be inserted here -->
+                                    <div id="destinationStatus"
+                                         class="sc-location-status">
+                                    </div>
 
                                 </div>
 
                             </div>
 
-
-                            <div id="destinationStatus"
-                                 class="location-status"></div>
-
-
-                            <span asp-validation-for="DestinationAddress"
-                                  class="text-danger"></span>
-
                         </div>
-
 
                     </div>
 
 
                     <!-- =================================================
-                         ACTION BUTTONS
+                         ACTIONS
                          ================================================= -->
 
-                    <div class="row g-3 mt-4">
+                    <div class="sc-transport-actions">
+
+                        <a asp-controller="Residents"
+                               asp-action="ResidentDetails"
+                               asp-route-id="@Model.RequestedForId"
+                               class="btn sc-cancel-transport">
+
+                            <i class="bi bi-x-lg"></i>
+
+                            Cancel
+
+                        </a>
 
 
-                        <div class="col-12 col-md-6">
+                        <button type="submit"
+                                class="btn sc-submit-transport">
 
-                            <a asp-controller="Residents"
-                                   asp-action="ResidentDetails"
-                                   asp-route-id="@Model.RequestedForId"
-                                   class="btn btn-outline-secondary cancel-btn w-100">
+                            <span>
 
-                                <i class="bi bi-x-circle me-2"></i>
-
-                                Cancel
-
-                            </a>
-
-                        </div>
-
-
-                        <div class="col-12 col-md-6">
-
-                            <button type="submit"
-                                    class="btn submit-transport-btn w-100">
-
-                                <i class="bi bi-send-check me-2"></i>
+                                <i class="bi bi-send-check-fill"></i>
 
                                 Submit Transport Request
 
-                            </button>
+                            </span>
 
-                        </div>
+                            <i class="bi bi-arrow-right sc-submit-arrow"></i>
 
+                        </button>
 
                     </div>
-
 
                 </div>
 
@@ -403,8 +583,6 @@
 
 <!-- ============================================================
      GOOGLE MAPS JAVASCRIPT API
-
-     Replace YOUR_NEW_GOOGLE_MAPS_API_KEY with your new key.
      ============================================================ -->
 
 <script async
@@ -415,8 +593,20 @@
 <script>
 
     // ============================================================
-    // GOOGLE PLACES AUTOCOMPLETE
-    // NEW PlaceAutocompleteElement
+    // FORMAT COORDINATES
+    // ============================================================
+
+    function formatCoordinate(value) {
+
+        return value
+            .toString()
+            .replace(".", ",");
+
+    }
+
+
+    // ============================================================
+    // GOOGLE PLACES
     // ============================================================
 
     async function initGooglePlaces() {
@@ -428,171 +618,243 @@
 
 
             // ====================================================
-            // PICKUP AUTOCOMPLETE
+            // PICKUP
             // ====================================================
 
             const pickupAutocomplete =
                 new PlaceAutocompleteElement();
 
 
-            pickupAutocomplete.includedRegionCodes = ["za"];
+            pickupAutocomplete.includedRegionCodes =
+                ["za"];
+
+
+            pickupAutocomplete.style.width =
+                "100%";
 
 
             document
-                .getElementById("pickupAutocompleteContainer")
-                .appendChild(pickupAutocomplete);
+                .getElementById(
+                    "pickupAutocompleteContainer"
+                )
+                .appendChild(
+                    pickupAutocomplete
+                );
 
 
             pickupAutocomplete.addEventListener(
                 "gmp-select",
                 async function (event) {
 
-                    const placePrediction =
-                        event.placePrediction;
+                    try {
+
+                        const place =
+                            event.placePrediction.toPlace();
 
 
-                    const place =
-                        placePrediction.toPlace();
+                        await place.fetchFields({
+                            fields: [
+                                "formattedAddress",
+                                "location"
+                            ]
+                        });
 
 
-                    await place.fetchFields({
-                        fields: [
-                            "formattedAddress",
-                            "location"
-                        ]
-                    });
+                        if (!place.location) {
+
+                            showLocationStatus(
+                                "pickupStatus",
+                                "Please select a valid address.",
+                                false
+                            );
+
+                            return;
+
+                        }
 
 
-                    if (!place.location) {
+                        document
+                            .getElementById(
+                                "pickupAddress"
+                            )
+                            .value =
+                            place.formattedAddress;
+
+
+                        document
+                            .getElementById(
+                                "pickupLatitude"
+                            )
+                            .value =
+                            formatCoordinate(
+                                place.location.lat()
+                            );
+
+
+                        document
+                            .getElementById(
+                                "pickupLongitude"
+                            )
+                            .value =
+                            formatCoordinate(
+                                place.location.lng()
+                            );
+
 
                         showLocationStatus(
                             "pickupStatus",
-                            "Please select a valid address.",
+                            "Pickup location selected successfully.",
+                            true
+                        );
+
+                    }
+                    catch (error) {
+
+                        console.error(error);
+
+                        showLocationStatus(
+                            "pickupStatus",
+                            "Unable to retrieve pickup location details.",
                             false
                         );
 
-                        return;
-
                     }
-
-
-                    document
-                        .getElementById("pickupAddress")
-                        .value =
-                        place.formattedAddress;
-
-
-                    document
-                        .getElementById("pickupLatitude")
-                        .value =
-                        place.location.lat();
-
-
-                    document
-                        .getElementById("pickupLongitude")
-                        .value =
-                        place.location.lng();
-
-
-                    showLocationStatus(
-                        "pickupStatus",
-                        "✓ Pickup location selected successfully.",
-                        true
-                    );
 
                 }
             );
 
 
             // ====================================================
-            // DESTINATION AUTOCOMPLETE
+            // DESTINATION
             // ====================================================
 
             const destinationAutocomplete =
                 new PlaceAutocompleteElement();
 
 
-            destinationAutocomplete.includedRegionCodes = ["za"];
+            destinationAutocomplete.includedRegionCodes =
+                ["za"];
+
+
+            destinationAutocomplete.style.width =
+                "100%";
 
 
             document
-                .getElementById("destinationAutocompleteContainer")
-                .appendChild(destinationAutocomplete);
+                .getElementById(
+                    "destinationAutocompleteContainer"
+                )
+                .appendChild(
+                    destinationAutocomplete
+                );
 
 
             destinationAutocomplete.addEventListener(
                 "gmp-select",
                 async function (event) {
 
-                    const placePrediction =
-                        event.placePrediction;
+                    try {
+
+                        const place =
+                            event.placePrediction.toPlace();
 
 
-                    const place =
-                        placePrediction.toPlace();
+                        await place.fetchFields({
+                            fields: [
+                                "formattedAddress",
+                                "location"
+                            ]
+                        });
 
 
-                    await place.fetchFields({
-                        fields: [
-                            "formattedAddress",
-                            "location"
-                        ]
-                    });
+                        if (!place.location) {
+
+                            showLocationStatus(
+                                "destinationStatus",
+                                "Please select a valid address.",
+                                false
+                            );
+
+                            return;
+
+                        }
 
 
-                    if (!place.location) {
+                        document
+                            .getElementById(
+                                "destinationAddress"
+                            )
+                            .value =
+                            place.formattedAddress;
+
+
+                        document
+                            .getElementById(
+                                "destinationLatitude"
+                            )
+                            .value =
+                            formatCoordinate(
+                                place.location.lat()
+                            );
+
+
+                        document
+                            .getElementById(
+                                "destinationLongitude"
+                            )
+                            .value =
+                            formatCoordinate(
+                                place.location.lng()
+                            );
+
 
                         showLocationStatus(
                             "destinationStatus",
-                            "Please select a valid address.",
+                            "Destination selected successfully.",
+                            true
+                        );
+
+                    }
+                    catch (error) {
+
+                        console.error(error);
+
+                        showLocationStatus(
+                            "destinationStatus",
+                            "Unable to retrieve destination location details.",
                             false
                         );
 
-                        return;
-
                     }
-
-
-                    document
-                        .getElementById("destinationAddress")
-                        .value =
-                        place.formattedAddress;
-
-
-                    document
-                        .getElementById("destinationLatitude")
-                        .value =
-                        place.location.lat();
-
-
-                    document
-                        .getElementById("destinationLongitude")
-                        .value =
-                        place.location.lng();
-
-
-                    showLocationStatus(
-                        "destinationStatus",
-                        "✓ Destination selected successfully.",
-                        true
-                    );
 
                 }
             );
-
 
         }
         catch (error) {
 
             console.error(
-                "Google Places failed to load:",
+                "Google Places loading error:",
                 error
+            );
+
+
+            showLocationStatus(
+                "pickupStatus",
+                "Google Places could not be loaded.",
+                false
+            );
+
+
+            showLocationStatus(
+                "destinationStatus",
+                "Google Places could not be loaded.",
+                false
             );
 
         }
 
     }
-
 
 
     // ============================================================
@@ -609,7 +871,11 @@
             document.getElementById(elementId);
 
 
-        element.textContent = message;
+        if (!element) return;
+
+
+        element.textContent =
+            message;
 
 
         element.classList.remove(
@@ -627,7 +893,6 @@
     }
 
 
-
     // ============================================================
     // DEFAULT DATE
     // ============================================================
@@ -642,7 +907,7 @@
                 );
 
 
-            if (dateInput && !dateInput.value) {
+            if (dateInput) {
 
                 const today =
                     new Date()
@@ -650,8 +915,12 @@
                         .split("T")[0];
 
 
-                dateInput.value =
-                    today;
+                if (!dateInput.value) {
+
+                    dateInput.value =
+                        today;
+
+                }
 
 
                 dateInput.min =
@@ -663,81 +932,116 @@
     );
 
 
-
     // ============================================================
-    // VALIDATE ADDRESSES BEFORE SUBMIT
+    // VALIDATE FORM
     // ============================================================
 
     document
-        .getElementById("transportRequestForm")
+        .getElementById(
+            "transportRequestForm"
+        )
         .addEventListener(
             "submit",
             function (event) {
 
+                const residentId =
+                    document
+                        .getElementById(
+                            "RequestedForId"
+                        )
+                        .value;
+
+
+                const pickupAddress =
+                    document
+                        .getElementById(
+                            "pickupAddress"
+                        )
+                        .value;
+
 
                 const pickupLatitude =
                     document
-                        .getElementById("pickupLatitude")
+                        .getElementById(
+                            "pickupLatitude"
+                        )
                         .value;
 
 
                 const pickupLongitude =
                     document
-                        .getElementById("pickupLongitude")
+                        .getElementById(
+                            "pickupLongitude"
+                        )
+                        .value;
+
+
+                const destinationAddress =
+                    document
+                        .getElementById(
+                            "destinationAddress"
+                        )
                         .value;
 
 
                 const destinationLatitude =
                     document
-                        .getElementById("destinationLatitude")
+                        .getElementById(
+                            "destinationLatitude"
+                        )
                         .value;
 
 
                 const destinationLongitude =
                     document
-                        .getElementById("destinationLongitude")
+                        .getElementById(
+                            "destinationLongitude"
+                        )
                         .value;
 
 
                 let isValid = true;
 
 
-                // ================================================
-                // PICKUP VALIDATION
-                // ================================================
+                if (!residentId) {
+
+                    isValid = false;
+
+                    alert(
+                        "A resident could not be identified."
+                    );
+
+                }
+
 
                 if (
+                    !pickupAddress ||
                     !pickupLatitude ||
                     !pickupLongitude
                 ) {
 
                     showLocationStatus(
                         "pickupStatus",
-                        "Please select a pickup address from the Google suggestions.",
+                        "Please select a pickup address from the suggestions.",
                         false
                     );
-
 
                     isValid = false;
 
                 }
 
 
-                // ================================================
-                // DESTINATION VALIDATION
-                // ================================================
-
                 if (
+                    !destinationAddress ||
                     !destinationLatitude ||
                     !destinationLongitude
                 ) {
 
                     showLocationStatus(
                         "destinationStatus",
-                        "Please select a destination address from the Google suggestions.",
+                        "Please select a destination from the suggestions.",
                         false
                     );
-
 
                     isValid = false;
 

@@ -1,11 +1,11 @@
-﻿@model SwiftCare.Models.Resident
+﻿
+@model SwiftCare.Models.Resident
 
 @{
     ViewData["Title"] = "Resident Details";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 
-
-var age = 0;
+    var age = 0;
 
     if (Model.DateOfBirth != default)
     {
@@ -19,66 +19,181 @@ var age = 0;
 
     var profileImage = string.IsNullOrWhiteSpace(Model.ProfilePicture)
         ? Url.Content("~/Images/default_profile_image.jpg")
-        : Url.Content("~/" + Model.ProfilePicture);
-
-
+        : Url.Content("~/" + Model.ProfilePicture.TrimStart('/'));
 }
 
-<style>
-    
-</style>
-
-<div class="resident-details-page">
+<div class="sc-resident-details-page">
 
     <!-- ============================================================
-     HEADER
-     ============================================================ -->
+         HERO / HEADER
+    ============================================================ -->
 
-    <div class="page-header d-flex align-items-center">
+    <div class="sc-resident-hero">
 
-        <a asp-controller="Residents"
-               asp-action="ResidentDetails"
-               class="back-link me-4">
+        <div class="sc-resident-hero-top">
 
-            <i class="bi bi-chevron-left me-1"></i>
-            Back
+            <a asp-controller="Residents"
+                   asp-action="Residents"
+                   class="sc-resident-back-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Residents</span>
+            </a>
 
-        </a>
+            <div class="sc-resident-id">
+                <i class="bi bi-person-vcard"></i>
+                Resident #@Model.Id
+            </div>
 
-        <h2 class="mb-0 text-white">
-            Resident Details
-        </h2>
+        </div>
+
+        <div class="sc-resident-hero-content">
+
+            <div class="sc-resident-image-wrap">
+
+                <img src="@profileImage"
+                     alt="@Model.FirstName @Model.LastName"
+                     class="sc-resident-main-image"
+                     onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")'" />
+
+                <div class="sc-resident-online-dot"></div>
+
+            </div>
+
+            <div class="sc-resident-main-info">
+
+                <div class="sc-resident-role">
+                    <i class="bi bi-person-heart"></i>
+                    Resident Profile
+                </div>
+
+                <h1>
+                    @Model.FirstName @Model.LastName
+                </h1>
+
+                <p>
+                    <i class="bi bi-house-door"></i>
+
+                    @if (Model.RoomNumber != null)
+                    {
+                        <span>Room @Model.RoomNumber</span>
+                    }
+                    else
+                    {
+                        <span>No room assigned</span>
+                    }
+                </p>
+
+            </div>
+
+        </div>
 
     </div>
 
 
-    <div class="container-fluid px-4">
+    <!-- ============================================================
+         PAGE CONTENT
+    ============================================================ -->
 
-        <!-- ============================================================
-         RESIDENT PROFILE
-         ============================================================ -->
+    <div class="sc-resident-content">
 
-        <div class="resident-profile-card">
+        <!-- ========================================================
+             QUICK STATS
+        ======================================================== -->
 
-            <div class="resident-profile-header">
+        <div class="row g-4 sc-resident-stats">
 
-                <img src="@profileImage"
-                     class="resident-profile-image"
-                     alt="Resident Profile Picture" />
+            <div class="col-12 col-sm-6 col-lg-3">
 
-                <div>
+                <div class="sc-resident-stat-card">
 
-                    <div class="resident-profile-name">
-                        @Model.FirstName @Model.LastName
+                    <div class="sc-resident-stat-icon sc-stat-green">
+                        <i class="bi bi-calendar-heart"></i>
                     </div>
 
-                    <p class="resident-profile-role">
+                    <div>
 
-                        <i class="bi bi-person-fill me-1"></i>
+                        <span>Date of Birth</span>
 
-                        Resident
+                        <strong>
+                            @(Model.DateOfBirth == default
+                                ? "Not provided"
+                                : Model.DateOfBirth.ToString("dd MMM yyyy"))
+                        </strong>
 
-                    </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-resident-stat-card">
+
+                    <div class="sc-resident-stat-icon sc-stat-lime">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+
+                    <div>
+
+                        <span>Age</span>
+
+                        <strong>
+                            @(Model.DateOfBirth == default
+                                ? "Not provided"
+                                : $"{age} years")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-resident-stat-card">
+
+                    <div class="sc-resident-stat-icon sc-stat-soft">
+                        <i class="bi bi-door-open"></i>
+                    </div>
+
+                    <div>
+
+                        <span>Assigned Room</span>
+
+                        <strong>
+                            @(Model.RoomNumber != null
+                                ? $"Room {Model.RoomNumber}"
+                                : "Not assigned")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-resident-stat-card">
+
+                    <div class="sc-resident-stat-icon sc-stat-dark">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+
+                    <div>
+
+                        <span>Status</span>
+
+                        <strong class="sc-resident-active">
+                            Active
+                        </strong>
+
+                    </div>
 
                 </div>
 
@@ -87,187 +202,263 @@ var age = 0;
         </div>
 
 
-        <!-- ============================================================
-         SIDE BY SIDE INFORMATION
-         PROFILE | ACCOMMODATION | EQUIPMENT
-         ============================================================ -->
+        <!-- ========================================================
+             INFORMATION CARDS
+        ======================================================== -->
 
         <div class="row g-4">
 
-            <!-- ========================================================
-             PROFILE INFORMATION
-             ======================================================== -->
 
-            <div class="col-12 col-lg-4">
+            <!-- ====================================================
+                 PERSONAL INFORMATION
+            ==================================================== -->
 
-                <div class="info-section">
+            <div class="col-12 col-lg-7">
 
-                    <div class="info-section-header">
+                <div class="sc-resident-info-card">
 
-                        <i class="bi bi-person-circle me-2"></i>
+                    <div class="sc-resident-card-heading">
 
-                        Profile Information
-
-                    </div>
-
-                    <div class="info-section-body">
-
-                        <div class="info-row">
-
-                            <div class="info-label">
-                                Email Address
-                            </div>
-
-                            <div class="info-value">
-                                @(string.IsNullOrWhiteSpace(Model.Email)
-                                    ? "Not provided"
-                                    : Model.Email)
-                            </div>
-
+                        <div class="sc-resident-heading-icon">
+                            <i class="bi bi-person-lines-fill"></i>
                         </div>
 
+                        <div>
 
-                        <div class="info-row">
+                            <h4>Personal Information</h4>
 
-                            <div class="info-label">
-                                Phone Number
-                            </div>
-
-                            <div class="info-value">
-                                @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
-                                    ? "Not provided"
-                                    : Model.PhoneNumber)
-                            </div>
-
-                        </div>
-
-
-                        <div class="info-row">
-
-                            <div class="info-label">
-                                Date of Birth
-                            </div>
-
-                            <div class="info-value">
-                                @(Model.DateOfBirth == default
-                                    ? "Not provided"
-                                    : Model.DateOfBirth.ToString("dd MMMM yyyy"))
-                            </div>
-
-                        </div>
-
-
-                        <div class="info-row">
-
-                            <div class="info-label">
-                                Age
-                            </div>
-
-                            <div class="info-value">
-                                @(Model.DateOfBirth == default
-                                    ? "Not provided"
-                                    : $"{age} years old")
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- ========================================================
-             ACCOMMODATION INFORMATION
-             ======================================================== -->
-
-            <div class="col-12 col-lg-4">
-
-                <div class="info-section">
-
-                    <div class="info-section-header">
-
-                        <i class="bi bi-house-door me-2"></i>
-
-                        Accommodation Information
-
-                    </div>
-
-                    <div class="info-section-body">
-
-                        <div class="info-row">
-
-                            <div class="info-label">
-                                Assigned Room
-                            </div>
-
-                            <div class="info-value">
-
-                                @(Model.RoomNumber != null
-                                    ? Model.RoomNumber.ToString()
-                                    : "No room assigned")
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- Additional accommodation information
-                         can be added here when available -->
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- ========================================================
-             ASSIGNED EQUIPMENT
-             ======================================================== -->
-
-            <div class="col-12 col-lg-4">
-
-                <div class="info-section">
-
-                    <div class="info-section-header d-flex align-items-center justify-content-between">
-
-                        <span>
-
-                            <i class="bi bi-box-seam me-2"></i>
-
-                            Assigned Equipment
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="info-section-body">
-
-                        <!--
-                        There is currently no equipment relationship
-                        included in the Resident model provided.
-
-                        Once you add your equipment assignment model,
-                        this section can loop through that data.
-                    -->
-
-                        <div class="equipment-empty">
-
-                            <i class="bi bi-box-seam"></i>
-
-                            <h5>No Equipment Assigned</h5>
-
-                            <p class="mb-0">
-                                This resident currently has no equipment assigned.
+                            <p>
+                                Contact and personal details for this resident.
                             </p>
 
                         </div>
 
                     </div>
 
+
+                    <div class="sc-resident-info-list">
+
+
+                        <div class="sc-resident-info-item">
+
+                            <div class="sc-resident-info-icon">
+                                <i class="bi bi-envelope"></i>
+                            </div>
+
+                            <div>
+
+                                <span>Email Address</span>
+
+                                <strong>
+                                    @(string.IsNullOrWhiteSpace(Model.Email)
+                                        ? "Not provided"
+                                        : Model.Email)
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="sc-resident-divider"></div>
+
+
+                        <div class="sc-resident-info-item">
+
+                            <div class="sc-resident-info-icon">
+                                <i class="bi bi-telephone"></i>
+                            </div>
+
+                            <div>
+
+                                <span>Phone Number</span>
+
+                                <strong>
+                                    @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
+                                        ? "Not provided"
+                                        : Model.PhoneNumber)
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="sc-resident-divider"></div>
+
+
+                        <div class="sc-resident-info-item">
+
+                            <div class="sc-resident-info-icon">
+                                <i class="bi bi-calendar-event"></i>
+                            </div>
+
+                            <div>
+
+                                <span>Date of Birth</span>
+
+                                <strong>
+                                    @(Model.DateOfBirth == default
+                                        ? "Not provided"
+                                        : Model.DateOfBirth.ToString("dd MMMM yyyy"))
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="sc-resident-divider"></div>
+
+
+                        <div class="sc-resident-info-item">
+
+                            <div class="sc-resident-info-icon">
+                                <i class="bi bi-person"></i>
+                            </div>
+
+                            <div>
+
+                                <span>Age</span>
+
+                                <strong>
+                                    @(Model.DateOfBirth == default
+                                        ? "Not provided"
+                                        : $"{age} years old")
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 ACCOMMODATION
+            ==================================================== -->
+
+            <div class="col-12 col-lg-5">
+
+                <div class="sc-resident-info-card sc-resident-accommodation-card">
+
+                    <div class="sc-resident-card-heading">
+
+                        <div class="sc-resident-heading-icon sc-accommodation-icon">
+                            <i class="bi bi-house-heart"></i>
+                        </div>
+
+                        <div>
+
+                            <h4>Accommodation</h4>
+
+                            <p>
+                                Current room assignment.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-resident-room-display">
+
+                        <div class="sc-resident-room-icon">
+
+                            <i class="bi bi-door-open-fill"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>Assigned Room</span>
+
+                            <strong>
+
+                                @(Model.RoomNumber != null
+                                    ? Model.RoomNumber.ToString()
+                                    : "Not Assigned")
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    @if (Model.RoomNumber != null)
+                    {
+                        <div class="sc-resident-room-status">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                            Currently assigned to accommodation
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="sc-resident-room-status sc-room-unassigned">
+
+                            <i class="bi bi-exclamation-circle-fill"></i>
+
+                            No accommodation assigned
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 EQUIPMENT
+            ==================================================== -->
+
+            <div class="col-12">
+
+                <div class="sc-resident-info-card sc-resident-equipment-card">
+
+                    <div class="sc-resident-card-heading">
+
+                        <div class="sc-resident-heading-icon sc-equipment-icon">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+
+                        <div>
+
+                            <h4>Assigned Equipment</h4>
+
+                            <p>
+                                Equipment currently assigned to this resident.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-resident-equipment-empty">
+
+                        <div class="sc-resident-empty-icon">
+
+                            <i class="bi bi-box"></i>
+
+                        </div>
+
+                        <h5>No Equipment Assigned</h5>
+
+                        <p>
+                            This resident currently has no equipment assigned.
+                        </p>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -275,26 +466,58 @@ var age = 0;
         </div>
 
 
-        <!-- ============================================================
-         ACTION BUTTONS
-         ============================================================ -->
+        <!-- ========================================================
+             ACTION CENTER
+        ======================================================== -->
 
-        <div class="actions-card">
+        <div class="sc-resident-action-section">
 
-            <div class="row g-3">
+            <div class="sc-resident-action-heading">
 
-                <!-- ASSIGN NEW EQUIPMENT -->
+                <div>
+
+                    <h4>Resident Actions</h4>
+
+                    <p>
+                        Manage equipment and transport services.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="row g-4">
+
+
+                <!-- ASSIGN EQUIPMENT -->
 
                 <div class="col-12 col-md-6">
 
                     <a asp-controller="Equipment"
                            asp-action="AssignEquipment"
                            asp-route-residentId="@Model.Id"
-                           class="btn action-btn btn-assign-equipment w-100">
+                           class="sc-resident-action-btn sc-action-equipment">
 
-                        <i class="bi bi-plus-circle me-2"></i>
+                        <div class="sc-resident-action-icon">
 
-                        Assign New Equipment
+                            <i class="bi bi-box-seam-fill"></i>
+
+                        </div>
+
+                        <div class="sc-resident-action-text">
+
+                            <strong>
+                                Assign Equipment
+                            </strong>
+
+                            <span>
+                                Assign equipment to this resident
+                            </span>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right sc-resident-action-arrow"></i>
 
                     </a>
 
@@ -308,11 +531,27 @@ var age = 0;
                     <a asp-controller="TransportRequests"
                            asp-action="RequestTransport"
                            asp-route-residentId="@Model.Id"
-                           class="btn action-btn btn-request-transport w-100">
+                           class="sc-resident-action-btn sc-action-transport">
 
-                        <i class="bi bi-truck me-2"></i>
+                        <div class="sc-resident-action-icon">
 
-                        Request Transport
+                            <i class="bi bi-truck"></i>
+
+                        </div>
+
+                        <div class="sc-resident-action-text">
+
+                            <strong>
+                                Request Transport
+                            </strong>
+
+                            <span>
+                                Create a transport request
+                            </span>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right sc-resident-action-arrow"></i>
 
                     </a>
 

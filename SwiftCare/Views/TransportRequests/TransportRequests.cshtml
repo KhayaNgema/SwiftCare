@@ -1,0 +1,826 @@
+﻿@using SwiftCare.Models
+@model IEnumerable<SwiftCare.Models.TransportRequest>
+
+@{
+    ViewData["Title"] = "Transport Requests";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var requests = Model?.ToList() ?? new List<TransportRequest>();
+
+    var pendingCount = requests.Count(r =>
+        r.Status == RequestStatus.Pending);
+
+    var assignedCount = requests.Count(r =>
+        r.Status == RequestStatus.Driver_Assigned);
+
+    var completedCount = requests.Count(r =>
+        r.Status == RequestStatus.Completed);
+}
+
+
+<div class="transport-requests-page">
+
+    <!-- ============================================================
+         PAGE HEADER
+         ============================================================ -->
+
+    <div class="transport-page-header">
+
+        <div>
+
+            <div class="page-title-wrapper">
+
+                <div class="page-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h2>
+                        Transport Requests
+                    </h2>
+
+                    <p>
+                        Manage and monitor resident transport requests.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="header-actions">
+
+            <button type="button"
+                    class="btn refresh-btn"
+                    onclick="window.location.reload()">
+
+                <i class="bi bi-arrow-clockwise me-2"></i>
+
+                Refresh
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         ERROR MESSAGE
+         ============================================================ -->
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger shadow-sm">
+
+            <h5>
+
+                <i class="bi bi-exclamation-triangle me-2"></i>
+
+                Database Error
+
+            </h5>
+
+            <hr />
+
+            <strong>
+                Error:
+            </strong>
+
+            <p class="mb-3">
+
+                @ViewBag.ErrorMessage
+
+            </p>
+
+
+            @if (ViewBag.InnerException != null)
+            {
+                <strong>
+                    Inner Exception:
+                </strong>
+
+                <p class="mb-3">
+
+                    @ViewBag.InnerException
+
+                </p>
+            }
+
+
+            @if (ViewBag.StackTrace != null)
+            {
+                <details>
+
+                    <summary>
+
+                        View Stack Trace
+
+                    </summary>
+
+                    <pre class="mt-3"
+                         style="white-space: pre-wrap; font-size: 12px;">
+@ViewBag.StackTrace
+                    </pre>
+
+                </details>
+            }
+
+        </div>
+    }
+
+
+    <!-- ============================================================
+         DEBUG REQUEST COUNT
+         ============================================================ -->
+    @if (ViewBag.RequestCount != null)
+    {
+        <div class="alert alert-info">
+
+            <i class="bi bi-info-circle me-2"></i>
+
+            Found
+
+            <strong>
+                @ViewBag.RequestCount
+            </strong>
+
+            transport request@(ViewBag.RequestCount == 1 ? "" : "s").
+
+        </div>
+    }
+
+
+    <!-- ============================================================
+         STATISTICS
+         ============================================================ -->
+
+    <div class="row g-4 mb-4">
+
+
+        <!-- TOTAL -->
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="transport-stat-card">
+
+                <div class="stat-icon total-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+
+                <div class="stat-content">
+
+                    <span class="stat-label">
+
+                        Total Requests
+
+                    </span>
+
+
+                    <h3>
+
+                        @requests.Count
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PENDING -->
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="transport-stat-card">
+
+                <div class="stat-icon pending-icon">
+
+                    <i class="bi bi-hourglass-split"></i>
+
+                </div>
+
+
+                <div class="stat-content">
+
+                    <span class="stat-label">
+
+                        Pending
+
+                    </span>
+
+
+                    <h3>
+
+                        @pendingCount
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- DRIVER ASSIGNED -->
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="transport-stat-card">
+
+                <div class="stat-icon assigned-icon">
+
+                    <i class="bi bi-person-check"></i>
+
+                </div>
+
+
+                <div class="stat-content">
+
+                    <span class="stat-label">
+
+                        Driver Assigned
+
+                    </span>
+
+
+                    <h3>
+
+                        @assignedCount
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- COMPLETED -->
+
+        <div class="col-12 col-md-6 col-xl-3">
+
+            <div class="transport-stat-card">
+
+                <div class="stat-icon completed-icon">
+
+                    <i class="bi bi-check-circle"></i>
+
+                </div>
+
+
+                <div class="stat-content">
+
+                    <span class="stat-label">
+
+                        Completed
+
+                    </span>
+
+
+                    <h3>
+
+                        @completedCount
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         REQUESTS CARD
+         ============================================================ -->
+
+    <div class="requests-card">
+
+
+        <!-- ========================================================
+             CARD HEADER
+             ======================================================== -->
+
+        <div class="requests-card-header">
+
+            <div>
+
+                <h4>
+
+                    <i class="bi bi-list-task me-2"></i>
+
+                    All Transport Requests
+
+                </h4>
+
+
+                <span>
+
+                    @requests.Count request@(requests.Count == 1 ? "" : "s") found
+
+                </span>
+
+            </div>
+
+
+            <!-- SEARCH -->
+
+            <div class="request-search">
+
+                <i class="bi bi-search"></i>
+
+                <input type="text"
+                       id="requestSearch"
+                       placeholder="Search requests..." />
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             TABLE
+             ======================================================== -->
+
+        <div class="table-responsive">
+
+            <table class="table transport-table mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Request
+                        </th>
+
+                        <th>
+                            Resident
+                        </th>
+
+                        <th>
+                            Transport Schedule
+                        </th>
+
+                        <th>
+                            Route
+                        </th>
+
+                        <th>
+                            Driver
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th class="text-end">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="transportRequestsTable">
+
+
+                    @if (requests.Any())
+                    {
+                        foreach (var request in requests)
+                        {
+                            <tr>
+
+
+                                <!-- =====================================
+                                     REQUEST
+                                     ===================================== -->
+
+                                <td>
+
+                                    <div class="request-number">
+
+                                        <span class="request-label">
+
+                                            Request
+
+                                        </span>
+
+
+                                        <strong>
+
+                                            #@request.RequestId
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="requested-time">
+
+                                        <i class="bi bi-clock-history me-1"></i>
+
+                                        @request.RequestedAt.ToString("dd MMM yyyy")
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     RESIDENT
+                                     ===================================== -->
+
+                                <td>
+
+                                    <div class="resident-cell">
+
+                                        <div class="resident-avatar">
+
+                                            @if (!string.IsNullOrWhiteSpace(request.Resident?.ProfilePicture))
+                                            {
+                                                <img src="@Url.Content("~/" + request.Resident.ProfilePicture)"
+                                                     alt="Resident" />
+                                            }
+                                            else
+                                            {
+                                                <div class="default-avatar">
+
+                                                    <i class="bi bi-person"></i>
+
+                                                </div>
+                                            }
+
+                                        </div>
+
+
+                                        <div>
+
+                                            @if (request.Resident != null)
+                                            {
+                                                <strong>
+
+                                                    @request.Resident.FirstName
+                                                    @request.Resident.LastName
+
+                                                </strong>
+
+
+                                                <span>
+
+                                                    Room:
+
+                                                    @(request.Resident.RoomNumber != null
+                                                        ? request.Resident.RoomNumber.ToString()
+                                                        : "Not Assigned")
+
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <strong>
+                                                    Resident Not Found
+                                                </strong>
+
+                                                <span>
+                                                    ID: @request.RequestedForId
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     TRANSPORT SCHEDULE
+                                     ===================================== -->
+
+                                <td>
+
+                                    <div class="schedule-cell">
+
+                                        <strong>
+
+                                            @request.RequestedForDate.ToString("dd MMM yyyy")
+
+                                        </strong>
+
+
+                                        <span>
+
+                                            <i class="bi bi-clock me-1"></i>
+
+                                            @request.RequestedForTime.ToString("HH:mm")
+
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     ROUTE
+                                     ===================================== -->
+
+                                <td>
+
+                                    <div class="route-cell">
+
+
+                                        <!-- PICKUP -->
+
+                                        <div class="route-location pickup">
+
+                                            <i class="bi bi-geo-alt-fill"></i>
+
+                                            <span title="@request.PickUpAddress">
+
+                                                @if (!string.IsNullOrWhiteSpace(request.PickUpAddress))
+                                                {
+                                                    @(request.PickUpAddress.Length > 30
+                                                        ? request.PickUpAddress.Substring(0, 30) + "..."
+                                                        : request.PickUpAddress)
+                                                }
+                                                else
+                                                {
+                                                    <text>No pickup address</text>
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="route-line">
+
+                                            <i class="bi bi-arrow-down"></i>
+
+                                        </div>
+
+
+                                        <!-- DESTINATION -->
+
+                                        <div class="route-location destination">
+
+                                            <i class="bi bi-geo-alt-fill"></i>
+
+                                            <span title="@request.DestinationAddress">
+
+                                                @if (!string.IsNullOrWhiteSpace(request.DestinationAddress))
+                                                {
+                                                    @(request.DestinationAddress.Length > 30
+                                                        ? request.DestinationAddress.Substring(0, 30) + "..."
+                                                        : request.DestinationAddress)
+                                                }
+                                                else
+                                                {
+                                                    <text>No destination address</text>
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     DRIVER
+                                     ===================================== -->
+
+                                <td>
+
+                                    @if (request.Driver != null)
+                                    {
+                                        <div class="driver-cell">
+
+                                            <div class="driver-icon">
+
+                                                <i class="bi bi-person-check"></i>
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <strong>
+
+                                                    @request.Driver.FirstName
+                                                    @request.Driver.LastName
+
+                                                </strong>
+
+
+                                                @if (request.Vehicle != null)
+                                                {
+                                                    <span>
+
+                                                        <i class="bi bi-car-front me-1"></i>
+
+                                                        Vehicle Assigned
+
+                                                    </span>
+                                                }
+
+                                            </div>
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="not-assigned">
+
+                                            <i class="bi bi-person-dash me-1"></i>
+
+                                            Not Assigned
+
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     STATUS
+                                     ===================================== -->
+
+                                <td>
+
+                                    @if (request.Status == RequestStatus.Pending)
+                                    {
+                                        <span class="status-badge pending">
+
+                                            <i class="bi bi-hourglass-split"></i>
+
+                                            Pending
+
+                                        </span>
+                                    }
+                                    else if (request.Status == RequestStatus.Driver_Assigned)
+                                    {
+                                        <span class="status-badge assigned">
+
+                                            <i class="bi bi-person-check"></i>
+
+                                            Driver Assigned
+
+                                        </span>
+                                    }
+                                    else if (request.Status == RequestStatus.Completed)
+                                    {
+                                        <span class="status-badge completed">
+
+                                            <i class="bi bi-check-circle"></i>
+
+                                            Completed
+
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <!-- =====================================
+                                     ACTIONS
+                                     ===================================== -->
+
+                                <td class="text-end">
+
+                                    <a asp-controller="TransportRequests"
+                                           asp-action="TransportRequestDetails"
+                                           asp-route-requestId="@request.RequestId"
+                                           class="btn view-request-btn">
+
+                                        <i class="bi bi-eye me-1"></i>
+
+                                        View
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="7">
+
+                                <div class="empty-state">
+
+                                    <div class="empty-icon">
+
+                                        <i class="bi bi-truck"></i>
+
+                                    </div>
+
+
+                                    <h4>
+
+                                        No Transport Requests
+
+                                    </h4>
+
+
+                                    <p>
+
+                                        There are currently no transport requests.
+
+                                    </p>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // ============================================================
+    // SEARCH TRANSPORT REQUESTS
+    // ============================================================
+
+    document
+        .getElementById("requestSearch")
+        ?.addEventListener(
+            "input",
+            function () {
+
+                const searchValue =
+                    this.value.toLowerCase();
+
+
+                const rows =
+                    document.querySelectorAll(
+                        "#transportRequestsTable tr"
+                    );
+
+
+                rows.forEach(function (row) {
+
+                    // Don't hide the empty-state row incorrectly
+                    if (row.querySelector(".empty-state")) {
+
+                        row.style.display = "";
+
+                        return;
+                    }
+
+
+                    const rowText =
+                        row.innerText.toLowerCase();
+
+
+                    if (rowText.includes(searchValue)) {
+
+                        row.style.display = "";
+
+                    }
+                    else {
+
+                        row.style.display = "none";
+
+                    }
+
+                });
+
+            }
+        );
+
+</script>

@@ -81,6 +81,8 @@ namespace SwiftCare.Data
 
         public DbSet<SwiftCare.Models.Cart> Carts { get; set; } = default!;
 
+        public DbSet<SwiftCare.Models.Trip> Trips { get; set; } = default!;
+
         public DbSet<SwiftCare.Models.Vehicle> Vehicles { get; set; } = default!;
 
         public DbSet<SwiftCare.Models.Order> Orders { get; set; } = default!;

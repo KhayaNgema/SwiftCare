@@ -1,10 +1,15 @@
 ﻿using SwiftCare.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace SwiftCare.ViewModels
 {
     public class RequestViewModel
     {
+        // ============================================================
+        // RESIDENT INFORMATION
+        // ============================================================
+
         public string? ProfilePicture { get; set; }
 
         [Required(ErrorMessage = "Resident ID is required.")]
@@ -18,27 +23,46 @@ namespace SwiftCare.ViewModels
 
         public string? PhoneNumber { get; set; }
 
+
+        // ============================================================
+        // REQUEST INFORMATION
+        // ============================================================
+
         [Required(ErrorMessage = "Reason for transport is required.")]
         public string RequestReason { get; set; } = string.Empty;
 
+
+        [Required(ErrorMessage = "Transport date is required.")]
         [DataType(DataType.Date)]
         public DateTime RequestedForDate { get; set; }
 
+
+        [Required(ErrorMessage = "Transport time is required.")]
         [DataType(DataType.Time)]
         public DateTime RequestedForTime { get; set; }
+
+
+        // ============================================================
+        // PICKUP LOCATION
+        // ============================================================
 
         [Required(ErrorMessage = "Pickup address is required.")]
         public string PickUpAddress { get; set; } = string.Empty;
 
+        public double? PickUpLatitude { get; set; }
+
+        public double? PickUpLongitude { get; set; }
+
+
+        // ============================================================
+        // DESTINATION LOCATION
+        // ============================================================
+
         [Required(ErrorMessage = "Destination address is required.")]
         public string DestinationAddress { get; set; } = string.Empty;
 
-        public double PickUpLatitude { get; set; }
+        public double? DestinationLatitude { get; set; }
 
-        public double PickUpLongitude { get; set; }
-
-        public double DestinationLatitude { get; set; }
-
-        public double DestinationLongitude { get; set; }
+        public double? DestinationLongitude { get; set; }
     }
 }

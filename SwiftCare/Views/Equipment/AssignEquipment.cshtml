@@ -1,0 +1,1422 @@
+﻿@using SwiftCare.ViewModels
+
+@model AssignEquipmentViewModel
+
+@{
+    ViewData["Title"] = "Assign Equipment";
+
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+    // ============================================================
+    // NORMALIZE WEB PATH
+    // ============================================================
+
+    string GetWebPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        if (path.StartsWith(
+                "http://",
+                StringComparison.OrdinalIgnoreCase
+            ) ||
+            path.StartsWith(
+                "https://",
+                StringComparison.OrdinalIgnoreCase
+            ))
+        {
+            return path;
+        }
+
+        return "/" + path.TrimStart('/');
+    }
+
+
+    var residentImage =
+        GetWebPath(
+            Model.ProfilePicture
+        );
+}
+
+
+<div class="sc-assign-equipment-page">
+
+
+    <!-- ============================================================
+         PAGE HEADER
+         ============================================================ -->
+
+    <div class="sc-assign-equipment-header">
+
+        <div class="sc-assign-equipment-header-glow"></div>
+
+
+        <div class="sc-assign-equipment-header-content">
+
+
+            <div class="sc-assign-equipment-header-left">
+
+                <a asp-controller="Residents"
+                       asp-action="ResidentDetails"
+                       asp-route-id="@Model.AssignedToId"
+                       class="sc-equipment-back">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                    <span>Back to Resident</span>
+
+                </a>
+
+
+                <div>
+
+                    <div class="sc-page-eyebrow">
+
+                        <i class="bi bi-hospital"></i>
+
+                        SWIFTCARE EQUIPMENT MANAGEMENT
+
+                    </div>
+
+
+                    <h1>
+                        Assign Medical Equipment
+                    </h1>
+
+
+                    <p>
+                        Scan or enter the equipment barcode to safely
+                        assign equipment to the selected resident.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-assignment-security">
+
+                <i class="bi bi-shield-check-fill"></i>
+
+                <span>
+                    Secure Assignment
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ============================================================
+         MAIN GRID
+         ============================================================ -->
+
+    <div class="sc-assign-equipment-grid">
+
+
+        <!-- ========================================================
+             RESIDENT CARD
+             ======================================================== -->
+
+        <div class="sc-assign-resident-card">
+
+
+            <div class="sc-glass-card-top-line"></div>
+
+
+            <div class="sc-assign-card-heading">
+
+                <div class="sc-card-heading-icon">
+
+                    <i class="bi bi-person-heart"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        RESIDENT
+                    </span>
+
+                    <h3>
+                        Assigning Equipment To
+                    </h3>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-assign-resident-profile">
+
+
+                @if (!string.IsNullOrWhiteSpace(residentImage))
+                {
+                    <div class="sc-resident-image-wrapper">
+
+                        <img src="@residentImage"
+                             alt="@Model.ResidentName"
+                             class="sc-assign-resident-image" />
+
+                        <div class="sc-resident-online-dot"></div>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="sc-assign-resident-placeholder">
+
+                        <i class="bi bi-person-fill"></i>
+
+                    </div>
+                }
+
+
+                <div class="sc-assign-resident-info">
+
+                    <span class="sc-resident-label">
+
+                        SELECTED RESIDENT
+
+                    </span>
+
+
+                    <h2>
+                        @Model.ResidentName
+                    </h2>
+
+
+                    <div class="sc-resident-room">
+
+                        <div class="sc-resident-room-icon">
+
+                            <i class="bi bi-door-open-fill"></i>
+
+                        </div>
+
+
+                        <span>
+
+                            Room
+
+                            <strong>
+                                @Model.RoomNo
+                            </strong>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- IMPORTANT -->
+            <!-- CARRIED FROM VIEWMODEL -->
+
+            <input type="hidden"
+                   id="assignedToId"
+                   value="@Model.AssignedToId" />
+
+
+            <div class="sc-resident-assignment-info">
+
+                <i class="bi bi-info-circle-fill"></i>
+
+                <span>
+                    The scanned equipment will be assigned to this resident.
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ========================================================
+             BARCODE SCANNER
+             ======================================================== -->
+
+        <div class="sc-assign-scanner-card">
+
+
+            <div class="sc-glass-card-top-line"></div>
+
+
+            <div class="sc-assign-card-heading">
+
+                <div class="sc-card-heading-icon sc-scanner-heading-icon">
+
+                    <i class="bi bi-upc-scan"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        EQUIPMENT IDENTIFICATION
+                    </span>
+
+                    <h3>
+                        Scan Equipment Barcode
+                    </h3>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-barcode-scanner-wrapper">
+
+                <div class="sc-scanner-corners">
+
+                    <span class="corner top-left"></span>
+
+                    <span class="corner top-right"></span>
+
+                    <span class="corner bottom-left"></span>
+
+                    <span class="corner bottom-right"></span>
+
+                </div>
+
+
+                <div id="barcode-reader">
+
+                    <div class="sc-scanner-placeholder">
+
+                        <div class="sc-scanner-icon">
+
+                            <i class="bi bi-upc-scan"></i>
+
+                        </div>
+
+
+                        <h3>
+                            Ready to Scan
+                        </h3>
+
+
+                        <p>
+                            Position the equipment barcode
+                            inside the scanning area.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ====================================================
+                 MANUAL BARCODE
+                 ==================================================== -->
+
+            <div class="sc-manual-barcode">
+
+
+                <div class="sc-manual-divider">
+
+                    <div></div>
+
+                    <span>
+
+                        OR ENTER BARCODE MANUALLY
+
+                    </span>
+
+                    <div></div>
+
+                </div>
+
+
+                <div class="sc-manual-input-group">
+
+                    <div class="sc-barcode-input-icon">
+
+                        <i class="bi bi-upc"></i>
+
+                    </div>
+
+
+                    <input type="text"
+                           id="manualBarcode"
+                           class="form-control"
+                           placeholder="Enter barcode value..." />
+
+
+                    <button type="button"
+                            class="sc-scan-submit-btn"
+                            onclick="searchBarcode()">
+
+                        <i class="bi bi-search"></i>
+
+                        <span>
+                            Search
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ============================================================
+         ERROR
+         ============================================================ -->
+
+    <div id="barcodeError"
+         class="sc-barcode-error"
+         style="display:none;">
+
+        <div class="sc-barcode-error-icon">
+
+            <i class="bi bi-exclamation-triangle-fill"></i>
+
+        </div>
+
+
+        <div>
+
+            <strong>
+                Equipment Not Found
+            </strong>
+
+            <span id="barcodeErrorMessage"></span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ============================================================
+         EQUIPMENT RESULT + ASSIGNMENT FORM
+         ============================================================ -->
+
+    <div id="equipmentResult"
+         class="sc-equipment-result-card"
+         style="display:none;">
+
+
+        <div class="sc-result-success-banner">
+
+            <div class="sc-result-success-icon">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    EQUIPMENT VERIFIED
+                </span>
+
+
+                <h2>
+                    Equipment Found Successfully
+                </h2>
+
+            </div>
+
+
+            <div class="sc-result-success-status">
+
+                <span></span>
+
+                Available for Assignment
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ========================================================
+             ASSIGNMENT FORM
+             ======================================================== -->
+
+        <form asp-controller="Equipment"
+              asp-action="AssignEquipment"
+              method="post"
+              id="assignEquipmentForm">
+
+            @Html.AntiForgeryToken()
+
+
+            <!-- ====================================================
+                 HIDDEN VIEWMODEL DATA
+                 ==================================================== -->
+            <!-- RESIDENT -->
+
+            <input asp-for="AssignedToId"
+                   type="hidden"
+                   id="formAssignedToId" />
+
+
+            <!-- EQUIPMENT -->
+
+            <input asp-for="EquipmentId"
+                   type="hidden"
+                   id="formEquipmentId" />
+
+
+            <input asp-for="BarcodeValue"
+                   type="hidden"
+                   id="formBarcodeValue" />
+
+
+            <input asp-for="EquipmentName"
+                   type="hidden"
+                   id="formEquipmentName" />
+
+
+            <input asp-for="EquipmentImage"
+                   type="hidden"
+                   id="formEquipmentImage" />
+
+
+            <input asp-for="EquipmentDescription"
+                   type="hidden"
+                   id="formEquipmentDescription" />
+
+
+            <input asp-for="EquipmentStatus"
+                   type="hidden"
+                   id="formEquipmentStatus" />
+
+
+
+            <!-- ====================================================
+                 EQUIPMENT DETAILS
+                 ==================================================== -->
+
+            <div class="sc-found-equipment-grid">
+
+
+                <!-- IMAGE -->
+
+                <div class="sc-found-equipment-image-section">
+
+                    <div class="sc-found-equipment-image-wrapper">
+
+                        <img id="resultEquipmentImage"
+                             src=""
+                             alt="Equipment"
+                             class="sc-found-equipment-image" />
+
+                    </div>
+
+
+                    <div class="sc-equipment-image-caption">
+
+                        <i class="bi bi-image-fill"></i>
+
+                        Equipment Image
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- DETAILS -->
+
+                <div class="sc-found-equipment-details">
+
+
+                    <div class="sc-found-equipment-icon">
+
+                        <i class="bi bi-heart-pulse-fill"></i>
+
+                    </div>
+
+
+                    <span class="sc-found-label">
+
+                        VERIFIED EQUIPMENT
+
+                    </span>
+
+
+                    <h2 id="resultEquipmentName"></h2>
+
+
+                    <p id="resultEquipmentDescription"></p>
+
+
+
+                    <!-- META -->
+
+                    <div class="sc-found-equipment-meta">
+
+
+                        <div class="sc-equipment-meta-card">
+
+                            <div class="sc-equipment-meta-icon">
+
+                                <i class="bi bi-upc-scan"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Barcode
+                                </span>
+
+                                <strong id="resultBarcodeValue"></strong>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="sc-equipment-meta-card">
+
+                            <div class="sc-equipment-meta-icon">
+
+                                <i class="bi bi-activity"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Status
+                                </span>
+
+                                <strong id="resultEquipmentStatus"></strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ====================================================
+                 ASSIGNMENT DETAILS
+                 ==================================================== -->
+
+            <div class="sc-assignment-form-section">
+
+
+                <div class="sc-assignment-form-header">
+
+                    <div class="sc-assignment-form-icon">
+
+                        <i class="bi bi-clipboard-check-fill"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            FINAL STEP
+                        </span>
+
+                        <h3>
+                            Equipment Assignment Details
+                        </h3>
+
+                        <p>
+                            Add any relevant notes before completing
+                            the equipment assignment.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ASSIGNMENT NOTES -->
+
+                <div class="sc-assignment-field">
+
+                    <label asp-for="AssignmentNotes">
+
+                        <i class="bi bi-journal-text"></i>
+
+                        Assignment Notes
+
+                        <span class="sc-optional-label">
+
+                            Optional
+
+                        </span>
+
+                    </label>
+
+
+                    <textarea asp-for="AssignmentNotes"
+                              id="assignmentNotes"
+                              class="form-control sc-assignment-textarea"
+                              rows="5"
+                              placeholder="Add any notes about this equipment assignment..."></textarea>
+
+
+                    <div class="sc-field-help">
+
+                        <i class="bi bi-info-circle"></i>
+
+                        <span>
+                            Example: Equipment assigned for daily mobility assistance.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     ASSIGNMENT SUMMARY
+                     ================================================= -->
+
+                <div class="sc-assignment-summary">
+
+
+                    <div class="sc-assignment-summary-item">
+
+                        <div class="sc-summary-icon">
+
+                            <i class="bi bi-person-check-fill"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                ASSIGN TO
+                            </span>
+
+                            <strong>
+                                @Model.ResidentName
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sc-summary-arrow">
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </div>
+
+
+
+                    <div class="sc-assignment-summary-item">
+
+                        <div class="sc-summary-icon">
+
+                            <i class="bi bi-box-seam-fill"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                EQUIPMENT
+                            </span>
+
+                            <strong id="summaryEquipmentName">
+
+                                Waiting for scan...
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     SUBMIT
+                     ================================================= -->
+
+                <div class="sc-assignment-actions">
+
+
+                    <button type="button"
+                            class="sc-assignment-cancel-btn"
+                            onclick="resetAssignment()">
+
+                        <i class="bi bi-arrow-counterclockwise"></i>
+
+                        Reset
+
+                    </button>
+
+
+                    <button type="submit"
+                            id="assignEquipmentButton"
+                            class="sc-assign-equipment-submit-btn"
+                            disabled>
+
+                        <i class="bi bi-check2-circle"></i>
+
+                        <span>
+                            Confirm Equipment Assignment
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+@section Scripts {
+
+    <!-- ============================================================
+         HTML5 QR CODE / BARCODE SCANNER
+         ============================================================ -->
+
+    <script src="https://unpkg.com/html5-qrcode"
+            type="text/javascript">
+    </script>
+
+
+    <script>
+
+        // ========================================================
+        // PREVENT DUPLICATE SCANS
+        // ========================================================
+
+        let isSearchingEquipment =
+            false;
+
+
+        let lastScannedBarcode =
+            null;
+
+
+
+        // ========================================================
+        // NORMALIZE IMAGE PATH
+        // ========================================================
+
+        function getWebPath(
+            path
+        ) {
+
+            if (!path) {
+
+                return "";
+
+            }
+
+
+            if (
+                path.startsWith("http://") ||
+                path.startsWith("https://")
+            ) {
+
+                return path;
+
+            }
+
+
+            return "/" +
+                path.replace(
+                    /^\/+/,
+                    ""
+                );
+
+        }
+
+
+
+        // ========================================================
+        // SCANNER SUCCESS
+        // ========================================================
+
+        function onScanSuccess(
+            decodedText
+        ) {
+
+            if (
+                isSearchingEquipment ||
+                decodedText === lastScannedBarcode
+            ) {
+
+                return;
+
+            }
+
+
+            lastScannedBarcode =
+                decodedText;
+
+
+            searchEquipment(
+                decodedText
+            );
+
+        }
+
+
+
+        // ========================================================
+        // START BARCODE SCANNER
+        // ========================================================
+
+        const html5QrCodeScanner =
+            new Html5QrcodeScanner(
+                "barcode-reader",
+                {
+                    fps: 10,
+
+                    qrbox:
+                    {
+                        width: 300,
+                        height: 150
+                    },
+
+                    formatsToSupport:
+                    [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E
+                    ]
+                },
+                false
+            );
+
+
+        html5QrCodeScanner.render(
+            onScanSuccess
+        );
+
+
+
+        // ========================================================
+        // MANUAL SEARCH
+        // ========================================================
+
+        function searchBarcode() {
+
+            const barcode =
+                document
+                    .getElementById(
+                        "manualBarcode"
+                    )
+                    .value
+                    .trim();
+
+
+            if (!barcode) {
+
+                showError(
+                    "Please enter a barcode value."
+                );
+
+                return;
+
+            }
+
+
+            lastScannedBarcode =
+                barcode;
+
+
+            searchEquipment(
+                barcode
+            );
+
+        }
+
+
+
+        // ========================================================
+        // SEARCH EQUIPMENT USING AJAX
+        // ========================================================
+
+        async function searchEquipment(
+            barcodeValue
+        ) {
+
+            if (isSearchingEquipment) {
+
+                return;
+
+            }
+
+
+            isSearchingEquipment =
+                true;
+
+
+            hideError();
+
+
+            document
+                .getElementById(
+                    "equipmentResult"
+                )
+                .style.display =
+                "none";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        '@Url.Action(
+                                                            "GetEquipmentByBarcode",
+                                                            "Equipment"
+                                            )' +
+                        '?barcodeValue=' +
+                        encodeURIComponent(
+                            barcodeValue
+                        )
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!data.success) {
+
+                    showError(
+                        data.message ||
+                        "Equipment could not be found."
+                    );
+
+                    return;
+
+                }
+
+
+                const equipment =
+                    data.equipment;
+
+
+
+                // =================================================
+                // DISPLAY EQUIPMENT DETAILS
+                // =================================================
+
+                document
+                    .getElementById(
+                        "resultEquipmentName"
+                    )
+                    .textContent =
+                    equipment.equipmentName ||
+                    "Unknown Equipment";
+
+
+                document
+                    .getElementById(
+                        "resultEquipmentDescription"
+                    )
+                    .textContent =
+                    equipment.description ||
+                    "No description available.";
+
+
+                document
+                    .getElementById(
+                        "resultBarcodeValue"
+                    )
+                    .textContent =
+                    equipment.barcodeValue ||
+                    "N/A";
+
+
+                document
+                    .getElementById(
+                        "resultEquipmentStatus"
+                    )
+                    .textContent =
+                    equipment.status ||
+                    "N/A";
+
+
+                document
+                    .getElementById(
+                        "summaryEquipmentName"
+                    )
+                    .textContent =
+                    equipment.equipmentName ||
+                    "Unknown Equipment";
+
+
+
+                // =================================================
+                // EQUIPMENT IMAGE
+                // =================================================
+
+                const equipmentImage =
+                    document.getElementById(
+                        "resultEquipmentImage"
+                    );
+
+
+                if (
+                    equipment.imageUrl
+                ) {
+
+                    equipmentImage.src =
+                        getWebPath(
+                            equipment.imageUrl
+                        );
+
+
+                    equipmentImage.style.display =
+                        "block";
+
+                }
+                else {
+
+                    equipmentImage.style.display =
+                        "none";
+
+                }
+
+
+
+                // =================================================
+                // POPULATE HIDDEN VIEWMODEL FIELDS
+                // =================================================
+
+                document
+                    .getElementById(
+                        "formAssignedToId"
+                    )
+                    .value =
+                    document
+                        .getElementById(
+                            "assignedToId"
+                        )
+                        .value;
+
+
+                document
+                    .getElementById(
+                        "formEquipmentId"
+                    )
+                    .value =
+                    equipment.equipmentId ||
+                    "";
+
+
+                document
+                    .getElementById(
+                        "formBarcodeValue"
+                    )
+                    .value =
+                    equipment.barcodeValue ||
+                    barcodeValue;
+
+
+                document
+                    .getElementById(
+                        "formEquipmentName"
+                    )
+                    .value =
+                    equipment.equipmentName ||
+                    "";
+
+
+                document
+                    .getElementById(
+                        "formEquipmentImage"
+                    )
+                    .value =
+                    equipment.imageUrl ||
+                    "";
+
+
+                document
+                    .getElementById(
+                        "formEquipmentDescription"
+                    )
+                    .value =
+                    equipment.description ||
+                    "";
+
+
+                document
+                    .getElementById(
+                        "formEquipmentStatus"
+                    )
+                    .value =
+                    equipment.status ||
+                    "";
+
+
+
+                // =================================================
+                // ENABLE ASSIGNMENT BUTTON
+                // =================================================
+
+                document
+                    .getElementById(
+                        "assignEquipmentButton"
+                    )
+                    .disabled =
+                    false;
+
+
+
+                // =================================================
+                // SHOW RESULT
+                // =================================================
+
+                const result =
+                    document.getElementById(
+                        "equipmentResult"
+                    );
+
+
+                result.style.display =
+                    "block";
+
+
+                result.scrollIntoView(
+                    {
+                        behavior: "smooth",
+                        block: "start"
+                    }
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                showError(
+                    "An error occurred while searching for the equipment."
+                );
+
+            }
+            finally {
+
+                isSearchingEquipment =
+                    false;
+
+            }
+
+        }
+
+
+
+        // ========================================================
+        // RESET ASSIGNMENT
+        // ========================================================
+
+        function resetAssignment() {
+
+            document
+                .getElementById(
+                    "equipmentResult"
+                )
+                .style.display =
+                "none";
+
+
+            document
+                .getElementById(
+                    "barcodeError"
+                )
+                .style.display =
+                "none";
+
+
+            document
+                .getElementById(
+                    "manualBarcode"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "assignmentNotes"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "assignEquipmentButton"
+                )
+                .disabled =
+                true;
+
+
+            document
+                .getElementById(
+                    "summaryEquipmentName"
+                )
+                .textContent =
+                "Waiting for scan...";
+
+
+            lastScannedBarcode =
+                null;
+
+
+            document
+                .getElementById(
+                    "formEquipmentId"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "formBarcodeValue"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "formEquipmentName"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "formEquipmentImage"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "formEquipmentDescription"
+                )
+                .value =
+                "";
+
+
+            document
+                .getElementById(
+                    "formEquipmentStatus"
+                )
+                .value =
+                "";
+
+        }
+
+
+
+        // ========================================================
+        // SHOW ERROR
+        // ========================================================
+
+        function showError(
+            message
+        ) {
+
+            const errorContainer =
+                document.getElementById(
+                    "barcodeError"
+                );
+
+
+            const errorMessage =
+                document.getElementById(
+                    "barcodeErrorMessage"
+                );
+
+
+            errorMessage.textContent =
+                message;
+
+
+            errorContainer.style.display =
+                "flex";
+
+
+            errorContainer.scrollIntoView(
+                {
+                    behavior: "smooth",
+                    block: "center"
+                }
+            );
+
+        }
+
+
+
+        // ========================================================
+        // HIDE ERROR
+        // ========================================================
+
+        function hideError() {
+
+            document
+                .getElementById(
+                    "barcodeError"
+                )
+                .style.display =
+                "none";
+
+        }
+
+    </script>
+
+}

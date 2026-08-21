@@ -1,43 +1,69 @@
-﻿@{
+﻿
+@{
     ViewData["Title"] = "Admin";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 }
 
-<div class="swiftcare-admin-dashboard">
+<div class="sc-dashboard">
 
     <!-- =========================================================
-         WELCOME / HEADER
+         DASHBOARD HEADER
          ========================================================= -->
 
-    <section class="swiftcare-admin-welcome">
+    <section class="sc-dashboard-header">
 
-        <div class="swiftcare-welcome-content">
+        <div class="sc-header-content">
 
-            <div class="swiftcare-admin-header">
+            <div class="sc-header-left">
 
-                <div class="swiftcare-admin-header-left">
+                <div class="sc-header-badge">
 
-                    <h1 class="swiftcare-admin-title">
-                        Welcome back, Administrator
-                    </h1>
+                    <i class="bi bi-shield-check"></i>
 
-                    <span class="swiftcare-admin-subtitle">
-                        Manage SwiftCare operations, residents, staff and
-                        care activities from your dashboard.
+                    Administrator Dashboard
+
+                </div>
+
+                <h1 class="sc-dashboard-title">
+
+                    Welcome back, Administrator
+
+                </h1>
+
+                <p class="sc-dashboard-description">
+
+                    Manage residents, staff, reports, support,
+                    equipment and system security from one place.
+
+                </p>
+
+            </div>
+
+
+            <div class="sc-date-card">
+
+                <div class="sc-date-icon">
+
+                    <i class="bi bi-calendar3"></i>
+
+                </div>
+
+                <div class="sc-date-content">
+
+                    <span class="sc-date-label">
+
+                        Today
+
+                    </span>
+
+                    <span class="sc-date-value">
+
+                        @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+
                     </span>
 
                 </div>
 
-                <div class="swiftcare-admin-status">
-
-                    <span class="swiftcare-admin-status-dot"></span>
-
-                    <i class="bi bi-calendar3"></i>
-
-                    @DateTime.Now.ToString("dddd, dd MMMM yyyy")
-
-                </div>
-
             </div>
 
         </div>
@@ -46,769 +72,366 @@
 
 
     <!-- =========================================================
-         STATISTICS
+         QUICK ACTIONS
          ========================================================= -->
 
-    <section class="swiftcare-admin-stat-grid">
+    <section class="sc-actions-section">
 
 
-        <!-- RESIDENTS -->
+        <div class="sc-section-header">
 
-        <div class="swiftcare-admin-stat-card">
+            <div>
 
-            <div class="swiftcare-stat-top">
+                <div class="sc-section-label">
 
-                <span class="swiftcare-stat-label">
-                    Total Residents
-                </span>
+                    CONTROL CENTER
 
-                <div class="swiftcare-stat-icon">
-                    <i class="bi bi-person-heart"></i>
                 </div>
 
-            </div>
-
-            <div class="swiftcare-stat-number">
-                128
-            </div>
-
-            <div class="swiftcare-stat-footer">
-
-                <i class="bi bi-arrow-up"></i>
-
-                <span>
-                    8% this month
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- STAFF -->
-
-        <div class="swiftcare-admin-stat-card">
-
-            <div class="swiftcare-stat-top">
-
-                <span class="swiftcare-stat-label">
-                    Staff Members
-                </span>
-
-                <div class="swiftcare-stat-icon">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-
-            </div>
-
-            <div class="swiftcare-stat-number">
-                42
-            </div>
-
-            <div class="swiftcare-stat-footer">
-
-                <i class="bi bi-check-circle-fill"></i>
-
-                <span>
-                    38 currently active
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- CARE -->
-
-        <div class="swiftcare-admin-stat-card">
-
-            <div class="swiftcare-stat-top">
-
-                <span class="swiftcare-stat-label">
-                    Care Activities
-                </span>
-
-                <div class="swiftcare-stat-icon">
-                    <i class="bi bi-heart-pulse-fill"></i>
-                </div>
-
-            </div>
-
-            <div class="swiftcare-stat-number">
-                246
-            </div>
-
-            <div class="swiftcare-stat-footer">
-
-                <i class="bi bi-clock-fill"></i>
-
-                <span>
-                    Today's activities
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- EQUIPMENT -->
-
-        <div class="swiftcare-admin-stat-card">
-
-            <div class="swiftcare-stat-top">
-
-                <span class="swiftcare-stat-label">
-                    Equipment
-                </span>
-
-                <div class="swiftcare-stat-icon">
-                    <i class="bi bi-box-seam-fill"></i>
-                </div>
-
-            </div>
-
-            <div class="swiftcare-stat-number">
-                76
-            </div>
-
-            <div class="swiftcare-stat-footer">
-
-                <i class="bi bi-check-circle-fill"></i>
-
-                <span>
-                    71 operational
-                </span>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- =========================================================
-         MAIN CONTENT
-         ========================================================= -->
-
-    <section class="swiftcare-admin-content-grid">
-
-
-        <!-- =====================================================
-             QUICK ACTIONS
-             ===================================================== -->
-
-        <div class="swiftcare-admin-panel">
-
-            <div class="swiftcare-admin-panel-header">
-
-                <h2 class="swiftcare-admin-panel-title">
-
-                    <i class="bi bi-lightning-charge-fill"></i>
+                <h2 class="sc-section-title">
 
                     Quick Actions
 
                 </h2>
 
-                <span class="swiftcare-admin-status">
+                <p class="sc-section-description">
 
-                    <span class="swiftcare-admin-status-dot"></span>
+                    Select an area below to manage your SwiftCare system.
 
-                    Management
-
-                </span>
+                </p>
 
             </div>
 
 
-            <div class="swiftcare-admin-actions">
+            <div class="sc-section-status">
+
+                <span class="sc-status-dot"></span>
+
+                All Systems Operational
+
+            </div>
+
+        </div>
 
 
-                <!-- STAFF -->
+        <!-- =====================================================
+             ACTION CARDS
+             ===================================================== -->
 
-                <a asp-controller="Users"
-                       asp-action="Index"
-                       class="swiftcare-admin-action">
+        <div class="sc-action-grid">
 
-                    <div class="swiftcare-admin-action-icon">
+
+            <!-- STAFF & USERS -->
+
+            <a asp-controller="Users"
+               asp-action="Index"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-people-fill"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
-                        <span class="swiftcare-admin-action-title">
-                            Staff & Users
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            Manage accounts
-                        </span>
-
-                    </div>
-
-                </a>
+                </div>
 
 
-                <!-- RESIDENTS -->
+                <div class="sc-action-body">
 
-                <a asp-controller="Home"
-                       asp-action="Index"
-                       class="swiftcare-admin-action">
+                    <h3>
 
-                    <div class="swiftcare-admin-action-icon">
+                        Staff & Users
+
+                    </h3>
+
+                    <p>
+
+                        Manage staff accounts, users,
+                        roles and access permissions.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-action-footer">
+
+                    <span>
+
+                        Manage Users
+
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- RESIDENTS -->
+
+            <a asp-controller="Residents"
+               asp-action="Residents"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-person-heart"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
-                        <span class="swiftcare-admin-action-title">
-                            Residents
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            View residents
-                        </span>
-
-                    </div>
-
-                </a>
+                </div>
 
 
-                <!-- REPORTS -->
+                <div class="sc-action-body">
 
-                <a asp-controller="Reports"
-                       asp-action="Index"
-                       class="swiftcare-admin-action">
+                    <h3>
 
-                    <div class="swiftcare-admin-action-icon">
+                        Residents
+
+                    </h3>
+
+                    <p>
+
+                        View resident profiles, information
+                        and care-related records.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-action-footer">
+
+                    <span>
+
+                        View Residents
+
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- REPORTS -->
+
+            <a asp-controller="Reports"
+               asp-action="Index"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-bar-chart-fill"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
-                        <span class="swiftcare-admin-action-title">
-                            Reports
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            View reports
-                        </span>
-
-                    </div>
-
-                </a>
+                </div>
 
 
-                <!-- SUPPORT -->
+                <div class="sc-action-body">
 
-                <a asp-controller="Queries"
-                       asp-action="SupportQueries"
-                       class="swiftcare-admin-action">
+                    <h3>
 
-                    <div class="swiftcare-admin-action-icon">
+                        Reports
+
+                    </h3>
+
+                    <p>
+
+                        Review system activity, performance
+                        and operational reports.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-action-footer">
+
+                    <span>
+
+                        View Reports
+
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- SUPPORT -->
+
+            <a asp-controller="Queries"
+               asp-action="SupportQueries"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-life-preserver"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
-                        <span class="swiftcare-admin-action-title">
-                            Support
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            Manage queries
-                        </span>
-
-                    </div>
-
-                </a>
+                </div>
 
 
-                <!-- EQUIPMENT -->
+                <div class="sc-action-body">
 
-                <a asp-controller="Equipment"
-                       asp-action="Index"
-                       class="swiftcare-admin-action">
+                    <h3>
 
-                    <div class="swiftcare-admin-action-icon">
+                        Support
+
+                    </h3>
+
+                    <p>
+
+                        Review support queries and assist
+                        users with their requests.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-action-footer">
+
+                    <span>
+
+                        Manage Support
+
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- EQUIPMENT -->
+
+            <a asp-controller="Equipment"
+               asp-action="OurEquipment"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-box-seam-fill"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
-                        <span class="swiftcare-admin-action-title">
-                            Equipment
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            Manage equipment
-                        </span>
-
-                    </div>
-
-                </a>
+                </div>
 
 
-                <!-- SECURITY -->
+                <div class="sc-action-body">
 
-                <a asp-controller="Users"
-                       asp-action="PasswordAndSecurity"
-                       class="swiftcare-admin-action">
+                    <h3>
 
-                    <div class="swiftcare-admin-action-icon">
+                        Equipment
+
+                    </h3>
+
+                    <p>
+
+                        Manage facility equipment and keep
+                        track of operational resources.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-action-footer">
+
+                    <span>
+
+                        Manage Equipment
+
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- SECURITY -->
+
+            <a asp-controller="Users"
+               asp-action="PasswordAndSecurity"
+               class="sc-action-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon">
 
                         <i class="bi bi-shield-lock-fill"></i>
 
                     </div>
 
-                    <div class="swiftcare-admin-action-content">
-
-                        <span class="swiftcare-admin-action-title">
-                            Security
-                        </span>
-
-                        <span class="swiftcare-admin-action-description">
-                            Account security
-                        </span>
-
-                    </div>
-
-                </a>
-
-            </div>
-
-        </div>
-
-   
-        <!-- =====================================================
-             SYSTEM STATUS
-             ===================================================== -->
-
-        <div class="swiftcare-admin-panel">
-
-            <div class="swiftcare-admin-panel-header">
-
-                <h2 class="swiftcare-admin-panel-title">
-
-                    <i class="bi bi-activity"></i>
-
-                    System Status
-
-                </h2>
-
-                <span class="swiftcare-admin-status">
-
-                    <span class="swiftcare-admin-status-dot"></span>
-
-                    Operational
-
-                </span>
-
-            </div>
-
-
-            <div class="swiftcare-system-status">
-
-
-                <!-- DATABASE -->
-
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-database-check"></i>
-
-                        Database
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Online
-                    </span>
+                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
 
-                <!-- SECURITY -->
+                <div class="sc-action-body">
 
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-shield-check"></i>
+                    <h3>
 
                         Security
 
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Secure
-                    </span>
-
-                </div>
-
-
-                <!-- APPLICATION -->
-
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-window-stack"></i>
-
-                        Application
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Running
-                    </span>
-
-                </div>
-
-
-                <!-- SERVICES -->
-
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-cloud-check"></i>
-
-                        Services
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Active
-                    </span>
-
-                </div>
-
-
-                <!-- BACKUP -->
-
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-cloud-arrow-up"></i>
-
-                        Backups
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Protected
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-    <br />
-
-    <!-- =========================================================
-         LOWER CONTENT
-         ========================================================= -->
-
-    <section class="swiftcare-admin-content-grid">
-
-
-        <!-- =====================================================
-             RECENT ACTIVITY
-             ===================================================== -->
-
-        <div class="swiftcare-admin-panel">
-
-            <div class="swiftcare-admin-panel-header">
-
-                <h2 class="swiftcare-admin-panel-title">
-
-                    <i class="bi bi-clock-history"></i>
-
-                    Recent Activity
-
-                </h2>
-
-                <a asp-controller="ActivityLogs"
-                       asp-action="MyActivityLogs"
-                       class="swiftcare-admin-panel-link">
-
-                    View all
-                    <i class="bi bi-arrow-right"></i>
-
-                </a>
-
-            </div>
-
-
-            <div class="swiftcare-admin-activity">
-
-
-                <!-- ACTIVITY 1 -->
-
-                <div class="swiftcare-activity-item">
-
-                    <div class="swiftcare-activity-icon">
-
-                        <i class="bi bi-person-plus-fill"></i>
-
-                    </div>
-
-                    <div class="swiftcare-activity-content">
-
-                        <div class="swiftcare-activity-title">
-                            New staff member added
-                        </div>
-
-                        <div class="swiftcare-activity-time">
-                            A new staff account was created
-                        </div>
-
-                    </div>
-
-                    <div class="swiftcare-activity-time">
-                        12 min ago
-                    </div>
-
-                </div>
-
-
-                <!-- ACTIVITY 2 -->
-
-                <div class="swiftcare-activity-item">
-
-                    <div class="swiftcare-activity-icon">
-
-                        <i class="bi bi-heart-pulse-fill"></i>
-
-                    </div>
-
-                    <div class="swiftcare-activity-content">
-
-                        <div class="swiftcare-activity-title">
-                            Care record updated
-                        </div>
-
-                        <div class="swiftcare-activity-time">
-                            A resident care record was updated
-                        </div>
-
-                    </div>
-
-                    <div class="swiftcare-activity-time">
-                        34 min ago
-                    </div>
-
-                </div>
-
-
-                <!-- ACTIVITY 3 -->
-
-                <div class="swiftcare-activity-item">
-
-                    <div class="swiftcare-activity-icon">
-
-                        <i class="bi bi-shield-check"></i>
-
-                    </div>
-
-                    <div class="swiftcare-activity-content">
-
-                        <div class="swiftcare-activity-title">
-                            Security settings updated
-                        </div>
-
-                        <div class="swiftcare-activity-time">
-                            Account security information changed
-                        </div>
-
-                    </div>
-
-                    <div class="swiftcare-activity-time">
-                        1 hr ago
-                    </div>
-
-                </div>
-
-
-                <!-- ACTIVITY 4 -->
-
-                <div class="swiftcare-activity-item">
-
-                    <div class="swiftcare-activity-icon">
-
-                        <i class="bi bi-box-seam-fill"></i>
-
-                    </div>
-
-                    <div class="swiftcare-activity-content">
-
-                        <div class="swiftcare-activity-title">
-                            Equipment status updated
-                        </div>
-
-                        <div class="swiftcare-activity-time">
-                            Equipment information was modified
-                        </div>
-
-                    </div>
-
-                    <div class="swiftcare-activity-time">
-                        2 hrs ago
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- =====================================================
-             ADMINISTRATION / WELCOME
-             ===================================================== -->
-
-        <div class="swiftcare-admin-panel">
-
-            <div class="swiftcare-admin-panel-header">
-
-                <h2 class="swiftcare-admin-panel-title">
-
-                    <i class="bi bi-person-badge-fill"></i>
-
-                    Administration
-
-                </h2>
-
-            </div>
-
-
-            <div class="swiftcare-admin-welcome">
-
-                <div class="swiftcare-welcome-content">
-
-                    <h3 class="swiftcare-welcome-title">
-                        SwiftCare Administration
                     </h3>
 
-                    <p class="swiftcare-welcome-text">
-                        You have full administrative access to manage
-                        residents, staff, care activities and system
-                        settings.
+                    <p>
+
+                        Manage account security, passwords
+                        and access protection.
+
                     </p>
 
-
-                    <div style="margin-top:18px;">
-
-                        <a asp-controller="Users"
-                               asp-action="PasswordAndSecurity"
-                               class="swiftcare-admin-button">
-
-                            <i class="bi bi-shield-lock-fill"></i>
-
-                            Account & Security
-
-                        </a>
-
-                    </div>
-
                 </div>
 
-            </div>
 
+                <div class="sc-action-footer">
 
-            <div class="swiftcare-system-status">
+                    <span>
 
-                <div class="swiftcare-system-row">
+                        Security Settings
 
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-person-check-fill"></i>
-
-                        Access Level
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Administrator
                     </span>
 
-                </div>
-
-
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-clock-history"></i>
-
-                        Last Activity
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Just now
-                    </span>
+                    <i class="bi bi-arrow-right"></i>
 
                 </div>
 
+            </a>
 
-                <div class="swiftcare-system-row">
-
-                    <div class="swiftcare-system-name">
-
-                        <i class="bi bi-shield-fill-check"></i>
-
-                        Account
-
-                    </div>
-
-                    <span class="swiftcare-system-status-badge">
-                        Protected
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-    <br />
-    <!-- =========================================================
-         FOOTER
-         ========================================================= -->
-
-    <section class="swiftcare-admin-welcome">
-
-        <div class="swiftcare-welcome-content">
-
-            <h3 class="swiftcare-welcome-title">
-
-                <i class="bi bi-heart-pulse-fill"></i>
-
-                SwiftCare Administration
-
-            </h3>
-
-            <p class="swiftcare-welcome-text">
-                Keeping your care facility organised, secure and connected.
-            </p>
 
         </div>
 
@@ -820,30 +443,49 @@
 @section Scripts {
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
 
-            const cards = document.querySelectorAll(
-                ".swiftcare-admin-stat-card, .swiftcare-admin-panel"
-            );
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
 
-            cards.forEach(function (card, index) {
+                const cards =
+                    document.querySelectorAll(
+                        ".sc-action-card"
+                    );
 
-                card.style.opacity = "0";
-                card.style.transform = "translateY(12px)";
 
-                setTimeout(function () {
+                cards.forEach(
+                    function (card, index) {
 
-                    card.style.transition =
-                        "opacity 0.45s ease, transform 0.45s ease";
+                        card.style.opacity = "0";
 
-                    card.style.opacity = "1";
-                    card.style.transform = "translateY(0)";
+                        card.style.transform =
+                            "translateY(20px)";
 
-                }, index * 70);
 
-            });
+                        setTimeout(
+                            function () {
 
-        });
+                                card.style.transition =
+                                    "opacity 0.45s ease, transform 0.45s ease";
+
+                                card.style.opacity =
+                                    "1";
+
+                                card.style.transform =
+                                    "translateY(0)";
+
+                            },
+                            index * 90
+                        );
+
+                    }
+                );
+
+            }
+        );
+
     </script>
 
 }
+

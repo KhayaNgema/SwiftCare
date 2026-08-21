@@ -1,0 +1,1099 @@
+﻿@model SwiftCare.Models.Order
+@inject SwiftCare.Interfaces.IEncryptionService encryptionService
+
+@{
+    ViewData["Title"] = "Order Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
+
+    var totalQuantity =
+        Model.OrderItems?.Sum(x => x.Quantity) ?? 0;
+
+    var totalEquipmentTypes =
+        Model.OrderItems?.Count ?? 0;
+
+}
+
+<div class="sc-order-details-page">
+
+    <!-- ============================================================
+     HEADER
+     ============================================================ -->
+
+    <section class="sc-order-details-header">
+
+        <div class="sc-order-details-header-inner">
+
+            <a asp-controller="Orders"
+                   asp-action="Orders"
+                   class="sc-order-details-back"
+                   title="Back to Orders">
+
+                <i class="bi bi-chevron-left"></i>
+
+            </a>
+
+
+            <div class="flex-grow-1">
+
+                <h1 class="sc-order-details-title">
+
+                    Order Details
+
+                </h1>
+
+                <p class="sc-order-details-subtitle">
+
+                    Review the equipment and quantities in this order.
+
+                </p>
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div>
+
+                @if (Model.Status == SwiftCare.Models.OrderStatus.Pending)
+                {
+                    <span class="sc-order-details-status
+                        sc-order-details-status-pending">
+
+                        <i class="bi bi-clock-history"></i>
+
+                        Pending
+
+                    </span>
+                }
+                else if (Model.Status == SwiftCare.Models.OrderStatus.Packaged)
+                {
+                    <span class="sc-order-details-status
+                        sc-order-details-status-packaged">
+
+                        <i class="bi bi-box-seam-fill"></i>
+
+                        Packaged
+
+                    </span>
+                }
+                else if (Model.Status == SwiftCare.Models.OrderStatus.OnTheWay)
+                {
+                    <span class="sc-order-details-status
+                        sc-order-details-status-way">
+
+                        <i class="bi bi-truck"></i>
+
+                        On The Way
+
+                    </span>
+                }
+                else if (Model.Status == SwiftCare.Models.OrderStatus.Collected)
+                {
+                    <span class="sc-order-details-status
+                        sc-order-details-status-collected">
+
+                        <i class="bi bi-check-circle-fill"></i>
+
+                        Delivered
+
+                    </span>
+                }
+                else if (Model.Status == SwiftCare.Models.OrderStatus.Cancelled)
+                {
+                    <span class="sc-order-details-status
+                        sc-order-details-status-cancelled">
+
+                        <i class="bi bi-x-circle-fill"></i>
+
+                        Cancelled
+
+                    </span>
+                }
+                else
+                {
+                    <span class="sc-order-details-status">
+
+                        @Model.Status
+
+                    </span>
+                }
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <div class="container-fluid px-4">
+
+        <!-- ========================================================
+         AJAX MESSAGE
+         ======================================================== -->
+
+        <div id="orderDetailsMessage"
+             class="sc-order-details-message">
+
+            <i id="orderDetailsMessageIcon"
+               class="bi bi-info-circle"></i>
+
+            <span id="orderDetailsMessageText"></span>
+
+        </div>
+
+
+        <!-- ========================================================
+         ORDER SUMMARY
+         ======================================================== -->
+
+        <section class="sc-order-details-summary">
+
+            <div class="row g-3">
+
+
+                <!-- ORDER NUMBER -->
+
+                <div class="col-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            Order Number
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @Model.OrderNumber
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ORDER DATE -->
+
+                <div class="col-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            Order Date
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @Model.OrderDate.ToString("dd MMM yyyy")
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EQUIPMENT TYPES -->
+
+                <div class="col-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            Equipment Types
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @totalEquipmentTypes
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL QUANTITY -->
+
+                <div class="col-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            Total Quantity
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @totalQuantity
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================================
+         ORDER INFORMATION
+         ======================================================== -->
+
+        <section class="sc-order-details-info-card">
+
+            <div class="sc-order-details-section-header">
+
+                <h3 class="sc-order-details-section-title">
+
+                    <i class="bi bi-info-circle-fill"></i>
+
+                    Order Information
+
+                </h3>
+
+
+                <div class="sc-order-details-total">
+
+                    <i class="bi bi-hash"></i>
+
+                    Order ID: @Model.OrderId
+
+                </div>
+
+            </div>
+
+
+            <div class="row g-3">
+
+
+                <!-- CREATED -->
+
+                <div class="col-12 col-md-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            <i class="bi bi-calendar-check me-1"></i>
+
+                            Created
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @Model.OrderDate.ToString("dd MMM yyyy HH:mm")
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- LAST UPDATED -->
+
+                <div class="col-12 col-md-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+
+                            Last Updated
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @Model.LastUpdated.ToString("dd MMM yyyy HH:mm")
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ORDERED BY -->
+
+                <div class="col-12 col-md-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            <i class="bi bi-person me-1"></i>
+
+                            Ordered By
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @(Model.User != null
+                                ? $"{Model.User.FirstName} {Model.User.LastName}"
+                                : "Not available")
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- STATUS -->
+
+                <div class="col-12 col-md-6 col-lg-3">
+
+                    <div class="sc-order-details-summary-item">
+
+                        <span class="sc-order-details-summary-label">
+
+                            <i class="bi bi-check-circle me-1"></i>
+
+                            Current Status
+
+                        </span>
+
+                        <span class="sc-order-details-summary-value">
+
+                            @Model.Status
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================================
+         EQUIPMENT ITEMS
+         ======================================================== -->
+
+        <section class="sc-order-details-info-card">
+
+            <div class="sc-order-details-section-header">
+
+                <div>
+
+                    <h3 class="sc-order-details-section-title">
+
+                        <i class="bi bi-boxes"></i>
+
+                        Equipment Items
+
+                    </h3>
+
+                    <p class="text-muted mb-0 mt-2">
+
+                        Review the equipment items and package them individually.
+
+                    </p>
+
+                </div>
+
+
+                <div class="sc-order-details-total">
+
+                    <i class="bi bi-box-seam"></i>
+
+                    @totalEquipmentTypes
+                    @(totalEquipmentTypes == 1 ? " Item" : " Items")
+
+                </div>
+
+            </div>
+
+
+            @if (Model.OrderItems != null && Model.OrderItems.Any())
+            {
+                <div class="sc-order-details-items">
+
+                    @foreach (var orderItem in Model.OrderItems)
+                    {
+                        <div class="sc-order-details-item"
+                             id="order-item-@orderItem.OrderItemId">
+
+
+                            <!-- EQUIPMENT ICON -->
+
+                            <div class="sc-order-details-item-icon">
+
+                                <i class="bi bi-boxes"></i>
+
+                            </div>
+
+
+                            <!-- EQUIPMENT INFORMATION -->
+
+                            <div class="sc-order-details-item-content">
+
+                                <div class="sc-order-details-item-name">
+
+                                    @(orderItem.Equipment?.EquipmentName
+                                        ?? "Equipment")
+
+                                </div>
+
+
+                                <div class="sc-order-details-item-description">
+
+                                    Equipment Item
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- QUANTITY -->
+
+                            <div class="sc-order-details-quantity">
+
+                                <span class="sc-order-details-quantity-label">
+
+                                    Quantity Ordered
+
+                                </span>
+
+                                <span class="sc-order-details-quantity-value">
+
+                                    @orderItem.Quantity
+
+                                </span>
+
+                            </div>
+
+
+                            <!-- PACKAGE BUTTON -->
+                            @if (orderItem.IsPackaged)
+                            {
+                                <button type="button"
+                                        class="sc-order-details-package-btn"
+                                        disabled>
+
+                                    <i class="bi bi-check-circle-fill"></i>
+
+                                    Packaged
+
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="sc-order-details-package-btn"
+                                        data-order-item-id="@orderItem.OrderItemId"
+                                        data-order-id="@encryptedOrderId">
+
+                                    <i class="bi bi-box-seam-fill"></i>
+
+                                    Package Item
+
+                                </button>
+                            }
+
+                        </div>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <div class="sc-order-details-empty">
+
+                    <div class="sc-order-details-empty-icon">
+
+                        <i class="bi bi-box-seam"></i>
+
+                    </div>
+
+                    <h5>
+
+                        No Equipment Items
+
+                    </h5>
+
+                    <p>
+
+                        There are currently no equipment items attached to this order.
+
+                    </p>
+
+                </div>
+            }
+
+        </section>
+
+
+        <!-- ========================================================
+         PACKAGE ENTIRE ORDER
+         ======================================================== -->
+        @if (Model.OrderItems != null && Model.OrderItems.Any())
+        {
+            <section class="sc-order-details-info-card">
+
+                <div class="sc-order-details-section-header">
+
+                    <div>
+
+                        <h3 class="sc-order-details-section-title">
+
+                            <i class="bi bi-box-seam-fill"></i>
+
+                            Package Entire Order
+
+                        </h3>
+
+                        <p class="text-muted mb-0 mt-2">
+
+                            Package all equipment items in this order.
+
+                        </p>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="sc-order-details-package-order-btn"
+                            id="packageOrderButton"
+                            data-order-id="@encryptedOrderId">
+
+                        <i class="bi bi-boxes"></i>
+
+                        Package Order
+
+                    </button>
+
+                </div>
+
+            </section>
+        }
+
+    </div>
+
+
+</div>
+
+@section Scripts {
+
+
+    @Html.AntiForgeryToken()
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+
+                /* ====================================================
+                   GET ANTI FORGERY TOKEN
+                   ==================================================== */
+
+                function getAntiForgeryToken() {
+
+                    return document
+                        .querySelector(
+                            'input[name="__RequestVerificationToken"]'
+                        )
+                        ?.value;
+
+                }
+
+
+                /* ====================================================
+                   SHOW MESSAGE
+                   ==================================================== */
+
+                function showOrderMessage(
+                    message,
+                    type
+                ) {
+
+                    const messageBox =
+                        document.getElementById(
+                            "orderDetailsMessage"
+                        );
+
+
+                    const messageText =
+                        document.getElementById(
+                            "orderDetailsMessageText"
+                        );
+
+
+                    const messageIcon =
+                        document.getElementById(
+                            "orderDetailsMessageIcon"
+                        );
+
+
+                    if (
+                        !messageBox ||
+                        !messageText
+                    ) {
+                        return;
+                    }
+
+
+                    messageBox.classList.remove(
+                        "sc-order-details-message-success",
+                        "sc-order-details-message-error"
+                    );
+
+
+                    if (type === "success") {
+
+                        messageBox.classList.add(
+                            "sc-order-details-message-success"
+                        );
+
+                        if (messageIcon) {
+
+                            messageIcon.className =
+                                "bi bi-check-circle-fill";
+
+                        }
+
+                    }
+                    else {
+
+                        messageBox.classList.add(
+                            "sc-order-details-message-error"
+                        );
+
+                        if (messageIcon) {
+
+                            messageIcon.className =
+                                "bi bi-x-circle-fill";
+
+                        }
+
+                    }
+
+
+                    messageText.textContent =
+                        message;
+
+
+                    messageBox.style.display =
+                        "flex";
+
+
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
+
+
+                    setTimeout(
+                        function () {
+
+                            messageBox.style.display =
+                                "none";
+
+                        },
+                        5000
+                    );
+
+                }
+
+
+                /* ====================================================
+                   PACKAGE SINGLE ITEM
+                   ==================================================== */
+
+                document
+                    .querySelectorAll(
+                        ".sc-order-details-package-btn:not(:disabled)"
+                    )
+                    .forEach(
+                        function (button) {
+
+                            button.addEventListener(
+                                "click",
+                                async function () {
+
+                                    const orderItemId =
+                                        button.getAttribute(
+                                            "data-order-item-id"
+                                        );
+
+
+                                    const orderId =
+                                        button.getAttribute(
+                                            "data-order-id"
+                                        );
+
+
+                                    const token =
+                                        getAntiForgeryToken();
+
+
+                                    if (
+                                        !orderItemId ||
+                                        !orderId ||
+                                        !token
+                                    ) {
+
+                                        showOrderMessage(
+                                            "Unable to process the package request.",
+                                            "error"
+                                        );
+
+                                        return;
+                                    }
+
+
+                                    const originalContent =
+                                        button.innerHTML;
+
+
+                                    /* LOADING */
+
+                                    button.disabled =
+                                        true;
+
+
+                                    button.innerHTML =
+                                        '<span class="sc-order-details-loading">' +
+                                        '<span class="sc-order-details-spinner"></span>' +
+                                        ' Packaging...' +
+                                        '</span>';
+
+
+                                    try {
+
+                                        const formData =
+                                            new FormData();
+
+
+                                        formData.append(
+                                            "orderId",
+                                            orderId
+                                        );
+
+
+                                        formData.append(
+                                            "orderItemId",
+                                            orderItemId
+                                        );
+
+
+                                        const response =
+                                            await fetch(
+                                                '@Url.Action("PackageOrderItem", "Orders")',
+                                                {
+                                                    method: "POST",
+
+                                                    headers: {
+
+                                                        "RequestVerificationToken":
+                                                            token
+
+                                                    },
+
+                                                    body:
+                                                        formData
+                                                }
+                                            );
+
+
+                                        const result =
+                                            await response.json();
+
+
+                                        if (!result.success) {
+
+                                            button.disabled =
+                                                false;
+
+
+                                            button.innerHTML =
+                                                originalContent;
+
+
+                                            showOrderMessage(
+                                                result.message ||
+                                                "Unable to package the equipment item.",
+                                                "error"
+                                            );
+
+                                            return;
+
+                                        }
+
+
+                                        /* =====================================
+                                           SUCCESS
+                                           ===================================== */
+
+                                        button.innerHTML =
+                                            '<i class="bi bi-check-circle-fill"></i>' +
+                                            ' Packaged';
+
+
+                                        button.disabled =
+                                            true;
+
+
+                                        const card =
+                                            document.getElementById(
+                                                "order-item-" +
+                                                result.orderItemId
+                                            );
+
+
+                                        if (card) {
+
+                                            card.classList.add(
+                                                "sc-order-item-packaged-success"
+                                            );
+
+                                        }
+
+
+                                        showOrderMessage(
+                                            result.message,
+                                            "success"
+                                        );
+
+                                    }
+                                    catch (error) {
+
+                                        console.error(
+                                            error
+                                        );
+
+
+                                        button.disabled =
+                                            false;
+
+
+                                        button.innerHTML =
+                                            originalContent;
+
+
+                                        showOrderMessage(
+                                            "Something went wrong while packaging the equipment item.",
+                                            "error"
+                                        );
+
+                                    }
+
+                                }
+                            );
+
+                        }
+                    );
+
+
+                /* ====================================================
+                   PACKAGE ENTIRE ORDER
+                   ==================================================== */
+
+                const packageOrderButton =
+                    document.getElementById(
+                        "packageOrderButton"
+                    );
+
+
+                if (packageOrderButton) {
+
+                    packageOrderButton.addEventListener(
+                        "click",
+                        async function () {
+
+
+                            const orderId =
+                                packageOrderButton.getAttribute(
+                                    "data-order-id"
+                                );
+
+
+                            const token =
+                                getAntiForgeryToken();
+
+
+                            if (
+                                !orderId ||
+                                !token
+                            ) {
+
+                                showOrderMessage(
+                                    "Unable to process the package request.",
+                                    "error"
+                                );
+
+                                return;
+
+                            }
+
+
+                            const originalContent =
+                                packageOrderButton.innerHTML;
+
+
+                            packageOrderButton.disabled =
+                                true;
+
+
+                            packageOrderButton.innerHTML =
+                                '<span class="sc-order-details-loading">' +
+                                '<span class="sc-order-details-spinner"></span>' +
+                                ' Packaging Order...' +
+                                '</span>';
+
+
+                            try {
+
+                                const formData =
+                                    new FormData();
+
+
+                                formData.append(
+                                    "orderId",
+                                    orderId
+                                );
+
+
+                                const response =
+                                    await fetch(
+                                        '@Url.Action("PackageEntireOrder", "Orders")',
+                                        {
+                                            method: "POST",
+
+                                            headers: {
+
+                                                "RequestVerificationToken":
+                                                    token
+
+                                            },
+
+                                            body:
+                                                formData
+                                        }
+                                    );
+
+
+                                const result =
+                                    await response.json();
+
+
+                                if (!result.success) {
+
+                                    packageOrderButton.disabled =
+                                        false;
+
+
+                                    packageOrderButton.innerHTML =
+                                        originalContent;
+
+
+                                    showOrderMessage(
+                                        result.message ||
+                                        "Unable to package the order.",
+                                        "error"
+                                    );
+
+                                    return;
+
+                                }
+
+
+                                /* =====================================
+                                   UPDATE ALL ITEM BUTTONS
+                                   ===================================== */
+
+                                document
+                                    .querySelectorAll(
+                                        ".sc-order-details-package-btn:not(:disabled)"
+                                    )
+                                    .forEach(
+                                        function (button) {
+
+                                            button.disabled =
+                                                true;
+
+
+                                            button.innerHTML =
+                                                '<i class="bi bi-check-circle-fill"></i>' +
+                                                ' Packaged';
+
+                                        }
+                                    );
+
+
+                                /* =====================================
+                                   UPDATE PACKAGE ORDER BUTTON
+                                   ===================================== */
+
+                                packageOrderButton.innerHTML =
+                                    '<i class="bi bi-check-circle-fill"></i>' +
+                                    ' Order Packaged';
+
+
+                                packageOrderButton.disabled =
+                                    true;
+
+
+                                showOrderMessage(
+                                    result.message,
+                                    "success"
+                                );
+
+                            }
+                            catch (error) {
+
+                                console.error(
+                                    error
+                                );
+
+
+                                packageOrderButton.disabled =
+                                    false;
+
+
+                                packageOrderButton.innerHTML =
+                                    originalContent;
+
+
+                                showOrderMessage(
+                                    "Something went wrong while packaging the order.",
+                                    "error"
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+    </script>
+
+
+
+}

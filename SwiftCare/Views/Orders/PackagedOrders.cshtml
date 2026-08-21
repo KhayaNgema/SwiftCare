@@ -1,0 +1,1102 @@
+﻿
+@model IEnumerable<SwiftCare.Models.Order>
+@inject SwiftCare.Interfaces.IEncryptionService encryptionService
+
+@{
+    ViewData["Title"] = "Packaged Orders";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var packagedOrderCount =
+        Model?.Count() ?? 0;
+
+    var totalQuantity =
+        Model?.Sum(
+            order => order.OrderItems?.Sum(
+                item => item.Quantity
+            ) ?? 0
+        ) ?? 0;
+}
+
+<div class="sc-packaged-page">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <section class="sc-packaged-header">
+
+        <div class="sc-packaged-header-inner">
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="sc-packaged-back"
+                   title="Back to Dashboard">
+
+                <i class="bi bi-chevron-left"></i>
+
+            </a>
+
+
+            <div class="sc-packaged-title-area">
+
+                <div class="sc-packaged-title-icon">
+
+                    <i class="bi bi-box-seam-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <span class="sc-packaged-kicker">
+
+                        ORDER MANAGEMENT
+
+                    </span>
+
+                    <h1>
+
+                        Packaged Orders
+
+                    </h1>
+
+                    <p>
+
+                        Equipment orders that have been packaged and are ready for delivery.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-packaged-header-stat">
+
+                <div class="sc-packaged-header-stat-icon">
+
+                    <i class="bi bi-boxes"></i>
+
+                </div>
+
+                <div>
+
+                    <strong id="packagedOrderCount">
+
+                        @packagedOrderCount
+
+                    </strong>
+
+                    <span>
+
+                        @(packagedOrderCount == 1
+                            ? "Order Ready"
+                            : "Orders Ready")
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         PAGE CONTENT
+         ============================================================ -->
+
+    <div class="sc-packaged-content">
+
+
+        <!-- ========================================================
+             MESSAGE
+             ======================================================== -->
+
+        <div id="packagedOrderMessage"
+             class="sc-packaged-message">
+
+            <i id="packagedOrderMessageIcon"
+               class="bi bi-info-circle-fill"></i>
+
+            <span id="packagedOrderMessageText"></span>
+
+        </div>
+
+
+        <!-- ========================================================
+             SUMMARY
+             ======================================================== -->
+
+        <section class="sc-packaged-summary">
+
+            <div class="row g-4">
+
+
+                <!-- PACKAGED ORDERS -->
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-packaged-summary-card">
+
+                        <div class="sc-packaged-summary-icon">
+
+                            <i class="bi bi-box-seam-fill"></i>
+
+                        </div>
+
+                        <div class="sc-packaged-summary-info">
+
+                            <span>
+
+                                Packaged Orders
+
+                            </span>
+
+                            <strong id="summaryPackagedCount">
+
+                                @packagedOrderCount
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL EQUIPMENT -->
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-packaged-summary-card">
+
+                        <div class="sc-packaged-summary-icon">
+
+                            <i class="bi bi-boxes"></i>
+
+                        </div>
+
+                        <div class="sc-packaged-summary-info">
+
+                            <span>
+
+                                Total Equipment
+
+                            </span>
+
+                            <strong>
+
+                                @totalQuantity
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- NEXT STEP -->
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-packaged-summary-card sc-packaged-summary-card-ready">
+
+                        <div class="sc-packaged-summary-icon">
+
+                            <i class="bi bi-truck"></i>
+
+                        </div>
+
+                        <div class="sc-packaged-summary-info">
+
+                            <span>
+
+                                Next Step
+
+                            </span>
+
+                            <strong>
+
+                                Ready for Delivery
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================================
+             TOOLBAR
+             ======================================================== -->
+
+        <section class="sc-packaged-toolbar">
+
+            <div class="sc-packaged-search">
+
+                <i class="bi bi-search"></i>
+
+                <input type="text"
+                       id="orderSearchInput"
+                       placeholder="Search packaged orders..." />
+
+            </div>
+
+
+            <div class="sc-packaged-ready-info">
+
+                <div class="sc-packaged-ready-dot"></div>
+
+                <span>
+
+                    All orders below are ready for delivery
+
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================================
+             EMPTY STATE
+             ======================================================== -->
+        @if (Model == null || !Model.Any())
+        {
+            <div id="packagedOrdersEmpty"
+                 class="sc-packaged-empty">
+
+                <div class="sc-packaged-empty-icon">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+                <h3>
+
+                    No Packaged Orders
+
+                </h3>
+
+                <p>
+
+                    There are currently no equipment orders waiting to be delivered.
+
+                </p>
+
+            </div>
+        }
+        else
+        {
+
+            <!-- ====================================================
+                 TABLE CARD
+                 ==================================================== -->
+
+            <section id="packagedOrdersContainer"
+                     class="sc-packaged-table-card">
+
+
+                <!-- TABLE HEADER -->
+
+                <div class="sc-packaged-table-header">
+
+                    <div>
+
+                        <span class="sc-packaged-table-kicker">
+
+                            READY FOR DELIVERY
+
+                        </span>
+
+                        <h3>
+
+                            Packaged Equipment Orders
+
+                        </h3>
+
+                        <p>
+
+                            Select an order to begin delivery.
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="sc-packaged-table-count">
+
+                        <i class="bi bi-box-seam-fill"></i>
+
+                        <span id="tableOrderCount">
+
+                            @packagedOrderCount
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TABLE -->
+
+                <div class="table-responsive">
+
+                    <table class="sc-packaged-table"
+                           id="ordersTable">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+
+                                    Order
+
+                                </th>
+
+                                <th>
+
+                                    Equipment
+
+                                </th>
+
+                                <th>
+
+                                    Quantity
+
+                                </th>
+
+                                <th>
+
+                                    Packaged
+
+                                </th>
+
+                                <th>
+
+                                    Status
+
+                                </th>
+
+                                <th class="text-end">
+
+                                    Delivery
+
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var item in Model)
+                            {
+                                var encryptedId =
+                                    encryptionService.Encrypt(
+                                        item.OrderId
+                                    );
+
+                                var equipmentCount =
+                                    item.OrderItems?.Count ?? 0;
+
+                                var itemQuantity =
+                                    item.OrderItems?.Sum(
+                                        x => x.Quantity
+                                    ) ?? 0;
+
+
+                                <tr id="order-row-@item.OrderId"
+                                    data-order-id="@item.OrderId">
+
+
+                                    <!-- ORDER -->
+
+                                    <td>
+
+                                        <div class="sc-packaged-order-number">
+
+                                            <div class="sc-packaged-order-icon">
+
+                                                <i class="bi bi-box-seam-fill"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+
+                                                    @item.OrderNumber
+
+                                                </strong>
+
+                                                <small>
+
+                                                    Order #@item.OrderId
+
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- EQUIPMENT -->
+
+                                    <td>
+
+                                        <div class="sc-packaged-equipment">
+
+                                            <span class="sc-packaged-equipment-count">
+
+                                                @equipmentCount
+
+                                            </span>
+
+                                            <span>
+
+                                                @(equipmentCount == 1
+                                                    ? "Equipment Type"
+                                                    : "Equipment Types")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- QUANTITY -->
+
+                                    <td>
+
+                                        <span class="sc-packaged-quantity">
+
+                                            <i class="bi bi-boxes"></i>
+
+                                            @itemQuantity item@(itemQuantity == 1 ? "" : "s")
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- PACKAGED DATE -->
+
+                                    <td>
+
+                                        <span class="sc-packaged-date">
+
+                                            <i class="bi bi-calendar-check"></i>
+
+                                            @item.LastUpdated.ToString("dd MMM yyyy")
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- STATUS -->
+
+                                    <td>
+
+                                        <span class="sc-packaged-status">
+
+                                            <span class="sc-packaged-status-dot"></span>
+
+                                            Packaged
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- DELIVER -->
+
+                                    <td class="text-end">
+
+                                       @if (
+                                            User.IsInRole("Administrator") ||
+                                            User.IsInRole("Supplier Admin")
+                                        )
+                                        {
+                                            <button type="button"
+                                                    class="sc-packaged-deliver-btn"
+                                                    data-order-id="@encryptedId"
+                                                    data-deliver-url="@Url.Action(
+                                                                                                                                                            "DeliverOrder",
+                                                                                                                                                            "Orders"
+                                                                                                                                                        )">
+
+                                                <i class="bi bi-truck"></i>
+
+                                                <span>
+
+                                                    Deliver
+
+                                                </span>
+
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+
+                                                No permission
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+        }
+
+
+        <!-- ========================================================
+             AJAX EMPTY STATE
+             ======================================================== -->
+
+        <div id="ajaxEmptyState"
+             class="sc-packaged-empty"
+             style="display:none;">
+
+            <div class="sc-packaged-empty-icon">
+
+                <i class="bi bi-check2-circle"></i>
+
+            </div>
+
+            <h3>
+
+                All Orders Delivered
+
+            </h3>
+
+            <p>
+
+                There are no more packaged orders waiting for delivery.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    @Html.AntiForgeryToken()
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+
+                /* ====================================================
+                   GET ANTI FORGERY TOKEN
+                   ==================================================== */
+
+                function getAntiForgeryToken() {
+
+                    return document
+                        .querySelector(
+                            'input[name="__RequestVerificationToken"]'
+                        )
+                        ?.value;
+
+                }
+
+
+                /* ====================================================
+                   SHOW MESSAGE
+                   ==================================================== */
+
+                function showMessage(
+                    message,
+                    type
+                ) {
+
+                    const messageBox =
+                        document.getElementById(
+                            "packagedOrderMessage"
+                        );
+
+                    const messageText =
+                        document.getElementById(
+                            "packagedOrderMessageText"
+                        );
+
+                    const messageIcon =
+                        document.getElementById(
+                            "packagedOrderMessageIcon"
+                        );
+
+
+                    if (
+                        !messageBox ||
+                        !messageText
+                    ) {
+                        return;
+                    }
+
+
+                    messageBox.classList.remove(
+                        "sc-packaged-message-success",
+                        "sc-packaged-message-error"
+                    );
+
+
+                    if (
+                        type === "success"
+                    ) {
+
+                        messageBox.classList.add(
+                            "sc-packaged-message-success"
+                        );
+
+                        if (messageIcon) {
+
+                            messageIcon.className =
+                                "bi bi-check-circle-fill";
+
+                        }
+
+                    }
+                    else {
+
+                        messageBox.classList.add(
+                            "sc-packaged-message-error"
+                        );
+
+                        if (messageIcon) {
+
+                            messageIcon.className =
+                                "bi bi-x-circle-fill";
+
+                        }
+
+                    }
+
+
+                    messageText.textContent =
+                        message;
+
+
+                    messageBox.style.display =
+                        "flex";
+
+
+                    setTimeout(
+                        function () {
+
+                            messageBox.style.display =
+                                "none";
+
+                        },
+                        5000
+                    );
+
+                }
+
+
+                /* ====================================================
+                   SEARCH
+                   ==================================================== */
+
+                const searchInput =
+                    document.getElementById(
+                        "orderSearchInput"
+                    );
+
+
+                if (searchInput) {
+
+                    searchInput.addEventListener(
+                        "input",
+                        function () {
+
+                            const value =
+                                searchInput.value
+                                    .toLowerCase()
+                                    .trim();
+
+
+                            document
+                                .querySelectorAll(
+                                    "#ordersTable tbody tr"
+                                )
+                                .forEach(
+                                    function (row) {
+
+                                        const text =
+                                            row.textContent
+                                                .toLowerCase();
+
+
+                                        row.style.display =
+                                            text.includes(value)
+                                                ? ""
+                                                : "none";
+
+                                    }
+                                );
+
+                        }
+                    );
+
+                }
+
+
+                /* ====================================================
+                   DELIVER ORDER
+                   ==================================================== */
+
+                document
+                    .querySelectorAll(
+                        ".sc-packaged-deliver-btn"
+                    )
+                    .forEach(
+                        function (button) {
+
+                            button.addEventListener(
+                                "click",
+                                async function () {
+
+
+                                    const orderId =
+                                        button.getAttribute(
+                                            "data-order-id"
+                                        );
+
+
+                                    const url =
+                                        button.getAttribute(
+                                            "data-deliver-url"
+                                        );
+
+
+                                    const token =
+                                        getAntiForgeryToken();
+
+
+                                    if (
+                                        !orderId ||
+                                        !url ||
+                                        !token
+                                    ) {
+
+                                        showMessage(
+                                            "Unable to start delivery for this order.",
+                                            "error"
+                                        );
+
+                                        return;
+
+                                    }
+
+
+                                    if (
+                                        !confirm(
+                                            "Are you sure you want to send this packaged order for delivery?"
+                                        )
+                                    ) {
+
+                                        return;
+
+                                    }
+
+
+                                    const originalContent =
+                                        button.innerHTML;
+
+
+                                    button.disabled =
+                                        true;
+
+
+                                    button.innerHTML =
+                                        `
+                                        <span class="sc-packaged-btn-loading">
+                                            <span class="sc-packaged-spinner"></span>
+                                            Starting...
+                                        </span>
+                                        `;
+
+
+                                    try {
+
+                                        const formData =
+                                            new FormData();
+
+
+                                        formData.append(
+                                            "orderId",
+                                            orderId
+                                        );
+
+
+                                        const response =
+                                            await fetch(
+                                                url,
+                                                {
+                                                    method:
+                                                        "POST",
+
+                                                    headers: {
+
+                                                        "RequestVerificationToken":
+                                                            token
+
+                                                    },
+
+                                                    body:
+                                                        formData
+                                                }
+                                            );
+
+
+                                        const result =
+                                            await response.json();
+
+
+                                        if (
+                                            !result.success
+                                        ) {
+
+                                            button.disabled =
+                                                false;
+
+
+                                            button.innerHTML =
+                                                originalContent;
+
+
+                                            showMessage(
+                                                result.message ||
+                                                "Unable to start delivery.",
+                                                "error"
+                                            );
+
+                                            return;
+
+                                        }
+
+
+                                        /* ====================================
+                                           SUCCESS
+                                           ==================================== */
+
+                                        const row =
+                                            button.closest(
+                                                "tr"
+                                            );
+
+
+                                        if (row) {
+
+                                            row.classList.add(
+                                                "sc-packaged-row-delivered"
+                                            );
+
+
+                                            setTimeout(
+                                                function () {
+
+                                                    row.remove();
+
+
+                                                    updateOrderCounts();
+
+
+                                                    checkEmptyState();
+
+                                                },
+                                                500
+                                            );
+
+                                        }
+
+
+                                        showMessage(
+                                            result.message ||
+                                            "Order successfully sent for delivery.",
+                                            "success"
+                                        );
+
+                                    }
+                                    catch (error) {
+
+                                        console.error(
+                                            error
+                                        );
+
+
+                                        button.disabled =
+                                            false;
+
+
+                                        button.innerHTML =
+                                            originalContent;
+
+
+                                        showMessage(
+                                            "Something went wrong while starting delivery.",
+                                            "error"
+                                        );
+
+                                    }
+
+                                }
+                            );
+
+                        }
+                    );
+
+
+                /* ====================================================
+                   UPDATE COUNTS
+                   ==================================================== */
+
+                function updateOrderCounts() {
+
+                    const rows =
+                        document.querySelectorAll(
+                            "#ordersTable tbody tr"
+                        );
+
+
+                    const count =
+                        rows.length;
+
+
+                    const headerCount =
+                        document.getElementById(
+                            "packagedOrderCount"
+                        );
+
+
+                    const summaryCount =
+                        document.getElementById(
+                            "summaryPackagedCount"
+                        );
+
+
+                    const tableCount =
+                        document.getElementById(
+                            "tableOrderCount"
+                        );
+
+
+                    if (headerCount) {
+
+                        headerCount.textContent =
+                            count;
+
+                    }
+
+
+                    if (summaryCount) {
+
+                        summaryCount.textContent =
+                            count;
+
+                    }
+
+
+                    if (tableCount) {
+
+                        tableCount.textContent =
+                            count;
+
+                    }
+
+                }
+
+
+                /* ====================================================
+                   EMPTY STATE
+                   ==================================================== */
+
+                function checkEmptyState() {
+
+                    const rows =
+                        document.querySelectorAll(
+                            "#ordersTable tbody tr"
+                        );
+
+
+                    if (
+                        rows.length === 0
+                    ) {
+
+                        const container =
+                            document.getElementById(
+                                "packagedOrdersContainer"
+                            );
+
+
+                        const emptyState =
+                            document.getElementById(
+                                "ajaxEmptyState"
+                            );
+
+
+                        if (container) {
+
+                            container.style.display =
+                                "none";
+
+                        }
+
+
+                        if (emptyState) {
+
+                            emptyState.style.display =
+                                "block";
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    </script>
+
+}
+
+
+
+

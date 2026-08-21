@@ -1,0 +1,1069 @@
+﻿@using SwiftCare.Models
+@using System.ComponentModel.DataAnnotations
+
+@model IEnumerable<OurEquipment>
+
+@{
+    ViewData["Title"] = "Equipment";
+
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+    // ============================================================
+    // NORMALIZE WEB PATH
+    // ONLY AFFECTS THIS VIEW
+    // ============================================================
+
+    string GetWebPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        // Leave absolute URLs unchanged
+        if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
+        // Remove all leading slashes
+        path = path.TrimStart('/');
+
+        // Return a root-relative URL
+        return "/" + path;
+    }
+
+
+    // ============================================================
+    // STATUS DISPLAY NAME
+    // ============================================================
+
+    string GetStatusDisplayName(EquipmentStatus status)
+    {
+        var memberInfo = status
+            .GetType()
+            .GetMember(status.ToString())
+            .FirstOrDefault();
+
+        var displayAttribute = memberInfo?
+            .GetCustomAttributes(
+                typeof(DisplayAttribute),
+                false
+            )
+            .Cast<DisplayAttribute>()
+            .FirstOrDefault();
+
+        return displayAttribute?.Name
+               ?? status.ToString();
+    }
+
+
+    // ============================================================
+    // STATUS CSS CLASS
+    // ============================================================
+
+    string GetStatusClass(EquipmentStatus status)
+    {
+        return status switch
+        {
+            EquipmentStatus.Available =>
+                "equipment-status-available",
+
+            EquipmentStatus.InUse =>
+                "equipment-status-in-use",
+
+            EquipmentStatus.UnderMaintenance =>
+                "equipment-status-maintenance",
+
+            EquipmentStatus.Retired =>
+                "equipment-status-retired",
+
+            _ =>
+                "equipment-status-default"
+        };
+    }
+}
+
+
+<div class="sc-equipment-page">
+
+    <!-- =========================================================
+         PAGE HEADER
+         ========================================================= -->
+
+    <div class="sc-equipment-header">
+
+        <div class="sc-equipment-header-content">
+
+            <div>
+
+                <div class="sc-equipment-title-row">
+
+                    <div class="sc-equipment-title-icon">
+
+                        <i class="bi bi-box-seam-fill"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h1 class="sc-equipment-title">
+                            Medical Equipment
+                        </h1>
+
+                        <p class="sc-equipment-subtitle">
+                            Manage and monitor all medical equipment within SwiftCare.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            @if (User.IsInRole("Administrator"))
+            {
+                <a asp-controller="Equipment"
+                       asp-action="EquipmentList"
+                       class="sc-order-equipment-btn">
+
+                    <i class="bi bi-cart-plus-fill"></i>
+
+                    <span>
+                        Order Equipment
+                    </span>
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         EQUIPMENT TABLE CARD
+         ========================================================= -->
+
+    <div class="sc-equipment-table-card">
+
+
+        <!-- =====================================================
+             TABLE HEADER
+             ===================================================== -->
+
+        <div class="sc-equipment-table-header">
+
+            <div>
+
+                <h2>
+
+                    <i class="bi bi-clipboard2-pulse-fill"></i>
+
+                    Equipment Inventory
+
+                </h2>
+
+                <span>
+
+                    @(Model?.Count() ?? 0)
+                    equipment item@((Model?.Count() ?? 0) == 1 ? "" : "s")
+                    registered
+
+                </span>
+
+            </div>
+
+
+            <!-- TOTAL EQUIPMENT -->
+
+            <div class="sc-equipment-total">
+
+                <div class="sc-equipment-total-icon">
+
+                    <i class="bi bi-boxes"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Total Equipment
+                    </span>
+
+                    <strong>
+                        @(Model?.Count() ?? 0)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             TABLE
+             ===================================================== -->
+
+        <div class="sc-equipment-table-wrapper">
+
+            <table class="sc-equipment-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Equipment
+                        </th>
+
+                        <th class="sc-equipment-image-header">
+                            Image
+                        </th>
+
+                        <th>
+                            Description
+                        </th>
+
+                        <th class="sc-equipment-barcode-header">
+                            Barcode
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th class="sc-equipment-actions-header">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var equipment in Model)
+                        {
+                            // ====================================================
+                            // CREATE CORRECT ROOT-RELATIVE PATHS
+                            // ====================================================
+
+                            var equipmentImagePath =
+                                GetWebPath(
+                                    equipment.ImageUrl
+                                );
+
+                            var barcodeImagePath =
+                                GetWebPath(
+                                    equipment.BarcodeImage
+                                );
+
+
+                            <tr>
+
+
+                                <!-- =============================================
+                                     EQUIPMENT
+                                     ============================================= -->
+
+                                <td>
+
+                                    <div class="sc-equipment-item">
+
+                                        <div class="sc-equipment-item-icon">
+
+                                            <i class="bi bi-heart-pulse-fill"></i>
+
+                                        </div>
+
+
+                                        <div class="sc-equipment-info">
+
+                                            <span class="sc-equipment-name">
+
+                                                @equipment.EquipmentName
+
+                                            </span>
+
+
+                                            <span class="sc-equipment-id">
+
+                                                Equipment #@equipment.EquipmentId
+
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =============================================
+                                     EQUIPMENT IMAGE
+                                     ============================================= -->
+
+                                <td>
+
+                                    <div class="sc-equipment-image-container">
+
+                                        @if (!string.IsNullOrWhiteSpace(equipmentImagePath))
+                                        {
+                                            <button type="button"
+                                                    class="sc-equipment-image-button"
+                                                    data-equipment-image="@equipmentImagePath"
+                                                    data-equipment-name="@equipment.EquipmentName"
+                                                    onclick="openEquipmentImage(this)"
+                                                    title="View Equipment Image">
+
+                                                <img src="@equipmentImagePath"
+                                                     alt="@equipment.EquipmentName"
+                                                     class="sc-equipment-image-preview" />
+
+                                                <div class="sc-equipment-image-overlay">
+
+                                                    <i class="bi bi-zoom-in"></i>
+
+                                                </div>
+
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div class="sc-equipment-image-placeholder">
+
+                                                <i class="bi bi-image"></i>
+
+                                                <span>
+                                                    No Image
+                                                </span>
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =============================================
+                                     DESCRIPTION
+                                     ============================================= -->
+
+                                <td>
+
+                                    <div class="sc-equipment-description">
+
+                                        @if (!string.IsNullOrWhiteSpace(equipment.Description))
+                                        {
+                                            <span>
+
+                                                @equipment.Description
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="sc-equipment-empty">
+
+                                                <i class="bi bi-dash-circle"></i>
+
+                                                No description available
+
+                                            </span>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =============================================
+                                     BARCODE
+                                     ============================================= -->
+
+                                <td>
+
+                                    <div class="sc-equipment-barcode-container">
+
+                                        @if (!string.IsNullOrWhiteSpace(barcodeImagePath))
+                                        {
+                                            <!-- =====================================
+                                                 BARCODE BUTTON
+                                                 ===================================== -->
+
+                                            <button type="button"
+                                                    class="sc-equipment-barcode-button"
+                                                    data-barcode-image="@barcodeImagePath"
+                                                    data-barcode-value="@equipment.BarcodeValue"
+                                                    onclick="openBarcode(this)"
+                                                    title="View Barcode">
+
+                                                <img src="@barcodeImagePath"
+                                                     alt="Barcode for @equipment.EquipmentName"
+                                                     class="sc-equipment-barcode-image" />
+
+                                                <div class="sc-equipment-barcode-overlay">
+
+                                                    <i class="bi bi-zoom-in"></i>
+
+                                                </div>
+
+                                            </button>
+
+
+                                            <!-- =====================================
+                                                 BARCODE NUMBER
+                                                 ===================================== -->
+                                            @if (!string.IsNullOrWhiteSpace(equipment.BarcodeValue))
+                                            {
+                                                <div class="sc-equipment-barcode-value">
+
+                                                    <i class="bi bi-upc-scan"></i>
+
+                                                    <span>
+
+                                                        @equipment.BarcodeValue
+
+                                                    </span>
+
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <!-- =====================================
+                                                 FALLBACK
+                                                 ===================================== -->
+
+                                            <div class="sc-equipment-barcode-missing">
+
+                                                <div class="sc-equipment-barcode-missing-icon">
+
+                                                    <i class="bi bi-upc-scan"></i>
+
+                                                </div>
+
+
+                                                @if (!string.IsNullOrWhiteSpace(equipment.BarcodeValue))
+                                                {
+                                                    <span>
+
+                                                        @equipment.BarcodeValue
+
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span>
+                                                        No barcode
+                                                    </span>
+                                                }
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =============================================
+                                     STATUS
+                                     ============================================= -->
+
+                                <td>
+
+                                    <span class="sc-equipment-status @GetStatusClass(equipment.Status)">
+
+                                        <span class="sc-equipment-status-dot"></span>
+
+                                        @GetStatusDisplayName(equipment.Status)
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- =============================================
+                                     ACTIONS
+                                     ============================================= -->
+
+                                <td>
+
+                                    <div class="sc-equipment-action-buttons">
+
+
+                                        <!-- VIEW -->
+
+                                        <a asp-controller="Equipments"
+                                               asp-action="Details"
+                                               asp-route-id="@equipment.EquipmentId"
+                                               class="sc-equipment-action-btn sc-equipment-view-btn"
+                                               title="View Equipment">
+
+                                            <i class="bi bi-eye-fill"></i>
+
+                                        </a>
+
+
+                                        <!-- EDIT -->
+                                        @if (User.IsInRole("Administrator"))
+                                        {
+                                            <a asp-controller="Equipments"
+                                                   asp-action="Edit"
+                                                   asp-route-id="@equipment.EquipmentId"
+                                                   class="sc-equipment-action-btn sc-equipment-edit-btn"
+                                                   title="Edit Equipment">
+
+                                                <i class="bi bi-pencil-square"></i>
+
+                                            </a>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <!-- =============================================
+                             EMPTY STATE
+                             ============================================= -->
+
+                        <tr>
+
+                            <td colspan="6">
+
+                                <div class="sc-equipment-empty-state">
+
+                                    <div class="sc-equipment-empty-icon">
+
+                                        <i class="bi bi-box-seam"></i>
+
+                                    </div>
+
+
+                                    <h3>
+                                        No Equipment Found
+                                    </h3>
+
+
+                                    <p>
+                                        There is currently no medical equipment
+                                        registered in the system.
+                                    </p>
+
+
+                                    @if (User.IsInRole("Administrator"))
+                                    {
+                                        <a asp-controller="Equipment"
+                                               asp-action="EquipmentList"
+                                               class="sc-order-equipment-btn">
+
+                                            <i class="bi bi-cart-plus-fill"></i>
+
+                                            Order Equipment
+
+                                        </a>
+                                    }
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =============================================================
+     EQUIPMENT IMAGE MODAL
+     ============================================================= -->
+
+<div class="modal fade"
+     id="equipmentImageModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+        <div class="modal-content sc-equipment-modal">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    <i class="bi bi-image me-2"></i>
+
+                    <span id="equipmentImageTitle">
+
+                        Equipment Image
+
+                    </span>
+
+                </h5>
+
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body text-center">
+
+                <img id="equipmentModalImage"
+                     src=""
+                     alt="Equipment"
+                     class="sc-equipment-modal-image" />
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =============================================================
+     BARCODE MODAL
+     ============================================================= -->
+
+<div class="modal fade"
+     id="barcodeModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+        <div class="modal-content sc-equipment-modal">
+
+
+            <!-- HEADER -->
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    <i class="bi bi-upc-scan me-2"></i>
+
+                    Equipment Barcode
+
+                </h5>
+
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <!-- BODY -->
+
+            <div class="modal-body text-center">
+
+
+                <!-- BARCODE IMAGE -->
+
+                <div class="sc-barcode-modal-wrapper">
+
+                    <img id="barcodeModalImage"
+                         src=""
+                         alt="Equipment Barcode"
+                         class="sc-barcode-modal-image"
+                         style="display: none;
+                    max-width: 100%;
+                    width: auto;
+                    height: auto;" />
+
+                </div>
+
+
+                <!-- ERROR MESSAGE -->
+
+                <div id="barcodeImageError"
+                     style="display: none;">
+
+                    <i class="bi bi-exclamation-triangle"></i>
+
+                    <p>
+                        Unable to load the barcode image.
+                    </p>
+
+                </div>
+
+
+                <!-- BARCODE VALUE -->
+
+                <div class="sc-barcode-modal-value">
+
+                    <i class="bi bi-upc-scan"></i>
+
+                    <span id="barcodeModalValue">
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        // =========================================================
+        // GET ROOT IMAGE PATH
+        // =========================================================
+
+        function getRootImagePath(path) {
+
+            if (!path) {
+
+                return "";
+
+            }
+
+
+            // If already a full URL, leave it alone
+
+            if (
+                path.startsWith("http://") ||
+                path.startsWith("https://")
+            ) {
+
+                return path;
+
+            }
+
+
+            // Remove leading slashes
+
+            path =
+                path.replace(
+                    /^\/+/,
+                    ""
+                );
+
+
+            // Always return root-relative URL
+
+            return "/" + path;
+
+        }
+
+
+        // =========================================================
+        // OPEN EQUIPMENT IMAGE
+        // =========================================================
+
+        function openEquipmentImage(button) {
+
+            const imageUrl =
+                button.dataset.equipmentImage;
+
+            const equipmentName =
+                button.dataset.equipmentName;
+
+
+            const image =
+                document.getElementById(
+                    "equipmentModalImage"
+                );
+
+            const title =
+                document.getElementById(
+                    "equipmentImageTitle"
+                );
+
+
+            if (image) {
+
+                // Reset image first
+
+                image.removeAttribute(
+                    "src"
+                );
+
+
+                // Set correct path
+
+                image.src =
+                    getRootImagePath(
+                        imageUrl
+                    );
+
+            }
+
+
+            if (title) {
+
+                title.textContent =
+                    equipmentName ||
+                    "Equipment Image";
+
+            }
+
+
+            const modalElement =
+                document.getElementById(
+                    "equipmentImageModal"
+                );
+
+
+            if (modalElement) {
+
+                const modal =
+                    bootstrap.Modal.getOrCreateInstance(
+                        modalElement
+                    );
+
+                modal.show();
+
+            }
+
+        }
+
+
+        // =========================================================
+        // OPEN BARCODE MODAL
+        // =========================================================
+
+        function openBarcode(button) {
+
+            // =====================================================
+            // GET VALUES DIRECTLY FROM BUTTON DATA ATTRIBUTES
+            // =====================================================
+
+            const barcodeImage =
+                button.dataset.barcodeImage;
+
+            const barcodeValue =
+                button.dataset.barcodeValue;
+
+
+            const image =
+                document.getElementById(
+                    "barcodeModalImage"
+                );
+
+            const value =
+                document.getElementById(
+                    "barcodeModalValue"
+                );
+
+            const error =
+                document.getElementById(
+                    "barcodeImageError"
+                );
+
+
+            // =====================================================
+            // SET BARCODE VALUE
+            // =====================================================
+
+            if (value) {
+
+                value.textContent =
+                    barcodeValue ||
+                    "Barcode value unavailable";
+
+            }
+
+
+            // =====================================================
+            // RESET IMAGE STATE
+            // =====================================================
+
+            if (image) {
+
+                image.style.display =
+                    "none";
+
+
+                image.removeAttribute(
+                    "src"
+                );
+
+            }
+
+
+            if (error) {
+
+                error.style.display =
+                    "none";
+
+            }
+
+
+            // =====================================================
+            // LOAD BARCODE IMAGE
+            // =====================================================
+
+            if (image && barcodeImage) {
+
+                const correctBarcodePath =
+                    getRootImagePath(
+                        barcodeImage
+                    );
+
+
+                // When barcode successfully loads
+
+                image.onload =
+                    function () {
+
+                        image.style.display =
+                            "block";
+
+                        if (error) {
+
+                            error.style.display =
+                                "none";
+
+                        }
+
+                    };
+
+
+                // If barcode cannot load
+
+                image.onerror =
+                    function () {
+
+                        image.style.display =
+                            "none";
+
+                        if (error) {
+
+                            error.style.display =
+                                "block";
+
+                        }
+
+                    };
+
+
+                // Set source AFTER handlers
+
+                image.src =
+                    correctBarcodePath;
+
+            }
+            else if (error) {
+
+                error.style.display =
+                    "block";
+
+            }
+
+
+            // =====================================================
+            // OPEN MODAL
+            // =====================================================
+
+            const modalElement =
+                document.getElementById(
+                    "barcodeModal"
+                );
+
+
+            if (modalElement) {
+
+                const modal =
+                    bootstrap.Modal.getOrCreateInstance(
+                        modalElement
+                    );
+
+                modal.show();
+
+            }
+
+        }
+
+
+        // =========================================================
+        // ROW ANIMATION
+        // =========================================================
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const equipmentRows =
+                    document.querySelectorAll(
+                        ".sc-equipment-table tbody tr"
+                    );
+
+
+                equipmentRows.forEach(
+                    function (
+                        row,
+                        index
+                    ) {
+
+                        row.style.opacity =
+                            "0";
+
+                        row.style.transform =
+                            "translateY(10px)";
+
+
+                        setTimeout(
+                            function () {
+
+                                row.style.transition =
+                                    "opacity 0.4s ease, transform 0.4s ease";
+
+                                row.style.opacity =
+                                    "1";
+
+                                row.style.transform =
+                                    "translateY(0)";
+
+                            },
+                            index * 60
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    </script>
+
+}

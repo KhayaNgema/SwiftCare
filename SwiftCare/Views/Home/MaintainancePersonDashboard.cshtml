@@ -1,4 +1,429 @@
 ﻿@{
-    ViewData["Title"] = "Maintenance Person";
+    ViewData["Title"] = "Maintenance Dashboard";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 }
+
+<div class="maintenance-dashboard">
+
+    <div class="maintenance-dashboard-container">
+
+        <!-- =====================================================
+             WELCOME
+        ===================================================== -->
+
+        <section class="maintenance-welcome">
+
+            <div class="maintenance-welcome-content">
+
+                <div class="maintenance-welcome-icon">
+
+                    <i class="bi bi-tools"></i>
+
+                </div>
+
+                <div>
+
+                    <h1>
+                        Maintenance Dashboard
+                    </h1>
+
+                    <p>
+                        Manage equipment maintenance requests, assigned repairs,
+                        and daily maintenance activities.
+                    </p>
+
+                    <div class="maintenance-status">
+
+                        <span class="maintenance-status-dot"></span>
+
+                        On duty
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             MAIN ACTIONS
+        ===================================================== -->
+
+        <section class="maintenance-actions">
+
+
+            <!-- MAINTENANCE REQUESTS -->
+
+            <a asp-controller="MaintenanceRequests"
+                   asp-action="MaintenanceRequests"
+                   class="maintenance-action-card">
+
+                <div class="maintenance-action-icon">
+
+                    <i class="bi bi-clipboard-check"></i>
+
+                </div>
+
+                <div class="maintenance-action-content">
+
+                    <div class="maintenance-action-title">
+
+                        Maintenance Requests
+
+                    </div>
+
+                    <div class="maintenance-action-description">
+
+                        View and manage equipment maintenance requests.
+
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right maintenance-action-arrow"></i>
+
+            </a>
+
+
+            <!-- ASSIGNED TASKS -->
+
+            <a asp-controller="MaintenanceRequests"
+                   asp-action="MyMaintenanceRequests"
+                   class="maintenance-action-card">
+
+                <div class="maintenance-action-icon">
+
+                    <i class="bi bi-wrench-adjustable-circle"></i>
+
+                </div>
+
+                <div class="maintenance-action-content">
+
+                    <div class="maintenance-action-title">
+
+                        My Assigned Tasks
+
+                    </div>
+
+                    <div class="maintenance-action-description">
+
+                        View maintenance jobs currently assigned to you.
+
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right maintenance-action-arrow"></i>
+
+            </a>
+
+
+            <!-- EQUIPMENT -->
+
+            <a asp-controller="Equipment"
+                   asp-action="OurEquipment"
+                   class="maintenance-action-card">
+
+                <div class="maintenance-action-icon">
+
+                    <i class="bi bi-box-seam-fill"></i>
+
+                </div>
+
+                <div class="maintenance-action-content">
+
+                    <div class="maintenance-action-title">
+
+                        Equipment
+
+                    </div>
+
+                    <div class="maintenance-action-description">
+
+                        View equipment and monitor its current maintenance status.
+
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right maintenance-action-arrow"></i>
+
+            </a>
+
+
+            <!-- COMPLETED MAINTENANCE -->
+
+            <a asp-controller="MaintenanceRequests"
+                   asp-action="CompletedRequests"
+                   class="maintenance-action-card">
+
+                <div class="maintenance-action-icon">
+
+                    <i class="bi bi-check2-circle"></i>
+
+                </div>
+
+                <div class="maintenance-action-content">
+
+                    <div class="maintenance-action-title">
+
+                        Completed Maintenance
+
+                    </div>
+
+                    <div class="maintenance-action-description">
+
+                        Review equipment maintenance jobs that have been completed.
+
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right maintenance-action-arrow"></i>
+
+            </a>
+
+        </section>
+
+
+        <!-- =====================================================
+             TODAY'S MAINTENANCE
+        ===================================================== -->
+
+        <section class="maintenance-section">
+
+            <div class="maintenance-section-header">
+
+                <div class="maintenance-section-title">
+
+                    <div class="maintenance-section-title-icon">
+
+                        <i class="bi bi-calendar-check-fill"></i>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            DAILY WORK
+                        </span>
+
+                        <h2>
+                            Today's Maintenance
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="maintenance-date">
+
+                    <i class="bi bi-calendar3"></i>
+
+                    @DateTime.Now.ToString("dd MMM yyyy")
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================= -->
+
+            <div class="maintenance-empty-state">
+
+                <div class="maintenance-empty-icon">
+
+                    <i class="bi bi-tools"></i>
+
+                </div>
+
+                <h3>
+                    No maintenance tasks assigned
+                </h3>
+
+                <p>
+                    Maintenance jobs assigned to you will appear here.
+                    Check your assigned tasks to manage equipment repairs
+                    and maintenance activities.
+                </p>
+
+
+                <a asp-controller="MaintenanceRequests"
+                       asp-action="AssignedRequests"
+                       class="maintenance-view-tasks-btn">
+
+                    <i class="bi bi-list-check"></i>
+
+                    View Assigned Tasks
+
+                </a>
+
+            </div>
+
+
+            <!-- =================================================
+                 QUICK INFORMATION
+            ================================================= -->
+
+            <div class="maintenance-info">
+
+
+                <!-- ASSIGNED TASKS -->
+
+                <div class="maintenance-info-item">
+
+                    <div class="maintenance-info-icon">
+
+                        <i class="bi bi-wrench-adjustable"></i>
+
+                    </div>
+
+                    <div>
+
+                        <div class="maintenance-info-label">
+
+                            Assigned Tasks
+
+                        </div>
+
+                        <div class="maintenance-info-value">
+
+                            0 assigned
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PENDING -->
+
+                <div class="maintenance-info-item">
+
+                    <div class="maintenance-info-icon">
+
+                        <i class="bi bi-hourglass-split"></i>
+
+                    </div>
+
+                    <div>
+
+                        <div class="maintenance-info-label">
+
+                            Pending Jobs
+
+                        </div>
+
+                        <div class="maintenance-info-value">
+
+                            0 pending
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- COMPLETED -->
+
+                <div class="maintenance-info-item">
+
+                    <div class="maintenance-info-icon">
+
+                        <i class="bi bi-check-circle-fill"></i>
+
+                    </div>
+
+                    <div>
+
+                        <div class="maintenance-info-label">
+
+                            Completed Today
+
+                        </div>
+
+                        <div class="maintenance-info-value">
+
+                            0 completed
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- STATUS -->
+
+                <div class="maintenance-info-item">
+
+                    <div class="maintenance-info-icon">
+
+                        <i class="bi bi-person-workspace"></i>
+
+                    </div>
+
+                    <div>
+
+                        <div class="maintenance-info-label">
+
+                            Work Status
+
+                        </div>
+
+                        <div class="maintenance-info-value maintenance-on-duty">
+
+                            On duty
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             QUICK REMINDER
+        ===================================================== -->
+
+        <section class="maintenance-reminder">
+
+            <div class="maintenance-reminder-icon">
+
+                <i class="bi bi-info-circle-fill"></i>
+
+            </div>
+
+            <div class="maintenance-reminder-content">
+
+                <span>
+                    MAINTENANCE REMINDER
+                </span>
+
+                <h3>
+                    Keep equipment safe and operational
+                </h3>
+
+                <p>
+                    Review assigned maintenance requests regularly and update
+                    the maintenance status when work begins or is completed.
+                </p>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

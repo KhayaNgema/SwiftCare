@@ -1,0 +1,599 @@
+﻿@using SwiftCare.Models
+
+@model List<MaintenanceRequest>
+
+@{
+    ViewData["Title"] = "Maintenance Requests";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var totalRequests = Model?.Count ?? 0;
+
+    var pendingRequests = Model?.Count(r =>
+        r.RequestStatus == MaintenanceRequestStatus.Pending) ?? 0;
+
+    var inProgressRequests = Model?.Count(r =>
+        r.RequestStatus == MaintenanceRequestStatus.InProgress) ?? 0;
+
+    var completedRequests = Model?.Count(r =>
+        r.RequestStatus == MaintenanceRequestStatus.Completed) ?? 0;
+}
+
+
+<div class="maintenance-requests-page">
+
+    <div class="maintenance-requests-container">
+
+
+        <!-- =====================================================
+             PAGE HERO
+        ====================================================== -->
+
+        <section class="maintenance-requests-hero">
+
+            <div class="maintenance-requests-hero-content">
+
+                <div class="maintenance-requests-eyebrow">
+
+                    <i class="bi bi-tools"></i>
+
+                    MAINTENANCE MANAGEMENT
+
+                </div>
+
+
+                <h1>
+                    Maintenance Requests
+                </h1>
+
+
+                <p>
+                    View, monitor and manage equipment maintenance
+                    requests assigned to you.
+                </p>
+
+            </div>
+
+
+            <div class="maintenance-hero-icon">
+
+                <i class="bi bi-wrench-adjustable-circle"></i>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             STATISTICS
+        ====================================================== -->
+
+        <section class="maintenance-request-stats">
+
+            <!-- TOTAL -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-total">
+
+                    <i class="bi bi-clipboard-data"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Total Requests
+                    </span>
+
+                    <strong>
+                        @totalRequests
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-pending">
+
+                    <i class="bi bi-hourglass-split"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Pending
+                    </span>
+
+                    <strong>
+                        @pendingRequests
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- IN PROGRESS -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-progress">
+
+                    <i class="bi bi-gear-wide-connected"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        In Progress
+                    </span>
+
+                    <strong>
+                        @inProgressRequests
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPLETED -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-completed">
+
+                    <i class="bi bi-check2-circle"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Completed
+                    </span>
+
+                    <strong>
+                        @completedRequests
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             REQUEST LIST
+        ====================================================== -->
+
+        <section class="maintenance-requests-section">
+
+
+            <!-- HEADER -->
+
+            <div class="maintenance-requests-section-header">
+
+                <div>
+
+                    <span class="maintenance-section-eyebrow">
+
+                        ACTIVE WORK QUEUE
+
+                    </span>
+
+
+                    <h2>
+                        Equipment Maintenance Requests
+                    </h2>
+
+
+                    <p>
+                        Review reported equipment problems and manage
+                        maintenance activities.
+                    </p>
+
+                </div>
+
+
+                <div class="maintenance-request-count">
+
+                    <i class="bi bi-inboxes"></i>
+
+                    @totalRequests Requests
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 REQUESTS
+            ================================================== -->
+            @if (Model != null && Model.Any())
+            {
+
+                <div class="maintenance-request-list">
+
+
+                    @foreach (var request in Model)
+                    {
+
+                        var equipmentImage =
+                            string.IsNullOrWhiteSpace(
+                                request.OurEquipment?.ImageUrl)
+                            ? Url.Content(
+                                "~/Images/default_equipment.png")
+                            : Url.Content(
+                                "~/" +
+                                request.OurEquipment.ImageUrl
+                                    .TrimStart('/'));
+
+
+                        var priorityClass =
+                            request.Priority == MaintenancePriority.Critical
+                                ? "maintenance-priority-critical"
+
+                            : request.Priority == MaintenancePriority.High
+                                ? "maintenance-priority-high"
+
+                            : request.Priority == MaintenancePriority.Medium
+                                ? "maintenance-priority-medium"
+
+                            : "maintenance-priority-low";
+
+
+                        var statusClass =
+                            request.RequestStatus ==
+                                MaintenanceRequestStatus.Pending
+                                ? "maintenance-status-pending"
+
+                            : request.RequestStatus ==
+                                MaintenanceRequestStatus.Assigned
+                                ? "maintenance-status-assigned"
+
+                            : request.RequestStatus ==
+                                MaintenanceRequestStatus.InProgress
+                                ? "maintenance-status-progress"
+
+                            : request.RequestStatus ==
+                                MaintenanceRequestStatus.Completed
+                                ? "maintenance-status-completed"
+
+                            : "maintenance-status-cancelled";
+
+
+                        <div class="maintenance-request-card">
+
+
+                            <!-- EQUIPMENT IMAGE -->
+
+                            <div class="maintenance-request-image">
+
+                                <img src="@equipmentImage"
+                                     alt="@request.OurEquipment?.EquipmentName"
+                                     onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+
+                            </div>
+
+
+                            <!-- MAIN CONTENT -->
+
+                            <div class="maintenance-request-main">
+
+
+                                <!-- TOP -->
+
+                                <div class="maintenance-request-top">
+
+                                    <div>
+
+                                        <span class="maintenance-request-label">
+
+                                            MAINTENANCE REQUEST
+
+                                        </span>
+
+
+                                        <h3>
+
+                                            @(request.OurEquipment?.EquipmentName
+                                                ?? "Unknown Equipment")
+
+                                        </h3>
+
+                                    </div>
+
+
+                                    <div class="maintenance-request-badges">
+
+                                        <span class="maintenance-priority-badge
+                                            @priorityClass">
+
+                                            <i class="bi bi-flag-fill"></i>
+
+                                            @request.Priority
+
+                                        </span>
+
+
+                                        <span class="maintenance-status-badge
+                                            @statusClass">
+
+                                            <i class="bi bi-circle-fill"></i>
+
+                                            @request.RequestStatus
+
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- REFERENCE -->
+
+                                <div class="maintenance-reference">
+
+                                    <i class="bi bi-upc-scan"></i>
+
+                                    <span>
+                                        Ref:
+                                    </span>
+
+                                    <strong>
+
+                                        @(string.IsNullOrWhiteSpace(
+                                            request.ReferenceNumber)
+                                            ? $"MR-{request.RequestId}"
+                                            : request.ReferenceNumber)
+
+                                    </strong>
+
+                                </div>
+
+
+                                <!-- PROBLEM -->
+
+                                <div class="maintenance-problem-box">
+
+                                    <div class="maintenance-problem-icon">
+
+                                        <i class="bi bi-exclamation-triangle"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Reported Problem
+                                        </span>
+
+
+                                        <p>
+
+                                            @request.Message
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- INFORMATION -->
+
+                                <div class="maintenance-request-meta">
+
+
+                                    <!-- EQUIPMENT BARCODE -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-upc"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Barcode
+                                            </span>
+
+
+                                            <strong>
+
+                                                @(string.IsNullOrWhiteSpace(
+                                                    request.OurEquipment?.BarcodeValue)
+                                                    ? "Not available"
+                                                    : request.OurEquipment.BarcodeValue)
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- RESIDENT -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-person-heart"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Resident
+                                            </span>
+
+
+                                            <strong>
+
+                                                @(request.OurEquipment?.AssignedTo != null
+                                                    ? $"{request.OurEquipment.AssignedTo.FirstName} {request.OurEquipment.AssignedTo.LastName}"
+                                                    : "Not assigned")
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- LOGGED BY -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-person-check"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Logged By
+                                            </span>
+
+
+                                            <strong>
+
+                                                @(request.LoggedBy != null
+                                                    ? $"{request.LoggedBy.FirstName} {request.LoggedBy.LastName}"
+                                                    : "Not available")
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- LOGGED DATE -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-calendar-event"></i>
+
+                                        <div>
+                                            <span>Reported On</span>
+                                            <strong>
+                                                @request.LoggedAt.ToString("dd MMM yyyy HH:mm")
+                                            </strong>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 SIDE ACTION
+                            ================================================== -->
+
+                            <div class="maintenance-request-side">
+
+
+                                @if (request.RequestStatus ==
+                                     MaintenanceRequestStatus.Pending)
+                                {
+
+                                    <a asp-controller="MaintenanceRequests"
+                                           asp-action="MaintenanceRequestDetails"
+                                           asp-route-requestId="@request.RequestId"
+                                           class="maintenance-request-action">
+
+                                        <i class="bi bi-arrow-right-circle"></i>
+
+                                        View Request
+
+                                    </a>
+
+                                }
+                                else
+                                {
+
+                                    <a asp-controller="MaintenanceRequests"
+                                           asp-action="MaintenanceRequestDetails"
+                                           asp-route-requestId="@request.RequestId"
+                                           class="maintenance-request-action">
+
+                                        <i class="bi bi-eye"></i>
+
+                                        View Details
+
+                                    </a>
+
+                                }
+
+                            </div>
+
+
+                        </div>
+
+                    }
+
+                </div>
+
+            }
+            else
+            {
+
+                <!-- =================================================
+                     EMPTY STATE
+                ================================================== -->
+
+                <div class="maintenance-requests-empty">
+
+
+                    <div class="maintenance-requests-empty-icon">
+
+                        <i class="bi bi-tools"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Maintenance Requests
+                    </h3>
+
+
+                    <p>
+                        There are currently no maintenance requests
+                        assigned to you or waiting for maintenance.
+                    </p>
+
+
+                    <a asp-controller="Maintenance"
+                           asp-action="MaintenanceDashboard"
+                           class="maintenance-empty-back-btn">
+
+                        <i class="bi bi-arrow-left"></i>
+
+                        Back to Dashboard
+
+                    </a>
+
+                </div>
+
+            }
+
+        </section>
+
+    </div>
+
+</div>

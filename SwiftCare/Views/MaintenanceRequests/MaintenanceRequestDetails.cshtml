@@ -1,0 +1,963 @@
+﻿@model SwiftCare.Models.MaintenanceRequest
+
+@{
+    ViewData["Title"] = "Maintenance Request Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var equipmentImage =
+        Model.OurEquipment != null &&
+        !string.IsNullOrWhiteSpace(Model.OurEquipment.ImageUrl)
+            ? Url.Content("~/" + Model.OurEquipment.ImageUrl.TrimStart('/'))
+            : Url.Content("~/Images/default_equipment.png");
+
+    var beforeImage =
+        !string.IsNullOrWhiteSpace(
+            Model.EquipmentConditionImageBefore
+        )
+            ? Url.Content(
+                "~/" +
+                Model.EquipmentConditionImageBefore.TrimStart('/')
+            )
+            : null;
+
+    var afterImage =
+        !string.IsNullOrWhiteSpace(
+            Model.EquipmentConditionImageAfter
+        )
+            ? Url.Content(
+                "~/" +
+                Model.EquipmentConditionImageAfter.TrimStart('/')
+            )
+            : null;
+
+
+    var priorityClass =
+        Model.Priority == MaintenancePriority.Low
+            ? "sc-priority-low"
+            : Model.Priority == MaintenancePriority.Medium
+                ? "sc-priority-medium"
+                : Model.Priority == MaintenancePriority.High
+                    ? "sc-priority-high"
+                    : "sc-priority-critical";
+
+
+    var statusClass =
+        Model.RequestStatus == MaintenanceRequestStatus.Pending
+            ? "sc-request-pending"
+            : Model.RequestStatus == MaintenanceRequestStatus.Assigned
+                ? "sc-request-assigned"
+                : Model.RequestStatus ==
+                  MaintenanceRequestStatus.InProgress
+                    ? "sc-request-progress"
+                    : Model.RequestStatus ==
+                      MaintenanceRequestStatus.Completed
+                        ? "sc-request-completed"
+                        : "sc-request-cancelled";
+}
+
+
+<div class="sc-maintenance-details-page">
+
+
+    <!-- ========================================================
+         HERO
+    ========================================================= -->
+
+    <div class="sc-maintenance-details-hero">
+
+
+        <div class="sc-maintenance-details-top">
+
+            <a asp-controller="MaintenanceRequests"
+                   asp-action="MaintenanceRequests"
+                   class="sc-maintenance-back">
+
+                <i class="bi bi-arrow-left"></i>
+
+                <span>
+                    Back to Requests
+                </span>
+
+            </a>
+
+
+            <div class="sc-maintenance-top-actions">
+
+                <a asp-controller="MaintenanceRequests"
+                       asp-action="UpdateMaintenanceRequest"
+                       asp-route-requestId="@Model.RequestId"
+                       class="sc-maintenance-edit-btn">
+
+                    <i class="bi bi-pencil-square"></i>
+
+                    <span>
+                        Update Request
+                    </span>
+
+                </a>
+
+
+                <div class="sc-maintenance-reference">
+
+                    <i class="bi bi-hash"></i>
+
+                    @(
+                        string.IsNullOrWhiteSpace(
+                            Model.ReferenceNumber
+                        )
+                        ? $"Request {Model.RequestId}"
+                        : Model.ReferenceNumber
+                    )
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sc-maintenance-details-hero-content">
+
+
+            <!-- EQUIPMENT IMAGE -->
+
+            <div class="sc-maintenance-equipment-image-wrap">
+
+                <img src="@equipmentImage"
+                     alt="@Model.OurEquipment?.EquipmentName"
+                     class="sc-maintenance-equipment-image"
+                     onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+
+            </div>
+
+
+            <!-- MAIN INFO -->
+
+            <div class="sc-maintenance-details-main-info">
+
+
+                <span class="sc-maintenance-eyebrow">
+
+                    <i class="bi bi-tools"></i>
+
+                    MAINTENANCE REQUEST
+
+                </span>
+
+
+                <h1>
+
+                    @(Model.OurEquipment?.EquipmentName
+                        ?? "Equipment Not Available")
+
+                </h1>
+
+
+                <p>
+
+                    <i class="bi bi-box-seam"></i>
+
+                    @(string.IsNullOrWhiteSpace(
+                        Model.OurEquipment?.BarcodeValue
+                    )
+                        ? "Equipment barcode not available"
+                        : $"Barcode: {Model.OurEquipment.BarcodeValue}")
+
+                </p>
+
+
+                <div class="sc-maintenance-hero-badges">
+
+
+                    <span class="sc-maintenance-priority @priorityClass">
+
+                        <i class="bi bi-exclamation-circle-fill"></i>
+
+                        @Model.Priority Priority
+
+                    </span>
+
+
+                    <span class="sc-maintenance-status @statusClass">
+
+                        <i class="bi bi-circle-fill"></i>
+
+                        @Model.RequestStatus
+
+                    </span>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ========================================================
+         CONTENT
+    ========================================================= -->
+
+    <div class="sc-maintenance-details-content">
+
+
+        <!-- ====================================================
+             QUICK INFORMATION
+        ===================================================== -->
+
+        <div class="row g-4">
+
+
+            <!-- PRIORITY -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-maintenance-stat-card">
+
+                    <div class="sc-maintenance-stat-icon">
+
+                        <i class="bi bi-exclamation-triangle"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Priority
+                        </span>
+
+                        <strong>
+                            @Model.Priority
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- STATUS -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-maintenance-stat-card">
+
+                    <div class="sc-maintenance-stat-icon">
+
+                        <i class="bi bi-activity"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Request Status
+                        </span>
+
+                        <strong>
+                            @Model.RequestStatus
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- LOGGED DATE -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-maintenance-stat-card">
+
+                    <div class="sc-maintenance-stat-icon">
+
+                        <i class="bi bi-calendar-event"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Logged On
+                        </span>
+
+                        <strong>
+
+                            @Model.LoggedAt.ToString(
+                                "dd MMM yyyy"
+                            )
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- REQUEST ID -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="sc-maintenance-stat-card">
+
+                    <div class="sc-maintenance-stat-icon">
+
+                        <i class="bi bi-clipboard-check"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Request ID
+                        </span>
+
+                        <strong>
+                            #@Model.RequestId
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ====================================================
+             MAIN INFORMATION
+        ===================================================== -->
+
+        <div class="row g-4 sc-maintenance-main-row">
+
+
+            <!-- =================================================
+                 PROBLEM DESCRIPTION
+            ================================================== -->
+
+            <div class="col-12 col-lg-7">
+
+                <div class="sc-maintenance-card">
+
+
+                    <div class="sc-maintenance-card-header">
+
+                        <div class="sc-maintenance-card-icon">
+
+                            <i class="bi bi-chat-square-text"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <h4>
+                                Maintenance Problem
+                            </h4>
+
+                            <p>
+                                Description provided when the request was logged.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-maintenance-problem">
+
+                        <i class="bi bi-quote"></i>
+
+                        <p>
+
+                            @(
+                                string.IsNullOrWhiteSpace(Model.Message)
+                                    ? "No maintenance problem description was provided."
+                                    : Model.Message
+                            )
+
+                        </p>
+
+                    </div>
+                    <!-- ====================================================
+     WORK PERFORMED
+==================================================== -->
+
+                    <div class="col-12">
+
+                        <div class="sc-maintenance-card sc-work-performed-card">
+
+                            <div class="sc-maintenance-card-header">
+
+                                <div class="sc-maintenance-card-icon">
+
+                                    <i class="bi bi-tools"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        Work Performed
+                                    </h4>
+
+                                    <p>
+                                        Maintenance work completed on this equipment.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            @if (!string.IsNullOrWhiteSpace(Model.WorkPerformed))
+                            {
+
+                                <div class="sc-work-performed-content">
+
+                                    <div class="sc-work-performed-quote">
+
+                                        <i class="bi bi-check2-circle"></i>
+
+                                    </div>
+
+
+                                    <p>
+                                        @Model.WorkPerformed
+                                    </p>
+
+                                </div>
+
+                            }
+                            else
+                            {
+
+                                <div class="sc-work-performed-empty">
+
+                                    <i class="bi bi-tools"></i>
+
+                                    <div>
+
+                                        <strong>
+                                            No maintenance work recorded yet
+                                        </strong>
+
+                                        <span>
+                                            The maintenance person has not yet added details about the work performed.
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 EQUIPMENT INFORMATION
+            ================================================== -->
+
+            <div class="col-12 col-lg-5">
+
+                <div class="sc-maintenance-card">
+
+
+                    <div class="sc-maintenance-card-header">
+
+                        <div class="sc-maintenance-card-icon">
+
+                            <i class="bi bi-box-seam"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <h4>
+                                Equipment Information
+                            </h4>
+
+                            <p>
+                                Equipment associated with this request.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sc-maintenance-info-list">
+
+
+                        <div class="sc-maintenance-info-item">
+
+                            <span>
+                                Equipment
+                            </span>
+
+                            <strong>
+
+                                @(Model.OurEquipment?.EquipmentName
+                                    ?? "Not available")
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="sc-maintenance-divider"></div>
+
+
+                        <div class="sc-maintenance-info-item">
+
+                            <span>
+                                Barcode
+                            </span>
+
+                            <strong>
+
+                                @(
+                                    string.IsNullOrWhiteSpace(
+                                        Model.OurEquipment?.BarcodeValue
+                                    )
+                                    ? "Not available"
+                                    : Model.OurEquipment.BarcodeValue
+                                )
+
+                            </strong>
+
+                        </div>
+
+
+                        <div class="sc-maintenance-divider"></div>
+
+
+                        <div class="sc-maintenance-info-item">
+
+                            <span>
+                                Equipment Status
+                            </span>
+
+                            <strong>
+
+                                @(Model.OurEquipment != null
+                                    ? Model.OurEquipment.Status.ToString()
+                                    : "Not available")
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+        <br />
+
+        <!-- ====================================================
+             PEOPLE
+        ===================================================== -->
+
+        <div class="row g-4">
+
+
+            <!-- LOGGED BY -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="sc-maintenance-card sc-maintenance-person-card">
+
+
+                    <div class="sc-maintenance-card-header">
+
+                        <div class="sc-maintenance-card-icon">
+
+                            <i class="bi bi-person-plus"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <h4>
+                                Logged By
+                            </h4>
+
+                            <p>
+                                Nurse who created this maintenance request.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-maintenance-person">
+
+
+                        <div class="sc-maintenance-person-avatar">
+
+                            <i class="bi bi-person-heart"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Nurse
+                            </span>
+
+                            <strong>
+
+                                @(
+                                    Model.LoggedBy != null
+                                        ? $"{Model.LoggedBy.FirstName} {Model.LoggedBy.LastName}"
+                                        : "Not available"
+                                )
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ASSIGNED TO -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="sc-maintenance-card sc-maintenance-person-card">
+
+
+                    <div class="sc-maintenance-card-header">
+
+                        <div class="sc-maintenance-card-icon">
+
+                            <i class="bi bi-person-gear"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <h4>
+                                Maintenance Person
+                            </h4>
+
+                            <p>
+                                Person assigned to handle this request.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    @if (Model.AssignedTo != null)
+                    {
+
+                        <div class="sc-maintenance-person">
+
+
+                            <div class="sc-maintenance-person-avatar">
+
+                                <i class="bi bi-tools"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Assigned To
+                                </span>
+
+                                <strong>
+
+                                    @Model.AssignedTo.FirstName
+                                    @Model.AssignedTo.LastName
+
+                                </strong>
+
+                            </div>
+
+
+                        </div>
+
+                    }
+                    else
+                    {
+
+                        <div class="sc-maintenance-unassigned">
+
+                            <i class="bi bi-person-dash"></i>
+
+                            <span>
+                                No maintenance person assigned yet.
+                            </span>
+
+                        </div>
+
+                    }
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ====================================================
+             EQUIPMENT CONDITION
+        ===================================================== -->
+
+        <div class="sc-maintenance-card sc-maintenance-condition-card">
+
+
+            <div class="sc-maintenance-card-header">
+
+                <div class="sc-maintenance-card-icon">
+
+                    <i class="bi bi-camera"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h4>
+                        Equipment Condition
+                    </h4>
+
+                    <p>
+                        Equipment condition before and after maintenance.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="row g-4">
+
+
+                <!-- BEFORE -->
+
+                <div class="col-12 col-md-6">
+
+                    <div class="sc-maintenance-condition-box">
+
+
+                        <div class="sc-condition-title">
+
+                            <i class="bi bi-camera-fill"></i>
+
+                            <span>
+                                Before Maintenance
+                            </span>
+
+                        </div>
+
+
+                        @if (beforeImage != null)
+                        {
+
+                            <img src="@beforeImage"
+                                 class="sc-condition-image"
+                                 alt="Equipment condition before maintenance" />
+
+                        }
+                        else
+                        {
+
+                            <div class="sc-condition-empty">
+
+                                <i class="bi bi-image"></i>
+
+                                <span>
+                                    No condition image provided.
+                                </span>
+
+                            </div>
+
+                        }
+
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- AFTER -->
+
+                <div class="col-12 col-md-6">
+
+                    <div class="sc-maintenance-condition-box">
+
+
+                        <div class="sc-condition-title">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                            <span>
+                                After Maintenance
+                            </span>
+
+                        </div>
+
+
+                        @if (afterImage != null)
+                        {
+
+                            <img src="@afterImage"
+                                 class="sc-condition-image"
+                                 alt="Equipment condition after maintenance" />
+
+                        }
+                        else
+                        {
+
+                            <div class="sc-condition-empty">
+
+                                <i class="bi bi-image"></i>
+
+                                <span>
+
+                                    @(Model.RequestStatus ==
+                                      MaintenanceRequestStatus.Completed
+                                        ? "No after-maintenance image was provided."
+                                        : "Maintenance has not been completed yet.")
+
+                                </span>
+
+                            </div>
+
+                        }
+
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ====================================================
+             RESOLUTION
+        ===================================================== -->
+
+        @if (Model.RequestStatus ==
+             MaintenanceRequestStatus.Completed)
+        {
+
+            <div class="sc-maintenance-resolution">
+
+
+                <div class="sc-maintenance-resolution-icon">
+
+                    <i class="bi bi-check2-circle"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Maintenance Completed
+                    </span>
+
+                    <strong>
+
+                        @(Model.ResolvedAt.HasValue
+                            ? $"Resolved on {Model.ResolvedAt.Value.ToString("dd MMMM yyyy 'at' HH:mm")}"
+                            : "Maintenance request completed")
+
+                    </strong>
+
+                </div>
+
+
+                @if (Model.ResolvedBy != null)
+                {
+
+                    <div class="sc-maintenance-resolved-by">
+
+                        Resolved by
+
+                        <strong>
+
+                            @Model.ResolvedBy.FirstName
+                            @Model.ResolvedBy.LastName
+
+                        </strong>
+
+                    </div>
+
+                }
+
+
+            </div>
+
+        }
+
+
+    </div>
+
+
+</div>

@@ -104,6 +104,48 @@ public static class SeedData
                     await _context.SaveChangesAsync();
                 }
             }
+
+            var admin2 = await userManager.FindByEmailAsync("zanini@swiftcare.com");
+
+            if (admin2 == null)
+            {
+                var defaultUser = new Administrator
+                {
+                    FirstName = "Zanini",
+                    LastName = "Dlamini",
+                    UserName = "zanini@swiftcare.com",
+                    Email = "zanini@swiftcare.com",
+                    PhoneNumber = "0845802946",
+                    DateOfBirth = DateTime.Now,
+                    ProfilePicture = "admin.jpg",
+                    EmailConfirmed = true,
+                    CreatedDateTime = DateTime.Now,
+                    ModifiedDateTime = DateTime.Now,
+                    CreatedBy = "default-user-id",
+                    ModifiedBy = "default-user-id"
+                };
+
+                var result = await userManager.CreateAsync(defaultUser, "Admin@123");
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(defaultUser, "Administrator");
+
+                    // ============================================================
+                    // CREATE ADMIN CART
+                    // ============================================================
+
+                    var adminCart = new Cart
+                    {
+                        UserId = defaultUser.Id,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Carts.Add(adminCart);
+
+                    await _context.SaveChangesAsync();
+                }
+            }
             var nurse = await userManager.FindByEmailAsync("nurse@gmail.com");
             if (nurse == null)
             {

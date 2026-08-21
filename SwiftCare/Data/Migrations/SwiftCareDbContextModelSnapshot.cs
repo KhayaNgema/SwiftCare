@@ -237,6 +237,73 @@ namespace SwiftCare.Data.Migrations
                     b.ToTable("Equipment");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.MaintenanceRequest", b =>
+                {
+                    b.Property<int>("RequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestId"));
+
+                    b.Property<string>("AssignedToId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("EquipmentConditionImageAfter")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("EquipmentConditionImageBefore")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LoggedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LoggedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResolvedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("WorkPerformed")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.HasKey("RequestId");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("LoggedById");
+
+                    b.HasIndex("ResolvedById");
+
+                    b.ToTable("MaintenanceRequests");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -296,6 +363,107 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.OurEquipment", b =>
+                {
+                    b.Property<int>("EquipmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EquipmentId"));
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AssignedToId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AssignmentNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BarcodeImage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BarcodeValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EquipmentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("EquipmentId");
+
+                    b.HasIndex("AssignedById");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.ToTable("OurEquipment");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.PackageOrder", b =>
+                {
+                    b.Property<int>("PackageOrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PackageOrderId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsReceived")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OrderId1")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PackageNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("QrCodeValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ReceivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PackageOrderId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("OrderId1");
+
+                    b.HasIndex("OrderItemId")
+                        .IsUnique();
+
+                    b.HasIndex("QrCodeValue")
+                        .IsUnique();
+
+                    b.ToTable("PackageOrders");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.TransportRequest", b =>
@@ -688,6 +856,37 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Equipment");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.MaintenanceRequest", b =>
+                {
+                    b.HasOne("SwiftCare.Models.MaintenancePerson", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId");
+
+                    b.HasOne("SwiftCare.Models.OurEquipment", "OurEquipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.Nurse", "LoggedBy")
+                        .WithMany()
+                        .HasForeignKey("LoggedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.MaintenancePerson", "ResolvedBy")
+                        .WithMany()
+                        .HasForeignKey("ResolvedById");
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("LoggedBy");
+
+                    b.Navigation("OurEquipment");
+
+                    b.Navigation("ResolvedBy");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.Order", b =>
                 {
                     b.HasOne("SwiftCare.Models.Administrator", "User")
@@ -716,6 +915,44 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Equipment");
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.OurEquipment", b =>
+                {
+                    b.HasOne("SwiftCare.Models.Nurse", "AssignedBy")
+                        .WithMany()
+                        .HasForeignKey("AssignedById");
+
+                    b.HasOne("SwiftCare.Models.Resident", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId");
+
+                    b.Navigation("AssignedBy");
+
+                    b.Navigation("AssignedTo");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.PackageOrder", b =>
+                {
+                    b.HasOne("SwiftCare.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.Order", null)
+                        .WithMany("PackageOrders")
+                        .HasForeignKey("OrderId1");
+
+                    b.HasOne("SwiftCare.Models.OrderItem", "OrderItem")
+                        .WithOne("PackageOrder")
+                        .HasForeignKey("SwiftCare.Models.PackageOrder", "OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("OrderItem");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.TransportRequest", b =>
@@ -770,6 +1007,14 @@ namespace SwiftCare.Data.Migrations
             modelBuilder.Entity("SwiftCare.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
+
+                    b.Navigation("PackageOrders");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.OrderItem", b =>
+                {
+                    b.Navigation("PackageOrder")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SwiftCare.Models.TransportRequest", b =>

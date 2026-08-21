@@ -12,9 +12,9 @@
     {
         return status switch
         {
-            SwiftCare.Models.OrderStatus.Pending => "status-pending",
-            SwiftCare.Models.OrderStatus.OnTheWay => "status-ontheway",
-            SwiftCare.Models.OrderStatus.Collected => "status-collected",
+            SwiftCare.Models.OrderStatus.Pending => "sc-orders-status-pending",
+            SwiftCare.Models.OrderStatus.OnTheWay => "sc-orders-status-ontheway",
+            SwiftCare.Models.OrderStatus.Collected => "sc-orders-status-collected",
             _ => ""
         };
     }
@@ -31,364 +31,22 @@
     }
 }
 
-<style>
-
-    /* ============================================================
-           MY EQUIPMENT ORDERS
-           ============================================================ */
-
-    .swift-orders-page {
-        padding-bottom: 40px;
-    }
-
-    /* ============================================================
-           HEADER
-           ============================================================ */
-
-    .swift-orders-header {
-        background: linear-gradient(135deg, #071a33, #102b4e);
-        padding: 22px 30px;
-        margin-bottom: 30px;
-        border-radius: 0 0 18px 18px;
-    }
-
-    .swift-orders-header-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-    }
-
-    .swift-orders-title-section {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-    }
-
-    .swift-back-link {
-        color: white;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: rgba(255,255,255,0.12);
-        transition: all 0.2s ease;
-    }
-
-        .swift-back-link:hover {
-            color: white;
-            background: rgba(255,255,255,0.22);
-            transform: translateX(-2px);
-        }
-
-    .swift-orders-title {
-        margin: 0;
-        color: white;
-        font-size: 1.7rem;
-        font-weight: 700;
-    }
-
-    .swift-orders-subtitle {
-        margin: 4px 0 0;
-        color: rgba(255,255,255,0.7);
-        font-size: 0.92rem;
-    }
-
-    /* ============================================================
-           FILTERS
-           ============================================================ */
-
-    .swift-order-filters {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .filter-btn {
-        border: none;
-        background: white;
-        color: #071a33;
-        padding: 9px 16px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.88rem;
-        transition: all 0.2s ease;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    }
-
-        .filter-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .filter-btn.active {
-            background: #071a33;
-            color: white;
-            outline: 2px solid white;
-        }
-
-    /* ============================================================
-           ORDER CARDS
-           ============================================================ */
-
-    .order-card {
-        height: 100%;
-        background: white;
-        border: 1px solid #e7eaf0;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 5px 18px rgba(0,0,0,0.06);
-        transition: all 0.25s ease;
-        display: flex;
-        flex-direction: column;
-    }
-
-        .order-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.10);
-        }
-
-    /* ============================================================
-           CARD HEADER
-           ============================================================ */
-
-    .order-header {
-        background: #071a33;
-        color: white;
-        padding: 17px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .order-number-label {
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        opacity: 0.65;
-        margin-bottom: 3px;
-    }
-
-    .order-number {
-        font-size: 1.05rem;
-        font-weight: 700;
-    }
-
-    .order-header-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,0.12);
-        font-size: 1.2rem;
-    }
-
-    /* ============================================================
-           CARD BODY
-           ============================================================ */
-
-    .order-body {
-        padding: 20px;
-        flex: 1;
-    }
-
-    .order-info-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 11px 0;
-        border-bottom: 1px solid #f0f1f4;
-    }
-
-        .order-info-row:last-child {
-            border-bottom: none;
-        }
-
-    .order-info-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: #f1f5f9;
-        color: #071a33;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .order-info-label {
-        display: block;
-        font-size: 0.75rem;
-        color: #8a94a6;
-        margin-bottom: 2px;
-    }
-
-    .order-info-value {
-        color: #1f2937;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    /* ============================================================
-           STATUS
-           ============================================================ */
-
-    .status-indicator {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 11px;
-        border-radius: 20px;
-        font-size: 0.78rem;
-        font-weight: 700;
-    }
-
-    .status-pending {
-        background: #fff3cd;
-        color: #856404;
-    }
-
-    .status-ontheway {
-        background: #cfe2ff;
-        color: #084298;
-    }
-
-    .status-collected {
-        background: #d1e7dd;
-        color: #0f5132;
-    }
-
-    /* ============================================================
-           ACTIONS
-           ============================================================ */
-
-    .card-actions {
-        padding: 0 20px 20px;
-        margin-top: auto;
-    }
-
-    .btn-details {
-        width: 100%;
-        border: none;
-        background: #071a33;
-        color: white;
-        padding: 11px 16px;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-        .btn-details:hover {
-            background: #102b4e;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-    /* ============================================================
-           EMPTY STATES
-           ============================================================ */
-
-    .swift-empty-orders {
-        background: white;
-        border-radius: 18px;
-        padding: 60px 20px;
-        text-align: center;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        margin-top: 25px;
-    }
-
-    .swift-empty-icon {
-        width: 75px;
-        height: 75px;
-        border-radius: 50%;
-        background: #f1f5f9;
-        color: #071a33;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        margin: 0 auto 18px;
-    }
-
-    .swift-no-results {
-        display: none;
-        background: #fff;
-        border-radius: 14px;
-        padding: 35px;
-        text-align: center;
-        color: #6b7280;
-        margin-top: 25px;
-        box-shadow: 0 5px 18px rgba(0,0,0,0.05);
-    }
-
-    /* ============================================================
-           TEMP MESSAGE
-           ============================================================ */
-
-    #tempDataMessage {
-        margin: 0 20px 25px;
-        border-radius: 12px;
-    }
-
-    /* ============================================================
-           RESPONSIVE
-           ============================================================ */
-
-    @@media (max-width: 768px) {
-
-        .swift-orders-header {
-            padding: 20px;
-        }
-
-        .swift-orders-header-inner {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .swift-order-filters {
-            width: 100%;
-        }
-
-        .filter-btn {
-            flex: 1;
-        }
-
-        .btn-text {
-            display: none;
-        }
-
-        .swift-orders-title {
-            font-size: 1.4rem;
-        }
-    }
-
-</style>
-
-
-<div class="swift-orders-page">
+<div class="sc-orders-page">
 
     <!-- ============================================================
          HEADER
          ============================================================ -->
 
-    <div class="swift-orders-header">
+    <section class="sc-orders-header">
 
-        <div class="swift-orders-header-inner">
+        <div class="sc-orders-header-inner">
 
-            <div class="swift-orders-title-section">
+            <div class="sc-orders-title-section">
 
                 <a asp-controller="Home"
                        asp-action="Index"
-                       class="swift-back-link">
+                       class="sc-orders-back-button"
+                       title="Back to Dashboard">
 
                     <i class="bi bi-chevron-left"></i>
 
@@ -396,12 +54,12 @@
 
                 <div>
 
-                    <h2 class="swift-orders-title">
+                    <h1 class="sc-orders-heading">
                         My Equipment Orders
-                    </h2>
+                    </h1>
 
-                    <p class="swift-orders-subtitle">
-                        Track and manage your equipment orders
+                    <p class="sc-orders-subheading">
+                        Track your equipment orders and view their current status.
                     </p>
 
                 </div>
@@ -409,47 +67,34 @@
             </div>
 
 
-            <!-- ====================================================
-                 FILTERS
-                 ==================================================== -->
+            <!-- FILTERS -->
 
-            <div class="swift-order-filters">
+            <div class="sc-orders-filter-group">
 
                 <button type="button"
-                        class="filter-btn"
+                        class="sc-orders-filter-button"
                         data-filter="Pending">
 
                     <i class="bi bi-hourglass-split me-1"></i>
-
-                    <span class="btn-text">
-                        Pending
-                    </span>
+                    Pending
 
                 </button>
 
-
                 <button type="button"
-                        class="filter-btn"
+                        class="sc-orders-filter-button"
                         data-filter="OnTheWay">
 
                     <i class="bi bi-truck me-1"></i>
-
-                    <span class="btn-text">
-                        On The Way
-                    </span>
+                    On The Way
 
                 </button>
 
-
                 <button type="button"
-                        class="filter-btn"
+                        class="sc-orders-filter-button"
                         data-filter="Collected">
 
                     <i class="bi bi-check-circle-fill me-1"></i>
-
-                    <span class="btn-text">
-                        Collected
-                    </span>
+                    Collected
 
                 </button>
 
@@ -457,15 +102,13 @@
 
         </div>
 
-    </div>
+    </section>
 
 
-    <!-- ============================================================
-         TEMP MESSAGE
-         ============================================================ -->
+    <!-- TEMP MESSAGE -->
     @if (TempData["Message"] != null)
     {
-        <div id="tempDataMessage"
+        <div id="scOrdersTempMessage"
              class="alert @(TempData["Message"]!.ToString()!.Contains("successfully")
                                           ? "alert-success"
                                           : "alert-danger")"
@@ -477,16 +120,14 @@
     }
 
 
-    <!-- ============================================================
-         NO FILTER RESULTS
-         ============================================================ -->
+    <!-- NO FILTER RESULTS -->
 
-    <div class="swift-no-results"
-         id="noResultsMessage">
+    <div class="sc-orders-no-results"
+         id="scOrdersNoResults">
 
-        <div class="swift-empty-icon">
+        <div class="sc-orders-empty-icon">
 
-            <i class="fas fa-search"></i>
+            <i class="bi bi-search"></i>
 
         </div>
 
@@ -501,18 +142,16 @@
     </div>
 
 
-    <!-- ============================================================
-         NO ORDERS
-         ============================================================ -->
+    <!-- NO ORDERS -->
     @if (Model == null || !Model.Any())
     {
         <div class="container-fluid">
 
-            <div class="swift-empty-orders">
+            <div class="sc-orders-empty-state">
 
-                <div class="swift-empty-icon">
+                <div class="sc-orders-empty-icon">
 
-                    <i class="fas fa-box-open"></i>
+                    <i class="bi bi-box-seam"></i>
 
                 </div>
 
@@ -520,16 +159,15 @@
                     No Equipment Orders Yet
                 </h4>
 
-                <p class="text-muted mb-4">
+                <p>
                     You haven't placed any equipment orders yet.
                 </p>
 
                 <a asp-controller="Equipment"
                        asp-action="Index"
-                       class="btn-details"
-                       style="max-width:240px;">
+                       class="sc-orders-details-button sc-orders-empty-button">
 
-                    <i class="fas fa-plus"></i>
+                    <i class="bi bi-plus-lg"></i>
 
                     Browse Equipment
 
@@ -541,78 +179,63 @@
     }
     else
     {
-        <!-- ========================================================
-             ORDERS
-             ======================================================== -->
-
-        <div class="container-fluid">
+        <div class="container-fluid sc-orders-grid">
 
             <div class="row g-4"
-                 id="ordersContainer">
+                 id="scOrdersContainer">
 
                 @foreach (var item in Model)
                 {
-                     var encryptedId =
-                            encryptionService.Encrypt(item.OrderId);
+                    var encryptedId =
+                        encryptionService.Encrypt(item.OrderId);
 
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-xl-4">
 
-                        <div class="order-card h-100"
-                             data-id="@item.OrderId"
-                             data-status="@item.Status">
+                        <article class="sc-orders-card"
+                                 data-id="@item.OrderId"
+                                 data-status="@item.Status">
 
-                            <!-- HEADER -->
+                            <div class="sc-orders-card-header">
 
-                            <div class="order-header">
+                                <div class="sc-orders-card-header-content">
 
-                                <div>
-
-                                    <div class="order-number-label">
+                                    <div class="sc-orders-card-label">
                                         Equipment Order
                                     </div>
 
-                                    <div class="order-number">
-
+                                    <div class="sc-orders-card-number">
                                         @item.OrderNumber
-
                                     </div>
 
                                 </div>
 
-                                <div class="order-header-icon">
+                                <div class="sc-orders-card-header-icon">
 
-                                    <i class="fas fa-box"></i>
+                                    <i class="bi bi-box-seam-fill"></i>
 
                                 </div>
 
                             </div>
 
 
-                            <!-- BODY -->
+                            <div class="sc-orders-card-body">
 
-                            <div class="order-body">
+                                <div class="sc-orders-info-row">
 
-
-                                <!-- DATE -->
-
-                                <div class="order-info-row">
-
-                                    <div class="order-info-icon">
+                                    <div class="sc-orders-info-icon">
 
                                         <i class="bi bi-calendar3"></i>
 
                                     </div>
 
-                                    <div>
+                                    <div class="sc-orders-info-content">
 
-                                        <span class="order-info-label">
+                                        <span class="sc-orders-info-label">
                                             Order Date
                                         </span>
 
-                                        <span class="order-info-value">
-
+                                        <span class="sc-orders-info-value">
                                             @item.OrderDate.ToString("dd MMM yyyy, HH:mm")
-
                                         </span>
 
                                     </div>
@@ -620,23 +243,21 @@
                                 </div>
 
 
-                                <!-- EQUIPMENT QUANTITY -->
+                                <div class="sc-orders-info-row">
 
-                                <div class="order-info-row">
+                                    <div class="sc-orders-info-icon">
 
-                                    <div class="order-info-icon">
-
-                                        <i class="fas fa-boxes"></i>
+                                        <i class="bi bi-boxes"></i>
 
                                     </div>
 
-                                    <div>
+                                    <div class="sc-orders-info-content">
 
-                                        <span class="order-info-label">
+                                        <span class="sc-orders-info-label">
                                             Equipment Quantity
                                         </span>
 
-                                        <span class="order-info-value">
+                                        <span class="sc-orders-info-value">
 
                                             @(item.OrderItems?.Sum(x => x.Quantity) ?? 0)
                                             item(s)
@@ -648,26 +269,22 @@
                                 </div>
 
 
-                                <!-- LAST UPDATED -->
+                                <div class="sc-orders-info-row">
 
-                                <div class="order-info-row">
-
-                                    <div class="order-info-icon">
+                                    <div class="sc-orders-info-icon">
 
                                         <i class="bi bi-clock-history"></i>
 
                                     </div>
 
-                                    <div>
+                                    <div class="sc-orders-info-content">
 
-                                        <span class="order-info-label">
+                                        <span class="sc-orders-info-label">
                                             Last Updated
                                         </span>
 
-                                        <span class="order-info-value">
-
+                                        <span class="sc-orders-info-value">
                                             @item.LastUpdated.ToString("dd MMM yyyy, HH:mm")
-
                                         </span>
 
                                     </div>
@@ -675,26 +292,22 @@
                                 </div>
 
 
-                                <!-- STATUS -->
+                                <div class="sc-orders-info-row">
 
-                                <div class="order-info-row">
-
-                                    <div class="order-info-icon">
+                                    <div class="sc-orders-info-icon">
 
                                         <i class="bi bi-info-circle"></i>
 
                                     </div>
 
-                                    <div>
+                                    <div class="sc-orders-info-content">
 
-                                        <span class="order-info-label">
+                                        <span class="sc-orders-info-label">
                                             Order Status
                                         </span>
 
-                                        <span class="status-indicator @GetStatusClass(item.Status)">
-
+                                        <span class="sc-orders-status-badge @GetStatusClass(item.Status)">
                                             @GetStatusDisplay(item.Status)
-
                                         </span>
 
                                     </div>
@@ -704,24 +317,24 @@
                             </div>
 
 
-                            <!-- ACTION -->
-
-                            <div class="card-actions">
+                            <div class="sc-orders-card-actions">
 
                                 <a asp-controller="Orders"
                                        asp-action="OrderDetails"
                                        asp-route-orderId="@encryptedId"
-                                       class="btn-details">
+                                       class="sc-orders-details-button">
 
-                                    <i class="fas fa-eye"></i>
+                                    <i class="bi bi-eye-fill"></i>
 
                                     View Order Details
+
+                                    <i class="bi bi-arrow-right"></i>
 
                                 </a>
 
                             </div>
 
-                        </div>
+                        </article>
 
                     </div>
                 }
@@ -734,43 +347,40 @@
 </div>
 
 
+@section Scripts {
 
     <script>
 
         document.addEventListener(
-            'DOMContentLoaded',
+            "DOMContentLoaded",
             function () {
 
                 const cards =
                     document.querySelectorAll(
-                        '.order-card'
+                        ".sc-orders-card"
                     );
 
                 const filterButtons =
                     document.querySelectorAll(
-                        '.filter-btn'
+                        ".sc-orders-filter-button"
                     );
 
                 const noResultsMessage =
                     document.getElementById(
-                        'noResultsMessage'
+                        "scOrdersNoResults"
                     );
 
-
-                // ====================================================
-                // FILTER ORDERS
-                // ====================================================
 
                 filterButtons.forEach(
                     function (button) {
 
                         button.addEventListener(
-                            'click',
+                            "click",
                             function () {
 
                                 const selectedStatus =
                                     button.getAttribute(
-                                        'data-filter'
+                                        "data-filter"
                                     );
 
 
@@ -778,7 +388,7 @@
                                     function (btn) {
 
                                         btn.classList.remove(
-                                            'active'
+                                            "sc-orders-filter-active"
                                         );
 
                                     }
@@ -786,12 +396,11 @@
 
 
                                 button.classList.add(
-                                    'active'
+                                    "sc-orders-filter-active"
                                 );
 
 
-                                let hasVisibleCard =
-                                    false;
+                                let hasVisibleCard = false;
 
 
                                 cards.forEach(
@@ -800,12 +409,10 @@
                                         const colDiv =
                                             card.parentElement;
 
-
                                         const cardStatus =
                                             card.getAttribute(
-                                                'data-status'
+                                                "data-status"
                                             );
-
 
                                         const isVisible =
                                             selectedStatus ===
@@ -814,14 +421,13 @@
 
                                         colDiv.style.display =
                                             isVisible
-                                                ? ''
-                                                : 'none';
+                                                ? ""
+                                                : "none";
 
 
                                         if (isVisible) {
 
-                                            hasVisibleCard =
-                                                true;
+                                            hasVisibleCard = true;
 
                                         }
 
@@ -829,14 +435,12 @@
                                 );
 
 
-                                if (
-                                    noResultsMessage
-                                ) {
+                                if (noResultsMessage) {
 
                                     noResultsMessage.style.display =
                                         hasVisibleCard
-                                            ? 'none'
-                                            : 'block';
+                                            ? "none"
+                                            : "block";
 
                                 }
 
@@ -847,44 +451,56 @@
                 );
 
 
-                // ====================================================
-                // DEFAULT FILTER
-                // ====================================================
-
                 const defaultFilter =
                     document.querySelector(
-                        '.filter-btn[data-filter="Pending"]'
+                        '.sc-orders-filter-button[data-filter="Pending"]'
                     );
 
 
-                if (
-                    defaultFilter
-                ) {
+                if (defaultFilter) {
 
                     defaultFilter.click();
 
                 }
 
 
-                // ====================================================
-                // HIDE TEMP MESSAGE
-                // ====================================================
+                cards.forEach(
+                    function (card, index) {
+
+                        card.style.opacity = "0";
+                        card.style.transform =
+                            "translateY(18px)";
+
+                        setTimeout(
+                            function () {
+
+                                card.style.transition =
+                                    "opacity 0.45s ease, transform 0.45s ease";
+
+                                card.style.opacity = "1";
+                                card.style.transform =
+                                    "translateY(0)";
+
+                            },
+                            index * 80
+                        );
+
+                    }
+                );
+
 
                 setTimeout(
                     function () {
 
                         const tempMessage =
                             document.getElementById(
-                                'tempDataMessage'
+                                "scOrdersTempMessage"
                             );
 
-
-                        if (
-                            tempMessage
-                        ) {
+                        if (tempMessage) {
 
                             tempMessage.style.display =
-                                'none';
+                                "none";
 
                         }
 
@@ -897,4 +513,5 @@
 
     </script>
 
+}
 

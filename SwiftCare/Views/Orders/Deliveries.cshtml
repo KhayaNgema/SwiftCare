@@ -1,0 +1,941 @@
+﻿@model IEnumerable<SwiftCare.Models.Order>
+
+@using SwiftCare.Models
+@inject SwiftCare.Interfaces.IEncryptionService encryptionService
+
+@{
+    ViewData["Title"] = "Equipment Deliveries";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var deliveryCount = Model?.Count() ?? 0;
+
+    var totalPackages =
+        Model?.Sum(order => order.PackageOrders?.Count ?? 0) ?? 0;
+
+    var receivedPackages =
+        Model?.Sum(order =>
+            order.PackageOrders?.Count(package => package.IsReceived) ?? 0
+        ) ?? 0;
+
+    var pendingPackages = totalPackages - receivedPackages;
+}
+
+<div class="sc-delivery-page">
+
+    <section class="sc-delivery-header">
+
+        <div class="sc-delivery-header-glow"></div>
+
+        <div class="sc-delivery-header-inner">
+
+            <a asp-controller="Home"
+                   asp-action="Index"
+                   class="sc-delivery-back">
+
+                <i class="bi bi-chevron-left"></i>
+
+            </a>
+
+            <div class="sc-delivery-title-area">
+
+                <div class="sc-delivery-title-icon">
+
+                    <i class="bi bi-truck-front-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <span class="sc-delivery-kicker">
+                        EQUIPMENT LOGISTICS
+                    </span>
+
+                    <h1>
+                        Active Deliveries
+                    </h1>
+
+                    <p>
+                        Monitor equipment currently in transit and view
+                        individual package QR codes.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="sc-delivery-header-stat">
+
+                <div class="sc-delivery-header-stat-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+                <div>
+
+                    <strong id="deliveryCount">
+                        @deliveryCount
+                    </strong>
+
+                    <span>
+                        @(deliveryCount == 1
+                            ? "Active Delivery"
+                            : "Active Deliveries")
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <div class="sc-delivery-content">
+
+        <section class="sc-delivery-summary">
+
+            <div class="row g-4">
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-delivery-summary-card">
+
+                        <div class="sc-delivery-summary-icon">
+
+                            <i class="bi bi-truck-front-fill"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Active Deliveries
+                            </span>
+
+                            <strong>
+                                @deliveryCount
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-delivery-summary-card">
+
+                        <div class="sc-delivery-summary-icon">
+
+                            <i class="bi bi-box-seam-fill"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Total Packages
+                            </span>
+
+                            <strong>
+                                @totalPackages
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="sc-delivery-summary-card sc-delivery-summary-lime">
+
+                        <div class="sc-delivery-summary-icon">
+
+                            <i class="bi bi-qr-code-scan"></i>
+
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Awaiting Scan
+                            </span>
+
+                            <strong>
+                                @pendingPackages
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="sc-delivery-toolbar">
+
+            <div class="sc-delivery-search">
+
+                <i class="bi bi-search"></i>
+
+                <input type="text"
+                       id="deliverySearchInput"
+                       placeholder="Search deliveries..." />
+
+            </div>
+
+        </section>
+
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="sc-delivery-empty">
+
+                <div class="sc-delivery-empty-icon">
+
+                    <i class="bi bi-truck"></i>
+
+                </div>
+
+                <h3>
+                    No Active Deliveries
+                </h3>
+
+                <p>
+                    There are currently no equipment orders on their way.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <section class="sc-delivery-table-card">
+
+                <div class="sc-delivery-table-header">
+
+                    <div>
+
+                        <span class="sc-delivery-table-kicker">
+                            LIVE DELIVERIES
+                        </span>
+
+                        <h3>
+                            Equipment On The Way
+                        </h3>
+
+                        <p>
+                            View all individual packages and QR codes.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="sc-delivery-table"
+                           id="deliveriesTable">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Order</th>
+
+                                <th>Recipient</th>
+
+                                <th>Equipment</th>
+
+                                <th>Packages</th>
+
+                                <th>Delivery Started</th>
+
+                                <th>Status</th>
+
+                                <th class="text-end">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var item in Model)
+                            {
+                                var packages =
+                                    item.PackageOrders?
+                                        .OrderBy(package => package.PackageNumber)
+                                        .ToList()
+                                    ?? new List<PackageOrder>();
+
+                                var packageCount = packages.Count;
+
+                                var equipmentTypes =
+                                    item.OrderItems?.Count ?? 0;
+
+                                var totalQuantity =
+                                    item.OrderItems?.Sum(orderItem =>
+                                        orderItem.Quantity
+                                    ) ?? 0;
+
+                                var recipientName =
+                                    item.User == null
+                                        ? "Not Available"
+                                        : $"{item.User.FirstName} {item.User.LastName}".Trim();
+
+                                <tr data-order="@item.OrderNumber">
+
+                                    <td>
+
+                                        <div class="sc-delivery-order">
+
+                                            <div class="sc-delivery-order-icon">
+
+                                                <i class="bi bi-box-seam-fill"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+                                                    @item.OrderNumber
+                                                </strong>
+
+                                                <small>
+                                                    Order #@item.OrderId
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="sc-delivery-recipient">
+
+                                            <div class="sc-delivery-recipient-avatar">
+
+                                                @if (!string.IsNullOrWhiteSpace(recipientName))
+                                                {
+                                                    @recipientName.Substring(0, 1)
+                                                }
+
+                                            </div>
+
+                                            <span>
+                                                @recipientName
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="sc-delivery-equipment">
+
+                                            <span class="sc-delivery-equipment-number">
+                                                @equipmentTypes
+                                            </span>
+
+                                            <span>
+                                                @totalQuantity item@(totalQuantity == 1 ? "" : "s")
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="sc-delivery-package-count">
+
+                                            <i class="bi bi-boxes"></i>
+
+                                            @packageCount
+
+                                            @(packageCount == 1
+                                                ? " Package"
+                                                : " Packages")
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="sc-delivery-date">
+
+                                            <i class="bi bi-clock-history"></i>
+
+                                            @item.LastUpdated.ToString("dd MMM yyyy HH:mm")
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="sc-delivery-status">
+
+                                            <span class="sc-delivery-status-dot"></span>
+
+                                            On The Way
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td class="text-end">
+
+                                        <button type="button"
+                                                class="sc-delivery-packages-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#packagesModal-@item.OrderId">
+
+                                            <i class="bi bi-qr-code"></i>
+
+                                            <span>
+                                                View Packages
+                                            </span>
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            @foreach (var item in Model)
+            {
+                var packages =
+                    item.PackageOrders?
+                        .OrderBy(package => package.PackageNumber)
+                        .ToList()
+                    ?? new List<PackageOrder>();
+
+                var packageCount = packages.Count;
+
+                var receivedCount =
+                    packages.Count(package => package.IsReceived);
+
+                var awaitingCount =
+                    packageCount - receivedCount;
+
+                var recipientName =
+                    item.User == null
+                        ? "Not Available"
+                        : $"{item.User.FirstName} {item.User.LastName}".Trim();
+
+                <div class="modal fade sc-package-modal-wrapper"
+                     id="packagesModal-@item.OrderId"
+                     tabindex="-1"
+                     aria-labelledby="packagesModalLabel-@item.OrderId"
+                     aria-hidden="true">
+
+                    <div class="modal-dialog modal-xl modal-dialog-centered sc-package-modal-dialog">
+
+                        <div class="modal-content sc-package-modal">
+
+
+                            <div class="sc-package-modal-header">
+
+                                <div class="sc-package-modal-title">
+
+                                    <div class="sc-package-modal-icon">
+
+                                        <i class="bi bi-box-seam-fill"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <span>
+                                            PACKAGE DELIVERY
+                                        </span>
+
+                                        <h4 id="packagesModalLabel-@item.OrderId">
+                                            @item.OrderNumber
+                                        </h4>
+
+                                    </div>
+
+                                </div>
+
+
+                                <button type="button"
+                                        class="sc-package-modal-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close">
+
+                                    <i class="bi bi-x-lg"></i>
+
+                                </button>
+
+                            </div>
+
+
+                            <div class="modal-body sc-package-modal-body">
+
+
+                                <div class="sc-package-summary-panel">
+
+                                    <div class="sc-package-summary-heading">
+
+                                        <span>
+                                            DELIVERY INFORMATION
+                                        </span>
+
+                                        <h5>
+                                            Package Overview
+                                        </h5>
+
+                                    </div>
+
+
+                                    <div class="sc-package-summary-list">
+
+                                        <div class="sc-package-summary-item">
+
+                                            <div class="sc-package-summary-item-icon">
+
+                                                <i class="bi bi-person-fill"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <span class="sc-package-summary-label">
+                                                    RECIPIENT
+                                                </span>
+
+                                                <strong>
+                                                    @recipientName
+                                                </strong>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div class="sc-package-summary-item">
+
+                                            <div class="sc-package-summary-item-icon">
+
+                                                <i class="bi bi-box-seam-fill"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <span class="sc-package-summary-label">
+                                                    TOTAL PACKAGES
+                                                </span>
+
+                                                <strong>
+                                                    @packageCount
+                                                </strong>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div class="sc-package-summary-item sc-package-summary-received">
+
+                                            <div class="sc-package-summary-item-icon">
+
+                                                <i class="bi bi-check-circle-fill"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <span class="sc-package-summary-label">
+                                                    RECEIVED
+                                                </span>
+
+                                                <strong>
+                                                    @receivedCount
+                                                </strong>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div class="sc-package-summary-item sc-package-summary-pending">
+
+                                            <div class="sc-package-summary-item-icon">
+
+                                                <i class="bi bi-qr-code-scan"></i>
+
+                                            </div>
+
+                                            <div>
+
+                                                <span class="sc-package-summary-label">
+                                                    AWAITING SCAN
+                                                </span>
+
+                                                <strong>
+                                                    @awaitingCount
+                                                </strong>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                @if (!packages.Any())
+                                {
+                                    <div class="sc-package-empty">
+
+                                        <div class="sc-package-empty-icon">
+
+                                            <i class="bi bi-box-seam"></i>
+
+                                        </div>
+
+                                        <h5>
+                                            No Packages Found
+                                        </h5>
+
+                                        <p>
+                                            No package records exist for this order.
+                                        </p>
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="sc-package-content-heading">
+
+                                        <div>
+
+                                            <span>
+                                                PACKAGE QR CODES
+                                            </span>
+
+                                            <h5>
+                                                Scan Packages
+                                            </h5>
+
+                                        </div>
+
+                                        <div class="sc-package-content-count">
+
+                                            <i class="bi bi-boxes"></i>
+
+                                            @packageCount Packages
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="sc-package-grid">
+
+                                        @foreach (var package in packages)
+                                        {
+                                            var equipmentName =
+                                                package.OrderItem?
+                                                    .Equipment?
+                                                    .EquipmentName
+                                                ?? "Equipment";
+
+                                            <div class="sc-package-card @(package.IsReceived ? "sc-package-card-received" : "")">
+
+
+                                                <div class="sc-package-card-top">
+
+                                                    <div class="sc-package-number">
+
+                                                        <div class="sc-package-number-icon">
+
+                                                            <i class="bi bi-box-seam-fill"></i>
+
+                                                        </div>
+
+                                                        <div>
+
+                                                            <small>
+                                                                PACKAGE
+                                                            </small>
+
+                                                            <strong>
+                                                                @package.PackageNumber
+                                                            </strong>
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    @if (package.IsReceived)
+                                                    {
+                                                        <span class="sc-package-received-badge">
+
+                                                            <i class="bi bi-check-circle-fill"></i>
+
+                                                            Received
+
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="sc-package-pending-badge">
+
+                                                            <i class="bi bi-qr-code-scan"></i>
+
+                                                            Awaiting Scan
+
+                                                        </span>
+                                                    }
+
+                                                </div>
+
+
+                                                <div class="sc-package-equipment">
+
+                                                    <div class="sc-package-equipment-icon">
+
+                                                        <i class="bi bi-tools"></i>
+
+                                                    </div>
+
+                                                    <div>
+
+                                                        <small>
+                                                            EQUIPMENT
+                                                        </small>
+
+                                                        <strong>
+                                                            @equipmentName
+                                                        </strong>
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                <div class="sc-package-qr-container">
+
+                                                    <div class="sc-package-qr-frame">
+
+                                                        <img src="@Url.Action(
+                                                                                                                                                                                 "GetPackageQrCode",
+                                                                                                                                                                                 "Orders",
+                                                                                                                                                                                 new
+                                                                                                                                                                                 {
+                                                                                                                                                                                     packageOrderId =
+                                                                                                                                                                                         package.PackageOrderId
+                                                                                                                                                                                 })"
+                                                             alt="QR Code for @package.PackageNumber"
+                                                             class="sc-package-qr" />
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                <div class="sc-package-qr-label">
+
+                                                    <i class="bi bi-qr-code-scan"></i>
+
+                                                    <span>
+                                                        Scan this package to confirm receipt
+                                                    </span>
+
+                                                </div>
+
+
+                                                <div class="sc-package-footer">
+
+                                                    @if (package.IsReceived)
+                                                    {
+                                                        <div class="sc-package-footer-received">
+
+                                                            <i class="bi bi-check-circle-fill"></i>
+
+                                                            <div>
+
+                                                                <strong>
+                                                                    Package Received
+                                                                </strong>
+
+                                                                @if (package.ReceivedDate.HasValue)
+                                                                {
+                                                                    <small>
+                                                                        @package.ReceivedDate.Value.ToString("dd MMM yyyy HH:mm")
+                                                                    </small>
+                                                                }
+
+                                                            </div>
+
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="sc-package-footer-pending">
+
+                                                            <i class="bi bi-clock-history"></i>
+
+                                                            <div>
+
+                                                                <strong>
+                                                                    Awaiting Delivery Confirmation
+                                                                </strong>
+
+                                                                <small>
+                                                                    Scan the QR code when received
+                                                                </small>
+
+                                                            </div>
+
+                                                        </div>
+                                                    }
+
+                                                </div>
+
+                                            </div>
+                                        }
+
+                                    </div>
+                                }
+
+                            </div>
+
+
+                            <div class="sc-package-modal-footer">
+
+                                <div class="sc-package-security-note">
+
+                                    <div>
+
+                                        <i class="bi bi-shield-check"></i>
+
+                                    </div>
+
+                                    <span>
+                                        Each QR code identifies an individual
+                                        SwiftCare equipment package.
+                                    </span>
+
+                                </div>
+
+
+                                <button type="button"
+                                        class="btn sc-package-close-btn"
+                                        data-bs-dismiss="modal">
+
+                                    Close
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+        }
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function ()
+            {
+                const searchInput =
+                    document.getElementById(
+                        "deliverySearchInput"
+                    );
+
+
+                if (searchInput)
+                {
+                    searchInput.addEventListener(
+                        "input",
+                        function ()
+                        {
+                            const searchValue =
+                                this.value
+                                    .toLowerCase()
+                                    .trim();
+
+
+                            document
+                                .querySelectorAll(
+                                    "#deliveriesTable tbody tr"
+                                )
+                                .forEach(
+                                    function (row)
+                                    {
+                                        const rowText =
+                                            row.textContent
+                                                .toLowerCase();
+
+
+                                        row.style.display =
+                                            rowText.includes(
+                                                searchValue
+                                            )
+                                                ? ""
+                                                : "none";
+                                    }
+                                );
+                        }
+                    );
+                }
+            }
+        );
+
+    </script>
+
+}

@@ -102,9 +102,11 @@ public class Startup
         services.AddScoped<FileUploadService>();
         services.AddScoped<RandomPasswordGeneratorService>();
         services.AddScoped<EmailService>();
+        services.AddScoped<ReceiveEquipmentOrder>();
         services.AddHttpClient();
         services.AddScoped<OrderNumberGenerator>();
         services.AddScoped<SmsService>();
+        services.AddScoped<BarcodeService>();
         services.AddScoped<QrCodeService>();
 
         services.AddLogging(logging =>

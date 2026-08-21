@@ -1,0 +1,563 @@
+﻿@model SwiftCare.ViewModels.MaintenanceRequestUpdateViewModel
+
+@{
+    ViewData["Title"] = "Update Maintenance Request";
+
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+    var equipmentImage =
+        !string.IsNullOrWhiteSpace(
+            Model.EquipmentImageUrl
+        )
+            ? Url.Content(
+                "~/" +
+                Model.EquipmentImageUrl.TrimStart('/')
+            )
+            : Url.Content(
+                "~/Images/default_equipment.png"
+            );
+
+
+    var existingAfterImage =
+        !string.IsNullOrWhiteSpace(
+            Model.ExistingConditionImageAfter
+        )
+            ? Url.Content(
+                "~/" +
+                Model.ExistingConditionImageAfter.TrimStart('/')
+            )
+            : null;
+}
+
+
+<div class="sc-update-maintenance-page">
+
+
+    <!-- ========================================================
+         HERO
+    ========================================================= -->
+
+    <div class="sc-update-maintenance-hero">
+
+
+        <div class="sc-update-maintenance-top">
+
+
+            <a asp-controller="MaintenanceRequests"
+                   asp-action="MaintenanceRequestDetails"
+                   asp-route-requestId="@Model.RequestId"
+                   class="sc-update-maintenance-back">
+
+                <i class="bi bi-arrow-left"></i>
+
+                <span>
+                    Back to Request
+                </span>
+
+            </a>
+
+
+            <div class="sc-update-reference">
+
+                <i class="bi bi-hash"></i>
+
+                @(
+                    string.IsNullOrWhiteSpace(
+                        Model.ReferenceNumber
+                    )
+                    ? $"Request {Model.RequestId}"
+                    : Model.ReferenceNumber
+                )
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="sc-update-maintenance-hero-content">
+
+
+            <div class="sc-update-equipment-image-wrap">
+
+                <img src="@equipmentImage"
+                     alt="@Model.EquipmentName"
+                     class="sc-update-equipment-image"
+                     onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+
+            </div>
+
+
+
+            <div class="sc-update-maintenance-info">
+
+
+                <span class="sc-update-eyebrow">
+
+                    <i class="bi bi-tools"></i>
+
+                    UPDATE MAINTENANCE
+
+                </span>
+
+
+                <h1>
+
+                    @Model.EquipmentName
+
+                </h1>
+
+
+                <p>
+
+                    <i class="bi bi-upc"></i>
+
+                    @(string.IsNullOrWhiteSpace(Model.BarcodeValue)
+                        ? "Barcode not available"
+                        : $"Barcode: {Model.BarcodeValue}")
+
+</p>
+
+
+</div>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ========================================================
+         CONTENT
+    ========================================================= -->
+
+        <div class="sc-update-maintenance-content">
+
+
+            <form asp-action="UpdateMaintenanceRequest"
+                  method="post"
+                  enctype="multipart/form-data">
+
+
+                @Html.AntiForgeryToken()
+
+
+                <input type="hidden"
+                       asp-for="RequestId" />
+
+
+                <input type="hidden"
+                       asp-for="EquipmentId" />
+
+
+                <!-- ====================================================
+                 VALIDATION
+            ===================================================== -->
+
+                <div asp-validation-summary="ModelOnly"
+                     class="sc-update-validation">
+                </div>
+
+
+
+                <div class="row g-4">
+
+
+                    <!-- =================================================
+                     LEFT
+                ================================================== -->
+
+                    <div class="col-12 col-lg-7">
+
+
+                        <!-- STATUS -->
+
+                        <div class="sc-update-card">
+
+
+                            <div class="sc-update-card-header">
+
+                                <div class="sc-update-card-icon">
+
+                                    <i class="bi bi-activity"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        Maintenance Status
+                                    </h4>
+
+                                    <p>
+                                        Update the current progress of this request.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="sc-status-options">
+
+
+                                @foreach (
+                                    MaintenanceRequestStatus status
+                                    in Enum.GetValues(
+                                        typeof(
+                                            MaintenanceRequestStatus
+                                        )
+                                    )
+                                )
+                                {
+
+                                    <label class="sc-status-option">
+
+                                        <input type="radio"
+                                               asp-for="RequestStatus"
+                                               value="@status" />
+
+                                        <span>
+
+                                            @status
+
+                                        </span>
+
+                                    </label>
+
+                                }
+
+
+                            </div>
+
+
+                            <span asp-validation-for="RequestStatus"
+                                  class="text-danger">
+
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- WORK PERFORMED -->
+
+                        <div class="sc-update-card">
+
+
+                            <div class="sc-update-card-header">
+
+                                <div class="sc-update-card-icon">
+
+                                    <i class="bi bi-tools"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        Work Performed
+                                    </h4>
+
+                                    <p>
+                                        Describe the maintenance or repairs completed.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <textarea asp-for="WorkPerformed"
+                                      class="sc-update-textarea"
+                                      rows="8"
+                                      placeholder="Describe what maintenance work was performed, repairs made, parts replaced, testing completed, and any other relevant details..."></textarea>
+
+
+                            <span asp-validation-for="WorkPerformed"
+                                  class="text-danger">
+
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- PROBLEM -->
+
+                        <div class="sc-update-card sc-original-problem">
+
+
+                            <div class="sc-update-card-header">
+
+                                <div class="sc-update-card-icon">
+
+                                    <i class="bi bi-chat-square-text"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        Original Problem
+                                    </h4>
+
+                                    <p>
+                                        The problem reported by the nurse.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="sc-original-problem-content">
+
+                                @(
+                                    string.IsNullOrWhiteSpace(
+                                        Model.ProblemDescription
+                                    )
+                                    ? "No problem description was provided."
+                                    : Model.ProblemDescription
+                                )
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                     RIGHT
+                ================================================== -->
+
+                    <div class="col-12 col-lg-5">
+
+
+                        <!-- EQUIPMENT SUMMARY -->
+
+                        <div class="sc-update-card">
+
+
+                            <div class="sc-update-card-header">
+
+                                <div class="sc-update-card-icon">
+
+                                    <i class="bi bi-box-seam"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        Equipment
+                                    </h4>
+
+                                    <p>
+                                        Equipment being serviced.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="sc-update-equipment-summary">
+
+
+                                <div class="sc-update-summary-row">
+
+                                    <span>
+                                        Equipment
+                                    </span>
+
+                                    <strong>
+                                        @Model.EquipmentName
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="sc-update-summary-row">
+
+                                    <span>
+                                        Barcode
+                                    </span>
+
+                                    <strong>
+                                        @(string.IsNullOrWhiteSpace(Model.BarcodeValue)
+                                            ? "Not available"
+                                            : Model.BarcodeValue)
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="sc-update-summary-row">
+
+                                    <span>
+                                        Priority
+                                    </span>
+
+                                    <strong>
+                                        @Model.Priority
+                                    </strong>
+
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- IMAGE -->
+
+                        <div class="sc-update-card">
+
+
+                            <div class="sc-update-card-header">
+
+                                <div class="sc-update-card-icon">
+
+                                    <i class="bi bi-camera"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h4>
+                                        After Maintenance
+                                    </h4>
+
+                                    <p>
+                                        Upload the equipment condition after repairs.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="sc-update-upload-area">
+
+
+                                <input asp-for="EquipmentConditionImageAfter"
+                                       type="file"
+                                       accept="image/*"
+                                       id="afterImageInput"
+                                       class="sc-update-file-input" />
+
+
+                                <label for="afterImageInput"
+                                       class="sc-update-upload-label">
+
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                    <strong>
+                                        Upload Condition Image
+                                    </strong>
+
+                                    <span>
+                                        Select an image of the equipment after maintenance
+                                    </span>
+
+                                </label>
+
+
+                            </div>
+
+
+                            <span asp-validation-for="EquipmentConditionImageAfter"
+                                  class="text-danger">
+
+                            </span>
+
+
+                            @if (existingAfterImage != null)
+                            {
+
+                                <div class="sc-existing-after-image">
+
+                                    <span>
+                                        Current After-Maintenance Image
+                                    </span>
+
+                                    <img src="@existingAfterImage"
+                                         alt="Existing maintenance condition" />
+
+                                </div>
+
+                            }
+
+
+                        </div>
+
+
+
+                        <!-- SAVE -->
+
+                        <div class="sc-update-actions">
+
+
+                            <a asp-action="MaintenanceRequestDetails"
+                                   asp-route-requestId="@Model.RequestId"
+                                   class="sc-update-cancel-btn">
+
+                                <i class="bi bi-x-circle"></i>
+
+                                Cancel
+
+                            </a>
+
+
+                            <button type="submit"
+                                    class="sc-update-save-btn">
+
+                                <i class="bi bi-check2-circle"></i>
+
+                                Save Update
+
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+
+    @section Scripts
+    {
+        <partial name="_ValidationScriptsPartial" />
+    }

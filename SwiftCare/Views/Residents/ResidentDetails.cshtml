@@ -1,25 +1,27 @@
-﻿
-@model SwiftCare.Models.Resident
+﻿@model SwiftCare.ViewModels.ResidentDetailsViewModel
 
 @{
     ViewData["Title"] = "Resident Details";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 
+    var resident = Model.Resident;
+
     var age = 0;
 
-    if (Model.DateOfBirth != default)
+    if (resident.DateOfBirth != default)
     {
-        age = DateTime.Today.Year - Model.DateOfBirth.Year;
+        age = DateTime.Today.Year - resident.DateOfBirth.Year;
 
-        if (Model.DateOfBirth.Date > DateTime.Today.AddYears(-age))
+        if (resident.DateOfBirth.Date > DateTime.Today.AddYears(-age))
         {
             age--;
         }
     }
 
-    var profileImage = string.IsNullOrWhiteSpace(Model.ProfilePicture)
+    var profileImage =
+        string.IsNullOrWhiteSpace(resident.ProfilePicture)
         ? Url.Content("~/Images/default_profile_image.jpg")
-        : Url.Content("~/" + Model.ProfilePicture.TrimStart('/'));
+        : Url.Content("~/" + resident.ProfilePicture.TrimStart('/'));
 }
 
 <div class="sc-resident-details-page">
@@ -35,23 +37,31 @@
             <a asp-controller="Residents"
                    asp-action="Residents"
                    class="sc-resident-back-btn">
+
                 <i class="bi bi-arrow-left"></i>
+
                 <span>Back to Residents</span>
+
             </a>
 
+
             <div class="sc-resident-id">
+
                 <i class="bi bi-person-vcard"></i>
-                Resident #@Model.Id
+
+                Resident #@resident.Id
+
             </div>
 
         </div>
+
 
         <div class="sc-resident-hero-content">
 
             <div class="sc-resident-image-wrap">
 
                 <img src="@profileImage"
-                     alt="@Model.FirstName @Model.LastName"
+                     alt="@resident.FirstName @resident.LastName"
                      class="sc-resident-main-image"
                      onerror="this.src='@Url.Content("~/Images/default_profile_image.jpg")'" />
 
@@ -59,28 +69,42 @@
 
             </div>
 
+
             <div class="sc-resident-main-info">
 
                 <div class="sc-resident-role">
+
                     <i class="bi bi-person-heart"></i>
+
                     Resident Profile
+
                 </div>
 
+
                 <h1>
-                    @Model.FirstName @Model.LastName
+
+                    @resident.FirstName @resident.LastName
+
                 </h1>
 
+
                 <p>
+
                     <i class="bi bi-house-door"></i>
 
-                    @if (Model.RoomNumber != null)
+                    @if (resident.RoomNumber != null)
                     {
-                        <span>Room @Model.RoomNumber</span>
+                        <span>
+                            Room @resident.RoomNumber
+                        </span>
                     }
                     else
                     {
-                        <span>No room assigned</span>
+                        <span>
+                            No room assigned
+                        </span>
                     }
+
                 </p>
 
             </div>
@@ -96,28 +120,40 @@
 
     <div class="sc-resident-content">
 
+
         <!-- ========================================================
              QUICK STATS
         ======================================================== -->
 
         <div class="row g-4 sc-resident-stats">
 
+
+            <!-- DATE OF BIRTH -->
+
             <div class="col-12 col-sm-6 col-lg-3">
 
                 <div class="sc-resident-stat-card">
 
                     <div class="sc-resident-stat-icon sc-stat-green">
+
                         <i class="bi bi-calendar-heart"></i>
+
                     </div>
+
 
                     <div>
 
-                        <span>Date of Birth</span>
+                        <span>
+                            Date of Birth
+                        </span>
+
 
                         <strong>
-                            @(Model.DateOfBirth == default
+
+                            @(resident.DateOfBirth == default
                                 ? "Not provided"
-                                : Model.DateOfBirth.ToString("dd MMM yyyy"))
+                                : resident.DateOfBirth.ToString("dd MMM yyyy"))
+
                         </strong>
 
                     </div>
@@ -126,23 +162,33 @@
 
             </div>
 
+
+            <!-- AGE -->
 
             <div class="col-12 col-sm-6 col-lg-3">
 
                 <div class="sc-resident-stat-card">
 
                     <div class="sc-resident-stat-icon sc-stat-lime">
+
                         <i class="bi bi-person-badge"></i>
+
                     </div>
+
 
                     <div>
 
-                        <span>Age</span>
+                        <span>
+                            Age
+                        </span>
+
 
                         <strong>
-                            @(Model.DateOfBirth == default
+
+                            @(resident.DateOfBirth == default
                                 ? "Not provided"
                                 : $"{age} years")
+
                         </strong>
 
                     </div>
@@ -151,23 +197,33 @@
 
             </div>
 
+
+            <!-- ROOM -->
 
             <div class="col-12 col-sm-6 col-lg-3">
 
                 <div class="sc-resident-stat-card">
 
                     <div class="sc-resident-stat-icon sc-stat-soft">
+
                         <i class="bi bi-door-open"></i>
+
                     </div>
+
 
                     <div>
 
-                        <span>Assigned Room</span>
+                        <span>
+                            Assigned Room
+                        </span>
+
 
                         <strong>
-                            @(Model.RoomNumber != null
-                                ? $"Room {Model.RoomNumber}"
+
+                            @(resident.RoomNumber != null
+                                ? $"Room {resident.RoomNumber}"
                                 : "Not assigned")
+
                         </strong>
 
                     </div>
@@ -177,20 +233,30 @@
             </div>
 
 
+            <!-- STATUS -->
+
             <div class="col-12 col-sm-6 col-lg-3">
 
                 <div class="sc-resident-stat-card">
 
                     <div class="sc-resident-stat-icon sc-stat-dark">
+
                         <i class="bi bi-person-check"></i>
+
                     </div>
+
 
                     <div>
 
-                        <span>Status</span>
+                        <span>
+                            Status
+                        </span>
+
 
                         <strong class="sc-resident-active">
+
                             Active
+
                         </strong>
 
                     </div>
@@ -220,12 +286,17 @@
                     <div class="sc-resident-card-heading">
 
                         <div class="sc-resident-heading-icon">
+
                             <i class="bi bi-person-lines-fill"></i>
+
                         </div>
+
 
                         <div>
 
-                            <h4>Personal Information</h4>
+                            <h4>
+                                Personal Information
+                            </h4>
 
                             <p>
                                 Contact and personal details for this resident.
@@ -239,20 +310,30 @@
                     <div class="sc-resident-info-list">
 
 
+                        <!-- EMAIL -->
+
                         <div class="sc-resident-info-item">
 
                             <div class="sc-resident-info-icon">
+
                                 <i class="bi bi-envelope"></i>
+
                             </div>
+
 
                             <div>
 
-                                <span>Email Address</span>
+                                <span>
+                                    Email Address
+                                </span>
+
 
                                 <strong>
-                                    @(string.IsNullOrWhiteSpace(Model.Email)
+
+                                    @(string.IsNullOrWhiteSpace(resident.Email)
                                         ? "Not provided"
-                                        : Model.Email)
+                                        : resident.Email)
+
                                 </strong>
 
                             </div>
@@ -263,20 +344,30 @@
                         <div class="sc-resident-divider"></div>
 
 
+                        <!-- PHONE -->
+
                         <div class="sc-resident-info-item">
 
                             <div class="sc-resident-info-icon">
+
                                 <i class="bi bi-telephone"></i>
+
                             </div>
+
 
                             <div>
 
-                                <span>Phone Number</span>
+                                <span>
+                                    Phone Number
+                                </span>
+
 
                                 <strong>
-                                    @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
+
+                                    @(string.IsNullOrWhiteSpace(resident.PhoneNumber)
                                         ? "Not provided"
-                                        : Model.PhoneNumber)
+                                        : resident.PhoneNumber)
+
                                 </strong>
 
                             </div>
@@ -287,20 +378,30 @@
                         <div class="sc-resident-divider"></div>
 
 
+                        <!-- DATE OF BIRTH -->
+
                         <div class="sc-resident-info-item">
 
                             <div class="sc-resident-info-icon">
+
                                 <i class="bi bi-calendar-event"></i>
+
                             </div>
+
 
                             <div>
 
-                                <span>Date of Birth</span>
+                                <span>
+                                    Date of Birth
+                                </span>
+
 
                                 <strong>
-                                    @(Model.DateOfBirth == default
+
+                                    @(resident.DateOfBirth == default
                                         ? "Not provided"
-                                        : Model.DateOfBirth.ToString("dd MMMM yyyy"))
+                                        : resident.DateOfBirth.ToString("dd MMMM yyyy"))
+
                                 </strong>
 
                             </div>
@@ -311,20 +412,30 @@
                         <div class="sc-resident-divider"></div>
 
 
+                        <!-- AGE -->
+
                         <div class="sc-resident-info-item">
 
                             <div class="sc-resident-info-icon">
+
                                 <i class="bi bi-person"></i>
+
                             </div>
+
 
                             <div>
 
-                                <span>Age</span>
+                                <span>
+                                    Age
+                                </span>
+
 
                                 <strong>
-                                    @(Model.DateOfBirth == default
+
+                                    @(resident.DateOfBirth == default
                                         ? "Not provided"
                                         : $"{age} years old")
+
                                 </strong>
 
                             </div>
@@ -349,12 +460,17 @@
                     <div class="sc-resident-card-heading">
 
                         <div class="sc-resident-heading-icon sc-accommodation-icon">
+
                             <i class="bi bi-house-heart"></i>
+
                         </div>
+
 
                         <div>
 
-                            <h4>Accommodation</h4>
+                            <h4>
+                                Accommodation
+                            </h4>
 
                             <p>
                                 Current room assignment.
@@ -373,14 +489,18 @@
 
                         </div>
 
+
                         <div>
 
-                            <span>Assigned Room</span>
+                            <span>
+                                Assigned Room
+                            </span>
+
 
                             <strong>
 
-                                @(Model.RoomNumber != null
-                                    ? Model.RoomNumber.ToString()
+                                @(resident.RoomNumber != null
+                                    ? resident.RoomNumber.ToString()
                                     : "Not Assigned")
 
                             </strong>
@@ -390,7 +510,7 @@
                     </div>
 
 
-                    @if (Model.RoomNumber != null)
+                    @if (resident.RoomNumber != null)
                     {
                         <div class="sc-resident-room-status">
 
@@ -417,47 +537,401 @@
 
 
             <!-- ====================================================
-                 EQUIPMENT
+                 ASSIGNED EQUIPMENT
             ==================================================== -->
 
             <div class="col-12">
 
                 <div class="sc-resident-info-card sc-resident-equipment-card">
 
-                    <div class="sc-resident-card-heading">
 
-                        <div class="sc-resident-heading-icon sc-equipment-icon">
-                            <i class="bi bi-box-seam"></i>
+                    <!-- HEADER -->
+
+                    <div class="sc-resident-equipment-header">
+
+                        <div class="sc-resident-card-heading">
+
+                            <div class="sc-resident-heading-icon sc-equipment-icon">
+
+                                <i class="bi bi-box-seam"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span class="sc-equipment-eyebrow">
+
+                                    RESIDENT EQUIPMENT
+
+                                </span>
+
+
+                                <h4>
+
+                                    Assigned Equipment
+
+                                </h4>
+
+
+                                <p>
+
+                                    Equipment currently assigned
+                                    to this resident.
+
+                                </p>
+
+                            </div>
+
                         </div>
 
-                        <div>
 
-                            <h4>Assigned Equipment</h4>
+                        <!-- COUNT -->
+
+                        <div class="sc-equipment-count">
+
+                            <i class="bi bi-boxes"></i>
+
+                            <span>
+
+                                @(Model.AssignedEquipment?.Count ?? 0)
+
+                            </span>
+
+                            <small>
+
+                                Assigned
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ====================================================
+                         EQUIPMENT LIST
+                    ==================================================== -->
+                    @if (Model.AssignedEquipment != null &&
+                                             Model.AssignedEquipment.Any())
+                    {
+
+                        <div class="sc-assigned-equipment-list">
+
+
+                            @foreach (var equipment in Model.AssignedEquipment)
+                            {
+
+                                var equipmentImage =
+                                    string.IsNullOrWhiteSpace(
+                                        equipment.ImageUrl
+                                    )
+                                    ? Url.Content(
+                                        "~/Images/default_equipment.png"
+                                    )
+                                    : Url.Content(
+                                        "~/" +
+                                        equipment.ImageUrl.TrimStart('/')
+                                    );
+
+
+                                <div class="sc-assigned-equipment-item">
+
+
+                                    <!-- IMAGE -->
+
+                                    <div class="sc-assigned-equipment-image-wrapper">
+
+                                        <img src="@equipmentImage"
+                                             alt="@equipment.EquipmentName"
+                                             class="sc-assigned-equipment-image"
+                                             onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+
+                                    </div>
+
+
+                                    <!-- DETAILS -->
+
+                                    <div class="sc-assigned-equipment-main">
+
+
+                                        <div class="sc-equipment-name-row">
+
+                                            <div>
+
+                                                <span class="sc-equipment-item-label">
+
+                                                    MEDICAL EQUIPMENT
+
+                                                </span>
+
+
+                                                <h5>
+
+                                                    @equipment.EquipmentName
+
+                                                </h5>
+
+                                            </div>
+
+
+                                            <!-- STATUS -->
+
+                                            <span class="sc-equipment-status
+                                                @(equipment.Status == EquipmentStatus.InUse
+                                                                                                      ? "sc-status-inuse"
+                                                                                                      : equipment.Status == EquipmentStatus.Available
+                                                                                                          ? "sc-status-available"
+                                                                                                          : equipment.Status == EquipmentStatus.UnderMaintenance
+                                                                                                              ? "sc-status-maintenance"
+                                                                                                              : "sc-status-retired")">
+
+                                                <i class="bi bi-circle-fill"></i>
+
+                                                @equipment.Status
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- DESCRIPTION -->
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                                    equipment.Description))
+                                        {
+
+                                            <p class="sc-assigned-equipment-description">
+
+                                                @equipment.Description
+
+                                            </p>
+
+                                        }
+
+
+                                        <!-- META -->
+
+                                        <div class="sc-assigned-equipment-meta">
+
+
+                                            <!-- BARCODE -->
+
+                                            <div class="sc-assigned-equipment-meta-item">
+
+                                                <div class="sc-equipment-meta-icon">
+
+                                                    <i class="bi bi-upc"></i>
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <span>
+                                                        Barcode
+                                                    </span>
+
+
+                                                    <strong>
+
+                                                        @(string.IsNullOrWhiteSpace(
+                                                            equipment.BarcodeValue)
+                                                            ? "Not available"
+                                                            : equipment.BarcodeValue)
+
+                                                    </strong>
+
+                                                </div>
+
+                                            </div>
+
+
+                                            <!-- ASSIGNED DATE -->
+
+                                            <div class="sc-assigned-equipment-meta-item">
+
+                                                <div class="sc-equipment-meta-icon">
+
+                                                    <i class="bi bi-calendar-check"></i>
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <span>
+                                                        Assigned On
+                                                    </span>
+
+
+                                                    <strong>
+
+                                                        @(equipment.AssignedAt.HasValue
+                                                            ? equipment.AssignedAt.Value
+                                                                .ToString("dd MMM yyyy")
+                                                            : "Not available")
+
+                                                    </strong>
+
+                                                </div>
+
+                                            </div>
+
+
+                                            <!-- ASSIGNED BY -->
+
+                                            <div class="sc-assigned-equipment-meta-item">
+
+                                                <div class="sc-equipment-meta-icon">
+
+                                                    <i class="bi bi-person-check"></i>
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <span>
+                                                        Assigned By
+                                                    </span>
+
+
+                                                    <strong>
+
+                                                        @(equipment.AssignedBy != null
+                                                            ? $"{equipment.AssignedBy.FirstName} {equipment.AssignedBy.LastName}"
+                                                            : "Not available")
+
+                                                    </strong>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <!-- ASSIGNMENT NOTES -->
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                                    equipment.AssignmentNotes))
+                                        {
+
+                                            <div class="sc-equipment-assignment-notes">
+
+                                                <div class="sc-equipment-notes-icon">
+
+                                                    <i class="bi bi-chat-left-text"></i>
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <span>
+                                                        Assignment Notes
+                                                    </span>
+
+
+                                                    <p>
+
+                                                        @equipment.AssignmentNotes
+
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                        }
+
+                                        <!-- ============================================================
+     EQUIPMENT ACTIONS
+============================================================ -->
+
+                                        <div class="sc-assigned-equipment-actions">
+
+                                            <a asp-controller="MaintenanceRequests"
+                                                   asp-action="RequestMaintenance"
+                                                   asp-route-equipmentId="@equipment.EquipmentId"
+                                                   class="sc-request-maintenance-btn">
+
+                                                <span class="sc-request-maintenance-btn-icon">
+
+                                                    <i class="bi bi-tools"></i>
+
+                                                </span>
+
+                                                <span class="sc-request-maintenance-btn-content">
+
+                                                    <strong>
+                                                        Request Maintenance
+                                                    </strong>
+
+                                                    <small>
+                                                        Report an issue or request equipment servicing
+                                                    </small>
+
+                                                </span>
+
+                                                <i class="bi bi-arrow-right sc-request-maintenance-arrow"></i>
+
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                   
+
+
+                                </div>
+
+                            }
+
+                        </div>
+
+                    }
+                    else
+                    {
+
+                        <!-- EMPTY STATE -->
+
+                        <div class="sc-resident-equipment-empty">
+
+                            <div class="sc-resident-empty-icon">
+
+                                <i class="bi bi-box"></i>
+
+                            </div>
+
+
+                            <h5>
+                                No Equipment Assigned
+                            </h5>
+
 
                             <p>
-                                Equipment currently assigned to this resident.
+                                This resident currently has no medical
+                                equipment assigned.
                             </p>
 
+
+                            <a asp-controller="Equipment"
+                                   asp-action="AssignEquipment"
+                                   asp-route-residentId="@resident.Id"
+                                   class="sc-empty-assign-equipment-btn">
+
+                                <i class="bi bi-plus-circle"></i>
+
+                                Assign Equipment
+
+                            </a>
+
                         </div>
 
-                    </div>
-
-
-                    <div class="sc-resident-equipment-empty">
-
-                        <div class="sc-resident-empty-icon">
-
-                            <i class="bi bi-box"></i>
-
-                        </div>
-
-                        <h5>No Equipment Assigned</h5>
-
-                        <p>
-                            This resident currently has no equipment assigned.
-                        </p>
-
-                    </div>
+                    }
 
                 </div>
 
@@ -476,7 +950,9 @@
 
                 <div>
 
-                    <h4>Resident Actions</h4>
+                    <h4>
+                        Resident Actions
+                    </h4>
 
                     <p>
                         Manage equipment and transport services.
@@ -496,7 +972,7 @@
 
                     <a asp-controller="Equipment"
                            asp-action="AssignEquipment"
-                           asp-route-residentId="@Model.Id"
+                           asp-route-residentId="@resident.Id"
                            class="sc-resident-action-btn sc-action-equipment">
 
                         <div class="sc-resident-action-icon">
@@ -504,6 +980,7 @@
                             <i class="bi bi-box-seam-fill"></i>
 
                         </div>
+
 
                         <div class="sc-resident-action-text">
 
@@ -516,6 +993,7 @@
                             </span>
 
                         </div>
+
 
                         <i class="bi bi-arrow-right sc-resident-action-arrow"></i>
 
@@ -530,7 +1008,7 @@
 
                     <a asp-controller="TransportRequests"
                            asp-action="RequestTransport"
-                           asp-route-residentId="@Model.Id"
+                           asp-route-residentId="@resident.Id"
                            class="sc-resident-action-btn sc-action-transport">
 
                         <div class="sc-resident-action-icon">
@@ -538,6 +1016,7 @@
                             <i class="bi bi-truck"></i>
 
                         </div>
+
 
                         <div class="sc-resident-action-text">
 
@@ -550,6 +1029,7 @@
                             </span>
 
                         </div>
+
 
                         <i class="bi bi-arrow-right sc-resident-action-arrow"></i>
 

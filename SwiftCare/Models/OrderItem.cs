@@ -10,14 +10,16 @@ namespace SwiftCare.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int OrderItemId { get; set; }
 
-        // ============================================================
-        // ORDER
-        // ============================================================
 
-        public int OrderId { get; set; }
+    // ============================================================
+    // ORDER
+    // ============================================================
+
+    public int OrderId { get; set; }
 
         [ForeignKey(nameof(OrderId))]
         public virtual Order Order { get; set; }
+
 
         // ============================================================
         // EQUIPMENT
@@ -28,6 +30,7 @@ namespace SwiftCare.Models
         [ForeignKey(nameof(EquipmentId))]
         public virtual Equipment Equipment { get; set; }
 
+
         // ============================================================
         // QUANTITY
         // ============================================================
@@ -36,6 +39,20 @@ namespace SwiftCare.Models
         [Display(Name = "Quantity")]
         public int Quantity { get; set; }
 
+
+        // ============================================================
+        // PACKAGE STATUS
+        // ============================================================
+
         public bool IsPackaged { get; set; }
+
+
+        // ============================================================
+        // PACKAGE
+        // ============================================================
+
+        public virtual PackageOrder PackageOrder { get; set; }
     }
+
+
 }

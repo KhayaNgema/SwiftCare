@@ -1,64 +1,79 @@
 ﻿
+@using System.Text.Json
 @model SwiftCare.Models.Order
 
 @{
     ViewData["Title"] = "Receive Equipment Order";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var orderItems = Model?.OrderItems?.ToList()
+                     ?? new List<SwiftCare.Models.OrderItem>();
+
+    var packageOrders = Model?.PackageOrders?.ToList()
+                        ?? new List<SwiftCare.Models.PackageOrder>();
+
+    // Safely get the encrypted order ID if your GET action originally
+    // receives an encrypted value. If you don't use encryption here,
+    // the JavaScript will fall back to Model.OrderId.
+    var currentOrderId = Model?.OrderId;
 }
 
+<div class="sc-receive-page">
 
-<div class="receive-page">
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
 
-    <!-- HEADER -->
-    <div class="receive-header">
+    <section class="sc-receive-header">
 
-        <div class="receive-header-inner">
+        <div class="sc-receive-header-inner">
 
             <a asp-controller="Orders"
-               asp-action="Orders"
-               class="receive-back">
+                   asp-action="Orders"
+                   class="sc-receive-back"
+                   title="Back to Orders">
 
                 <i class="bi bi-chevron-left"></i>
-                Back
 
             </a>
 
             <div>
 
-                <h2 class="receive-title">
+                <h1 class="sc-receive-title">
                     Receive Equipment Order
-                </h2>
+                </h1>
 
-                <p class="receive-subtitle">
-                    Scan and verify the equipment before completing the order.
+                <p class="sc-receive-subtitle">
+                    Scan the QR code on each package to verify the package
+                    and receive the equipment belonging to this order.
                 </p>
 
             </div>
 
         </div>
 
-    </div>
+    </section>
 
 
-    <div class="container-fluid px-4 mt-4">
+    <div class="container-fluid px-4">
 
         @if (Model == null)
         {
-            <div class="empty-order">
+            <div class="sc-receive-empty">
 
-                <i class="fas fa-box-open"></i>
+                <div class="sc-receive-empty-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
 
-                <h4>
-                    Order not found
-                </h4>
+                <h4>Order Not Found</h4>
 
                 <p class="text-muted">
                     The equipment order could not be found.
                 </p>
 
                 <a asp-controller="Orders"
-                   asp-action="Orders"
-                   class="btn btn-primary">
+                       asp-action="Orders"
+                       class="sc-receive-submit-button">
 
                     Back to Orders
 
@@ -68,56 +83,77 @@
         }
         else
         {
-            <!-- ORDER INFORMATION -->
+            <!-- ====================================================
+                 ORDER SUMMARY
+                 ==================================================== -->
 
-            <div class="order-info-card">
+            <div class="sc-receive-summary-card">
 
-                <div class="row g-4">
+                <div class="row g-3">
 
                     <div class="col-6 col-md-3">
 
-                        <div class="order-info-label">
-                            Order Number
-                        </div>
+                        <div class="sc-receive-summary-item">
 
-                        <div class="order-info-value">
-                            @Model.OrderNumber
+                            <span class="sc-receive-summary-label">
+                                Order Number
+                            </span>
+
+                            <span class="sc-receive-summary-value">
+                                @(Model.OrderNumber ?? "N/A")
+                            </span>
+
                         </div>
 
                     </div>
 
+
                     <div class="col-6 col-md-3">
 
-                        <div class="order-info-label">
-                            Order ID
-                        </div>
+                        <div class="sc-receive-summary-item">
 
-                        <div class="order-info-value">
-                            #@Model.OrderId
+                            <span class="sc-receive-summary-label">
+                                Order ID
+                            </span>
+
+                            <span class="sc-receive-summary-value">
+                                #@Model.OrderId
+                            </span>
+
                         </div>
 
                     </div>
 
+
                     <div class="col-6 col-md-3">
 
-                        <div class="order-info-label">
-                            Order Date
-                        </div>
+                        <div class="sc-receive-summary-item">
 
-                        <div class="order-info-value">
-                            @Model.OrderDate.ToString("dd MMM yyyy")
+                            <span class="sc-receive-summary-label">
+                                Order Date
+                            </span>
+
+                            <span class="sc-receive-summary-value">
+                                @Model.OrderDate.ToString("dd MMM yyyy")
+                            </span>
+
                         </div>
 
                     </div>
 
+
                     <div class="col-6 col-md-3">
 
-                        <div class="order-info-label">
-                            Status
-                        </div>
+                        <div class="sc-receive-summary-item">
 
-                        <div class="order-info-value">
-                            @Model.Status
+                            <span class="sc-receive-summary-label">
+                                Current Status
+                            </span>
+
+                            <span class="sc-receive-summary-value">
+                                @Model.Status
+                            </span>
+
                         </div>
 
                     </div>
@@ -127,11 +163,47 @@
             </div>
 
 
+            <!-- ====================================================
+                 INFORMATION
+                 ==================================================== -->
+
+            <div class="sc-receive-info-banner">
+
+                <div class="sc-receive-info-icon">
+                    <i class="bi bi-info-lg"></i>
+                </div>
+
+                <div>
+
+                    <div class="sc-receive-info-title">
+                        Scan Package QR Codes
+                    </div>
+
+                    <p class="sc-receive-info-text">
+
+                        Each package generated for this order has its own
+                        registered QR code. Scan the package QR code to verify
+                        the package against the database.
+
+                        The system will identify the package, determine which
+                        order item it belongs to, highlight the related
+                        equipment, and mark the package as scanned.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================================
+                 RECEIVE FORM
+                 ==================================================== -->
+
             <form asp-controller="Orders"
                   asp-action="ReceiveOrder"
-                  asp-route-orderId="@Model.OrderId"
                   method="post"
-                  id="receiveOrderForm">
+                  id="scReceiveOrderForm">
 
                 @Html.AntiForgeryToken()
 
@@ -140,47 +212,95 @@
                        value="@Model.OrderId" />
 
 
-                <div class="row">
+                <!-- ====================================================
+                     SCANNED PACKAGE IDs
+                     These are submitted with the final receive action.
+                     ==================================================== -->
 
-                    <!-- SCANNER -->
+                <div id="scannedPackagesContainer"></div>
+
+
+                <div class="row g-4">
+
+                    <!-- ====================================================
+                         QR SCANNER
+                         ==================================================== -->
 
                     <div class="col-12 col-lg-4">
 
-                        <div class="scanner-card">
+                        <div class="sc-receive-scanner-card">
 
-                            <h5 class="scanner-title">
+                            <div class="sc-receive-scanner-heading">
 
-                                <i class="fas fa-qrcode me-2"
-                                   style="color:#48AAAD;"></i>
+                                <div class="sc-receive-scanner-icon">
+                                    <i class="bi bi-qr-code-scan"></i>
+                                </div>
 
-                                Scan Equipment
+                                <div>
 
-                            </h5>
+                                    <h5>
+                                        Scan Package QR Code
+                                    </h5>
 
-                            <p class="scanner-description">
+                                    <p>
+                                        Scan the QR code attached to the
+                                        equipment package.
+                                    </p>
 
-                                Scan the QR code attached to each equipment item.
-                                Each successful scan will update the quantity below.
-
-                            </p>
-
-                            <div id="scanner"></div>
-
-                            <div class="scanner-status"
-                                 id="scannerStatus">
-
-                                <i class="fas fa-camera me-1"></i>
-
-                                Scanner ready
+                                </div>
 
                             </div>
 
-                            <div class="all-complete"
-                                 id="allComplete">
 
-                                <i class="fas fa-check-circle me-1"></i>
+                            <div class="sc-receive-scanner-frame">
 
-                                All equipment has been verified.
+                                <div id="scanner"></div>
+
+                            </div>
+
+
+                            <div class="sc-receive-scanner-status"
+                                 id="scannerStatus">
+
+                                <i class="bi bi-camera"></i>
+
+                                <span>
+                                    Scanner ready
+                                </span>
+
+                            </div>
+
+
+                            <div class="sc-receive-scan-result"
+                                 id="scanResult"
+                                 style="display:none;">
+
+                                <div class="sc-receive-scan-result-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+
+                                <div>
+
+                                    <span class="sc-receive-scan-result-label">
+                                        Package Identified
+                                    </span>
+
+                                    <strong id="scannedEquipmentName"></strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="sc-receive-scanner-help">
+
+                                <i class="bi bi-lightbulb"></i>
+
+                                <span>
+                                    Scan the QR code printed on a package.
+                                    The package will be verified directly
+                                    against this order.
+                                </span>
 
                             </div>
 
@@ -189,95 +309,237 @@
                     </div>
 
 
-                    <!-- EQUIPMENT -->
+                    <!-- ====================================================
+                         EQUIPMENT ITEMS
+                         ==================================================== -->
 
                     <div class="col-12 col-lg-8">
 
-                        <h5 class="fw-bold mb-3">
+                        <h5 class="sc-receive-section-title">
 
-                            Equipment to Receive
+                            <i class="bi bi-box-seam-fill"></i>
+
+                            Equipment & Packages
 
                         </h5>
 
-                        @if (Model.OrderItems != null &&
-                             Model.OrderItems.Any())
+
+                        @if (orderItems.Any())
                         {
-                            foreach (var item in Model.OrderItems)
+                            foreach (var item in orderItems)
                             {
-                                <div class="equipment-card"
-                                     id="order-item-@item.OrderItemId"
-                                     data-equipment-id="@item.EquipmentId"
-                                     data-required-qty="@item.Quantity"
-                                     data-scanned-count="0">
+                                var equipmentName =
+                                    item.Equipment?.EquipmentName
+                                    ?? "Equipment";
+
+                                var itemPackages =
+                                    packageOrders
+                                        .Where(p =>
+                                            p.OrderItemId == item.OrderItemId)
+                                        .ToList();
+
+                                <div class="sc-receive-equipment-card"
+                                     data-order-item-id="@item.OrderItemId"
+                                     data-expected="@item.Quantity">
+
+                                    <input type="hidden"
+                                           name="receivedItems[@item.OrderItemId].OrderItemId"
+                                           value="@item.OrderItemId" />
+
+
+                                    <!-- EQUIPMENT HEADER -->
 
                                     <div class="d-flex align-items-start gap-3">
 
-                                        <div class="equipment-icon">
+                                        <div class="sc-receive-equipment-icon">
 
-                                            <i class="fas fa-wheelchair"></i>
+                                            <i class="bi bi-boxes"></i>
 
                                         </div>
 
+
                                         <div class="flex-grow-1">
 
-                                            <h5 class="equipment-name">
+                                            <div class="sc-receive-equipment-name">
 
-                                                @item.Equipment?.EquipmentName
-
-                                            </h5>
-
-                                            <div class="equipment-quantity">
-
-                                                Required quantity:
-                                                <strong>
-                                                    @item.Quantity
-                                                </strong>
+                                                @equipmentName
 
                                             </div>
 
-                                            <div class="scan-progress">
 
-                                                <div class="scan-progress-bar">
+                                            <div class="sc-receive-equipment-id">
 
-                                                    <div class="scan-progress-fill">
-                                                    </div>
+                                                @if (itemPackages.Any())
+                                                {
+                                                    <span>
 
-                                                </div>
+                                                        <span class="package-count">
+                                                            @itemPackages.Count
+                                                        </span>
 
-                                                <div class="scan-count">
+                                                        package(s) available
 
-                                                    Scanned:
-                                                    <span class="scanned-count">
-                                                        0
                                                     </span>
-                                                    /
-                                                    @item.Quantity
-
-                                                </div>
+                                                }
+                                                else
+                                                {
+                                                    <span>
+                                                        No packages created
+                                                    </span>
+                                                }
 
                                             </div>
+
+                                        </div>
+
+
+                                        <div class="sc-receive-scanned-badge">
+
+                                            <i class="bi bi-qr-code"></i>
+
+                                            Waiting
 
                                         </div>
 
                                     </div>
 
-                                    <i class="fas fa-check-circle check-icon d-none"></i>
+
+                                    <!-- ====================================================
+                                         PACKAGE LIST
+                                         ==================================================== -->
+                                    @if (itemPackages.Any())
+                                    {
+                                        <div class="mt-3 d-flex flex-wrap gap-2">
+
+                                            @foreach (var package in itemPackages)
+                                            {
+                                                var packageDisplay =
+                                                    package.PackageNumber?.ToString()
+                                                    ?? $"Package #{package.PackageOrderId}";
+
+                                                <span class="badge bg-light text-dark border sc-package-badge"
+                                                      data-package-id="@package.PackageOrderId">
+
+                                                    <i class="bi bi-box-seam me-1"></i>
+
+                                                    @packageDisplay
+
+                                                </span>
+                                            }
+
+                                        </div>
+                                    }
+
+
+                                    <!-- QUANTITY GRID -->
+
+                                    <div class="sc-receive-quantity-grid">
+
+                                        <div class="sc-receive-quantity-box">
+
+                                            <span class="sc-receive-quantity-label">
+                                                Expected / Ordered
+                                            </span>
+
+                                            <span class="sc-receive-quantity-value">
+
+                                                @item.Quantity item(s)
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="sc-receive-quantity-box">
+
+                                            <label class="sc-receive-quantity-label">
+
+                                                Total Received
+
+                                            </label>
+
+                                            <input type="number"
+                                                   min="0"
+                                                   value="0"
+                                                   name="receivedItems[@item.OrderItemId].ReceivedQuantity"
+                                                   class="sc-receive-input sc-received-quantity-input"
+                                                   data-order-item-id="@item.OrderItemId" />
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- DIFFERENCE -->
+
+                                    <div class="sc-receive-difference">
+
+                                        <span>
+
+                                            Expected:
+
+                                            <strong>
+                                                @item.Quantity
+                                            </strong>
+
+                                        </span>
+
+
+                                        <span class="sc-receive-difference-divider">
+                                            |
+                                        </span>
+
+
+                                        <span>
+
+                                            Received:
+
+                                            <strong class="received-display">
+                                                0
+                                            </strong>
+
+                                        </span>
+
+
+                                        <span class="sc-receive-difference-divider">
+                                            |
+                                        </span>
+
+
+                                        <span>
+
+                                            Difference:
+
+                                            <strong class="difference-display sc-difference-missing">
+
+                                                @item.Quantity missing
+
+                                            </strong>
+
+                                        </span>
+
+                                    </div>
 
                                 </div>
                             }
                         }
                         else
                         {
-                            <div class="empty-order">
+                            <div class="sc-receive-empty">
 
-                                <i class="fas fa-box-open"></i>
+                                <div class="sc-receive-empty-icon">
+
+                                    <i class="bi bi-box-seam"></i>
+
+                                </div>
 
                                 <h5>
-                                    No equipment items
+                                    No Equipment Items
                                 </h5>
 
                                 <p class="text-muted">
-                                    This order contains no equipment items.
+                                    This order does not contain any equipment
+                                    items.
                                 </p>
 
                             </div>
@@ -288,21 +550,41 @@
                 </div>
 
 
-                <!-- SUBMIT -->
+                <!-- ====================================================
+                     FOOTER
+                     ==================================================== -->
 
-                <div class="receive-footer">
+                <div class="sc-receive-footer">
 
                     <div class="container-fluid">
 
-                        <button type="submit"
-                                class="receive-button"
-                                id="receiveOrderButton">
+                        <div class="sc-receive-footer-inner">
 
-                            <i class="fas fa-truck-loading me-2"></i>
+                            <div class="sc-receive-footer-info">
 
-                            Receive Equipment Order
+                                <i class="bi bi-info-circle"></i>
 
-                        </button>
+                                <span id="receiveFooterMessage">
+
+                                    Scan packages to verify them before
+                                    confirming the received equipment.
+
+                                </span>
+
+                            </div>
+
+
+                            <button type="submit"
+                                    class="sc-receive-submit-button"
+                                    id="scReceiveOrderButton">
+
+                                <i class="bi bi-check2-circle"></i>
+
+                                Confirm Received Equipment
+
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -324,467 +606,1235 @@
 
         let html5QrCode = null;
         let scanningPaused = false;
+        let scanRequestInProgress = false;
 
-        /* ============================================================
-           BEEP
-        ============================================================ */
+        const orderId = @Model?.OrderId;
+
+        /*
+        ============================================================
+        BEEP
+        ============================================================
+        */
 
         function playBeep() {
 
-            try {
+        try {
 
-                const AudioContext =
-                    window.AudioContext ||
-                    window.webkitAudioContext;
+        const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
 
-                if (!AudioContext) return;
+        if (!AudioContext) return;
 
-                const audioCtx = new AudioContext();
+        const audioContext =
+        new AudioContext();
 
-                const oscillator =
-                    audioCtx.createOscillator();
+        const oscillator =
+        audioContext.createOscillator();
 
-                const gainNode =
-                    audioCtx.createGain();
+        const gainNode =
+        audioContext.createGain();
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+        oscillator.connect(gainNode);
 
-                oscillator.type = "sine";
+        gainNode.connect(
+        audioContext.destination
+        );
 
-                oscillator.frequency.setValueAtTime(
-                    1000,
-                    audioCtx.currentTime
-                );
+        oscillator.type = "sine";
 
-                gainNode.gain.setValueAtTime(
-                    0.2,
-                    audioCtx.currentTime
-                );
+        oscillator.frequency.setValueAtTime(
+        1000,
+        audioContext.currentTime
+        );
 
-                oscillator.start();
+        gainNode.gain.setValueAtTime(
+        0.15,
+        audioContext.currentTime
+        );
 
-                oscillator.stop(
-                    audioCtx.currentTime + 0.15
-                );
+        oscillator.start();
 
-            }
-            catch (error) {
+        oscillator.stop(
+        audioContext.currentTime + 0.15
+        );
 
-                console.log("Beep unavailable.");
+        }
+        catch (error) {
 
-            }
+        console.log("Beep unavailable.");
+
+        }
 
         }
 
 
-        /* ============================================================
-           UPDATE CARD
-        ============================================================ */
+        /*
+        ============================================================
+        GET ANTI FORGERY TOKEN
+        ============================================================
+        */
 
-        function updateEquipmentCard(card, scannedCount) {
+        function getAntiForgeryToken() {
 
-            const requiredQty =
-                parseInt(
-                    card.getAttribute(
-                        "data-required-qty"
-                    )
-                ) || 0;
+        const token =
+        document.querySelector(
+        '#scReceiveOrderForm input[name="__RequestVerificationToken"]'
+        );
 
-            card.setAttribute(
-                "data-scanned-count",
-                scannedCount
-            );
-
-            const countElement =
-                card.querySelector(
-                    ".scanned-count"
-                );
-
-            if (countElement) {
-
-                countElement.textContent =
-                    scannedCount;
-
-            }
-
-            const progress =
-                card.querySelector(
-                    ".scan-progress-fill"
-                );
-
-            if (progress && requiredQty > 0) {
-
-                const percentage =
-                    Math.min(
-                        (scannedCount / requiredQty) * 100,
-                        100
-                    );
-
-                progress.style.width =
-                    percentage + "%";
-
-            }
-
-            const checkIcon =
-                card.querySelector(
-                    ".check-icon"
-                );
-
-            if (scannedCount >= requiredQty) {
-
-                card.classList.add(
-                    "completed"
-                );
-
-                if (checkIcon) {
-
-                    checkIcon.classList.remove(
-                        "d-none"
-                    );
-
-                }
-
-            }
-            else {
-
-                card.classList.remove(
-                    "completed"
-                );
-
-                if (checkIcon) {
-
-                    checkIcon.classList.add(
-                        "d-none"
-                    );
-
-                }
-
-            }
-
-            checkAllComplete();
+        return token
+        ? token.value
+        : "";
 
         }
 
 
-        /* ============================================================
-           CHECK EVERYTHING
-        ============================================================ */
+        /*
+        ============================================================
+        UPDATE SCANNER STATUS
+        ============================================================
+        */
 
-        function checkAllComplete() {
+        function updateScannerStatus(
+        message,
+        type
+        ) {
 
-            const cards =
-                document.querySelectorAll(
-                    ".equipment-card"
-                );
+        const status =
+        document.getElementById(
+        "scannerStatus"
+        );
 
-            if (!cards.length) return;
+        if (!status) return;
 
-            let complete = true;
+        let icon =
+        "bi-camera";
 
-            cards.forEach(card => {
+        status.classList.remove(
+        "sc-scanner-success",
+        "sc-scanner-warning",
+        "sc-scanner-error"
+        );
 
-                const required =
-                    parseInt(
-                        card.getAttribute(
-                            "data-required-qty"
-                        )
-                    ) || 0;
 
-                const scanned =
-                    parseInt(
-                        card.getAttribute(
-                            "data-scanned-count"
-                        )
-                    ) || 0;
+        if (type === "success") {
 
-                if (scanned < required) {
+        icon =
+        "bi-check-circle-fill";
 
-                    complete = false;
+        status.classList.add(
+        "sc-scanner-success"
+        );
 
-                }
+        }
+        else if (type === "warning") {
 
-            });
+        icon =
+        "bi-exclamation-triangle-fill";
 
-            const allComplete =
-                document.getElementById(
-                    "allComplete"
-                );
+        status.classList.add(
+        "sc-scanner-warning"
+        );
 
-            if (allComplete) {
+        }
+        else if (type === "error") {
 
-                allComplete.style.display =
-                    complete ? "block" : "none";
+        icon =
+        "bi-x-circle-fill";
 
-            }
+        status.classList.add(
+        "sc-scanner-error"
+        );
 
         }
 
 
-        /* ============================================================
-           QR SCAN
-           
-           QR CODE SHOULD CONTAIN EQUIPMENT ID
-           OR EQUIPMENT NAME.
-        ============================================================ */
-
-        function handleQrCode(decodedText) {
-
-            if (scanningPaused) return;
-
-            const code =
-                decodedText.trim();
-
-            const cards =
-                Array.from(
-                    document.querySelectorAll(
-                        ".equipment-card"
-                    )
-                );
-
-            const matchedCard =
-                cards.find(card => {
-
-                    const equipmentId =
-                        card.getAttribute(
-                            "data-equipment-id"
-                        );
-
-                    return equipmentId === code;
-
-                });
-
-            if (!matchedCard) {
-
-                const status =
-                    document.getElementById(
-                        "scannerStatus"
-                    );
-
-                if (status) {
-
-                    status.innerHTML =
-                        '<i class="fas fa-exclamation-triangle me-1"></i> ' +
-                        'QR code does not match this order.';
-
-                    status.style.background =
-                        "#fff3cd";
-
-                    status.style.color =
-                        "#856404";
-
-                    setTimeout(() => {
-
-                        status.innerHTML =
-                            '<i class="fas fa-camera me-1"></i> Scanner ready';
-
-                        status.style.background =
-                            "#eefafa";
-
-                        status.style.color =
-                            "#337d80";
-
-                    }, 1800);
-
-                }
-
-                scanningPaused = true;
-
-                setTimeout(() => {
-
-                    scanningPaused = false;
-
-                }, 1200);
-
-                return;
-
-            }
-
-            let scannedCount =
-                parseInt(
-                    matchedCard.getAttribute(
-                        "data-scanned-count"
-                    )
-                ) || 0;
-
-            const requiredQty =
-                parseInt(
-                    matchedCard.getAttribute(
-                        "data-required-qty"
-                    )
-                ) || 0;
-
-
-            if (scannedCount < requiredQty) {
-
-                scannedCount++;
-
-                updateEquipmentCard(
-                    matchedCard,
-                    scannedCount
-                );
-
-                playBeep();
-
-                const status =
-                    document.getElementById(
-                        "scannerStatus"
-                    );
-
-                if (status) {
-
-                    status.innerHTML =
-                        '<i class="fas fa-check-circle me-1"></i> Equipment verified';
-
-                    status.style.background =
-                        "#eaf8ee";
-
-                    status.style.color =
-                        "#26783a";
-
-                    setTimeout(() => {
-
-                        status.innerHTML =
-                            '<i class="fas fa-camera me-1"></i> Scanner ready';
-
-                        status.style.background =
-                            "#eefafa";
-
-                        status.style.color =
-                            "#337d80";
-
-                    }, 1200);
-
-                }
-
-            }
-
-            scanningPaused = true;
-
-            setTimeout(() => {
-
-                scanningPaused = false;
-
-            }, 1000);
+        status.innerHTML =
+        '<i class="bi ' +
+        icon +
+        '"></i>' +
+        '<span>' +
+        message +
+        '</span>';
 
         }
 
 
-        /* ============================================================
-           START SCANNER
-        ============================================================ */
+        /*
+        ============================================================
+        CLEAR EQUIPMENT SELECTION
+        ============================================================
+        */
+
+        function clearEquipmentSelection() {
+
+        document
+        .querySelectorAll(
+        ".sc-receive-equipment-card"
+        )
+        .forEach(
+        function (card) {
+
+        card.classList.remove(
+        "sc-receive-equipment-selected"
+        );
+
+        }
+        );
+
+        }
+
+
+        /*
+        ============================================================
+        HIGHLIGHT MATCHED EQUIPMENT
+        ============================================================
+        */
+
+        function highlightEquipment(card) {
+
+        clearEquipmentSelection();
+
+        card.classList.add(
+        "sc-receive-equipment-selected"
+        );
+
+
+        const badge =
+        card.querySelector(
+        ".sc-receive-scanned-badge"
+        );
+
+        if (badge) {
+
+        badge.innerHTML =
+        '<i class="bi bi-check-circle-fill"></i>' +
+        ' Package Verified';
+
+        badge.classList.add(
+        "sc-receive-scanned-success"
+        );
+
+        }
+
+
+        card.scrollIntoView({
+
+        behavior: "smooth",
+
+        block: "center"
+
+        });
+
+        }
+
+
+        /*
+        ============================================================
+        SHOW SCANNED RESULT
+        ============================================================
+        */
+
+        function showScanResult(
+        equipmentName,
+        packageNumber
+        ) {
+
+        const result =
+        document.getElementById(
+        "scanResult"
+        );
+
+        const name =
+        document.getElementById(
+        "scannedEquipmentName"
+        );
+
+        if (!result || !name) return;
+
+
+        name.textContent =
+        packageNumber +
+        " • " +
+        equipmentName;
+
+
+        result.style.display =
+        "flex";
+
+        }
+
+
+        /*
+        ============================================================
+        ADD SCANNED PACKAGE TO FORM
+
+        The final ReceiveOrder POST can receive:
+
+        scannedPackageIds = [1, 5, 8]
+
+        ============================================================
+        */
+
+        function addScannedPackageToForm(
+        packageId
+        ) {
+
+        const container =
+        document.getElementById(
+        "scannedPackagesContainer"
+        );
+
+        if (!container) return;
+
+
+        const existingInput =
+        container.querySelector(
+        'input[value="' +
+        packageId +
+        '"]'
+        );
+
+        if (existingInput) return;
+
+
+        const input =
+        document.createElement(
+        "input"
+        );
+
+        input.type =
+        "hidden";
+
+        input.name =
+        "scannedPackageIds";
+
+        input.value =
+        packageId;
+
+        container.appendChild(
+        input
+        );
+
+        }
+
+
+        /*
+        ============================================================
+        MARK PACKAGE BADGE AS SCANNED
+        ============================================================
+        */
+
+        function markPackageBadgeAsScanned(
+        packageId
+        ) {
+
+        const badge =
+        document.querySelector(
+        '.sc-package-badge[data-package-id="' +
+        packageId +
+        '"]'
+        );
+
+        if (!badge) return;
+
+        badge.classList.add(
+        "bg-success",
+        "text-white"
+        );
+
+        badge.classList.remove(
+        "bg-light",
+        "text-dark"
+        );
+
+        badge.innerHTML =
+        '<i class="bi bi-check-circle-fill me-1"></i>' +
+        badge.textContent.trim();
+
+        }
+
+
+        /*
+        ============================================================
+        UPDATE RECEIVED QUANTITY
+        ============================================================
+        */
+
+        function updateQuantityDisplay(
+        input
+        ) {
+
+        const card =
+        input.closest(
+        ".sc-receive-equipment-card"
+        );
+
+        if (!card) return;
+
+
+        const expected =
+        parseInt(
+        card.getAttribute(
+        "data-expected"
+        )
+        ) || 0;
+
+
+        let received =
+        parseInt(
+        input.value
+        );
+
+
+        if (
+        isNaN(received) ||
+        received < 0
+        ) {
+
+        received = 0;
+
+        }
+
+
+        const difference =
+        received - expected;
+
+
+        const receivedDisplay =
+        card.querySelector(
+        ".received-display"
+        );
+
+
+        const differenceDisplay =
+        card.querySelector(
+        ".difference-display"
+        );
+
+
+        if (receivedDisplay) {
+
+        receivedDisplay.textContent =
+        received;
+
+        }
+
+
+        if (differenceDisplay) {
+
+        differenceDisplay.classList.remove(
+
+        "sc-difference-matched",
+
+        "sc-difference-extra",
+
+        "sc-difference-missing"
+
+        );
+
+
+        if (difference === 0) {
+
+        differenceDisplay.textContent =
+        "Matched";
+
+        differenceDisplay.classList.add(
+        "sc-difference-matched"
+        );
+
+        }
+        else if (difference > 0) {
+
+        differenceDisplay.textContent =
+        "+" +
+        difference +
+        " extra";
+
+        differenceDisplay.classList.add(
+        "sc-difference-extra"
+        );
+
+        }
+        else {
+
+        differenceDisplay.textContent =
+        Math.abs(
+        difference
+        ) +
+        " missing";
+
+        differenceDisplay.classList.add(
+        "sc-difference-missing"
+        );
+
+        }
+
+        }
+
+        }
+
+
+        /*
+        ============================================================
+        APPLY PACKAGE SCAN RESULT
+
+        The server returns the package and its OrderItemId.
+        This updates only the UI.
+        ============================================================
+        */
+
+        function applyPackageScanResult(result) {
+
+        const orderItemId =
+        result.orderItemId;
+
+        const packageId =
+        result.packageOrderId ||
+        result.packageId;
+
+        const packageNumber =
+        result.packageNumber ||
+        ("Package #" + packageId);
+
+        const equipmentName =
+        result.equipmentName ||
+        "Equipment";
+
+
+        if (!packageId) {
+
+        updateScannerStatus(
+
+        "The package was verified but its package ID was not returned.",
+
+        "error"
+
+        );
+
+        return;
+
+        }
+
+
+        const matchedCard =
+        document.querySelector(
+        '.sc-receive-equipment-card[data-order-item-id="' +
+        orderItemId +
+        '"]'
+        );
+
+
+        if (!matchedCard) {
+
+        updateScannerStatus(
+
+        "Package verified, but the related order item could not be displayed.",
+
+        "error"
+
+        );
+
+        return;
+
+        }
+
+
+        playBeep();
+
+
+        highlightEquipment(
+        matchedCard
+        );
+
+
+        showScanResult(
+        equipmentName,
+        packageNumber
+        );
+
+
+        markPackageBadgeAsScanned(
+        packageId
+        );
+
+
+        addScannedPackageToForm(
+        packageId
+        );
+
+
+        updateScannerStatus(
+
+        packageNumber +
+        " verified successfully.",
+
+        "success"
+
+        );
+
+
+        const quantityInput =
+        matchedCard.querySelector(
+        ".sc-received-quantity-input"
+        );
+
+
+        if (quantityInput) {
+
+        setTimeout(
+        function () {
+
+        quantityInput.focus();
+
+        quantityInput.select();
+
+        },
+        400
+        );
+
+        }
+
+        }
+
+
+        /*
+        ============================================================
+        SCAN PACKAGE ACTION
+
+        Calls:
+
+        POST /Orders/ScanPackage
+
+        Sends:
+        - orderId
+        - qrCodeValue
+
+        The controller should verify:
+        1. The QR code belongs to a PackageOrder.
+        2. The package belongs to this order.
+        3. The package has not already been received/scanned.
+        4. Return package details.
+        ============================================================
+        */
+
+        async function scanPackage(scannedValue) {
+
+        if (scanRequestInProgress) {
+        return;
+        }
+
+        scanRequestInProgress = true;
+
+        try {
+
+        const cleanQrValue = scannedValue
+        ? scannedValue.trim()
+        : "";
+
+        if (!cleanQrValue) {
+
+        updateScannerStatus(
+        "No QR code value was detected.",
+        "warning"
+        );
+
+        return;
+        }
+
+        updateScannerStatus(
+        "Verifying package...",
+        "default"
+        );
+
+        console.log("Scanning QR Value:", cleanQrValue);
+        console.log("Order ID:", orderId);
+
+        const formData = new FormData();
+
+        formData.append(
+        "orderId",
+        orderId
+        );
+
+        formData.append(
+        "qrCodeValue",
+        cleanQrValue
+        );
+
+        formData.append(
+        "__RequestVerificationToken",
+        getAntiForgeryToken()
+        );
+
+        const response = await fetch(
+        '@Url.Action("ScanPackage", "Orders")',
+        {
+        method: "POST",
+
+        body: formData
+        }
+        );
+
+        let result = null;
+
+        try {
+
+        result = await response.json();
+
+        }
+        catch (jsonError) {
+
+        console.error(
+        "Invalid JSON response:",
+        jsonError
+        );
+
+        throw new Error(
+        "The server returned an invalid response."
+        );
+        }
+
+        console.log(
+        "Scan Package Response:",
+        result
+        );
+
+        if (
+        !response.ok ||
+        result.success === false
+        ) {
+
+        updateScannerStatus(
+
+        result.message ||
+        "The package could not be verified for this order.",
+
+        "warning"
+
+        );
+
+        return;
+        }
+
+        applyPackageScanResult(
+        result
+        );
+
+        }
+        catch (error) {
+
+        console.error(
+        "Package scan error:",
+        error
+        );
+
+        updateScannerStatus(
+
+        error.message ||
+        "Unable to verify the package. Please try again.",
+
+        "error"
+
+        );
+
+        }
+        finally {
+
+        scanRequestInProgress = false;
+
+        }
+
+        }
+
+
+        /*
+        ============================================================
+        HANDLE QR CODE
+        ============================================================
+        */
+
+        function handleQrCode(
+        decodedText
+        ) {
+
+        if (
+        scanningPaused ||
+        scanRequestInProgress
+        ) {
+        return;
+        }
+
+
+        const scannedValue =
+        decodedText.trim();
+
+
+        if (!scannedValue) {
+
+        return;
+
+        }
+
+
+        scanningPaused =
+        true;
+
+
+        scanPackage(
+        scannedValue
+        )
+        .finally(
+        function () {
+
+        setTimeout(
+        function () {
+
+        scanningPaused =
+        false;
+
+        },
+        1500
+        );
+
+        }
+        );
+
+        }
+
+
+        /*
+        ============================================================
+        START QR SCANNER
+        ============================================================
+        */
 
         function startScanner() {
 
-            const scannerElement =
-                document.getElementById(
-                    "scanner"
-                );
+        const scannerElement =
+        document.getElementById(
+        "scanner"
+        );
 
-            if (!scannerElement) return;
+        if (!scannerElement) return;
 
-            html5QrCode =
-                new Html5Qrcode(
-                    "scanner"
-                );
 
-            html5QrCode.start(
+        html5QrCode =
+        new Html5Qrcode(
+        "scanner"
+        );
 
-                {
-                    facingMode: "environment"
-                },
 
-                {
-                    fps: 10,
-                    qrbox: {
-                        width: 220,
-                        height: 220
-                    }
-                },
+        html5QrCode.start(
 
-                function(decodedText) {
+        {
 
-                    handleQrCode(
-                        decodedText
-                    );
+        facingMode:
+        "environment"
 
-                },
+        },
 
-                function(errorMessage) {
+        {
 
-                    // Normal scanner frame errors are ignored.
+        fps: 10,
 
-                }
+        qrbox: {
 
-            ).catch(function(error) {
+        width: 220,
 
-                console.error(
-                    "Unable to start scanner:",
-                    error
-                );
+        height: 220
 
-                const status =
-                    document.getElementById(
-                        "scannerStatus"
-                    );
+        }
 
-                if (status) {
+        },
 
-                    status.innerHTML =
-                        '<i class="fas fa-exclamation-triangle me-1"></i> Camera could not be started';
 
-                    status.style.background =
-                        "#f8d7da";
+        function (
+        decodedText
+        ) {
 
-                    status.style.color =
-                        "#842029";
+        handleQrCode(
+        decodedText
+        );
 
-                }
+        },
 
-            });
+
+        function (
+        errorMessage
+        ) {
+
+        // Ignore normal frame scanning errors.
+
+        }
+
+        )
+        .catch(
+
+        function (
+        error
+        ) {
+
+        console.error(
+        "Unable to start scanner:",
+        error
+        );
+
+
+        updateScannerStatus(
+
+        "Camera could not be started. Please allow camera access.",
+
+        "error"
+
+        );
+
+        }
+
+        );
 
         }
 
 
-        /* ============================================================
-           PREVENT DOUBLE SUBMISSION
-        ============================================================ */
+        /*
+        ============================================================
+        INITIALIZE QUANTITY INPUTS
+        ============================================================
+        */
 
-        document
-            .getElementById("receiveOrderForm")
-            ?.addEventListener(
-                "submit",
-                function () {
+        function initializeQuantityInputs() {
 
-                    const button =
-                        document.getElementById(
-                            "receiveOrderButton"
-                        );
-
-                    if (!button) return;
-
-                    button.disabled = true;
-
-                    button.innerHTML =
-                        '<i class="fas fa-spinner fa-spin me-2"></i> Receiving Order...';
-
-                }
-            );
+        const quantityInputs =
+        document.querySelectorAll(
+        ".sc-received-quantity-input"
+        );
 
 
-        /* ============================================================
-           INITIALIZE
-        ============================================================ */
+        quantityInputs.forEach(
+
+        function (
+        input
+        ) {
+
+        input.addEventListener(
+
+        "input",
+
+        function () {
+
+        updateQuantityDisplay(
+        input
+        );
+
+        }
+
+        );
+
+        }
+
+        );
+
+        }
+
+
+        function initializeFormSubmission() {
+
+        const form =
+        document.getElementById(
+        "scReceiveOrderForm"
+        );
+
+        if (!form) return;
+
+
+        form.addEventListener(
+        "submit",
+        async function (event) {
+
+        // IMPORTANT:
+        // Stop the normal form POST to ReceiveOrder.
+        event.preventDefault();
+
+
+        const button =
+        document.getElementById(
+        "scReceiveOrderButton"
+        );
+
+        const footerMessage =
+        document.getElementById(
+        "receiveFooterMessage"
+        );
+
+
+        // Prevent double submission
+        if (
+        button &&
+        button.disabled
+        ) {
+        return;
+        }
+
+
+        // ------------------------------------------------
+        // CHECK ORDER ID
+        // ------------------------------------------------
+
+        if (!orderId) {
+
+        updateScannerStatus(
+        "Order ID could not be found.",
+        "error"
+        );
+
+        return;
+        }
+
+
+        // ------------------------------------------------
+        // DISABLE BUTTON
+        // ------------------------------------------------
+
+        if (button) {
+
+        button.disabled = true;
+
+        button.innerHTML =
+        '<i class="bi bi-arrow-repeat"></i>' +
+        ' Completing Order...';
+        }
+
+
+        if (footerMessage) {
+
+        footerMessage.textContent =
+        "Completing the order and adding equipment to your inventory...";
+        }
+
+
+        try {
+
+        // ------------------------------------------------
+        // GET ANTI-FORGERY TOKEN
+        // ------------------------------------------------
+
+        const token =
+        getAntiForgeryToken();
+
+
+        // ------------------------------------------------
+        // CREATE FORM DATA
+        // ------------------------------------------------
+
+        const formData =
+        new FormData();
+
+        formData.append(
+        "orderId",
+        orderId
+        );
+
+        formData.append(
+        "__RequestVerificationToken",
+        token
+        );
+
+
+        // ------------------------------------------------
+        // CALL COMPLETE ORDER
+        // ------------------------------------------------
+
+        const response =
+        await fetch(
+        '@Url.Action("CompleteOrder", "Orders")',
+        {
+        method: "POST",
+        body: formData
+        }
+        );
+
+
+        // ------------------------------------------------
+        // READ JSON RESPONSE
+        // ------------------------------------------------
+
+        let result = null;
+
+        try {
+
+        result =
+        await response.json();
+
+        }
+        catch (jsonError) {
+
+        console.error(
+        "Invalid CompleteOrder response:",
+        jsonError
+        );
+
+        throw new Error(
+        "The server returned an invalid response."
+        );
+        }
+
+
+        console.log(
+        "CompleteOrder Response:",
+        result
+        );
+
+
+        // ------------------------------------------------
+        // CHECK RESPONSE
+        // ------------------------------------------------
+
+        if (
+        !response.ok ||
+        !result.success
+        ) {
+
+        const errorMessage =
+        result.message ||
+        "Unable to complete the order.";
+
+        updateScannerStatus(
+        errorMessage,
+        "error"
+        );
+
+
+        if (footerMessage) {
+
+        footerMessage.textContent =
+        errorMessage;
+        }
+
+
+        // Re-enable button
+        if (button) {
+
+        button.disabled =
+        false;
+
+        button.innerHTML =
+        '<i class="bi bi-check2-circle"></i>' +
+        ' Confirm Received Equipment';
+        }
+
+
+        return;
+        }
+
+
+        // ------------------------------------------------
+        // SUCCESS
+        // ------------------------------------------------
+
+        updateScannerStatus(
+        "Order completed successfully.",
+        "success"
+        );
+
+
+        if (footerMessage) {
+
+        footerMessage.textContent =
+        result.message ||
+        "Equipment has been added to your inventory.";
+        }
+
+
+        if (button) {
+
+        button.innerHTML =
+        '<i class="bi bi-check-circle-fill"></i>' +
+        ' Order Completed';
+        }
+
+
+        // ------------------------------------------------
+        // REDIRECT TO OUR EQUIPMENT
+        // ------------------------------------------------
+
+        setTimeout(
+        function () {
+
+        window.location.href =
+        '@Url.Action("OurEquipment", "Equipment")';
+
+        },
+        800
+        );
+
+        }
+        catch (error) {
+
+        console.error(
+        "CompleteOrder error:",
+        error
+        );
+
+
+        updateScannerStatus(
+        error.message ||
+        "Unable to complete the order.",
+        "error"
+        );
+
+
+        if (footerMessage) {
+
+        footerMessage.textContent =
+        error.message ||
+        "Something went wrong while completing the order.";
+        }
+
+
+        // ------------------------------------------------
+        // RE-ENABLE BUTTON
+        // ------------------------------------------------
+
+        if (button) {
+
+        button.disabled =
+        false;
+
+        button.innerHTML =
+        '<i class="bi bi-check2-circle"></i>' +
+        ' Confirm Received Equipment';
+        }
+
+        }
+
+        }
+        );
+        }
+
+
+        /*
+        ============================================================
+        INITIALIZE
+        ============================================================
+        */
 
         document.addEventListener(
-            "DOMContentLoaded",
-            function () {
 
-                startScanner();
+        "DOMContentLoaded",
 
-            }
+        function () {
+
+        initializeQuantityInputs();
+
+        initializeFormSubmission();
+
+        startScanner();
+
+        }
+
         );
 
     </script>
+
 }
- 
+

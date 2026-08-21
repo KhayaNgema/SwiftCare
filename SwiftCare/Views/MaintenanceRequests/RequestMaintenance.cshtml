@@ -1,0 +1,874 @@
+﻿@model SwiftCare.ViewModels.MaintenanceRequestViewModel
+
+@{
+    ViewData["Title"] = "Request Maintenance";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var equipmentImage =
+        string.IsNullOrWhiteSpace(Model.ImageUrl)
+        ? Url.Content("~/Images/default_equipment.png")
+        : Url.Content("~/" + Model.ImageUrl.TrimStart('/'));
+}
+
+<div class="sc-maintenance-page">
+
+    <!-- ============================================================
+         PAGE HEADER
+    ============================================================ -->
+
+    <div class="sc-maintenance-hero">
+
+        <div class="sc-maintenance-hero-glow"></div>
+
+        <div class="sc-maintenance-hero-top">
+
+            <a asp-controller="Residents"
+                   asp-action="ResidentDetails"
+                   asp-route-id="@Model.AssignedToId"
+                   class="sc-maintenance-back-btn">
+
+                <i class="bi bi-arrow-left"></i>
+
+                <span>
+                    Back to Resident
+                </span>
+
+            </a>
+
+
+            <div class="sc-maintenance-secure">
+
+                <i class="bi bi-shield-check"></i>
+
+                <span>
+                    Maintenance Request
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="sc-maintenance-hero-content">
+
+            <div class="sc-maintenance-hero-icon">
+
+                <i class="bi bi-tools"></i>
+
+            </div>
+
+
+            <div>
+
+                <div class="sc-maintenance-eyebrow">
+
+                    <i class="bi bi-wrench-adjustable"></i>
+
+                    EQUIPMENT MAINTENANCE
+
+                </div>
+
+
+                <h1>
+                    Request Maintenance
+                </h1>
+
+
+                <p>
+                    Report an equipment issue and create a maintenance
+                    request for the maintenance team.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ============================================================
+         MAIN CONTENT
+    ============================================================ -->
+
+    <div class="sc-maintenance-content">
+
+        <div class="row g-4">
+
+
+            <!-- ====================================================
+                 EQUIPMENT INFORMATION
+            ==================================================== -->
+
+            <div class="col-12 col-lg-5">
+
+                <div class="sc-maintenance-equipment-card">
+
+                    <div class="sc-glass-top-line"></div>
+
+
+                    <!-- CARD HEADER -->
+
+                    <div class="sc-maintenance-card-heading">
+
+                        <div class="sc-maintenance-heading-icon">
+
+                            <i class="bi bi-box-seam"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                SELECTED EQUIPMENT
+                            </span>
+
+                            <h3>
+                                Equipment Details
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- EQUIPMENT IMAGE -->
+
+                    <div class="sc-maintenance-equipment-image-wrapper">
+
+                        <img src="@equipmentImage"
+                             alt="@Model.EquipmentName"
+                             class="sc-maintenance-equipment-image"
+                             onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+
+                    </div>
+
+
+
+                    <!-- EQUIPMENT NAME -->
+
+                    <div class="sc-maintenance-equipment-name">
+
+                        <span>
+                            MEDICAL EQUIPMENT
+                        </span>
+
+                        <h2>
+                            @(string.IsNullOrWhiteSpace(Model.EquipmentName)
+                                ? "Equipment"
+                                : Model.EquipmentName)
+                        </h2>
+
+                    </div>
+
+
+
+                    <!-- STATUS -->
+
+                    <div class="sc-maintenance-status-row">
+
+                        <span class="sc-maintenance-status-label">
+
+                            Current Status
+
+                        </span>
+
+
+                        <span class="sc-maintenance-equipment-status
+                            @(Model.EquipmentStatus == EquipmentStatus.Available
+                                                              ? "sc-equipment-available"
+                                                              : Model.EquipmentStatus == EquipmentStatus.InUse
+                                                                  ? "sc-equipment-inuse"
+                                                                  : Model.EquipmentStatus == EquipmentStatus.UnderMaintenance
+                                                                      ? "sc-equipment-maintenance"
+                                                                      : "sc-equipment-retired")">
+
+                            <i class="bi bi-circle-fill"></i>
+
+                            @Model.EquipmentStatus
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- DESCRIPTION -->
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div class="sc-maintenance-description">
+
+                            <div class="sc-maintenance-description-icon">
+
+                                <i class="bi bi-card-text"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Equipment Description
+                                </span>
+
+                                <p>
+                                    @Model.Description
+                                </p>
+
+                            </div>
+
+                        </div>
+                    }
+
+
+
+                    <!-- EQUIPMENT META -->
+
+                    <div class="sc-maintenance-equipment-meta">
+
+
+                        <!-- BARCODE -->
+
+                        <div class="sc-maintenance-meta-item">
+
+                            <div class="sc-maintenance-meta-icon">
+
+                                <i class="bi bi-upc"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Barcode
+                                </span>
+
+                                <strong>
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        Model.BarcodeValue
+                                    )
+                                        ? "Not available"
+                                        : Model.BarcodeValue)
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ASSIGNED DATE -->
+
+                        <div class="sc-maintenance-meta-item">
+
+                            <div class="sc-maintenance-meta-icon">
+
+                                <i class="bi bi-calendar-check"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Assigned On
+                                </span>
+
+                                <strong>
+
+                                    @(Model.AssignedAt.HasValue
+                                        ? Model.AssignedAt.Value
+                                            .ToString("dd MMM yyyy")
+                                        : "Not available")
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- ASSIGNMENT NOTES -->
+                    @if (!string.IsNullOrWhiteSpace(
+                                            Model.AssignmentNotes
+                                        ))
+                    {
+                        <div class="sc-maintenance-assignment-notes">
+
+                            <div class="sc-maintenance-notes-icon">
+
+                                <i class="bi bi-chat-left-text"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    Assignment Notes
+                                </span>
+
+                                <p>
+                                    @Model.AssignmentNotes
+                                </p>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ====================================================
+                 MAINTENANCE FORM
+            ==================================================== -->
+
+            <div class="col-12 col-lg-7">
+
+                <div class="sc-maintenance-form-card">
+
+                    <div class="sc-glass-top-line"></div>
+
+
+                    <!-- FORM HEADER -->
+
+                    <div class="sc-maintenance-form-heading">
+
+                        <div class="sc-maintenance-form-icon">
+
+                            <i class="bi bi-clipboard2-pulse"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                MAINTENANCE REPORT
+                            </span>
+
+                            <h2>
+                                Describe the Problem
+                            </h2>
+
+                            <p>
+                                Provide details about the equipment issue
+                                so the maintenance team can assist.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- VALIDATION -->
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="text-danger sc-maintenance-validation">
+                    </div>
+
+
+
+                    <!-- FORM -->
+
+                    <form asp-controller="MaintenanceRequests"
+                          asp-action="RequestMaintenance"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="sc-maintenance-form">
+
+
+                        @Html.AntiForgeryToken()
+
+
+                        <!-- EQUIPMENT ID -->
+
+                        <input asp-for="EquipmentId"
+                               type="hidden" />
+
+
+                        <!-- ====================================================
+                             PRIORITY
+                        ==================================================== -->
+
+                        <div class="sc-maintenance-field">
+
+                            <label asp-for="Priority">
+
+                                <i class="bi bi-exclamation-triangle"></i>
+
+                                Maintenance Priority
+
+                            </label>
+
+
+                            <div class="sc-priority-options">
+
+
+                                <!-- LOW -->
+
+                                <label class="sc-priority-option">
+
+                                    <input type="radio"
+                                           asp-for="Priority"
+                                           value="Low" />
+
+                                    <span class="sc-priority-option-content">
+
+                                        <span class="sc-priority-radio-icon sc-priority-low">
+
+                                            <i class="bi bi-arrow-down"></i>
+
+                                        </span>
+
+                                        <span>
+
+                                            <strong>
+                                                Low
+                                            </strong>
+
+                                            <small>
+                                                Minor issue
+                                            </small>
+
+                                        </span>
+
+                                    </span>
+
+                                </label>
+
+
+
+                                <!-- MEDIUM -->
+
+                                <label class="sc-priority-option">
+
+                                    <input type="radio"
+                                           asp-for="Priority"
+                                           value="Medium" />
+
+                                    <span class="sc-priority-option-content">
+
+                                        <span class="sc-priority-radio-icon sc-priority-medium">
+
+                                            <i class="bi bi-dash"></i>
+
+                                        </span>
+
+                                        <span>
+
+                                            <strong>
+                                                Medium
+                                            </strong>
+
+                                            <small>
+                                                Needs attention
+                                            </small>
+
+                                        </span>
+
+                                    </span>
+
+                                </label>
+
+
+
+                                <!-- HIGH -->
+
+                                <label class="sc-priority-option">
+
+                                    <input type="radio"
+                                           asp-for="Priority"
+                                           value="High" />
+
+                                    <span class="sc-priority-option-content">
+
+                                        <span class="sc-priority-radio-icon sc-priority-high">
+
+                                            <i class="bi bi-arrow-up"></i>
+
+                                        </span>
+
+                                        <span>
+
+                                            <strong>
+                                                High
+                                            </strong>
+
+                                            <small>
+                                                Urgent attention
+                                            </small>
+
+                                        </span>
+
+                                    </span>
+
+                                </label>
+
+
+
+                                <!-- CRITICAL -->
+
+                                <label class="sc-priority-option">
+
+                                    <input type="radio"
+                                           asp-for="Priority"
+                                           value="Critical" />
+
+                                    <span class="sc-priority-option-content">
+
+                                        <span class="sc-priority-radio-icon sc-priority-critical">
+
+                                            <i class="bi bi-lightning-charge"></i>
+
+                                        </span>
+
+                                        <span>
+
+                                            <strong>
+                                                Critical
+                                            </strong>
+
+                                            <small>
+                                                Immediate action
+                                            </small>
+
+                                        </span>
+
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+
+                            <span asp-validation-for="Priority"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             PROBLEM DESCRIPTION
+                        ==================================================== -->
+
+                        <div class="sc-maintenance-field">
+
+                            <label asp-for="Message">
+
+                                <i class="bi bi-chat-left-text"></i>
+
+                                Describe the Problem
+
+                            </label>
+
+
+                            <textarea asp-for="Message"
+                                      rows="7"
+                                      class="form-control sc-maintenance-textarea"
+                                      placeholder="Describe the issue with this equipment. Include any symptoms, faults, damage, unusual behaviour, or other important details..."></textarea>
+
+
+                            <span asp-validation-for="Message"
+                                  class="text-danger">
+                            </span>
+
+
+                            <div class="sc-maintenance-field-help">
+
+                                <i class="bi bi-info-circle"></i>
+
+                                <span>
+                                    Provide as much detail as possible to
+                                    help the maintenance team diagnose
+                                    the issue.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             CONDITION IMAGE
+                        ==================================================== -->
+
+                        <div class="sc-maintenance-field">
+
+                            <label asp-for="EquipmentConditionImageBefore">
+
+                                <i class="bi bi-camera"></i>
+
+                                Equipment Condition Photo
+
+                                <span class="sc-maintenance-optional">
+                                    OPTIONAL
+                                </span>
+
+                            </label>
+
+
+                            <div class="sc-maintenance-upload-wrapper">
+
+                                <input asp-for="EquipmentConditionImageBefore"
+                                       type="file"
+                                       accept="image/*"
+                                       class="sc-maintenance-file-input"
+                                       id="equipmentConditionImage" />
+
+
+                                <label for="equipmentConditionImage"
+                                       class="sc-maintenance-upload-area">
+
+                                    <div class="sc-maintenance-upload-icon">
+
+                                        <i class="bi bi-cloud-arrow-up"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <strong>
+                                            Upload Equipment Photo
+                                        </strong>
+
+                                        <span>
+                                            PNG, JPG or JPEG
+                                        </span>
+
+                                    </div>
+
+                                </label>
+
+                            </div>
+
+
+                            <span asp-validation-for="EquipmentConditionImageBefore"
+                                  class="text-danger">
+                            </span>
+
+
+                            <div id="sc-maintenance-image-preview"
+                                 class="sc-maintenance-image-preview">
+
+                                <img id="sc-maintenance-preview-image"
+                                     src=""
+                                     alt="Equipment condition preview" />
+
+                                <button type="button"
+                                        id="sc-maintenance-remove-image">
+
+                                    <i class="bi bi-x"></i>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             REQUEST SUMMARY
+                        ==================================================== -->
+
+                        <div class="sc-maintenance-summary">
+
+                            <div class="sc-maintenance-summary-icon">
+
+                                <i class="bi bi-tools"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span>
+                                    MAINTENANCE REQUEST FOR
+                                </span>
+
+                                <strong>
+
+                                    @(string.IsNullOrWhiteSpace(
+                                        Model.EquipmentName
+                                    )
+                                        ? "Selected Equipment"
+                                        : Model.EquipmentName)
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="sc-maintenance-summary-arrow">
+
+                                <i class="bi bi-arrow-right"></i>
+
+                            </div>
+
+
+                            <div class="sc-maintenance-summary-status">
+
+                                <span></span>
+
+                                Ready to submit
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             ACTIONS
+                        ==================================================== -->
+
+                        <div class="sc-maintenance-actions">
+
+                            <a asp-controller="Residents"
+                                   asp-action="ResidentDetails"
+                                   asp-route-id="@Model.AssignedToId"
+                                   class="sc-maintenance-cancel-btn">
+
+                                <i class="bi bi-x-circle"></i>
+
+                                Cancel
+
+                            </a>
+
+
+                            <button type="submit"
+                                    class="sc-maintenance-submit-btn">
+
+                                <i class="bi bi-send-check"></i>
+
+                                Submit Maintenance Request
+
+                            </button>
+
+                        </div>
+
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const fileInput =
+                document.getElementById(
+                    "equipmentConditionImage"
+                );
+
+            const previewContainer =
+                document.getElementById(
+                    "sc-maintenance-image-preview"
+                );
+
+            const previewImage =
+                document.getElementById(
+                    "sc-maintenance-preview-image"
+                );
+
+            const removeButton =
+                document.getElementById(
+                    "sc-maintenance-remove-image"
+                );
+
+
+            fileInput.addEventListener(
+                "change",
+                function () {
+
+                    const file =
+                        this.files &&
+                        this.files[0];
+
+                    if (!file) {
+
+                        previewContainer.classList.remove(
+                            "show"
+                        );
+
+                        return;
+                    }
+
+
+                    const reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function (event) {
+
+                            previewImage.src =
+                                event.target.result;
+
+                            previewContainer.classList.add(
+                                "show"
+                            );
+
+                        };
+
+
+                    reader.readAsDataURL(
+                        file
+                    );
+
+                }
+            );
+
+
+            removeButton.addEventListener(
+                "click",
+                function () {
+
+                    fileInput.value = "";
+
+                    previewImage.src = "";
+
+                    previewContainer.classList.remove(
+                        "show"
+                    );
+
+                }
+            );
+
+        });
+
+    </script>
+
+}

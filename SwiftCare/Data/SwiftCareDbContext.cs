@@ -70,8 +70,27 @@ namespace SwiftCare.Data
                 .HasForeignKey<Trip>(t => t.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+            modelBuilder.Entity<PackageOrder>()
+                .HasIndex(x => x.QrCodeValue)
+                .IsUnique();
+
+            modelBuilder.Entity<PackageOrder>()
+                   .HasOne(p => p.Order)
+                   .WithMany()
+                   .HasForeignKey(p => p.OrderId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PackageOrder>()
+                .HasOne(p => p.OrderItem)
+                .WithOne(o => o.PackageOrder)
+                .HasForeignKey<PackageOrder>(p => p.OrderItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
-        
+
+
+        public DbSet<PackageOrder> PackageOrders { get; set; }
         public DbSet<SwiftCare.Models.Administrator> Administrators { get; set; } = default!;
         public DbSet<SwiftCare.Models.TransportRequest> TransportRequests { get; set; } = default!;
         public DbSet<SwiftCare.Models.Doctor> Doctors { get; set; } = default!;
@@ -89,7 +108,11 @@ namespace SwiftCare.Data
 
         public DbSet<SwiftCare.Models.CartItem> CartItems{ get; set; } = default!;
 
+        public DbSet<SwiftCare.Models.OurEquipment> OurEquipment { get; set; } = default!;
+
         public DbSet<SwiftCare.Models.OrderItem> OrderItems { get; set; } = default!;
+
+        public DbSet<SwiftCare.Models.MaintenanceRequest> MaintenanceRequests { get; set; } = default!;
 
         public DbSet<SwiftCare.Models.SupplierAdmin> SupplierAdmins { get; set; } = default!;
 

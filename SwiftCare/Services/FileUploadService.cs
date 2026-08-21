@@ -34,5 +34,16 @@ namespace SwiftCare.Services
 
             return Path.Combine("UploadedFiles", uniqueFileName);
         }
+
+
+        public async Task<string> SaveFileAsync(byte[] fileBytes, string fileName)
+        {
+            var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
+            var filePath = Path.Combine(_uploadsDirectory, uniqueFileName);
+
+            await File.WriteAllBytesAsync(filePath, fileBytes);
+
+            return Path.Combine("UploadedFiles", uniqueFileName);
+        }
     }
 }

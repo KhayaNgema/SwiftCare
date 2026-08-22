@@ -184,8 +184,8 @@ namespace SwiftCare.Controllers
 
             var request = await _context.MaintenanceRequests
                 .Include(x => x.OurEquipment)
-                 .Include(x => x.AssignedTo)
-                  .Include(x => x.ResolvedBy)
+                .Include(x => x.AssignedTo)
+                .Include(x => x.ResolvedBy)
                 .FirstOrDefaultAsync(
                     x => x.RequestId == model.RequestId
                 );
@@ -198,180 +198,11 @@ namespace SwiftCare.Controllers
 
 
             // ========================================================
-            // MODEL VALIDATION
+            // POPULATE VIEW MODEL HELPER
             // ========================================================
 
-            if (!ModelState.IsValid)
+            void PopulateViewModel()
             {
-                model.EquipmentId = request.EquipmentId;
-
-                model.EquipmentName =
-                    request.OurEquipment?.EquipmentName;
-
-                model.EquipmentImageUrl =
-                    request.OurEquipment?.ImageUrl;
-
-                model.BarcodeValue =
-                    request.OurEquipment?.BarcodeValue;
-
-                model.EquipmentStatus =
-                    request.OurEquipment?.Status
-                    ?? EquipmentStatus.Available;
-
-                model.ReferenceNumber =
-                    request.ReferenceNumber;
-
-                model.Priority =
-                    request.Priority;
-
-                model.ProblemDescription =
-                    request.Message;
-
-                model.LoggedAt =
-                    request.LoggedAt;
-
-                model.ExistingConditionImageAfter =
-                    request.EquipmentConditionImageAfter;
-
-
-                return View(model);
-            }
-
-
-            try
-            {
-                // ====================================================
-                // UPDATE STATUS
-                // ====================================================
-
-                request.RequestStatus =
-                    model.RequestStatus;
-
-
-                // ====================================================
-                // UPDATE WORK PERFORMED
-                // ====================================================
-
-                request.WorkPerformed =
-                    model.WorkPerformed;
-
-
-                // ====================================================
-                // UPLOAD AFTER MAINTENANCE IMAGE
-                // ====================================================
-
-                if (
-                    model.EquipmentConditionImageAfter != null &&
-                    model.EquipmentConditionImageAfter.Length > 0
-                )
-                {
-                    var uploadedImage =
-                        await _fileUploadService.UploadFileAsync(
-                            model.EquipmentConditionImageAfter
-                        );
-
-
-                    request.EquipmentConditionImageAfter =
-                        uploadedImage;
-                }
-
-
-                // ====================================================
-                // IF MAINTENANCE IS COMPLETED
-                // ====================================================
-
-                if (
-                    model.RequestStatus ==
-                    MaintenanceRequestStatus.Completed
-                )
-                {
-                    request.ResolvedAt =
-                        DateTime.Now;
-
-
-                    // =================================================
-                    // TODO:
-                    // Replace this with your logged-in maintenance
-                    // person's ID from Identity.
-                    // =================================================
-
-                    var user = await _userManager.GetUserAsync(User);
-
-                    if (user != null)
-                    {
-                        request.ResolvedById = user.Id;
-                    }
-
-
-                    if (!string.IsNullOrWhiteSpace(
-                        user.Id
-                    ))
-                    {
-                        request.ResolvedById =
-                            user.Id;
-                    }
-
-
-                    // =================================================
-                    // UPDATE EQUIPMENT STATUS
-                    // =================================================
-
-                    if (request.OurEquipment != null)
-                    {
-                        request.OurEquipment.Status =
-                            EquipmentStatus.Available;
-                    }
-                }
-                else
-                {
-                    // =================================================
-                    // CLEAR RESOLUTION IF REQUEST REOPENED
-                    // =================================================
-
-                    request.ResolvedAt = null;
-
-                    request.ResolvedById = null;
-
-
-                    // =================================================
-                    // EQUIPMENT IS CURRENTLY UNDER MAINTENANCE
-                    // =================================================
-
-                    if (request.OurEquipment != null)
-                    {
-                        request.OurEquipment.Status =
-                            EquipmentStatus.UnderMaintenance;
-                    }
-                }
-
-
-                // ====================================================
-                // SAVE
-                // ====================================================
-
-                await _context.SaveChangesAsync();
-
-
-                TempData["SuccessMessage"] =
-                    "Maintenance request updated successfully.";
-
-
-                return RedirectToAction(
-                    nameof(MaintenanceRequestDetails),
-                    new
-                    {
-                        requestId = request.RequestId
-                    }
-                );
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(
-                    "",
-                    $"An error occurred while updating the maintenance request: {ex.Message}"
-                );
-
-
                 model.EquipmentId =
                     request.EquipmentId;
 
@@ -402,6 +233,266 @@ namespace SwiftCare.Controllers
 
                 model.ExistingConditionImageAfter =
                     request.EquipmentConditionImageAfter;
+            }
+
+
+            // ========================================================
+            // MODEL VALIDATION
+            // ========================================================
+
+            if (!ModelState.IsValid)
+            {
+                PopulateViewModel();
+
+                return View(model);
+            }
+
+
+            try
+            {
+                // ====================================================
+                // GET CURRENT LOGGED-IN USER
+                // ====================================================
+
+                var currentUser =
+                    await _userManager.GetUserAsync(User);
+
+
+                if (currentUser == null)
+                {
+                    return Unauthorized();
+                }
+
+
+                var currentUserId =
+                    currentUser.Id;
+
+
+                // ====================================================
+                // UPDATE BASIC REQUEST INFORMATION
+                // ====================================================
+
+                request.RequestStatus =
+                    model.RequestStatus;
+
+                request.WorkPerformed =
+                    model.WorkPerformed;
+
+
+                // ====================================================
+                // ASSIGN CURRENT USER
+                // ====================================================
+
+                if (
+                    model.RequestStatus ==
+                    MaintenanceRequestStatus.Assigned
+                )
+                {
+                    request.AssignedToId =
+                        currentUserId;
+
+                    // Equipment is now under maintenance
+                    if (request.OurEquipment != null)
+                    {
+                        request.OurEquipment.Status =
+                            EquipmentStatus.UnderMaintenance;
+                    }
+                }
+
+
+                // ====================================================
+                // UPLOAD AFTER MAINTENANCE IMAGE
+                // ====================================================
+
+                if (
+                    model.EquipmentConditionImageAfter != null &&
+                    model.EquipmentConditionImageAfter.Length > 0
+                )
+                {
+                    var uploadedImage =
+                        await _fileUploadService.UploadFileAsync(
+                            model.EquipmentConditionImageAfter
+                        );
+
+
+                    if (!string.IsNullOrWhiteSpace(uploadedImage))
+                    {
+                        request.EquipmentConditionImageAfter =
+                            uploadedImage;
+                    }
+                }
+
+
+                // ====================================================
+                // IF MAINTENANCE IS COMPLETED / RESOLVED
+                // ====================================================
+
+                if (
+                    model.RequestStatus ==
+                    MaintenanceRequestStatus.Completed
+                )
+                {
+                    // =================================================
+                    // SET RESOLUTION INFORMATION
+                    // =================================================
+
+                    request.ResolvedAt =
+                        DateTime.Now;
+
+                    request.ResolvedById =
+                        currentUserId;
+
+
+                    // =================================================
+                    // ENSURE THE CURRENT USER IS ALSO THE ASSIGNED USER
+                    // IF NOBODY WAS ASSIGNED BEFORE
+                    // =================================================
+
+                    if (string.IsNullOrWhiteSpace(
+                        request.AssignedToId
+                    ))
+                    {
+                        request.AssignedToId =
+                            currentUserId;
+                    }
+
+
+                    // =================================================
+                    // UPDATE EQUIPMENT STATUS
+                    // =================================================
+
+                    if (request.OurEquipment != null)
+                    {
+                        request.OurEquipment.Status =
+                            EquipmentStatus.InUse;
+                    }
+                }
+
+
+                // ====================================================
+                // IF REQUEST IS PENDING
+                // ====================================================
+
+                else if (
+                    model.RequestStatus ==
+                    MaintenanceRequestStatus.Pending
+                )
+                {
+                    // =================================================
+                    // CLEAR RESOLUTION INFORMATION
+                    // =================================================
+
+                    request.ResolvedAt =
+                        null;
+
+                    request.ResolvedById =
+                        null;
+
+
+                    // =================================================
+                    // EQUIPMENT STATUS
+                    // =================================================
+
+                    if (request.OurEquipment != null)
+                    {
+                        request.OurEquipment.Status =
+                            EquipmentStatus.UnderMaintenance;
+                    }
+                }
+
+
+                // ====================================================
+                // IF REQUEST IS IN PROGRESS
+                // ====================================================
+
+                else if (
+                    model.RequestStatus ==
+                    MaintenanceRequestStatus.InProgress
+                )
+                {
+                    // =================================================
+                    // CLEAR RESOLUTION IF IT WAS PREVIOUSLY COMPLETED
+                    // =================================================
+
+                    request.ResolvedAt =
+                        null;
+
+                    request.ResolvedById =
+                        null;
+
+
+                    // =================================================
+                    // MAKE SURE THERE IS AN ASSIGNED USER
+                    // =================================================
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            request.AssignedToId
+                        )
+                    )
+                    {
+                        request.AssignedToId =
+                            currentUserId;
+                    }
+
+
+                    // =================================================
+                    // EQUIPMENT IS UNDER MAINTENANCE
+                    // =================================================
+
+                    if (request.OurEquipment != null)
+                    {
+                        request.OurEquipment.Status =
+                            EquipmentStatus.UnderMaintenance;
+                    }
+                }
+
+
+                // ====================================================
+                // SAVE CHANGES
+                // ====================================================
+
+                await _context.SaveChangesAsync();
+
+
+                // ====================================================
+                // SUCCESS MESSAGE
+                // ====================================================
+
+                TempData["SuccessMessage"] =
+                    "Maintenance request updated successfully.";
+
+
+                // ====================================================
+                // REDIRECT TO DETAILS
+                // ====================================================
+
+                return RedirectToAction(
+                    nameof(MaintenanceRequestDetails),
+                    new
+                    {
+                        requestId = request.RequestId
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                // ====================================================
+                // ADD ERROR
+                // ====================================================
+
+                ModelState.AddModelError(
+                    "",
+                    "An error occurred while updating the maintenance " +
+                    $"request: {ex.Message}"
+                );
+
+
+                // ====================================================
+                // RESTORE VIEW MODEL DATA
+                // ====================================================
+
+                PopulateViewModel();
 
 
                 return View(model);
@@ -409,12 +500,53 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
-        // MAINTENANCE REQUESTS
+        // COMPLETED MAINTENANCE REQUESTS
         // ============================================================
+
+        [HttpGet]
+        public async Task<IActionResult> CompletedRequests()
+        {
+            try
+            {
+                var completedRequests = await _context.MaintenanceRequests
+                    .Include(x => x.OurEquipment)
+                        .ThenInclude(x => x.AssignedTo)
+
+                    .Include(x => x.LoggedBy)
+
+                    .Include(x => x.AssignedTo)
+
+                    .Include(x => x.ResolvedBy)
+
+                    .Where(x =>
+                        x.RequestStatus ==
+                        MaintenanceRequestStatus.Completed
+                    )
+
+                    .OrderByDescending(x => x.ResolvedAt)
+                    .ThenByDescending(x => x.LoggedAt)
+
+                    .ToListAsync();
+
+
+                return View(completedRequests);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Unable to load completed maintenance requests: {ex.Message}";
+
+                return View(new List<MaintenanceRequest>());
+            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> MaintenanceRequests()
         {
+            // ============================================================
+            // GET CURRENT USER
+            // ============================================================
+
             var currentUserId = _userManager.GetUserId(User);
 
             if (string.IsNullOrWhiteSpace(currentUserId))
@@ -422,69 +554,70 @@ namespace SwiftCare.Controllers
                 return Challenge();
             }
 
+            // ============================================================
+            // GET AVAILABLE + MY ACTIVE REQUESTS
+            // ============================================================
 
             var maintenanceRequests = await _context.MaintenanceRequests
 
-                // ====================================================
+                // ========================================================
                 // EQUIPMENT
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.OurEquipment)
                     .ThenInclude(e => e.AssignedTo)
 
-
-                // ====================================================
+                // ========================================================
                 // NURSE WHO LOGGED REQUEST
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.LoggedBy)
 
-
-                // ====================================================
+                // ========================================================
                 // ASSIGNED MAINTENANCE PERSON
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.AssignedTo)
 
-
-                // ====================================================
-                // LOAD REQUESTS FOR CURRENT MAINTENANCE PERSON
-                // ====================================================
+                // ========================================================
+                // FILTER REQUESTS
+                // ========================================================
 
                 .Where(r =>
 
-                    r.AssignedToId == currentUserId
+                    // Available requests
+                    (
+                        r.RequestStatus == MaintenanceRequestStatus.Pending &&
+                        r.AssignedToId == null
+                    )
 
                     ||
 
-                    r.AssignedToId == null
-
-                    ||
-
-                    r.RequestStatus == MaintenanceRequestStatus.Pending
+                    // Requests assigned to me
+                    (
+                        r.AssignedToId == currentUserId &&
+                        r.RequestStatus != MaintenanceRequestStatus.Completed
+                    )
                 )
 
-
-                // ====================================================
-                // NEWEST FIRST
-                // ====================================================
+                // ========================================================
+                // ORDER
+                // ========================================================
 
                 .OrderByDescending(r => r.Priority)
                 .ThenByDescending(r => r.LoggedAt)
 
                 .ToListAsync();
-
 
             return View(maintenanceRequests);
         }
-
-        // ============================================================
-        // MAINTENANCE REQUESTS
-        // ============================================================
-
         [HttpGet]
         public async Task<IActionResult> MyMaintenanceRequests()
         {
+            // ============================================================
+            // GET CURRENT USER
+            // ============================================================
+
             var currentUserId = _userManager.GetUserId(User);
 
             if (string.IsNullOrWhiteSpace(currentUserId))
@@ -492,61 +625,68 @@ namespace SwiftCare.Controllers
                 return Challenge();
             }
 
+            // ============================================================
+            // GET MY REQUESTS
+            // ============================================================
 
             var maintenanceRequests = await _context.MaintenanceRequests
 
-                // ====================================================
+                // ========================================================
                 // EQUIPMENT
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.OurEquipment)
                     .ThenInclude(e => e.AssignedTo)
 
-
-                // ====================================================
+                // ========================================================
                 // NURSE WHO LOGGED REQUEST
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.LoggedBy)
 
-
-                // ====================================================
+                // ========================================================
                 // ASSIGNED MAINTENANCE PERSON
-                // ====================================================
+                // ========================================================
 
                 .Include(r => r.AssignedTo)
 
+                // ========================================================
+                // ONLY REQUESTS ASSIGNED TO ME
+                // ========================================================
 
-                // ====================================================
-                // LOAD REQUESTS FOR CURRENT MAINTENANCE PERSON
-                // ====================================================
+                .Where(r =>
+                    r.AssignedToId == currentUserId
+                )
+
+                // ========================================================
+                // INCLUDE ACTIVE + COMPLETED REQUESTS
+                // ========================================================
 
                 .Where(r =>
 
-                    r.AssignedToId == currentUserId
+                    r.RequestStatus ==
+                        MaintenanceRequestStatus.Assigned
 
                     ||
 
-                    r.RequestStatus == MaintenanceRequestStatus.Pending
+                    r.RequestStatus ==
+                        MaintenanceRequestStatus.InProgress
 
-                    ||
 
-                     r.RequestStatus == MaintenanceRequestStatus.Assigned
-                     ||
-
-                      r.RequestStatus == MaintenanceRequestStatus.InProgress
                 )
 
+                // ========================================================
+                // ORDER
+                // ========================================================
 
-                // ====================================================
-                // NEWEST FIRST
-                // ====================================================
+                .OrderByDescending(r => r.RequestStatus ==
+                    MaintenanceRequestStatus.InProgress)
 
-                .OrderByDescending(r => r.Priority)
+                .ThenByDescending(r => r.Priority)
+
                 .ThenByDescending(r => r.LoggedAt)
 
                 .ToListAsync();
-
 
             return View(maintenanceRequests);
         }

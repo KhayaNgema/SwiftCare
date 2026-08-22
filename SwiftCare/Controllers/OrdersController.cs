@@ -1887,7 +1887,7 @@ public async Task<IActionResult> PlaceOrder()
                             {
                                 EquipmentName =
                                     equipment.EquipmentName,
-
+                              
                                 ImageUrl =
                                     equipment.ImageUrl,
 

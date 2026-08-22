@@ -212,6 +212,71 @@ namespace SwiftCare.Data.Migrations
                     b.ToTable("CartItems");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.DailyCare", b =>
+                {
+                    b.Property<int>("CareId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CareId"));
+
+                    b.Property<string>("CareNotes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NurseId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResidentId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CareId");
+
+                    b.HasIndex("NurseId");
+
+                    b.HasIndex("ResidentId");
+
+                    b.ToTable("DailyCare");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.DailyMaintenance", b =>
+                {
+                    b.Property<int>("MaintenanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaintenanceId"));
+
+                    b.Property<string>("MaintenancePersonId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("MaintenanceRequestRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaintenanceStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MaintenanceId");
+
+                    b.HasIndex("MaintenancePersonId");
+
+                    b.HasIndex("MaintenanceRequestRequestId");
+
+                    b.ToTable("DailyMaintenance");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.Equipment", b =>
                 {
                     b.Property<int>("EquipmentId")
@@ -854,6 +919,44 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Equipment");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.DailyCare", b =>
+                {
+                    b.HasOne("SwiftCare.Models.Nurse", "Nurse")
+                        .WithMany()
+                        .HasForeignKey("NurseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.Resident", "Resident")
+                        .WithMany()
+                        .HasForeignKey("ResidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Nurse");
+
+                    b.Navigation("Resident");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.DailyMaintenance", b =>
+                {
+                    b.HasOne("SwiftCare.Models.MaintenancePerson", "MaintenancePerson")
+                        .WithMany()
+                        .HasForeignKey("MaintenancePersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.MaintenanceRequest", "MaintenanceRequest")
+                        .WithMany()
+                        .HasForeignKey("MaintenanceRequestRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MaintenancePerson");
+
+                    b.Navigation("MaintenanceRequest");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.MaintenanceRequest", b =>

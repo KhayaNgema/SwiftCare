@@ -40,17 +40,17 @@ public static class SeedData
                 }
             }
 
-            var admin = await userManager.FindByEmailAsync("admin@swiftcare.com");
+            var admin = await userManager.FindByEmailAsync("lwandiled181@gmail.com");
 
             if (admin == null)
             {
                 var defaultUser = new Administrator
                 {
-                    FirstName = "SwiftCare",
-                    LastName = "Admin",
-                    UserName = "admin@swiftcare.com",
-                    Email = "admin@swiftcare.com",
-                    PhoneNumber = "0678987834",
+                    FirstName = "Lwandile",
+                    LastName = "Dlamini",
+                    UserName = "lwandiled181@gmail.com",
+                    Email = "lwandiled181@gmail.com",
+                    PhoneNumber = "0845802946",
                     DateOfBirth = DateTime.Now,
                     ProfilePicture = "admin.jpg",
                     EmailConfirmed = true,
@@ -60,7 +60,7 @@ public static class SeedData
                     ModifiedBy = "default-user-id"
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Admin@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
@@ -81,6 +81,8 @@ public static class SeedData
                     await _context.SaveChangesAsync();
                 }
             }
+
+
             else
             {
                 // ============================================================
@@ -105,17 +107,17 @@ public static class SeedData
                 }
             }
 
-            var admin2 = await userManager.FindByEmailAsync("zanini@swiftcare.com");
+            var admin2 = await userManager.FindByEmailAsync("yandymbatha05@gmail.com");
 
             if (admin2 == null)
             {
                 var defaultUser = new Administrator
                 {
-                    FirstName = "Zanini",
+                    FirstName = "Lwandile",
                     LastName = "Dlamini",
-                    UserName = "zanini@swiftcare.com",
-                    Email = "zanini@swiftcare.com",
-                    PhoneNumber = "0845802946",
+                    UserName = "yandymbatha05@gmail.com",
+                    Email = "yandymbatha05@gmail.com",
+                    PhoneNumber = "0845802990",
                     DateOfBirth = DateTime.Now,
                     ProfilePicture = "admin.jpg",
                     EmailConfirmed = true,
@@ -125,7 +127,7 @@ public static class SeedData
                     ModifiedBy = "default-user-id"
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Admin@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
@@ -146,6 +148,33 @@ public static class SeedData
                     await _context.SaveChangesAsync();
                 }
             }
+
+
+            else
+            {
+                // ============================================================
+                // ADMIN ALREADY EXISTS
+                // MAKE SURE THE ADMIN HAS A CART
+                // ============================================================
+
+                var existingCart = await _context.Carts
+                    .FirstOrDefaultAsync(c => c.UserId == admin.Id);
+
+                if (existingCart == null)
+                {
+                    var adminCart = new Cart
+                    {
+                        UserId = admin.Id,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Carts.Add(adminCart);
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+
             var nurse = await userManager.FindByEmailAsync("nurse@gmail.com");
             if (nurse == null)
             {
@@ -165,23 +194,98 @@ public static class SeedData
                     ModifiedBy = "default-user-id"
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Nurse@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(defaultUser, "Nurse");
                 }
             }
+            // ============================================================
+            // SEED DEFAULT VEHICLES
+            // ============================================================
 
-            var resident1 = await userManager.FindByEmailAsync("khaya@gmail.com");
+            var vehicles = new List<Vehicle>
+{
+    new Vehicle
+    {
+        VehicleName = "SwiftCare Transport 01",
+        RegNumber = "SC 001 GP",
+        Model = "Toyota Quantum",
+        Year = "2023",
+        Status = VehicleStatus.Available
+    },
+
+    new Vehicle
+    {
+        VehicleName = "SwiftCare Transport 02",
+        RegNumber = "SC 002 GP",
+        Model = "Toyota Hiace",
+        Year = "2022",
+        Status = VehicleStatus.Available
+    },
+
+    new Vehicle
+    {
+        VehicleName = "SwiftCare Medical Van 01",
+        RegNumber = "SC 003 GP",
+        Model = "Mercedes-Benz Sprinter",
+        Year = "2024",
+        Status = VehicleStatus.Available
+    },
+
+    new Vehicle
+    {
+        VehicleName = "SwiftCare Transport 03",
+        RegNumber = "SC 004 GP",
+        Model = "Ford Transit",
+        Year = "2021",
+        Status = VehicleStatus.Unavailable
+    },
+
+    new Vehicle
+    {
+        VehicleName = "SwiftCare Emergency Transport",
+        RegNumber = "SC 005 GP",
+        Model = "Volkswagen Crafter",
+        Year = "2023",
+        Status = VehicleStatus.Available
+    }
+};
+
+
+            // ============================================================
+            // ADD VEHICLES ONLY IF THEY DO NOT ALREADY EXIST
+            // ============================================================
+
+            foreach (var vehicle in vehicles)
+            {
+                var vehicleExists =
+                    await _context.Vehicles
+                        .AnyAsync(v =>
+                            v.RegNumber == vehicle.RegNumber);
+
+                if (!vehicleExists)
+                {
+                    await _context.Vehicles.AddAsync(vehicle);
+                }
+            }
+
+
+            // ============================================================
+            // SAVE VEHICLES
+            // ============================================================
+
+            await _context.SaveChangesAsync();
+            var resident1 = await userManager.FindByEmailAsync("lunga@gmail.com");
             if (resident1 == null)
             {
                 var defaultUser = new Resident
                 {
-                    FirstName = "Khaya",
-                    LastName = "Ngema",
-                    UserName = "khaya@gmail.com",
-                    Email = "khaya@gmail.com",
+                    FirstName = "Lunga",
+                    LastName = "Buthelezi",
+                    UserName = "lunga@gmail.com",
+                    Email = "lunga@gmail.com",
                     PhoneNumber = "0765623458",
                     DateOfBirth = DateTime.Now,
                     ProfilePicture = "Images/default_profile_image.jpg",
@@ -193,7 +297,7 @@ public static class SeedData
                     RoomNumber = Room.Room08A
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Resident@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
@@ -231,15 +335,15 @@ public static class SeedData
             }
 
 
-            var supplierAdmin = await userManager.FindByEmailAsync("sadmin@gmail.com");
+            var supplierAdmin = await userManager.FindByEmailAsync("subadmin@gmail.com");
             if (supplierAdmin == null)
             {
                 var defaultUser = new SupplierAdmin
                 {
                     FirstName = "Supplier",
                     LastName = "Admin",
-                    UserName = "sadmin@gmail.com",
-                    Email = "sadmin@gmail.com",
+                    UserName = "subadmin@gmail.com",
+                    Email = "subadmin@gmail.com",
                     PhoneNumber = "0645676567",
                     DateOfBirth = DateTime.Now,
                     ProfilePicture = "Images/default_profile_image.jpg",
@@ -250,7 +354,7 @@ public static class SeedData
                     ModifiedBy = "default-user-id"
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Supplier@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
@@ -259,16 +363,16 @@ public static class SeedData
             }
 
 
-            var driver = await userManager.FindByEmailAsync("driver@gmail.com");
+            var driver = await userManager.FindByEmailAsync("sdriver@gmail.com");
             if (driver == null)
             {
-                var defaultUser = new SupplierAdmin
+                var defaultUser = new Driver
                 {
-                    FirstName = "Supplier",
+                    FirstName = "Swift",
                     LastName = "Driver",
-                    UserName = "driver@gmail.com",
-                    Email = "driver@gmail.com",
-                    PhoneNumber = "0645612345",
+                    UserName = "sdriver@gmail.com",
+                    Email = "sdriver@gmail.com",
+                    PhoneNumber = "0645612390",
                     DateOfBirth = DateTime.Now,
                     ProfilePicture = "Images/default_profile_image.jpg",
                     EmailConfirmed = true,
@@ -279,6 +383,33 @@ public static class SeedData
                 };
 
                 var result = await userManager.CreateAsync(defaultUser, "Driver@123");
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(defaultUser, "Driver");
+                }
+            }
+
+            var driver2 = await userManager.FindByEmailAsync("driver2@gmail.com");
+            if (driver2 == null)
+            {
+                var defaultUser = new SupplierAdmin
+                {
+                    FirstName = "SwiftCare",
+                    LastName = "Driver",
+                    UserName = "driver2@gmail.com",
+                    Email = "driver2@gmail.com",
+                    PhoneNumber = "0695612395",
+                    DateOfBirth = DateTime.Now,
+                    ProfilePicture = "Images/default_profile_image.jpg",
+                    EmailConfirmed = true,
+                    CreatedDateTime = DateTime.Now,
+                    ModifiedDateTime = DateTime.Now,
+                    CreatedBy = "default-user-id",
+                    ModifiedBy = "default-user-id"
+                };
+
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {
@@ -305,7 +436,7 @@ public static class SeedData
                     ModifiedBy = "default-user-id"
                 };
 
-                var result = await userManager.CreateAsync(defaultUser, "Maintenance@123");
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
 
                 if (result.Succeeded)
                 {

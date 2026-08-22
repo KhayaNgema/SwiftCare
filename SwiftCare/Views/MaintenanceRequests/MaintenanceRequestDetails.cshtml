@@ -1,57 +1,111 @@
-﻿@model SwiftCare.Models.MaintenanceRequest
+﻿@using SwiftCare.Models
+
+@model SwiftCare.Models.MaintenanceRequest
 
 @{
     ViewData["Title"] = "Maintenance Request Details";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 
+
+    // ============================================================
+    // IMAGE HELPER
+    // Handles:
+    // 1. Azure Blob URLs
+    // 2. UploadedFiles/image.jpg
+    // 3. /UploadedFiles/image.jpg
+    // ============================================================
+
+    string ResolveImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return Url.Content("~/UploadedFiles/default_equipment.png");
+        }
+
+        if (
+            imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return imageUrl;
+        }
+
+        return Url.Content(
+            "~/" + imageUrl.TrimStart('/')
+        );
+    }
+
+
     var equipmentImage =
-        Model.OurEquipment != null &&
-        !string.IsNullOrWhiteSpace(Model.OurEquipment.ImageUrl)
-            ? Url.Content("~/" + Model.OurEquipment.ImageUrl.TrimStart('/'))
-            : Url.Content("~/Images/default_equipment.png");
+        ResolveImageUrl(
+            Model.OurEquipment?.ImageUrl
+        );
 
-    var beforeImage =
-        !string.IsNullOrWhiteSpace(
-            Model.EquipmentConditionImageBefore
-        )
-            ? Url.Content(
-                "~/" +
-                Model.EquipmentConditionImageBefore.TrimStart('/')
-            )
-            : null;
 
-    var afterImage =
-        !string.IsNullOrWhiteSpace(
-            Model.EquipmentConditionImageAfter
-        )
-            ? Url.Content(
-                "~/" +
-                Model.EquipmentConditionImageAfter.TrimStart('/')
-            )
-            : null;
+    string? beforeImage = null;
 
+    if (!string.IsNullOrWhiteSpace(
+        Model.EquipmentConditionImageBefore
+    ))
+    {
+        beforeImage =
+            ResolveImageUrl(
+                Model.EquipmentConditionImageBefore
+            );
+    }
+
+
+    string? afterImage = null;
+
+    if (!string.IsNullOrWhiteSpace(
+        Model.EquipmentConditionImageAfter
+    ))
+    {
+        afterImage =
+            ResolveImageUrl(
+                Model.EquipmentConditionImageAfter
+            );
+    }
+
+
+    // ============================================================
+    // PRIORITY CLASS
+    // ============================================================
 
     var priorityClass =
         Model.Priority == MaintenancePriority.Low
             ? "sc-priority-low"
+
             : Model.Priority == MaintenancePriority.Medium
                 ? "sc-priority-medium"
+
                 : Model.Priority == MaintenancePriority.High
                     ? "sc-priority-high"
+
                     : "sc-priority-critical";
 
 
+    // ============================================================
+    // STATUS CLASS
+    // ============================================================
+
     var statusClass =
-        Model.RequestStatus == MaintenanceRequestStatus.Pending
+        Model.RequestStatus ==
+        MaintenanceRequestStatus.Pending
             ? "sc-request-pending"
-            : Model.RequestStatus == MaintenanceRequestStatus.Assigned
+
+            : Model.RequestStatus ==
+              MaintenanceRequestStatus.Assigned
                 ? "sc-request-assigned"
+
                 : Model.RequestStatus ==
                   MaintenanceRequestStatus.InProgress
                     ? "sc-request-progress"
+
                     : Model.RequestStatus ==
                       MaintenanceRequestStatus.Completed
                         ? "sc-request-completed"
+
                         : "sc-request-cancelled";
 }
 
@@ -66,7 +120,10 @@
     <div class="sc-maintenance-details-hero">
 
 
+        <!-- TOP -->
+
         <div class="sc-maintenance-details-top">
+
 
             <a asp-controller="MaintenanceRequests"
                    asp-action="MaintenanceRequests"
@@ -82,6 +139,7 @@
 
 
             <div class="sc-maintenance-top-actions">
+
 
                 <a asp-controller="MaintenanceRequests"
                        asp-action="UpdateMaintenanceRequest"
@@ -113,7 +171,12 @@
 
             </div>
 
+
         </div>
+
+
+
+        <!-- HERO CONTENT -->
 
         <div class="sc-maintenance-details-hero-content">
 
@@ -125,9 +188,10 @@
                 <img src="@equipmentImage"
                      alt="@Model.OurEquipment?.EquipmentName"
                      class="sc-maintenance-equipment-image"
-                     onerror="this.src='@Url.Content("~/Images/default_equipment.png")'" />
+                     onerror="this.src='@Url.Content("~/UploadedFiles/default_equipment.png")'" />
 
             </div>
+
 
 
             <!-- MAIN INFO -->
@@ -154,13 +218,15 @@
 
                 <p>
 
-                    <i class="bi bi-box-seam"></i>
+                    <i class="bi bi-upc-scan"></i>
 
-                    @(string.IsNullOrWhiteSpace(
-                        Model.OurEquipment?.BarcodeValue
-                    )
+                    @(
+                        string.IsNullOrWhiteSpace(
+                            Model.OurEquipment?.BarcodeValue
+                        )
                         ? "Equipment barcode not available"
-                        : $"Barcode: {Model.OurEquipment.BarcodeValue}")
+                        : $"Barcode: {Model.OurEquipment.BarcodeValue}"
+                    )
 
                 </p>
 
@@ -295,11 +361,7 @@
                         </span>
 
                         <strong>
-
-                            @Model.LoggedAt.ToString(
-                                "dd MMM yyyy"
-                            )
-
+                            @Model.LoggedAt.ToString("dd MMM yyyy")
                         </strong>
 
                     </div>
@@ -351,11 +413,10 @@
         <div class="row g-4 sc-maintenance-main-row">
 
 
-            <!-- =================================================
-                 PROBLEM DESCRIPTION
-            ================================================== -->
+            <!-- PROBLEM + WORK PERFORMED -->
 
             <div class="col-12 col-lg-7">
+
 
                 <div class="sc-maintenance-card">
 
@@ -399,95 +460,101 @@
                         </p>
 
                     </div>
-                    <!-- ====================================================
-     WORK PERFORMED
-==================================================== -->
-
-                    <div class="col-12">
-
-                        <div class="sc-maintenance-card sc-work-performed-card">
-
-                            <div class="sc-maintenance-card-header">
-
-                                <div class="sc-maintenance-card-icon">
-
-                                    <i class="bi bi-tools"></i>
-
-                                </div>
 
 
-                                <div>
-
-                                    <h4>
-                                        Work Performed
-                                    </h4>
-
-                                    <p>
-                                        Maintenance work completed on this equipment.
-                                    </p>
-
-                                </div>
-
-                            </div>
+                </div>
 
 
-                            @if (!string.IsNullOrWhiteSpace(Model.WorkPerformed))
-                            {
 
-                                <div class="sc-work-performed-content">
-
-                                    <div class="sc-work-performed-quote">
-
-                                        <i class="bi bi-check2-circle"></i>
-
-                                    </div>
+                <br />
 
 
-                                    <p>
-                                        @Model.WorkPerformed
-                                    </p>
+                <!-- WORK PERFORMED -->
 
-                                </div>
+                <div class="sc-maintenance-card sc-work-performed-card">
 
-                            }
-                            else
-                            {
 
-                                <div class="sc-work-performed-empty">
+                    <div class="sc-maintenance-card-header">
 
-                                    <i class="bi bi-tools"></i>
+                        <div class="sc-maintenance-card-icon">
 
-                                    <div>
+                            <i class="bi bi-tools"></i>
 
-                                        <strong>
-                                            No maintenance work recorded yet
-                                        </strong>
+                        </div>
 
-                                        <span>
-                                            The maintenance person has not yet added details about the work performed.
-                                        </span>
 
-                                    </div>
+                        <div>
 
-                                </div>
+                            <h4>
+                                Work Performed
+                            </h4>
 
-                            }
+                            <p>
+                                Maintenance work completed on this equipment.
+                            </p>
 
                         </div>
 
                     </div>
 
+
+                    @if (!string.IsNullOrWhiteSpace(
+                        Model.WorkPerformed
+                    ))
+                    {
+
+                        <div class="sc-work-performed-content">
+
+                            <div class="sc-work-performed-quote">
+
+                                <i class="bi bi-check2-circle"></i>
+
+                            </div>
+
+
+                            <p>
+                                @Model.WorkPerformed
+                            </p>
+
+                        </div>
+
+                    }
+                    else
+                    {
+
+                        <div class="sc-work-performed-empty">
+
+                            <i class="bi bi-tools"></i>
+
+
+                            <div>
+
+                                <strong>
+                                    No maintenance work recorded yet
+                                </strong>
+
+                                <span>
+                                    The maintenance person has not yet added details about the work performed.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    }
+
+
                 </div>
+
 
             </div>
 
 
 
-            <!-- =================================================
-                 EQUIPMENT INFORMATION
-            ================================================== -->
+            <!-- EQUIPMENT INFORMATION -->
 
             <div class="col-12 col-lg-5">
+
 
                 <div class="sc-maintenance-card">
 
@@ -514,7 +581,6 @@
                         </div>
 
                     </div>
-
 
 
                     <div class="sc-maintenance-info-list">
@@ -585,12 +651,17 @@
 
                 </div>
 
+
             </div>
 
 
         </div>
 
+
+
         <br />
+
+
 
         <!-- ====================================================
              PEOPLE
@@ -602,6 +673,7 @@
             <!-- LOGGED BY -->
 
             <div class="col-12 col-md-6">
+
 
                 <div class="sc-maintenance-card sc-maintenance-person-card">
 
@@ -664,6 +736,7 @@
 
                 </div>
 
+
             </div>
 
 
@@ -671,6 +744,7 @@
             <!-- ASSIGNED TO -->
 
             <div class="col-12 col-md-6">
+
 
                 <div class="sc-maintenance-card sc-maintenance-person-card">
 
@@ -749,10 +823,15 @@
 
                 </div>
 
+
             </div>
 
 
         </div>
+
+
+
+        <br />
 
 
 
@@ -795,6 +874,7 @@
 
                 <div class="col-12 col-md-6">
 
+
                     <div class="sc-maintenance-condition-box">
 
 
@@ -814,7 +894,8 @@
 
                             <img src="@beforeImage"
                                  class="sc-condition-image"
-                                 alt="Equipment condition before maintenance" />
+                                 alt="Equipment condition before maintenance"
+                                 onerror="this.src='@Url.Content("~/UploadedFiles/default_equipment.png")'" />
 
                         }
                         else
@@ -835,6 +916,7 @@
 
                     </div>
 
+
                 </div>
 
 
@@ -842,6 +924,7 @@
                 <!-- AFTER -->
 
                 <div class="col-12 col-md-6">
+
 
                     <div class="sc-maintenance-condition-box">
 
@@ -862,7 +945,8 @@
 
                             <img src="@afterImage"
                                  class="sc-condition-image"
-                                 alt="Equipment condition after maintenance" />
+                                 alt="Equipment condition after maintenance"
+                                 onerror="this.src='@Url.Content("~/UploadedFiles/default_equipment.png")'" />
 
                         }
                         else
@@ -888,6 +972,7 @@
 
                     </div>
 
+
                 </div>
 
 
@@ -901,9 +986,10 @@
         <!-- ====================================================
              RESOLUTION
         ===================================================== -->
-
-        @if (Model.RequestStatus ==
-             MaintenanceRequestStatus.Completed)
+        @if (
+                    Model.RequestStatus ==
+                    MaintenanceRequestStatus.Completed
+                )
         {
 
             <div class="sc-maintenance-resolution">
@@ -925,7 +1011,7 @@
                     <strong>
 
                         @(Model.ResolvedAt.HasValue
-                            ? $"Resolved on {Model.ResolvedAt.Value.ToString("dd MMMM yyyy 'at' HH:mm")}"
+                            ? $"Resolved on {Model.ResolvedAt.Value:dd MMMM yyyy 'at' HH:mm}"
                             : "Maintenance request completed")
 
                     </strong>

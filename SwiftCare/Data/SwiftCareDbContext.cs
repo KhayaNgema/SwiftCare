@@ -88,8 +88,8 @@ namespace SwiftCare.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
         }
-
-
+        public DbSet<DailyMaintenance> DailyMaintenance { get; set; }
+        public DbSet<DailyCare> DailyCare { get; set; }
         public DbSet<PackageOrder> PackageOrders { get; set; }
         public DbSet<SwiftCare.Models.Administrator> Administrators { get; set; } = default!;
         public DbSet<SwiftCare.Models.TransportRequest> TransportRequests { get; set; } = default!;

@@ -237,9 +237,6 @@
                             Status
                         </th>
 
-                        <th class="sc-equipment-actions-header">
-                            Actions
-                        </th>
 
                     </tr>
 
@@ -497,41 +494,7 @@
                                      ACTIONS
                                      ============================================= -->
 
-                                <td>
-
-                                    <div class="sc-equipment-action-buttons">
-
-
-                                        <!-- VIEW -->
-
-                                        <a asp-controller="Equipments"
-                                               asp-action="Details"
-                                               asp-route-id="@equipment.EquipmentId"
-                                               class="sc-equipment-action-btn sc-equipment-view-btn"
-                                               title="View Equipment">
-
-                                            <i class="bi bi-eye-fill"></i>
-
-                                        </a>
-
-
-                                        <!-- EDIT -->
-                                        @if (User.IsInRole("Administrator"))
-                                        {
-                                            <a asp-controller="Equipments"
-                                                   asp-action="Edit"
-                                                   asp-route-id="@equipment.EquipmentId"
-                                                   class="sc-equipment-action-btn sc-equipment-edit-btn"
-                                                   title="Edit Equipment">
-
-                                                <i class="bi bi-pencil-square"></i>
-
-                                            </a>
-                                        }
-
-                                    </div>
-
-                                </td>
+                              
 
                             </tr>
                         }

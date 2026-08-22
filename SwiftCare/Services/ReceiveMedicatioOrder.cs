@@ -1,7 +1,7 @@
-﻿
-using SwiftCare.Data;
+﻿using SwiftCare.Data;
 using SwiftCare.Interfaces;
 using SwiftCare.Models;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -13,25 +13,23 @@ namespace SwiftCare.Services
         private readonly SwiftCareDbContext _context;
         private readonly UserManager<UserBaseModel> _userManager;
         private readonly IEncryptionService _encryptionService;
-        private readonly EmailService _emailService;
         private readonly QrCodeService _qrCodeService;
-        private readonly SmsService _smsService;
+        private readonly IBackgroundJobClient _backgroundJobs;
 
         public ReceiveEquipmentOrder(
             SwiftCareDbContext context,
             UserManager<UserBaseModel> userManager,
             IEncryptionService encryptionService,
             QrCodeService qrCodeService,
-            EmailService emailService,
-            SmsService smsService)
+            IBackgroundJobClient backgroundJobs)
         {
             _context = context;
             _userManager = userManager;
             _encryptionService = encryptionService;
             _qrCodeService = qrCodeService;
-            _emailService = emailService;
-            _smsService = smsService;
+            _backgroundJobs = backgroundJobs;
         }
+
 
         // ============================================================
         // NOTIFY ADMINISTRATOR WHEN EQUIPMENT ORDER IS ON THE WAY
@@ -50,14 +48,16 @@ namespace SwiftCare.Services
 
                 try
                 {
-                    orderId = _encryptionService.DecryptToInt(
-                        encryptedOrderId
-                    );
+                    orderId =
+                        _encryptionService.DecryptToInt(
+                            encryptedOrderId
+                        );
                 }
                 catch
                 {
                     return;
                 }
+
 
                 // ====================================================
                 // GET ORDER
@@ -67,14 +67,15 @@ namespace SwiftCare.Services
                     .Include(o => o.User)
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Equipment)
-                    .FirstOrDefaultAsync(o =>
-                        o.OrderId == orderId
+                    .FirstOrDefaultAsync(
+                        o => o.OrderId == orderId
                     );
 
                 if (order == null)
                 {
                     return;
                 }
+
 
                 // ====================================================
                 // GET USER
@@ -94,6 +95,7 @@ namespace SwiftCare.Services
 
                 var phone = user.PhoneNumber;
                 var email = user.Email;
+
 
                 // ====================================================
                 // EQUIPMENT DETAILS
@@ -115,7 +117,8 @@ namespace SwiftCare.Services
                                 item.Equipment?.EquipmentName
                                 ?? "Equipment";
 
-                            return $"{equipmentName} x{item.Quantity}";
+                            return
+                                $"{equipmentName} x{item.Quantity}";
                         })
                         .ToList()
                     ?? new List<string>();
@@ -132,12 +135,13 @@ namespace SwiftCare.Services
                         $" and {equipmentItems.Count - 3} more item(s)";
                 }
 
+
                 // ====================================================
                 // APPLICATION URL
                 // ====================================================
 
                 string baseUrl =
-                    "https://localhost:7238";
+                    "https://swiftcare20260821114126-dec5cfdefeesfuhj.spaincentral-01.azurewebsites.net";
 
                 string encodedOrderId =
                     WebUtility.UrlEncode(
@@ -147,6 +151,7 @@ namespace SwiftCare.Services
                 string orderDetailsLink =
                     $"{baseUrl}/Orders/ReceiveOrder" +
                     $"?orderId={encodedOrderId}";
+
 
                 // ====================================================
                 // SMS MESSAGE
@@ -161,8 +166,9 @@ namespace SwiftCare.Services
                     $"View your order: {orderDetailsLink}\n\n" +
                     $"SwiftCare";
 
+
                 // ====================================================
-                // EQUIPMENT SUMMARY SECTION
+                // EQUIPMENT SUMMARY
                 // ====================================================
 
                 string equipmentSummarySection =
@@ -171,6 +177,7 @@ namespace SwiftCare.Services
                 if (!string.IsNullOrWhiteSpace(equipmentSummary))
                 {
                     equipmentSummarySection = $@"
+
 <div style=""margin:25px 0;
             padding:20px;
             background:#fafdf7;
@@ -192,12 +199,14 @@ namespace SwiftCare.Services
 </div>";
                 }
 
+
                 // ====================================================
                 // EMAIL MESSAGE
                 // ====================================================
 
                 string emailMessage = $@"
 <!DOCTYPE html>
+
 <html>
 
 <head>
@@ -215,8 +224,6 @@ namespace SwiftCare.Services
                 border-radius:16px;
                 overflow:hidden;
                 box-shadow:0 10px 35px rgba(20,70,45,0.12);"">
-
-        <!-- HEADER -->
 
         <div style=""background:#123f2d;
                     padding:35px;
@@ -240,8 +247,6 @@ namespace SwiftCare.Services
 
         </div>
 
-
-        <!-- CONTENT -->
 
         <div style=""padding:40px;
                     color:#25332b;"">
@@ -270,8 +275,6 @@ namespace SwiftCare.Services
             </p>
 
 
-            <!-- ORDER DETAILS -->
-
             <div style=""margin:30px 0;
                         padding:25px;
                         background:#f4faed;
@@ -297,46 +300,36 @@ namespace SwiftCare.Services
                 </h3>
 
 
-                <div>
+                <p style=""margin:8px 0;"">
 
-                    <p style=""margin:8px 0;"">
+                    <strong>Total Equipment:</strong>
 
-                        <strong>
-                            Total Equipment:
-                        </strong>
+                    {totalQuantity} item(s)
 
-                        {totalQuantity} item(s)
-
-                    </p>
+                </p>
 
 
-                    <p style=""margin:8px 0;"">
+                <p style=""margin:8px 0;"">
 
-                        <strong>
-                            Equipment Types:
-                        </strong>
+                    <strong>Equipment Types:</strong>
 
-                        {equipmentTypes}
+                    {equipmentTypes}
 
-                    </p>
+                </p>
 
 
-                    <p style=""margin:8px 0;"">
+                <p style=""margin:8px 0;"">
 
-                        <strong>
-                            Current Status:
-                        </strong>
+                    <strong>Current Status:</strong>
 
-                        <span style=""color:#27659c;
-                                     font-weight:bold;"">
+                    <span style=""color:#27659c;
+                                 font-weight:bold;"">
 
-                            On The Way
+                        On The Way
 
-                        </span>
+                    </span>
 
-                    </p>
-
-                </div>
+                </p>
 
             </div>
 
@@ -351,8 +344,6 @@ namespace SwiftCare.Services
 
             </p>
 
-
-            <!-- VIEW ORDER BUTTON -->
 
             <div style=""text-align:center;
                         margin:35px 0;"">
@@ -372,8 +363,6 @@ namespace SwiftCare.Services
 
             </div>
 
-
-            <!-- INFORMATION -->
 
             <div style=""padding:18px;
                         background:#f6f9f6;
@@ -405,8 +394,6 @@ namespace SwiftCare.Services
         </div>
 
 
-        <!-- FOOTER -->
-
         <div style=""padding:20px;
                     text-align:center;
                     background:#123f2d;
@@ -423,51 +410,38 @@ namespace SwiftCare.Services
 
 </html>";
 
+
                 // ====================================================
-                // SEND SMS
+                // QUEUE SMS WITH HANGFIRE
                 // ====================================================
 
                 if (!string.IsNullOrWhiteSpace(phone))
                 {
-                    try
-                    {
-                        await _smsService.SendSmsAsync(
-                            phone,
-                            smsMessage
-                        );
-                    }
-                    catch (Exception smsEx)
-                    {
-                        Console.WriteLine(
-                            $"Failed to send equipment delivery SMS: " +
-                            $"{smsEx.Message}"
-                        );
-                    }
+                    _backgroundJobs.Enqueue<NotificationJobService>(
+                        service =>
+                            service.SendSmsAsync(
+                                phone,
+                                smsMessage
+                            )
+                    );
                 }
 
+
                 // ====================================================
-                // SEND EMAIL
+                // QUEUE EMAIL WITH HANGFIRE
                 // ====================================================
 
                 if (!string.IsNullOrWhiteSpace(email))
                 {
-                    try
-                    {
-                        await _emailService.SendEmailAsync(
-                            to: email,
-                            subject:
+                    _backgroundJobs.Enqueue<NotificationJobService>(
+                        service =>
+                            service.SendEmailAsync(
+                                email,
                                 $"SwiftCare Equipment Delivery - {order.OrderNumber}",
-                            body: emailMessage,
-                            senderName: "SwiftCare"
-                        );
-                    }
-                    catch (Exception emailEx)
-                    {
-                        Console.WriteLine(
-                            $"Failed to send equipment delivery email: " +
-                            $"{emailEx.Message}"
-                        );
-                    }
+                                emailMessage,
+                                "SwiftCare"
+                            )
+                    );
                 }
             }
             catch (Exception ex)
@@ -489,25 +463,35 @@ namespace SwiftCare.Services
         {
             try
             {
+                // ====================================================
+                // DECRYPT ORDER ID
+                // ====================================================
+
                 int orderId;
 
                 try
                 {
-                    orderId = _encryptionService.DecryptToInt(
-                        encryptedOrderId
-                    );
+                    orderId =
+                        _encryptionService.DecryptToInt(
+                            encryptedOrderId
+                        );
                 }
                 catch
                 {
                     return;
                 }
 
+
+                // ====================================================
+                // GET ORDER
+                // ====================================================
+
                 var order = await _context.Orders
                     .Include(o => o.User)
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Equipment)
-                    .FirstOrDefaultAsync(o =>
-                        o.OrderId == orderId
+                    .FirstOrDefaultAsync(
+                        o => o.OrderId == orderId
                     );
 
                 if (order == null || order.User == null)
@@ -530,12 +514,13 @@ namespace SwiftCare.Services
                         item => item.Quantity
                     ) ?? 0;
 
+
                 // ====================================================
                 // APPLICATION URL
                 // ====================================================
 
                 string baseUrl =
-                    "https://localhost:7238";
+                    "https://swiftcare20260821114126-dec5cfdefeesfuhj.spaincentral-01.azurewebsites.net";
 
                 string encodedOrderId =
                     WebUtility.UrlEncode(
@@ -546,8 +531,9 @@ namespace SwiftCare.Services
                     $"{baseUrl}/Orders/ReceiveOrder" +
                     $"?orderId={encodedOrderId}";
 
+
                 // ====================================================
-                // SMS
+                // SMS MESSAGE
                 // ====================================================
 
                 string smsMessage =
@@ -558,12 +544,14 @@ namespace SwiftCare.Services
                     $"View your order: {orderLink}\n\n" +
                     $"SwiftCare";
 
+
                 // ====================================================
-                // EMAIL
+                // EMAIL MESSAGE
                 // ====================================================
 
                 string emailMessage = $@"
 <!DOCTYPE html>
+
 <html>
 
 <head>
@@ -627,7 +615,7 @@ namespace SwiftCare.Services
             <p>
 
                 Your SwiftCare equipment order has been
-                successfully packaged and is now ready
+                successfully packaged and is ready
                 to be dispatched for delivery.
 
             </p>
@@ -659,9 +647,7 @@ namespace SwiftCare.Services
 
                 <p style=""margin:8px 0;"">
 
-                    <strong>
-                        Total Equipment:
-                    </strong>
+                    <strong>Total Equipment:</strong>
 
                     {totalQuantity} item(s)
 
@@ -670,9 +656,7 @@ namespace SwiftCare.Services
 
                 <p style=""margin:8px 0;"">
 
-                    <strong>
-                        Current Status:
-                    </strong>
+                    <strong>Current Status:</strong>
 
                     <span style=""color:#1f5c3a;
                                  font-weight:bold;"">
@@ -698,7 +682,7 @@ namespace SwiftCare.Services
                           border-radius:8px;
                           font-weight:bold;"">
 
-                    View Equipment Order
+                    Receive Equipment Order
 
                 </a>
 
@@ -738,49 +722,38 @@ namespace SwiftCare.Services
 
 </html>";
 
+
                 // ====================================================
-                // SEND SMS
+                // QUEUE SMS WITH HANGFIRE
                 // ====================================================
 
                 if (!string.IsNullOrWhiteSpace(phone))
                 {
-                    try
-                    {
-                        await _smsService.SendSmsAsync(
-                            phone,
-                            smsMessage
-                        );
-                    }
-                    catch (Exception smsEx)
-                    {
-                        Console.WriteLine(
-                            $"Failed to send SMS: {smsEx.Message}"
-                        );
-                    }
+                    _backgroundJobs.Enqueue<NotificationJobService>(
+                        service =>
+                            service.SendSmsAsync(
+                                phone,
+                                smsMessage
+                            )
+                    );
                 }
 
+
                 // ====================================================
-                // SEND EMAIL
+                // QUEUE EMAIL WITH HANGFIRE
                 // ====================================================
 
                 if (!string.IsNullOrWhiteSpace(email))
                 {
-                    try
-                    {
-                        await _emailService.SendEmailAsync(
-                            to: email,
-                            subject:
+                    _backgroundJobs.Enqueue<NotificationJobService>(
+                        service =>
+                            service.SendEmailAsync(
+                                email,
                                 $"SwiftCare Equipment Order {order.OrderNumber} - Packaged",
-                            body: emailMessage,
-                            senderName: "SwiftCare"
-                        );
-                    }
-                    catch (Exception emailEx)
-                    {
-                        Console.WriteLine(
-                            $"Failed to send email: {emailEx.Message}"
-                        );
-                    }
+                                emailMessage,
+                                "SwiftCare"
+                            )
+                    );
                 }
             }
             catch (Exception ex)
@@ -792,4 +765,3 @@ namespace SwiftCare.Services
         }
     }
 }
-

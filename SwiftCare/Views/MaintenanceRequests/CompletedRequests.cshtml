@@ -1,0 +1,688 @@
+﻿@using SwiftCare.Models
+
+@model List<MaintenanceRequest>
+
+@{
+    ViewData["Title"] = "Completed Maintenance Requests";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+    // ============================================================
+    // IMAGE HELPER
+    // ============================================================
+
+    string ResolveImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return Url.Content("~/UploadedFiles/default_equipment.png");
+        }
+
+        if (
+            imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return imageUrl;
+        }
+
+        return Url.Content(
+            "~/" + imageUrl.TrimStart('/')
+        );
+    }
+
+
+    // ============================================================
+    // STATISTICS
+    // ============================================================
+
+    var totalCompleted = Model?.Count ?? 0;
+
+
+    var completedToday =
+        Model?.Count(r =>
+            r.ResolvedAt.HasValue &&
+            r.ResolvedAt.Value.Date ==
+            DateTime.Today
+        ) ?? 0;
+
+
+    var completedThisWeek =
+        Model?.Count(r =>
+            r.ResolvedAt.HasValue &&
+            r.ResolvedAt.Value.Date >=
+            DateTime.Today.AddDays(-7)
+        ) ?? 0;
+
+
+    var criticalCompleted =
+        Model?.Count(r =>
+            r.Priority ==
+            MaintenancePriority.Critical
+        ) ?? 0;
+}
+
+
+<div class="maintenance-requests-page">
+
+    <div class="maintenance-requests-container">
+
+
+        <!-- =====================================================
+             PAGE HERO
+        ====================================================== -->
+
+        <section class="maintenance-requests-hero completed-requests-hero">
+
+
+            <div class="maintenance-requests-hero-content">
+
+
+                <div class="maintenance-requests-eyebrow">
+
+                    <i class="bi bi-check2-circle"></i>
+
+                    COMPLETED MAINTENANCE
+
+                </div>
+
+
+                <h1>
+                    Completed Requests
+                </h1>
+
+
+                <p>
+                    Review completed maintenance requests,
+                    work performed and equipment resolution details.
+                </p>
+
+
+            </div>
+
+
+            <div class="maintenance-hero-icon">
+
+                <i class="bi bi-check2-all"></i>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             STATISTICS
+        ====================================================== -->
+
+        <section class="maintenance-request-stats">
+
+
+            <!-- TOTAL -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-completed">
+
+                    <i class="bi bi-clipboard-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Total Completed
+                    </span>
+
+                    <strong>
+                        @totalCompleted
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TODAY -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-today">
+
+                    <i class="bi bi-calendar-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Completed Today
+                    </span>
+
+                    <strong>
+                        @completedToday
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- WEEK -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-progress">
+
+                    <i class="bi bi-calendar-week"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Last 7 Days
+                    </span>
+
+                    <strong>
+                        @completedThisWeek
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- CRITICAL -->
+
+            <div class="maintenance-stat-card">
+
+                <div class="maintenance-stat-icon maintenance-stat-critical">
+
+                    <i class="bi bi-shield-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Critical Resolved
+                    </span>
+
+                    <strong>
+                        @criticalCompleted
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             REQUEST LIST
+        ====================================================== -->
+
+        <section class="maintenance-requests-section">
+
+
+            <!-- HEADER -->
+
+            <div class="maintenance-requests-section-header">
+
+
+                <div>
+
+
+                    <span class="maintenance-section-eyebrow">
+
+                        MAINTENANCE HISTORY
+
+                    </span>
+
+
+                    <h2>
+                        Completed Equipment Maintenance
+                    </h2>
+
+
+                    <p>
+                        View completed maintenance work,
+                        resolved equipment and technician information.
+                    </p>
+
+
+                </div>
+
+
+                <div class="maintenance-request-count">
+
+                    <i class="bi bi-check-circle"></i>
+
+                    @totalCompleted Completed
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 REQUESTS
+            ================================================== -->
+            @if (Model != null && Model.Any())
+            {
+
+                <div class="maintenance-request-list">
+
+
+                    @foreach (var request in Model)
+                    {
+
+                        // =========================================
+                        // EQUIPMENT IMAGE
+                        // =========================================
+
+                        var equipmentImage =
+                            ResolveImageUrl(
+                                request.OurEquipment?.ImageUrl
+                            );
+
+
+                        // =========================================
+                        // PRIORITY
+                        // =========================================
+
+                        var priorityClass =
+                            request.Priority ==
+                            MaintenancePriority.Critical
+                                ? "maintenance-priority-critical"
+
+                            : request.Priority ==
+                              MaintenancePriority.High
+                                ? "maintenance-priority-high"
+
+                            : request.Priority ==
+                              MaintenancePriority.Medium
+                                ? "maintenance-priority-medium"
+
+                            : "maintenance-priority-low";
+
+
+                        // =========================================
+                        // COMPLETED DATE
+                        // =========================================
+
+                        var completedDate =
+                            request.ResolvedAt.HasValue
+                                ? request.ResolvedAt.Value
+                                : request.LoggedAt;
+
+
+                        <div class="maintenance-request-card
+                            maintenance-completed-card">
+
+
+                            <!-- EQUIPMENT IMAGE -->
+
+                            <div class="maintenance-request-image">
+
+                                <img src="@equipmentImage"
+                                     alt="@request.OurEquipment?.EquipmentName"
+                                     onerror="this.src='@Url.Content("~/UploadedFiles/default_equipment.png")'" />
+
+                            </div>
+
+
+
+                            <!-- MAIN -->
+
+                            <div class="maintenance-request-main">
+
+
+                                <!-- TOP -->
+
+                                <div class="maintenance-request-top">
+
+
+                                    <div>
+
+
+                                        <span class="maintenance-request-label
+                                            maintenance-completed-label">
+
+                                            <i class="bi bi-check-circle-fill"></i>
+
+                                            COMPLETED
+
+                                        </span>
+
+
+                                        <h3>
+
+                                            @(request.OurEquipment?.EquipmentName
+                                                ?? "Unknown Equipment")
+
+                                        </h3>
+
+
+                                    </div>
+
+
+
+                                    <div class="maintenance-request-badges">
+
+
+                                        <span class="maintenance-priority-badge
+                                            @priorityClass">
+
+                                            <i class="bi bi-flag-fill"></i>
+
+                                            @request.Priority
+
+                                        </span>
+
+
+                                        <span class="maintenance-status-badge
+                                            maintenance-status-completed">
+
+                                            <i class="bi bi-check-circle-fill"></i>
+
+                                            Completed
+
+                                        </span>
+
+
+                                    </div>
+
+
+                                </div>
+
+
+
+                                <!-- REFERENCE -->
+
+                                <div class="maintenance-reference">
+
+                                    <i class="bi bi-upc-scan"></i>
+
+                                    <span>
+                                        Reference:
+                                    </span>
+
+                                    <strong>
+
+                                        @(string.IsNullOrWhiteSpace(
+                                            request.ReferenceNumber
+                                        )
+                                            ? $"MR-{request.RequestId}"
+                                            : request.ReferenceNumber)
+
+                                    </strong>
+
+                                </div>
+
+
+
+                                <!-- WORK PERFORMED -->
+
+                                <div class="maintenance-problem-box
+                                    maintenance-work-completed-box">
+
+
+                                    <div class="maintenance-problem-icon
+                                        maintenance-work-icon">
+
+                                        <i class="bi bi-tools"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Work Performed
+                                        </span>
+
+
+                                        <p>
+
+                                            @(string.IsNullOrWhiteSpace(
+                                                request.WorkPerformed
+                                            )
+                                                ? "No maintenance work details were recorded."
+                                                : request.WorkPerformed)
+
+                                        </p>
+
+                                    </div>
+
+
+                                </div>
+
+
+
+                                <!-- META -->
+
+                                <div class="maintenance-request-meta">
+
+
+                                    <!-- BARCODE -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-upc"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Barcode
+                                            </span>
+
+                                            <strong>
+
+                                                @(string.IsNullOrWhiteSpace(
+                                                    request.OurEquipment?.BarcodeValue
+                                                )
+                                                    ? "Not available"
+                                                    : request.OurEquipment.BarcodeValue)
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <!-- RESIDENT -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-person-heart"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Resident
+                                            </span>
+
+                                            <strong>
+
+                                                @(request.OurEquipment?.AssignedTo != null
+                                                    ? $"{request.OurEquipment.AssignedTo.FirstName} {request.OurEquipment.AssignedTo.LastName}"
+                                                    : "Not assigned")
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <!-- RESOLVED BY -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-person-check-fill"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Resolved By
+                                            </span>
+
+                                            <strong>
+
+                                                @(request.ResolvedBy != null
+                                                    ? $"{request.ResolvedBy.FirstName} {request.ResolvedBy.LastName}"
+                                                    : "Not available")
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+
+                                    <!-- COMPLETED DATE -->
+
+                                    <div class="maintenance-meta-item">
+
+                                        <i class="bi bi-calendar-check"></i>
+
+
+                                        <div>
+
+                                            <span>
+                                                Completed On
+                                            </span>
+
+                                            <strong>
+
+                                                @completedDate.ToString(
+                                                    "dd MMM yyyy HH:mm"
+                                                )
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <!-- SIDE ACTION -->
+
+                            <div class="maintenance-request-side">
+
+
+                                <div class="maintenance-completed-indicator">
+
+                                    <i class="bi bi-check2-circle"></i>
+
+                                    <span>
+                                        Maintenance Complete
+                                    </span>
+
+                                </div>
+
+
+                                <a asp-controller="MaintenanceRequests"
+                                       asp-action="MaintenanceRequestDetails"
+                                       asp-route-requestId="@request.RequestId"
+                                       class="maintenance-request-action">
+
+                                    <i class="bi bi-eye"></i>
+
+                                    View Details
+
+                                </a>
+
+
+                            </div>
+
+
+                        </div>
+
+                    }
+
+
+                </div>
+
+            }
+            else
+            {
+
+
+                <!-- =============================================
+                     EMPTY STATE
+                ============================================== -->
+
+                <div class="maintenance-requests-empty">
+
+
+                    <div class="maintenance-requests-empty-icon">
+
+                        <i class="bi bi-check2-circle"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Completed Requests
+                    </h3>
+
+
+                    <p>
+                        There are currently no completed maintenance
+                        requests available.
+                    </p>
+
+
+                    <a asp-controller="MaintenanceRequests"
+                           asp-action="MaintenanceRequests"
+                           class="maintenance-empty-back-btn">
+
+                        <i class="bi bi-arrow-left"></i>
+
+                        Back to Maintenance Requests
+
+                    </a>
+
+
+                </div>
+
+            }
+
+
+        </section>
+
+
+    </div>
+
+
+</div>

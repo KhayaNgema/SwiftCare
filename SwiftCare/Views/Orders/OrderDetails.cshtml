@@ -5,8 +5,7 @@
     ViewData["Title"] = "Order Details";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 
-
-var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
+    var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
     var totalQuantity =
         Model.OrderItems?.Sum(x => x.Quantity) ?? 0;
@@ -14,20 +13,23 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
     var totalEquipmentTypes =
         Model.OrderItems?.Count ?? 0;
 
+    var isSupplierAdmin =
+        User.IsInRole("Supplier Admin");
 }
+
 
 <div class="sc-order-details-page">
 
     <!-- ============================================================
-     HEADER
-     ============================================================ -->
+         HEADER
+    ============================================================ -->
 
     <section class="sc-order-details-header">
 
         <div class="sc-order-details-header-inner">
 
             <a asp-controller="Orders"
-                   asp-action="Orders"
+                   asp-action="MyOrders"
                    class="sc-order-details-back"
                    title="Back to Orders">
 
@@ -53,7 +55,9 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
             </div>
 
 
-            <!-- STATUS -->
+            <!-- ====================================================
+                 STATUS
+            ===================================================== -->
 
             <div>
 
@@ -128,11 +132,13 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
     </section>
 
 
+
     <div class="container-fluid px-4">
 
+
         <!-- ========================================================
-         AJAX MESSAGE
-         ======================================================== -->
+             AJAX MESSAGE
+        ========================================================= -->
 
         <div id="orderDetailsMessage"
              class="sc-order-details-message">
@@ -145,9 +151,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
         </div>
 
 
+
         <!-- ========================================================
-         ORDER SUMMARY
-         ======================================================== -->
+             ORDER SUMMARY
+        ========================================================= -->
 
         <section class="sc-order-details-summary">
 
@@ -177,6 +184,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                 </div>
 
 
+
                 <!-- ORDER DATE -->
 
                 <div class="col-6 col-lg-3">
@@ -200,6 +208,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                 </div>
 
 
+
                 <!-- EQUIPMENT TYPES -->
 
                 <div class="col-6 col-lg-3">
@@ -221,6 +230,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                     </div>
 
                 </div>
+
 
 
                 <!-- TOTAL QUANTITY -->
@@ -250,9 +260,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
         </section>
 
 
+
         <!-- ========================================================
-         ORDER INFORMATION
-         ======================================================== -->
+             ORDER INFORMATION
+        ========================================================= -->
 
         <section class="sc-order-details-info-card">
 
@@ -276,6 +287,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                 </div>
 
             </div>
+
 
 
             <div class="row g-3">
@@ -306,6 +318,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                 </div>
 
 
+
                 <!-- LAST UPDATED -->
 
                 <div class="col-12 col-md-6 col-lg-3">
@@ -329,6 +342,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                     </div>
 
                 </div>
+
 
 
                 <!-- ORDERED BY -->
@@ -356,6 +370,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                     </div>
 
                 </div>
+
 
 
                 <!-- STATUS -->
@@ -387,9 +402,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
         </section>
 
 
+
         <!-- ========================================================
-         EQUIPMENT ITEMS
-         ======================================================== -->
+             EQUIPMENT ITEMS
+        ========================================================= -->
 
         <section class="sc-order-details-info-card">
 
@@ -407,7 +423,18 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
                     <p class="text-muted mb-0 mt-2">
 
-                        Review the equipment items and package them individually.
+                        @if (isSupplierAdmin)
+                        {
+                            <span>
+                                Review the equipment items and package them individually.
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Review the equipment items included in this order.
+                            </span>
+                        }
 
                     </p>
 
@@ -426,6 +453,7 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
             </div>
 
 
+
             @if (Model.OrderItems != null && Model.OrderItems.Any())
             {
                 <div class="sc-order-details-items">
@@ -436,7 +464,9 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                              id="order-item-@orderItem.OrderItemId">
 
 
-                            <!-- EQUIPMENT ICON -->
+                            <!-- =================================================
+                                 EQUIPMENT ICON
+                            ================================================== -->
 
                             <div class="sc-order-details-item-icon">
 
@@ -445,7 +475,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                             </div>
 
 
-                            <!-- EQUIPMENT INFORMATION -->
+
+                            <!-- =================================================
+                                 EQUIPMENT INFORMATION
+                            ================================================== -->
 
                             <div class="sc-order-details-item-content">
 
@@ -466,7 +499,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                             </div>
 
 
-                            <!-- QUANTITY -->
+
+                            <!-- =================================================
+                                 QUANTITY
+                            ================================================== -->
 
                             <div class="sc-order-details-quantity">
 
@@ -485,32 +521,40 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
                             </div>
 
 
-                            <!-- PACKAGE BUTTON -->
-                            @if (orderItem.IsPackaged)
+
+                            <!-- =================================================
+                                 PACKAGE BUTTON
+                                 ONLY SUPPLIER ADMIN CAN SEE THIS
+                            ================================================== -->
+                            @if (isSupplierAdmin)
                             {
-                                <button type="button"
-                                        class="sc-order-details-package-btn"
-                                        disabled>
+                                if (orderItem.IsPackaged)
+                                {
+                                    <button type="button"
+                                            class="sc-order-details-package-btn"
+                                            disabled>
 
-                                    <i class="bi bi-check-circle-fill"></i>
+                                        <i class="bi bi-check-circle-fill"></i>
 
-                                    Packaged
+                                        Packaged
 
-                                </button>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="sc-order-details-package-btn"
+                                            data-order-item-id="@orderItem.OrderItemId"
+                                            data-order-id="@encryptedOrderId">
+
+                                        <i class="bi bi-box-seam-fill"></i>
+
+                                        Package Item
+
+                                    </button>
+                                }
                             }
-                            else
-                            {
-                                <button type="button"
-                                        class="sc-order-details-package-btn"
-                                        data-order-item-id="@orderItem.OrderItemId"
-                                        data-order-id="@encryptedOrderId">
 
-                                    <i class="bi bi-box-seam-fill"></i>
-
-                                    Package Item
-
-                                </button>
-                            }
 
                         </div>
                     }
@@ -519,6 +563,10 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
             }
             else
             {
+                <!-- =================================================
+                     EMPTY STATE
+                ================================================== -->
+
                 <div class="sc-order-details-empty">
 
                     <div class="sc-order-details-empty-icon">
@@ -535,7 +583,8 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
                     <p>
 
-                        There are currently no equipment items attached to this order.
+                        There are currently no equipment items attached
+                        to this order.
 
                     </p>
 
@@ -545,10 +594,16 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
         </section>
 
 
+
         <!-- ========================================================
-         PACKAGE ENTIRE ORDER
-         ======================================================== -->
-        @if (Model.OrderItems != null && Model.OrderItems.Any())
+             PACKAGE ENTIRE ORDER
+             ONLY SUPPLIER ADMIN CAN SEE THIS
+        ========================================================= -->
+        @if (
+                    isSupplierAdmin &&
+                    Model.OrderItems != null &&
+                    Model.OrderItems.Any()
+                )
         {
             <section class="sc-order-details-info-card">
 
@@ -591,238 +646,310 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
     </div>
 
-
 </div>
+
+
 
 @section Scripts {
 
-
     @Html.AntiForgeryToken()
-    <script>
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            function () {
 
 
-                /* ====================================================
-                   GET ANTI FORGERY TOKEN
-                   ==================================================== */
+    @if (isSupplierAdmin)
+    {
+        <script>
 
-                function getAntiForgeryToken() {
-
-                    return document
-                        .querySelector(
-                            'input[name="__RequestVerificationToken"]'
-                        )
-                        ?.value;
-
-                }
+            document.addEventListener(
+                "DOMContentLoaded",
+                function () {
 
 
-                /* ====================================================
-                   SHOW MESSAGE
-                   ==================================================== */
+                    /* ====================================================
+                       GET ANTI FORGERY TOKEN
+                    ==================================================== */
 
-                function showOrderMessage(
-                    message,
-                    type
-                ) {
+                    function getAntiForgeryToken() {
 
-                    const messageBox =
-                        document.getElementById(
-                            "orderDetailsMessage"
-                        );
+                        return document
+                            .querySelector(
+                                'input[name="__RequestVerificationToken"]'
+                            )
+                            ?.value;
 
-
-                    const messageText =
-                        document.getElementById(
-                            "orderDetailsMessageText"
-                        );
-
-
-                    const messageIcon =
-                        document.getElementById(
-                            "orderDetailsMessageIcon"
-                        );
-
-
-                    if (
-                        !messageBox ||
-                        !messageText
-                    ) {
-                        return;
                     }
 
 
-                    messageBox.classList.remove(
-                        "sc-order-details-message-success",
-                        "sc-order-details-message-error"
-                    );
+
+                    /* ====================================================
+                       SHOW MESSAGE
+                    ==================================================== */
+
+                    function showOrderMessage(
+                        message,
+                        type
+                    ) {
+
+                        const messageBox =
+                            document.getElementById(
+                                "orderDetailsMessage"
+                            );
 
 
-                    if (type === "success") {
+                        const messageText =
+                            document.getElementById(
+                                "orderDetailsMessageText"
+                            );
 
-                        messageBox.classList.add(
-                            "sc-order-details-message-success"
-                        );
 
-                        if (messageIcon) {
+                        const messageIcon =
+                            document.getElementById(
+                                "orderDetailsMessageIcon"
+                            );
 
-                            messageIcon.className =
-                                "bi bi-check-circle-fill";
 
+                        if (
+                            !messageBox ||
+                            !messageText
+                        ) {
+                            return;
                         }
 
-                    }
-                    else {
 
-                        messageBox.classList.add(
+                        messageBox.classList.remove(
+                            "sc-order-details-message-success",
                             "sc-order-details-message-error"
                         );
 
-                        if (messageIcon) {
 
-                            messageIcon.className =
-                                "bi bi-x-circle-fill";
+                        if (type === "success") {
+
+                            messageBox.classList.add(
+                                "sc-order-details-message-success"
+                            );
+
+
+                            if (messageIcon) {
+
+                                messageIcon.className =
+                                    "bi bi-check-circle-fill";
+
+                            }
 
                         }
+                        else {
+
+                            messageBox.classList.add(
+                                "sc-order-details-message-error"
+                            );
+
+
+                            if (messageIcon) {
+
+                                messageIcon.className =
+                                    "bi bi-x-circle-fill";
+
+                            }
+
+                        }
+
+
+                        messageText.textContent =
+                            message;
+
+
+                        messageBox.style.display =
+                            "flex";
+
+
+                        window.scrollTo({
+                            top: 0,
+                            behavior: "smooth"
+                        });
+
+
+                        setTimeout(
+                            function () {
+
+                                messageBox.style.display =
+                                    "none";
+
+                            },
+                            5000
+                        );
 
                     }
 
 
-                    messageText.textContent =
-                        message;
+
+                    /* ====================================================
+                       PACKAGE SINGLE ITEM
+                    ==================================================== */
+
+                    document
+                        .querySelectorAll(
+                            ".sc-order-details-package-btn:not(:disabled)"
+                        )
+                        .forEach(
+                            function (button) {
+
+                                button.addEventListener(
+                                    "click",
+                                    async function () {
 
 
-                    messageBox.style.display =
-                        "flex";
-
-
-                    window.scrollTo({
-                        top: 0,
-                        behavior: "smooth"
-                    });
-
-
-                    setTimeout(
-                        function () {
-
-                            messageBox.style.display =
-                                "none";
-
-                        },
-                        5000
-                    );
-
-                }
-
-
-                /* ====================================================
-                   PACKAGE SINGLE ITEM
-                   ==================================================== */
-
-                document
-                    .querySelectorAll(
-                        ".sc-order-details-package-btn:not(:disabled)"
-                    )
-                    .forEach(
-                        function (button) {
-
-                            button.addEventListener(
-                                "click",
-                                async function () {
-
-                                    const orderItemId =
-                                        button.getAttribute(
-                                            "data-order-item-id"
-                                        );
-
-
-                                    const orderId =
-                                        button.getAttribute(
-                                            "data-order-id"
-                                        );
-
-
-                                    const token =
-                                        getAntiForgeryToken();
-
-
-                                    if (
-                                        !orderItemId ||
-                                        !orderId ||
-                                        !token
-                                    ) {
-
-                                        showOrderMessage(
-                                            "Unable to process the package request.",
-                                            "error"
-                                        );
-
-                                        return;
-                                    }
-
-
-                                    const originalContent =
-                                        button.innerHTML;
-
-
-                                    /* LOADING */
-
-                                    button.disabled =
-                                        true;
-
-
-                                    button.innerHTML =
-                                        '<span class="sc-order-details-loading">' +
-                                        '<span class="sc-order-details-spinner"></span>' +
-                                        ' Packaging...' +
-                                        '</span>';
-
-
-                                    try {
-
-                                        const formData =
-                                            new FormData();
-
-
-                                        formData.append(
-                                            "orderId",
-                                            orderId
-                                        );
-
-
-                                        formData.append(
-                                            "orderItemId",
-                                            orderItemId
-                                        );
-
-
-                                        const response =
-                                            await fetch(
-                                                '@Url.Action("PackageOrderItem", "Orders")',
-                                                {
-                                                    method: "POST",
-
-                                                    headers: {
-
-                                                        "RequestVerificationToken":
-                                                            token
-
-                                                    },
-
-                                                    body:
-                                                        formData
-                                                }
+                                        const orderItemId =
+                                            button.getAttribute(
+                                                "data-order-item-id"
                                             );
 
 
-                                        const result =
-                                            await response.json();
+                                        const orderId =
+                                            button.getAttribute(
+                                                "data-order-id"
+                                            );
 
 
-                                        if (!result.success) {
+                                        const token =
+                                            getAntiForgeryToken();
+
+
+                                        if (
+                                            !orderItemId ||
+                                            !orderId ||
+                                            !token
+                                        ) {
+
+                                            showOrderMessage(
+                                                "Unable to process the package request.",
+                                                "error"
+                                            );
+
+                                            return;
+
+                                        }
+
+
+                                        const originalContent =
+                                            button.innerHTML;
+
+
+                                        /* LOADING */
+
+                                        button.disabled =
+                                            true;
+
+
+                                        button.innerHTML =
+                                            '<span class="sc-order-details-loading">' +
+                                            '<span class="sc-order-details-spinner"></span>' +
+                                            ' Packaging...' +
+                                            '</span>';
+
+
+                                        try {
+
+                                            const formData =
+                                                new FormData();
+
+
+                                            formData.append(
+                                                "orderId",
+                                                orderId
+                                            );
+
+
+                                            formData.append(
+                                                "orderItemId",
+                                                orderItemId
+                                            );
+
+
+                                            const response =
+                                                await fetch(
+                                                    '@Url.Action("PackageOrderItem", "Orders")',
+                                                    {
+                                                        method: "POST",
+
+                                                        headers: {
+
+                                                            "RequestVerificationToken":
+                                                                token
+
+                                                        },
+
+                                                        body:
+                                                            formData
+                                                    }
+                                                );
+
+
+                                            const result =
+                                                await response.json();
+
+
+                                            if (!result.success) {
+
+                                                button.disabled =
+                                                    false;
+
+
+                                                button.innerHTML =
+                                                    originalContent;
+
+
+                                                showOrderMessage(
+                                                    result.message ||
+                                                    "Unable to package the equipment item.",
+                                                    "error"
+                                                );
+
+                                                return;
+
+                                            }
+
+
+
+                                            /* =====================================
+                                               SUCCESS
+                                            ===================================== */
+
+                                            button.innerHTML =
+                                                '<i class="bi bi-check-circle-fill"></i>' +
+                                                ' Packaged';
+
+
+                                            button.disabled =
+                                                true;
+
+
+                                            const card =
+                                                document.getElementById(
+                                                    "order-item-" +
+                                                    result.orderItemId
+                                                );
+
+
+                                            if (card) {
+
+                                                card.classList.add(
+                                                    "sc-order-item-packaged-success"
+                                                );
+
+                                            }
+
+
+                                            showOrderMessage(
+                                                result.message,
+                                                "success"
+                                            );
+
+                                        }
+                                        catch (error) {
+
+                                            console.error(
+                                                error
+                                            );
+
 
                                             button.disabled =
                                                 false;
@@ -833,173 +960,183 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
 
                                             showOrderMessage(
-                                                result.message ||
-                                                "Unable to package the equipment item.",
+                                                "Something went wrong while packaging the equipment item.",
                                                 "error"
                                             );
 
-                                            return;
-
                                         }
-
-
-                                        /* =====================================
-                                           SUCCESS
-                                           ===================================== */
-
-                                        button.innerHTML =
-                                            '<i class="bi bi-check-circle-fill"></i>' +
-                                            ' Packaged';
-
-
-                                        button.disabled =
-                                            true;
-
-
-                                        const card =
-                                            document.getElementById(
-                                                "order-item-" +
-                                                result.orderItemId
-                                            );
-
-
-                                        if (card) {
-
-                                            card.classList.add(
-                                                "sc-order-item-packaged-success"
-                                            );
-
-                                        }
-
-
-                                        showOrderMessage(
-                                            result.message,
-                                            "success"
-                                        );
 
                                     }
-                                    catch (error) {
+                                );
 
-                                        console.error(
-                                            error
+                            }
+                        );
+
+
+
+                    /* ====================================================
+                       PACKAGE ENTIRE ORDER
+                    ==================================================== */
+
+                    const packageOrderButton =
+                        document.getElementById(
+                            "packageOrderButton"
+                        );
+
+
+                    if (packageOrderButton) {
+
+                        packageOrderButton.addEventListener(
+                            "click",
+                            async function () {
+
+
+                                const orderId =
+                                    packageOrderButton.getAttribute(
+                                        "data-order-id"
+                                    );
+
+
+                                const token =
+                                    getAntiForgeryToken();
+
+
+                                if (
+                                    !orderId ||
+                                    !token
+                                ) {
+
+                                    showOrderMessage(
+                                        "Unable to process the package request.",
+                                        "error"
+                                    );
+
+                                    return;
+
+                                }
+
+
+                                const originalContent =
+                                    packageOrderButton.innerHTML;
+
+
+                                packageOrderButton.disabled =
+                                    true;
+
+
+                                packageOrderButton.innerHTML =
+                                    '<span class="sc-order-details-loading">' +
+                                    '<span class="sc-order-details-spinner"></span>' +
+                                    ' Packaging Order...' +
+                                    '</span>';
+
+
+                                try {
+
+                                    const formData =
+                                        new FormData();
+
+
+                                    formData.append(
+                                        "orderId",
+                                        orderId
+                                    );
+
+
+                                    const response =
+                                        await fetch(
+                                            '@Url.Action("PackageEntireOrder", "Orders")',
+                                            {
+                                                method: "POST",
+
+                                                headers: {
+
+                                                    "RequestVerificationToken":
+                                                        token
+
+                                                },
+
+                                                body:
+                                                    formData
+                                            }
                                         );
 
 
-                                        button.disabled =
+                                    const result =
+                                        await response.json();
+
+
+                                    if (!result.success) {
+
+                                        packageOrderButton.disabled =
                                             false;
 
 
-                                        button.innerHTML =
+                                        packageOrderButton.innerHTML =
                                             originalContent;
 
 
                                         showOrderMessage(
-                                            "Something went wrong while packaging the equipment item.",
+                                            result.message ||
+                                            "Unable to package the order.",
                                             "error"
                                         );
 
+                                        return;
+
                                     }
 
-                                }
-                            );
-
-                        }
-                    );
 
 
-                /* ====================================================
-                   PACKAGE ENTIRE ORDER
-                   ==================================================== */
+                                    /* =====================================
+                                       UPDATE ALL ITEM BUTTONS
+                                    ===================================== */
 
-                const packageOrderButton =
-                    document.getElementById(
-                        "packageOrderButton"
-                    );
+                                    document
+                                        .querySelectorAll(
+                                            ".sc-order-details-package-btn:not(:disabled)"
+                                        )
+                                        .forEach(
+                                            function (button) {
 
-
-                if (packageOrderButton) {
-
-                    packageOrderButton.addEventListener(
-                        "click",
-                        async function () {
+                                                button.disabled =
+                                                    true;
 
 
-                            const orderId =
-                                packageOrderButton.getAttribute(
-                                    "data-order-id"
-                                );
+                                                button.innerHTML =
+                                                    '<i class="bi bi-check-circle-fill"></i>' +
+                                                    ' Packaged';
+
+                                            }
+                                        );
 
 
-                            const token =
-                                getAntiForgeryToken();
+
+                                    /* =====================================
+                                       UPDATE PACKAGE ORDER BUTTON
+                                    ===================================== */
+
+                                    packageOrderButton.innerHTML =
+                                        '<i class="bi bi-check-circle-fill"></i>' +
+                                        ' Order Packaged';
 
 
-                            if (
-                                !orderId ||
-                                !token
-                            ) {
-
-                                showOrderMessage(
-                                    "Unable to process the package request.",
-                                    "error"
-                                );
-
-                                return;
-
-                            }
+                                    packageOrderButton.disabled =
+                                        true;
 
 
-                            const originalContent =
-                                packageOrderButton.innerHTML;
-
-
-                            packageOrderButton.disabled =
-                                true;
-
-
-                            packageOrderButton.innerHTML =
-                                '<span class="sc-order-details-loading">' +
-                                '<span class="sc-order-details-spinner"></span>' +
-                                ' Packaging Order...' +
-                                '</span>';
-
-
-                            try {
-
-                                const formData =
-                                    new FormData();
-
-
-                                formData.append(
-                                    "orderId",
-                                    orderId
-                                );
-
-
-                                const response =
-                                    await fetch(
-                                        '@Url.Action("PackageEntireOrder", "Orders")',
-                                        {
-                                            method: "POST",
-
-                                            headers: {
-
-                                                "RequestVerificationToken":
-                                                    token
-
-                                            },
-
-                                            body:
-                                                formData
-                                        }
+                                    showOrderMessage(
+                                        result.message,
+                                        "success"
                                     );
 
+                                }
+                                catch (error) {
 
-                                const result =
-                                    await response.json();
+                                    console.error(
+                                        error
+                                    );
 
-
-                                if (!result.success) {
 
                                     packageOrderButton.disabled =
                                         false;
@@ -1010,90 +1147,21 @@ var encryptedOrderId = encryptionService.Encrypt(Model.OrderId);
 
 
                                     showOrderMessage(
-                                        result.message ||
-                                        "Unable to package the order.",
+                                        "Something went wrong while packaging the order.",
                                         "error"
                                     );
 
-                                    return;
-
                                 }
 
-
-                                /* =====================================
-                                   UPDATE ALL ITEM BUTTONS
-                                   ===================================== */
-
-                                document
-                                    .querySelectorAll(
-                                        ".sc-order-details-package-btn:not(:disabled)"
-                                    )
-                                    .forEach(
-                                        function (button) {
-
-                                            button.disabled =
-                                                true;
-
-
-                                            button.innerHTML =
-                                                '<i class="bi bi-check-circle-fill"></i>' +
-                                                ' Packaged';
-
-                                        }
-                                    );
-
-
-                                /* =====================================
-                                   UPDATE PACKAGE ORDER BUTTON
-                                   ===================================== */
-
-                                packageOrderButton.innerHTML =
-                                    '<i class="bi bi-check-circle-fill"></i>' +
-                                    ' Order Packaged';
-
-
-                                packageOrderButton.disabled =
-                                    true;
-
-
-                                showOrderMessage(
-                                    result.message,
-                                    "success"
-                                );
-
                             }
-                            catch (error) {
+                        );
 
-                                console.error(
-                                    error
-                                );
-
-
-                                packageOrderButton.disabled =
-                                    false;
-
-
-                                packageOrderButton.innerHTML =
-                                    originalContent;
-
-
-                                showOrderMessage(
-                                    "Something went wrong while packaging the order.",
-                                    "error"
-                                );
-
-                            }
-
-                        }
-                    );
+                    }
 
                 }
+            );
 
-            }
-        );
-
-    </script>
-
-
+        </script>
+    }
 
 }

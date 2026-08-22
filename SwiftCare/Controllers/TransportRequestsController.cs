@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QRCoder.Extensions;
@@ -24,6 +25,45 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
+        // SCHEDULED TRIPS
+        // ============================================================
+
+        [HttpGet]
+        public async Task<IActionResult> ScheduledTrips()
+        {
+            try
+            {
+                var today = DateTime.Today;
+
+                var scheduledTrips = await _context.TransportRequests
+                    .Include(x => x.Resident)
+                    .Include(x => x.Driver)
+                    .Include(x => x.Vehicle)
+                    .Include(x => x.Nurse)
+                    .Include(x => x.Trip)
+                    .Where(x =>
+                        x.Status != RequestStatus.Completed &&
+                        x.Status != RequestStatus.Rejected &&
+                        x.RequestedForDate >= today
+                    )
+                    .OrderBy(x => x.RequestedForDate)
+                    .ThenBy(x => x.RequestedForTime)
+                    .ToListAsync();
+
+                return View(scheduledTrips);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Unable to load scheduled trips: {ex.Message}";
+
+                return View(
+                    new List<TransportRequest>()
+                );
+            }
+        }
+
+        // ============================================================
         // GET: TRANSPORT REQUEST DETAILS
         // ============================================================
 
@@ -46,21 +86,14 @@ namespace SwiftCare.Controllers
 
 
                 // ========================================================
-                // LOAD TRANSPORT REQUESTS FIRST
+                // FIND TRANSPORT REQUEST
                 // ========================================================
 
-                var transportRequests = await _context.TransportRequests
-                    .AsNoTracking()
-                    .ToListAsync();
-
-
-                // ========================================================
-                // FIND THE REQUEST IN MEMORY
-                // ========================================================
-
-                var transportRequest = transportRequests
-                    .FirstOrDefault(tr =>
-                        tr.RequestId == requestId.Value);
+                var transportRequest =
+                    await _context.TransportRequests
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(tr =>
+                            tr.RequestId == requestId.Value);
 
 
                 // ========================================================
@@ -72,64 +105,63 @@ namespace SwiftCare.Controllers
                     ViewBag.ErrorMessage =
                         $"Transport request with ID {requestId.Value} was not found.";
 
-
-                    ViewBag.DebugMessage =
-                        transportRequests.Any()
-                            ? $"Request IDs currently available: {string.Join(", ", transportRequests.Select(x => x.RequestId))}"
-                            : "No transport requests were found in the database.";
-
-
                     return View(null);
                 }
 
 
                 // ========================================================
-                // LOAD RESIDENT SAFELY
+                // LOAD RESIDENT
                 // ========================================================
 
                 if (!string.IsNullOrWhiteSpace(
-                    transportRequest.RequestedForId))
+                    transportRequest.RequestedForId
+                ))
                 {
                     transportRequest.Resident =
                         await _context.Residents
                             .AsNoTracking()
                             .FirstOrDefaultAsync(r =>
-                                r.Id == transportRequest.RequestedForId);
+                                r.Id ==
+                                transportRequest.RequestedForId);
                 }
 
 
                 // ========================================================
-                // LOAD NURSE SAFELY
+                // LOAD NURSE
                 // ========================================================
 
                 if (!string.IsNullOrWhiteSpace(
-                    transportRequest.RequestedById))
+                    transportRequest.RequestedById
+                ))
                 {
                     transportRequest.Nurse =
                         await _context.Nurses
                             .AsNoTracking()
                             .FirstOrDefaultAsync(n =>
-                                n.Id == transportRequest.RequestedById);
+                                n.Id ==
+                                transportRequest.RequestedById);
                 }
 
 
                 // ========================================================
-                // LOAD DRIVER SAFELY
+                // LOAD ASSIGNED DRIVER
                 // ========================================================
 
                 if (!string.IsNullOrWhiteSpace(
-                    transportRequest.AssignedToId))
+                    transportRequest.AssignedToId
+                ))
                 {
                     transportRequest.Driver =
                         await _context.Drivers
                             .AsNoTracking()
                             .FirstOrDefaultAsync(d =>
-                                d.Id == transportRequest.AssignedToId);
+                                d.Id ==
+                                transportRequest.AssignedToId);
                 }
 
 
                 // ========================================================
-                // LOAD VEHICLE SAFELY
+                // LOAD ASSIGNED VEHICLE
                 // ========================================================
 
                 if (transportRequest.VehicleId.HasValue)
@@ -144,7 +176,7 @@ namespace SwiftCare.Controllers
 
 
                 // ========================================================
-                // LOAD TRIP SAFELY
+                // LOAD TRIP
                 // ========================================================
 
                 transportRequest.Trip =
@@ -156,7 +188,59 @@ namespace SwiftCare.Controllers
 
 
                 // ========================================================
-                // RETURN DETAILS PAGE
+                // LOAD ALL DRIVERS
+                // ========================================================
+
+                var drivers =
+                    await _context.Drivers
+                        .AsNoTracking()
+                        .OrderBy(d => d.FirstName)
+                        .ThenBy(d => d.LastName)
+                        .ToListAsync();
+
+
+                ViewBag.Drivers = drivers;
+
+
+                // ========================================================
+                // LOAD AVAILABLE VEHICLES
+                //
+                // Include currently assigned vehicle.
+                // ========================================================
+
+                var vehicles =
+                    await _context.Vehicles
+                        .AsNoTracking()
+                        .Where(v =>
+                            v.Status == VehicleStatus.Available
+                            ||
+                            (
+                                transportRequest.VehicleId.HasValue
+                                &&
+                                v.VehicleId ==
+                                transportRequest.VehicleId.Value
+                            )
+                        )
+                        .OrderBy(v => v.VehicleName)
+                        .ToListAsync();
+
+
+                ViewBag.Vehicles = vehicles;
+
+
+                // ========================================================
+                // DEBUG INFORMATION
+                //
+                // Useful while testing.
+                // ========================================================
+
+                ViewBag.DriverCount = drivers.Count;
+
+                ViewBag.VehicleCount = vehicles.Count;
+
+
+                // ========================================================
+                // RETURN VIEW
                 // ========================================================
 
                 return View(transportRequest);
@@ -176,6 +260,326 @@ namespace SwiftCare.Controllers
                     ex.StackTrace;
 
                 return View(null);
+            }
+        }
+
+        // ============================================================
+        // POST: ASSIGN VEHICLE
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> AssignVehicle(
+            int requestId,
+            int vehicleId)
+        {
+            try
+            {
+                // ========================================================
+                // VALIDATE REQUEST
+                // ========================================================
+
+                if (requestId <= 0)
+                {
+                    TempData["ErrorMessage"] =
+                        "Invalid transport request.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new { requestId }
+                    );
+                }
+
+
+                // ========================================================
+                // FIND TRANSPORT REQUEST
+                // ========================================================
+
+                var transportRequest =
+                    await _context.TransportRequests
+                        .FirstOrDefaultAsync(tr =>
+                            tr.RequestId == requestId);
+
+
+                if (transportRequest == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "Transport request could not be found.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequests)
+                    );
+                }
+
+
+                // ========================================================
+                // FIND VEHICLE
+                // ========================================================
+
+                var vehicle =
+                    await _context.Vehicles
+                        .FirstOrDefaultAsync(v =>
+                            v.VehicleId == vehicleId);
+
+
+                if (vehicle == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The selected vehicle could not be found.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new { requestId }
+                    );
+                }
+
+
+                // ========================================================
+                // CHECK VEHICLE AVAILABILITY
+                //
+                // Allow the currently assigned vehicle to remain selected.
+                // ========================================================
+
+                if (vehicle.Status != VehicleStatus.Available &&
+                    transportRequest.VehicleId != vehicleId)
+                {
+                    TempData["ErrorMessage"] =
+                        "The selected vehicle is currently unavailable.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new { requestId }
+                    );
+                }
+
+
+                // ========================================================
+                // STORE OLD VEHICLE
+                // ========================================================
+
+                var oldVehicleId =
+                    transportRequest.VehicleId;
+
+
+                // ========================================================
+                // ASSIGN NEW VEHICLE
+                // ========================================================
+
+                transportRequest.VehicleId =
+                    vehicle.VehicleId;
+
+
+                // ========================================================
+                // MARK VEHICLE AS UNAVAILABLE
+                //
+                // This prevents another request from selecting it.
+                // ========================================================
+
+                vehicle.Status =
+                    VehicleStatus.Unavailable;
+
+
+                // ========================================================
+                // RELEASE OLD VEHICLE IF CHANGED
+                // ========================================================
+
+                if (oldVehicleId.HasValue &&
+                    oldVehicleId.Value != vehicle.VehicleId)
+                {
+                    var oldVehicle =
+                        await _context.Vehicles
+                            .FirstOrDefaultAsync(v =>
+                                v.VehicleId ==
+                                oldVehicleId.Value);
+
+
+                    if (oldVehicle != null)
+                    {
+                        oldVehicle.Status =
+                            VehicleStatus.Available;
+                    }
+                }
+
+
+                // ========================================================
+                // SAVE
+                // ========================================================
+
+                await _context.SaveChangesAsync();
+
+
+                TempData["SuccessMessage"] =
+                    $"{vehicle.VehicleName} has been assigned successfully.";
+
+
+                return RedirectToAction(
+                    nameof(TransportRequestDetails),
+                    new { requestId }
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Unable to assign vehicle: {ex.Message}";
+
+
+                return RedirectToAction(
+                    nameof(TransportRequestDetails),
+                    new { requestId }
+                );
+            }
+        }
+
+
+        // ============================================================
+        // POST: ASSIGN DRIVER
+        // ============================================================
+
+        [Authorize(Roles = "Administrator")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignDriver(
+            int requestId,
+            string driverId
+        )
+        {
+            try
+            {
+                // ====================================================
+                // VALIDATE
+                // ====================================================
+
+                if (requestId <= 0)
+                {
+                    TempData["ErrorMessage"] =
+                        "Invalid transport request.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new
+                        {
+                            requestId
+                        }
+                    );
+                }
+
+
+                if (string.IsNullOrWhiteSpace(
+                    driverId
+                ))
+                {
+                    TempData["ErrorMessage"] =
+                        "Please select a driver.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new
+                        {
+                            requestId
+                        }
+                    );
+                }
+
+
+                // ====================================================
+                // FIND TRANSPORT REQUEST
+                // ====================================================
+
+                var transportRequest =
+                    await _context.TransportRequests
+                        .FirstOrDefaultAsync(tr =>
+                            tr.RequestId ==
+                            requestId);
+
+
+                if (transportRequest == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "Transport request not found.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequests)
+                    );
+                }
+
+
+                // ====================================================
+                // VALIDATE DRIVER
+                // ====================================================
+
+                var driver =
+                    await _context.Drivers
+                        .FirstOrDefaultAsync(d =>
+                            d.Id == driverId);
+
+
+                if (driver == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The selected driver could not be found.";
+
+                    return RedirectToAction(
+                        nameof(TransportRequestDetails),
+                        new
+                        {
+                            requestId
+                        }
+                    );
+                }
+
+
+                // ====================================================
+                // ASSIGN DRIVER
+                // ====================================================
+
+                transportRequest.AssignedToId =
+                    driver.Id;
+
+
+                // Update request status
+                if (transportRequest.Status ==
+                    RequestStatus.Pending)
+                {
+                    transportRequest.Status =
+                        RequestStatus.Driver_Assigned;
+                }
+
+
+                // ====================================================
+                // SAVE
+                // ====================================================
+
+                await _context.SaveChangesAsync();
+
+
+                TempData["SuccessMessage"] =
+                    $"{driver.FirstName} {driver.LastName} " +
+                    "has been assigned to this transport request.";
+
+
+                return RedirectToAction(
+                    nameof(TransportRequestDetails),
+                    new
+                    {
+                        requestId
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    "Something went wrong while assigning the driver: " +
+                    ex.Message;
+
+
+                return RedirectToAction(
+                    nameof(TransportRequestDetails),
+                    new
+                    {
+                        requestId
+                    }
+                );
             }
         }
 

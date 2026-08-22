@@ -267,7 +267,7 @@ namespace SwiftCare.Controllers
 
 
             return RedirectToAction(
-                "Details",
+                "ResidentDetails",
                 "Residents",
                 new
                 {

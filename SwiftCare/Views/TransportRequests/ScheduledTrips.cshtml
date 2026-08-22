@@ -1,0 +1,874 @@
+﻿@using SwiftCare.Models
+
+@model List<TransportRequest>
+
+@{
+    ViewData["Title"] = "Scheduled Trips";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var trips = Model ?? new List<TransportRequest>();
+
+    var totalTrips = trips.Count;
+
+    var pendingTrips = trips.Count(x =>
+        x.Status == RequestStatus.Pending
+    );
+
+    var assignedTrips = trips.Count(x =>
+        x.Status == RequestStatus.Driver_Assigned
+    );
+
+    var today = DateTime.Today;
+
+    var todayTrips = trips.Count(x =>
+        x.RequestedForDate.Date == today
+    );
+
+    var upcomingTrips = trips.Count(x =>
+        x.RequestedForDate.Date > today
+    );
+}
+
+
+<div class="sc-scheduled-trips-page">
+
+
+    <!-- ============================================================
+         HERO
+    ============================================================= -->
+
+    <section class="sc-scheduled-trips-hero">
+
+        <div class="sc-scheduled-trips-hero-content">
+
+
+            <div class="sc-scheduled-trips-eyebrow">
+
+                <i class="bi bi-calendar-week"></i>
+
+                TRANSPORT MANAGEMENT
+
+            </div>
+
+
+            <h1>
+                Scheduled Trips
+            </h1>
+
+
+            <p>
+                View and manage upcoming resident transportation
+                requests, driver assignments and scheduled journeys.
+            </p>
+
+
+            <div class="sc-scheduled-trips-hero-stats">
+
+
+                <div class="sc-hero-mini-stat">
+
+                    <i class="bi bi-calendar-event"></i>
+
+                    <div>
+
+                        <span>
+                            Upcoming Trips
+                        </span>
+
+                        <strong>
+                            @totalTrips
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-hero-mini-stat">
+
+                    <i class="bi bi-calendar-day"></i>
+
+                    <div>
+
+                        <span>
+                            Scheduled Today
+                        </span>
+
+                        <strong>
+                            @todayTrips
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        <div class="sc-scheduled-trips-hero-icon">
+
+            <div class="sc-scheduled-trips-icon-circle">
+
+                <i class="bi bi-truck"></i>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ============================================================
+         STATISTICS
+    ============================================================= -->
+
+    <section class="sc-scheduled-trip-stats">
+
+
+        <!-- TOTAL -->
+
+        <div class="sc-scheduled-stat-card">
+
+            <div class="sc-scheduled-stat-icon sc-scheduled-stat-total">
+
+                <i class="bi bi-calendar-week"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Total Scheduled
+                </span>
+
+                <strong>
+                    @totalTrips
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- TODAY -->
+
+        <div class="sc-scheduled-stat-card">
+
+            <div class="sc-scheduled-stat-icon sc-scheduled-stat-today">
+
+                <i class="bi bi-calendar-day"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Today
+                </span>
+
+                <strong>
+                    @todayTrips
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- PENDING -->
+
+        <div class="sc-scheduled-stat-card">
+
+            <div class="sc-scheduled-stat-icon sc-scheduled-stat-pending">
+
+                <i class="bi bi-hourglass-split"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Awaiting Assignment
+                </span>
+
+                <strong>
+                    @pendingTrips
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ASSIGNED -->
+
+        <div class="sc-scheduled-stat-card">
+
+            <div class="sc-scheduled-stat-icon sc-scheduled-stat-assigned">
+
+                <i class="bi bi-person-check"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Driver Assigned
+                </span>
+
+                <strong>
+                    @assignedTrips
+                </strong>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ============================================================
+         PAGE CONTENT
+    ============================================================= -->
+
+    <section class="sc-scheduled-trips-content">
+
+
+        <!-- ========================================================
+             SECTION HEADER
+        ========================================================= -->
+
+        <div class="sc-scheduled-trips-section-header">
+
+
+            <div>
+
+
+                <span class="sc-scheduled-section-eyebrow">
+
+                    UPCOMING JOURNEYS
+
+                </span>
+
+
+                <h2>
+                    Scheduled Transportation
+                </h2>
+
+
+                <p>
+                    Monitor upcoming resident transport requests
+                    and assigned resources.
+                </p>
+
+
+            </div>
+
+
+            <div class="sc-scheduled-trip-count">
+
+                <i class="bi bi-truck-front-fill"></i>
+
+                <span>
+
+                    @totalTrips
+                    @(totalTrips == 1 ? " Trip" : " Trips")
+
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ========================================================
+             TRIP LIST
+        ========================================================= -->
+        @if (trips.Any())
+        {
+
+            <div class="sc-scheduled-trip-list">
+
+
+                @foreach (var trip in trips)
+                {
+
+                    var residentName =
+                        trip.Resident != null
+                            ? $"{trip.Resident.FirstName} {trip.Resident.LastName}"
+                            : "Resident not available";
+
+
+                    /*
+                     =====================================================
+                     RESIDENT PROFILE IMAGE
+                     =====================================================
+
+                     Handles:
+
+                     1. Full Azure Blob URL:
+                        https://storage.blob.core.windows.net/...
+
+                     2. Relative path:
+                        UploadedFiles/...
+
+                     3. Relative path with slash:
+                        /UploadedFiles/...
+
+                     =====================================================
+                    */
+
+                    var residentImage = "";
+
+                    if (
+                        trip.Resident != null &&
+                        !string.IsNullOrWhiteSpace(
+                            trip.Resident.ProfilePicture
+                        )
+                    )
+                    {
+                        var imagePath =
+                            trip.Resident.ProfilePicture.Trim();
+
+                        if (
+                            Uri.TryCreate(
+                                imagePath,
+                                UriKind.Absolute,
+                                out var absoluteUri
+                            )
+                            &&
+                            (
+                                absoluteUri.Scheme ==
+                                Uri.UriSchemeHttp
+                                ||
+                                absoluteUri.Scheme ==
+                                Uri.UriSchemeHttps
+                            )
+                        )
+                        {
+                            // Azure Blob Storage or other absolute URL
+                            residentImage =
+                                imagePath;
+                        }
+                        else
+                        {
+                            // Local relative uploaded file
+                            residentImage =
+                                Url.Content(
+                                    "~/" +
+                                    imagePath.TrimStart('/')
+                                );
+                        }
+                    }
+
+
+                    var driverName =
+                        trip.Driver != null
+                            ? $"{trip.Driver.FirstName} {trip.Driver.LastName}"
+                            : "Driver not assigned";
+
+
+                    var nurseName =
+                        trip.Nurse != null
+                            ? $"{trip.Nurse.FirstName} {trip.Nurse.LastName}"
+                            : "Not available";
+
+
+                    var isToday =
+                        trip.RequestedForDate.Date ==
+                        DateTime.Today;
+
+
+                    var isTomorrow =
+                        trip.RequestedForDate.Date ==
+                        DateTime.Today.AddDays(1);
+
+
+                    var statusClass =
+                        trip.Status == RequestStatus.Pending
+                            ? "sc-trip-status-pending"
+
+                        : trip.Status == RequestStatus.Driver_Assigned
+                            ? "sc-trip-status-assigned"
+
+                        : trip.Status == RequestStatus.Completed
+                            ? "sc-trip-status-completed"
+
+                        : "sc-trip-status-rejected";
+
+
+                    var tripDateText =
+                        isToday
+                            ? "Today"
+                            : isTomorrow
+                                ? "Tomorrow"
+                                : trip.RequestedForDate
+                                    .ToString(
+                                        "dddd, dd MMM yyyy"
+                                    );
+
+
+                    <article class="sc-scheduled-trip-card">
+
+
+                        <!-- ====================================================
+                             DATE
+                        ===================================================== -->
+
+                        <div class="sc-scheduled-trip-date">
+
+                            <span class="sc-trip-day">
+
+                                @trip.RequestedForDate.ToString("dd")
+
+                            </span>
+
+
+                            <span class="sc-trip-month">
+
+                                @trip.RequestedForDate.ToString("MMM")
+
+                            </span>
+
+
+                            <span class="sc-trip-year">
+
+                                @trip.RequestedForDate.ToString("yyyy")
+
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             RESIDENT PROFILE IMAGE
+                        ===================================================== -->
+
+                        <div class="sc-scheduled-trip-resident-image">
+
+
+                            @if (!string.IsNullOrWhiteSpace(residentImage))
+                            {
+
+                                <img src="@residentImage"
+                                     alt="@residentName"
+                                     class="sc-scheduled-resident-img"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.sc-scheduled-resident-fallback').style.display='flex';" />
+
+                                <div class="sc-scheduled-resident-fallback"
+                                     style="display:none;">
+
+                                    <i class="bi bi-person-fill"></i>
+
+                                </div>
+
+                            }
+                            else
+                            {
+
+                                <div class="sc-scheduled-resident-fallback">
+
+                                    <i class="bi bi-person-fill"></i>
+
+                                </div>
+
+                            }
+
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             MAIN CONTENT
+                        ===================================================== -->
+
+                        <div class="sc-scheduled-trip-main">
+
+
+                            <!-- TOP -->
+
+                            <div class="sc-scheduled-trip-top">
+
+
+                                <div>
+
+
+                                    <span class="sc-trip-label">
+
+                                        TRANSPORT REQUEST
+
+                                    </span>
+
+
+                                    <h3>
+
+                                        @residentName
+
+                                    </h3>
+
+
+                                    <div class="sc-trip-schedule">
+
+                                        <i class="bi bi-calendar-event"></i>
+
+                                        <span>
+
+                                            @tripDateText
+
+                                        </span>
+
+
+                                        <span class="sc-trip-dot">
+
+                                            •
+
+                                        </span>
+
+
+                                        <i class="bi bi-clock"></i>
+
+                                        <span>
+
+                                            @trip.RequestedForTime
+                                            .ToString("HH:mm")
+
+                                        </span>
+
+                                    </div>
+
+
+                                </div>
+
+
+                                <span class="sc-trip-status @statusClass">
+
+                                    <i class="bi bi-circle-fill"></i>
+
+                                    @trip.Status
+
+                                </span>
+
+
+                            </div>
+
+
+
+                            <!-- ====================================================
+                                 ROUTE
+                            ===================================================== -->
+
+                            <div class="sc-scheduled-trip-route">
+
+
+                                <!-- PICKUP -->
+
+                                <div class="sc-trip-location">
+
+
+                                    <div class="sc-trip-location-icon
+                                        sc-trip-pickup-icon">
+
+                                        <i class="bi bi-geo-alt-fill"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Pickup Location
+                                        </span>
+
+                                        <strong>
+
+                                            @trip.PickUpAddress
+
+                                        </strong>
+
+                                    </div>
+
+
+                                </div>
+
+
+
+                                <!-- ROUTE LINE -->
+
+                                <div class="sc-trip-route-line">
+
+                                    <i class="bi bi-arrow-right"></i>
+
+                                </div>
+
+
+
+                                <!-- DESTINATION -->
+
+                                <div class="sc-trip-location">
+
+
+                                    <div class="sc-trip-location-icon
+                                        sc-trip-destination-icon">
+
+                                        <i class="bi bi-geo-alt-fill"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Destination
+                                        </span>
+
+                                        <strong>
+
+                                            @trip.DestinationAddress
+
+                                        </strong>
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <!-- ====================================================
+                                 META INFORMATION
+                            ===================================================== -->
+
+                            <div class="sc-scheduled-trip-meta">
+
+
+                                <!-- DRIVER -->
+
+                                <div class="sc-trip-meta-item">
+
+                                    <div class="sc-trip-meta-icon">
+
+                                        <i class="bi bi-person-badge"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Driver
+                                        </span>
+
+                                        <strong>
+
+                                            @driverName
+
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- VEHICLE -->
+
+                                <div class="sc-trip-meta-item">
+
+                                    <div class="sc-trip-meta-icon">
+
+                                        <i class="bi bi-car-front-fill"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Vehicle
+                                        </span>
+
+                                        <strong>
+
+                                            @(trip.Vehicle != null
+                                                ? trip.Vehicle.ToString()
+                                                : "Vehicle not assigned")
+
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- REQUESTED BY -->
+
+                                <div class="sc-trip-meta-item">
+
+                                    <div class="sc-trip-meta-icon">
+
+                                        <i class="bi bi-person-plus"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Requested By
+                                        </span>
+
+                                        <strong>
+
+                                            @nurseName
+
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- DISTANCE -->
+
+                                <div class="sc-trip-meta-item">
+
+                                    <div class="sc-trip-meta-icon">
+
+                                        <i class="bi bi-signpost-split"></i>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Distance
+                                        </span>
+
+                                        <strong>
+
+                                            @(string.IsNullOrWhiteSpace(
+                                                trip.TravelDistance
+                                            )
+                                                ? "Not calculated"
+                                                : trip.TravelDistance)
+
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- ====================================================
+                             ACTION
+                        ===================================================== -->
+
+                        <div class="sc-scheduled-trip-action">
+
+
+                            <a asp-controller="TransportRequests"
+                                   asp-action="TransportRequestDetails"
+                                   asp-route-requestId="@trip.RequestId"
+                                   class="sc-scheduled-trip-view-btn">
+
+                                <i class="bi bi-arrow-right-circle"></i>
+
+                                <span>
+                                    View Trip
+                                </span>
+
+                            </a>
+
+
+                        </div>
+
+
+                    </article>
+
+                }
+
+
+            </div>
+
+        }
+        else
+        {
+
+
+            <!-- ========================================================
+                 EMPTY STATE
+            ========================================================= -->
+
+            <div class="sc-scheduled-trips-empty">
+
+
+                <div class="sc-scheduled-trips-empty-icon">
+
+                    <i class="bi bi-calendar-x"></i>
+
+                </div>
+
+
+                <h3>
+                    No Scheduled Trips
+                </h3>
+
+
+                <p>
+                    There are currently no upcoming transport
+                    requests scheduled.
+                </p>
+
+
+                <a asp-controller="TransportRequests"
+                       asp-action="TransportRequests"
+                       class="sc-scheduled-empty-btn">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                    Back to Transport Requests
+
+                </a>
+
+
+            </div>
+
+        }
+
+
+    </section>
+
+
+</div>

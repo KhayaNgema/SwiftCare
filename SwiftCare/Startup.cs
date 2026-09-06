@@ -131,7 +131,9 @@ public class Startup
         {
             options.EnableDetailedErrors = false;
         });
-      
+
+        services.AddHttpClient();
+
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
             .UseSimpleAssemblyNameTypeSerializer()

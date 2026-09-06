@@ -1,0 +1,410 @@
+﻿@{
+    ViewData["Title"] = "Volunteer Management";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="sc-dashboard volunteer-dashboard">
+
+    <!-- =========================================================
+         HEADER
+         ========================================================= -->
+
+    <section class="sc-dashboard-header volunteer-header">
+
+        <div class="sc-header-content">
+
+            <div class="sc-header-left">
+
+                <div class="sc-header-badge">
+                    <i class="bi bi-people-fill"></i>
+                    Volunteer Management
+                </div>
+
+                <h1 class="sc-dashboard-title">
+                    Volunteer Management
+                </h1>
+
+                <p class="sc-dashboard-description">
+                    Manage volunteer opportunities, applications,
+                    volunteers, availability and shifts from one place.
+                </p>
+
+            </div>
+
+            <div class="sc-date-card">
+
+                <div class="sc-date-icon">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+
+                <div class="sc-date-content">
+
+                    <span class="sc-date-label">
+                        Today
+                    </span>
+
+                    <span class="sc-date-value">
+                        @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         VOLUNTEER MANAGEMENT
+         ========================================================= -->
+
+    <section class="sc-actions-section volunteer-actions-section">
+
+        <div class="sc-section-header">
+
+            <div>
+
+                <div class="sc-section-label">
+                    VOLUNTEER CENTER
+                </div>
+
+                <h2 class="sc-section-title">
+                    Manage Volunteers
+                </h2>
+
+                <p class="sc-section-description">
+                    Choose an area below to manage your volunteer programme.
+                </p>
+
+            </div>
+
+            <div class="sc-section-status">
+
+                <span class="sc-status-dot"></span>
+
+                Volunteer Services Active
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             VOLUNTEER CARDS
+             ===================================================== -->
+
+        <div class="sc-action-grid volunteer-action-grid">
+
+
+            <!-- =================================================
+                 JOB OPPORTUNITIES
+                 ================================================= -->
+
+            <a asp-controller="VolunteerOpportunities"
+                   asp-action="VolunteerOpportunities"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon volunteer-icon">
+                        <i class="bi bi-briefcase-fill"></i>
+                    </div>
+                    
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+
+                </div>
+
+                <div class="sc-action-body">
+
+                    <span class="volunteer-card-label">
+                        OPPORTUNITIES
+                    </span>
+
+                    <h3>
+                        Job Opportunities
+                    </h3>
+
+                    <p>
+                        Create, publish and manage volunteer opportunities
+                        available at SwiftCare.
+                    </p>
+
+                </div>
+
+                <div class="sc-action-footer">
+
+                    <span>
+                        View Opportunities
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 APPLICATIONS
+                 ================================================= -->
+
+            <a asp-controller="VolunteerApplications"
+                   asp-action="Applications"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon volunteer-icon">
+                        <i class="bi bi-file-earmark-person-fill"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+
+                </div>
+
+                <div class="sc-action-body">
+
+                    <span class="volunteer-card-label">
+                        APPLICATIONS
+                    </span>
+
+                    <h3>
+                        Applications
+                    </h3>
+
+                    <p>
+                        Review volunteer applications, check applicant
+                        information and manage application statuses.
+                    </p>
+
+                </div>
+
+                <div class="sc-action-footer">
+
+                    <span>
+                        Manage Applications
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 VOLUNTEERS
+                 ================================================= -->
+
+            <a asp-controller="Volunteers"
+                   asp-action="Volunteers"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon volunteer-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+
+                </div>
+
+                <div class="sc-action-body">
+
+                    <span class="volunteer-card-label">
+                        VOLUNTEERS
+                    </span>
+
+                    <h3>
+                        Volunteers
+                    </h3>
+
+                    <p>
+                        View active volunteers, manage volunteer profiles,
+                        skills, experience and assigned responsibilities.
+                    </p>
+
+                </div>
+
+                <div class="sc-action-footer">
+
+                    <span>
+                        View Volunteers
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 AVAILABILITY & SHIFTS
+                 ================================================= -->
+
+            <a asp-controller="VolunteerAvailability"
+                   asp-action="AvailabilityAndShifts"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+
+                    <div class="sc-action-icon volunteer-icon">
+                        <i class="bi bi-calendar2-week-fill"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+
+                </div>
+
+                <div class="sc-action-body">
+
+                    <span class="volunteer-card-label">
+                        SCHEDULING
+                    </span>
+
+                    <h3>
+                        Availability & Shifts
+                    </h3>
+
+                    <p>
+                        Manage volunteer availability, schedules and
+                        shifts to ensure the right support is available.
+                    </p>
+
+                </div>
+
+                <div class="sc-action-footer">
+
+                    <span>
+                        Manage Schedules
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+            <a asp-controller="VolunteerTasks"
+                   asp-action="Tasks"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+                    <div class="volunteer-icon">
+                        <i class="bi bi-list-task"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+                </div>
+
+                <div class="sc-action-body">
+                    <span class="volunteer-card-label">VOLUNTEER OPERATIONS</span>
+                    <h3>Tasks & Responsibilities</h3>
+                    <p>
+                        Assign, manage and monitor volunteer tasks and responsibilities.
+                    </p>
+                </div>
+
+                <div class="sc-action-footer">
+                    <span>Manage Tasks</span>
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
+            </a>
+
+
+            <a asp-controller="VolunteerOnboarding"
+                   asp-action="Onboarding"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+                    <div class="volunteer-icon">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+                </div>
+
+                <div class="sc-action-body">
+                    <span class="volunteer-card-label">VOLUNTEER PROCESS</span>
+                    <h3>Onboarding</h3>
+                    <p>
+                        Manage volunteer onboarding, documents, screening, agreements and orientation.
+                    </p>
+                </div>
+
+                <div class="sc-action-footer">
+                    <span>Manage Onboarding</span>
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
+            </a>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const cards =
+                    document.querySelectorAll(
+                        ".volunteer-card"
+                    );
+
+                cards.forEach(
+                    function (card, index) {
+
+                        card.style.opacity = "0";
+
+                        card.style.transform =
+                            "translateY(25px)";
+
+                        setTimeout(
+                            function () {
+
+                                card.style.transition =
+                                    "opacity 0.5s ease, transform 0.5s ease";
+
+                                card.style.opacity =
+                                    "1";
+
+                                card.style.transform =
+                                    "translateY(0)";
+
+                            },
+                            index * 120
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    </script>
+
+}

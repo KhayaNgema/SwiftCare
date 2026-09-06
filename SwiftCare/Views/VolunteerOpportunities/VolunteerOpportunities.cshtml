@@ -1,0 +1,1214 @@
+﻿@using SwiftCare.Models
+@using System.ComponentModel.DataAnnotations
+
+@model IEnumerable<VolunteerOpportunity>
+
+@{
+    ViewData["Title"] = "Volunteer Opportunities";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+
+    // ============================================================
+    // CATEGORY DISPLAY NAME
+    // ============================================================
+
+    string GetCategoryDisplayName(VolunteerCategory? category)
+    {
+        if (!category.HasValue)
+        {
+            return "Not specified";
+        }
+
+        var memberInfo = category.Value
+            .GetType()
+            .GetMember(category.Value.ToString())
+            .FirstOrDefault();
+
+        var displayAttribute = memberInfo?
+            .GetCustomAttributes(
+                typeof(DisplayAttribute),
+                false
+            )
+            .Cast<DisplayAttribute>()
+            .FirstOrDefault();
+
+        return displayAttribute?.Name
+            ?? category.Value.ToString();
+    }
+
+
+    // ============================================================
+    // STATUS DISPLAY NAME
+    // ============================================================
+
+    string GetStatusDisplayName(
+        VolunteerOpportunityStatus status)
+    {
+        var memberInfo = status
+            .GetType()
+            .GetMember(status.ToString())
+            .FirstOrDefault();
+
+        var displayAttribute = memberInfo?
+            .GetCustomAttributes(
+                typeof(DisplayAttribute),
+                false
+            )
+            .Cast<DisplayAttribute>()
+            .FirstOrDefault();
+
+        return displayAttribute?.Name
+            ?? status.ToString();
+    }
+
+
+    // ============================================================
+    // STATUS CSS CLASS
+    // ============================================================
+
+    string GetStatusClass(
+        VolunteerOpportunityStatus status)
+    {
+        return status switch
+        {
+            VolunteerOpportunityStatus.Draft =>
+                "volunteer-opportunity-status-draft",
+
+            VolunteerOpportunityStatus.Published =>
+                "volunteer-opportunity-status-published",
+
+            VolunteerOpportunityStatus.Closed =>
+                "volunteer-opportunity-status-closed",
+
+            VolunteerOpportunityStatus.Cancelled =>
+                "volunteer-opportunity-status-cancelled",
+
+            _ =>
+                "volunteer-opportunity-status-default"
+        };
+    }
+
+
+    // ============================================================
+    // CATEGORY ICON
+    // ============================================================
+
+    string GetCategoryIcon(
+        VolunteerCategory? category)
+    {
+        return category switch
+        {
+            VolunteerCategory.ResidentSupport =>
+                "bi-person-heart",
+
+            VolunteerCategory.Activities =>
+                "bi-calendar-event",
+
+            VolunteerCategory.Companionship =>
+                "bi-people-fill",
+
+            VolunteerCategory.Events =>
+                "bi-stars",
+
+            VolunteerCategory.Administration =>
+                "bi-clipboard-data",
+
+            VolunteerCategory.Recreation =>
+                "bi-controller",
+
+            VolunteerCategory.FoodService =>
+                "bi-egg-fried",
+
+            VolunteerCategory.Gardening =>
+                "bi-flower1",
+
+            VolunteerCategory.Maintenance =>
+                "bi-tools",
+
+            VolunteerCategory.Fundraising =>
+                "bi-cash-coin",
+
+            VolunteerCategory.Transportation =>
+                "bi-car-front-fill",
+
+            VolunteerCategory.SocialSupport =>
+                "bi-chat-heart-fill",
+
+            _ =>
+                "bi-heart-pulse-fill"
+        };
+    }
+}
+
+
+
+<div class="sc-volunteer-opportunities-page">
+
+
+    <!-- =========================================================
+         PAGE HEADER
+         ========================================================= -->
+
+    <div class="sc-volunteer-opportunities-header">
+
+        <div class="sc-volunteer-opportunities-header-content">
+
+            <div>
+
+                <div class="sc-volunteer-opportunities-title-row">
+
+                    <div class="sc-volunteer-opportunities-title-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <h1 class="sc-volunteer-opportunities-title">
+                            Volunteer Opportunities
+                        </h1>
+
+                        <p class="sc-volunteer-opportunities-subtitle">
+                            Manage and monitor volunteer opportunities
+                            available within SwiftCare.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            @if (User.IsInRole("Administrator"))
+            {
+                <a asp-controller="VolunteerOpportunities"
+                       asp-action="NewOpportunity"
+                       class="sc-create-volunteer-opportunity-btn">
+
+                    <i class="bi bi-plus-circle-fill"></i>
+
+                    <span>
+                        Create Opportunity
+                    </span>
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         OPPORTUNITIES TABLE CARD
+         ========================================================= -->
+
+    <div class="sc-volunteer-opportunities-table-card">
+
+        <!-- =========================================================
+         TEMP DATA MESSAGE
+         ========================================================= -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div id="scTempDataMessage" class="sc-tempdata-message sc-tempdata-success">
+                <div class="sc-tempdata-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+
+                <div class="sc-tempdata-content">
+                    <strong>Success</strong>
+                    <span>@TempData["SuccessMessage"]</span>
+                </div>
+
+                <button type="button"
+                        class="sc-tempdata-close"
+                        onclick="closeTempDataMessage()"
+                        aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div id="scTempDataMessage" class="sc-tempdata-message sc-tempdata-error">
+                <div class="sc-tempdata-icon">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </div>
+
+                <div class="sc-tempdata-content">
+                    <strong>Error</strong>
+                    <span>@TempData["ErrorMessage"]</span>
+                </div>
+
+                <button type="button"
+                        class="sc-tempdata-close"
+                        onclick="closeTempDataMessage()"
+                        aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        }
+        <!-- =====================================================
+             TABLE HEADER
+             ===================================================== -->
+
+        <div class="sc-volunteer-opportunities-table-header">
+
+            <div>
+
+                <h2>
+                    <i class="bi bi-people-fill"></i>
+                    Opportunity Listings
+                </h2>
+
+                <span>
+
+                    @(Model?.Count() ?? 0)
+                    volunteer opportunit@(Model?.Count() == 1 ? "y" : "ies")
+                    registered
+
+                </span>
+
+            </div>
+
+
+            <!-- TOTAL OPPORTUNITIES -->
+
+            <div class="sc-volunteer-opportunities-total">
+
+                <div class="sc-volunteer-opportunities-total-icon">
+
+                    <i class="bi bi-briefcase-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Total Opportunities
+                    </span>
+
+                    <strong>
+                        @(Model?.Count() ?? 0)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             TABLE
+             ===================================================== -->
+
+        <div class="sc-volunteer-opportunities-table-wrapper">
+
+            <table class="sc-volunteer-opportunities-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Opportunity
+                        </th>
+
+                        <th>
+                            Category
+                        </th>
+
+                        <th>
+                            Location
+                        </th>
+
+                        <th>
+                            Schedule
+                        </th>
+
+                        <th>
+                            Deadline
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th class="sc-volunteer-opportunities-actions-header">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var opportunity in Model)
+                        {
+                            <tr>
+
+
+                                <!-- =================================================
+                                     OPPORTUNITY
+                                     ================================================= -->
+
+                                <td>
+
+                                    <div class="sc-volunteer-opportunity-item">
+
+                                        <div class="sc-volunteer-opportunity-item-icon">
+
+                                            <i class="bi @GetCategoryIcon(opportunity.Category)"></i>
+
+                                        </div>
+
+
+                                        <div class="sc-volunteer-opportunity-info">
+
+                                            <span class="sc-volunteer-opportunity-name">
+
+                                                @(string.IsNullOrWhiteSpace(opportunity.Title)
+                                                    ? "Untitled Opportunity"
+                                                    : opportunity.Title)
+
+                                            </span>
+
+
+                                            <span class="sc-volunteer-opportunity-id">
+
+                                                Opportunity #@opportunity.VolunteerOpportunityId
+
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     CATEGORY
+                                     ================================================= -->
+
+                                <td>
+
+                                    <div class="sc-volunteer-category">
+
+                                        <div class="sc-volunteer-category-icon">
+
+                                            <i class="bi @GetCategoryIcon(opportunity.Category)"></i>
+
+                                        </div>
+
+                                        <span>
+
+                                            @GetCategoryDisplayName(opportunity.Category)
+
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     LOCATION
+                                     ================================================= -->
+
+                                <td>
+
+                                    <div class="sc-volunteer-location">
+
+                                        <div class="sc-volunteer-location-icon">
+
+                                            <i class="bi bi-geo-alt-fill"></i>
+
+                                        </div>
+
+                                        <div class="sc-volunteer-location-info">
+
+                                            <strong>
+
+                                                @(string.IsNullOrWhiteSpace(opportunity.CityName)
+                                                    ? "Location not specified"
+                                                    : opportunity.CityName)
+
+                                            </strong>
+
+
+                                            @if (!string.IsNullOrWhiteSpace(opportunity.Province))
+                                            {
+                                                <span>
+                                                    @opportunity.Province
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     SCHEDULE
+                                     ================================================= -->
+
+                                <td>
+
+                                    <div class="sc-volunteer-schedule">
+
+                                        @if (opportunity.StartDate.HasValue)
+                                        {
+                                            <div class="sc-volunteer-date-row">
+
+                                                <i class="bi bi-calendar3"></i>
+
+                                                <span>
+
+                                                    @opportunity.StartDate.Value.ToString("dd MMM yyyy")
+
+                                                    @if (opportunity.EndDate.HasValue)
+                                                    {
+                                                        <text>
+                                                            -
+                                                            @opportunity.EndDate.Value.ToString("dd MMM yyyy")
+                                                        </text>
+                                                    }
+
+                                                </span>
+
+                                            </div>
+                                        }
+
+
+                                        @if (opportunity.StartTime.HasValue)
+                                        {
+                                            <div class="sc-volunteer-time-row">
+
+                                                <i class="bi bi-clock-fill"></i>
+
+                                                <span>
+
+                                                    @opportunity.StartTime.Value.ToString(@"hh\:mm")
+
+                                                    @if (opportunity.EndTime.HasValue)
+                                                    {
+                                                        <text>
+                                                            -
+                                                            @opportunity.EndTime.Value.ToString(@"hh\:mm")
+                                                        </text>
+                                                    }
+
+                                                </span>
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     DEADLINE
+                                     ================================================= -->
+
+                                <td>
+
+                                    <div class="sc-volunteer-deadline">
+
+                                        @if (opportunity.ApplicationDeadline.HasValue)
+                                        {
+                                            <i class="bi bi-calendar-x-fill"></i>
+
+                                            <span>
+
+                                                @(opportunity.ApplicationDeadline?.ToString("dd MMM yyyy") ?? "No deadline")
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="sc-volunteer-empty">
+
+                                                <i class="bi bi-dash-circle"></i>
+
+                                                No deadline
+
+                                            </span>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     STATUS
+                                     ================================================= -->
+
+                                <td>
+
+                                    <span class="sc-volunteer-opportunity-status @GetStatusClass(opportunity.Status)">
+
+                                        <span class="sc-volunteer-opportunity-status-dot"></span>
+
+                                        @GetStatusDisplayName(opportunity.Status)
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- =================================================
+                                     ACTIONS
+                                     ================================================= -->
+
+                                <td class="sc-volunteer-actions-cell">
+
+                                    <div class="sc-volunteer-action-menu">
+
+                                        <!-- THREE DOT BUTTON -->
+
+                                        <button type="button"
+                                                class="sc-volunteer-action-trigger"
+                                                aria-label="Open opportunity actions"
+                                                aria-expanded="false">
+
+                                            <i class="bi bi-three-dots-vertical"></i>
+
+                                        </button>
+
+
+                                        <!-- =================================================
+                                             FLOATING DROPDOWN
+                                             ================================================= -->
+
+                                        <div class="sc-volunteer-action-dropdown">
+
+
+                                            <!-- DRAFT -->
+                                            @if (opportunity.Status == VolunteerOpportunityStatus.Draft)
+                                            {
+                                                <a asp-controller="VolunteerOpportunities"
+                                                       asp-action="OpportunityDetails"
+                                                       asp-route-opportunityId="@opportunity.VolunteerOpportunityId"
+                                                       class="sc-volunteer-dropdown-item">
+
+                                                    <span class="sc-volunteer-dropdown-icon sc-action-review-icon">
+
+                                                        <i class="bi bi-search"></i>
+
+                                                    </span>
+
+                                                    <span>
+                                                        Review
+                                                    </span>
+
+                                                </a>
+                                            }
+
+
+                                            <!-- PUBLISHED -->
+                                            @if (opportunity.Status == VolunteerOpportunityStatus.Published)
+                                            {
+                                                <form asp-controller="VolunteerOpportunities"
+                                                      asp-action="Close"
+                                                      asp-route-opportunityId="@opportunity.VolunteerOpportunityId"
+                                                      method="post"
+                                                      class="sc-volunteer-dropdown-form"
+                                                      onsubmit="return confirm('Are you sure you want to close this opportunity?');">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <button type="submit"
+                                                            class="sc-volunteer-dropdown-item sc-volunteer-dropdown-button">
+
+                                                        <span class="sc-volunteer-dropdown-icon sc-action-close-icon">
+
+                                                            <i class="bi bi-lock-fill"></i>
+
+                                                        </span>
+
+                                                        <span>
+                                                            Close
+                                                        </span>
+
+                                                    </button>
+
+                                                </form>
+
+
+                                                <form asp-controller="VolunteerOpportunities"
+                                                      asp-action="Cancel"
+                                                      asp-route-opportunityId="@opportunity.VolunteerOpportunityId"
+                                                      method="post"
+                                                      class="sc-volunteer-dropdown-form"
+                                                      onsubmit="return confirm('Are you sure you want to cancel this opportunity?');">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <button type="submit"
+                                                            class="sc-volunteer-dropdown-item sc-volunteer-dropdown-button">
+
+                                                        <span class="sc-volunteer-dropdown-icon sc-action-cancel-icon">
+
+                                                            <i class="bi bi-x-circle-fill"></i>
+
+                                                        </span>
+
+                                                        <span>
+                                                            Cancel
+                                                        </span>
+
+                                                    </button>
+
+                                                </form>
+                                            }
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+
+                        <!-- =================================================
+                             EMPTY STATE
+                             ================================================= -->
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                <div class="sc-volunteer-opportunities-empty-state">
+
+                                    <div class="sc-volunteer-opportunities-empty-icon">
+
+                                        <i class="bi bi-heart-pulse"></i>
+
+                                    </div>
+
+
+                                    <h3>
+                                        No Volunteer Opportunities
+                                    </h3>
+
+
+                                    <p>
+                                        There are currently no volunteer
+                                        opportunities registered in SwiftCare.
+                                    </p>
+
+
+                                    @if (User.IsInRole("Administrator"))
+                                    {
+                                        <a asp-controller="VolunteerOpportunities"
+                                               asp-action="NewOpportunity"
+                                               class="sc-create-volunteer-opportunity-btn">
+
+                                            <i class="bi bi-plus-circle-fill"></i>
+
+                                            Create Opportunity
+
+                                        </a>
+                                    }
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // =========================================================
+            // ALL ACTION MENUS
+            // =========================================================
+
+            const actionMenus =
+                document.querySelectorAll(
+                    ".sc-volunteer-action-menu"
+                );
+
+
+            let activeDropdown = null;
+            let activeTrigger = null;
+
+
+            // =========================================================
+            // CLOSE ACTIVE MENU
+            // =========================================================
+
+            function closeActiveMenu() {
+
+                if (activeDropdown) {
+
+                    activeDropdown.classList.remove(
+                        "is-floating-open"
+                    );
+
+                    activeDropdown.style.left = "";
+                    activeDropdown.style.top = "";
+
+                }
+
+
+                if (activeTrigger) {
+
+                    activeTrigger.classList.remove(
+                        "is-active"
+                    );
+
+                    activeTrigger.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                }
+
+
+                activeDropdown = null;
+                activeTrigger = null;
+            }
+
+
+            // =========================================================
+            // POSITION DROPDOWN
+            // =========================================================
+
+            function positionDropdown(
+                trigger,
+                dropdown
+            ) {
+
+                const rect =
+                    trigger.getBoundingClientRect();
+
+
+                const dropdownWidth =
+                    dropdown.offsetWidth || 175;
+
+
+                const dropdownHeight =
+                    dropdown.offsetHeight || 250;
+
+
+                const spacing = 8;
+                const screenPadding = 10;
+
+
+                // -----------------------------------------
+                // DEFAULT: BELOW BUTTON
+                // -----------------------------------------
+
+                let left =
+                    rect.right - dropdownWidth;
+
+                let top =
+                    rect.bottom + spacing;
+
+
+                // -----------------------------------------
+                // KEEP INSIDE RIGHT SIDE
+                // -----------------------------------------
+
+                if (
+                    left + dropdownWidth >
+                    window.innerWidth - screenPadding
+                ) {
+
+                    left =
+                        window.innerWidth -
+                        dropdownWidth -
+                        screenPadding;
+
+                }
+
+
+                // -----------------------------------------
+                // KEEP INSIDE LEFT SIDE
+                // -----------------------------------------
+
+                if (left < screenPadding) {
+
+                    left =
+                        screenPadding;
+
+                }
+
+
+                // -----------------------------------------
+                // NOT ENOUGH SPACE BELOW
+                // SHOW ABOVE
+                // -----------------------------------------
+
+                if (
+                    top + dropdownHeight >
+                    window.innerHeight - screenPadding
+                ) {
+
+                    top =
+                        rect.top -
+                        dropdownHeight -
+                        spacing;
+
+                }
+
+
+                // -----------------------------------------
+                // KEEP INSIDE TOP
+                // -----------------------------------------
+
+                if (top < screenPadding) {
+
+                    top =
+                        screenPadding;
+
+                }
+
+
+                dropdown.style.left =
+                    `${left}px`;
+
+                dropdown.style.top =
+                    `${top}px`;
+
+            }
+
+
+            // =========================================================
+            // SETUP EACH ACTION MENU
+            // =========================================================
+
+            actionMenus.forEach(function (menu) {
+
+                const trigger =
+                    menu.querySelector(
+                        ".sc-volunteer-action-trigger"
+                    );
+
+
+                const dropdown =
+                    menu.querySelector(
+                        ".sc-volunteer-action-dropdown"
+                    );
+
+
+                if (!trigger || !dropdown) {
+                    return;
+                }
+
+
+                // =====================================================
+                // SAVE ORIGINAL PARENT
+                // =====================================================
+
+                const originalParent = dropdown.parentElement;
+
+
+                // =====================================================
+                // BUTTON CLICK
+                // =====================================================
+
+                trigger.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+
+                        // ---------------------------------------------
+                        // IF THIS MENU IS ALREADY OPEN
+                        // ---------------------------------------------
+
+                        if (
+                            activeTrigger === trigger
+                        ) {
+
+                            closeActiveMenu();
+
+                            return;
+                        }
+
+
+                        // ---------------------------------------------
+                        // CLOSE OTHER MENU
+                        // ---------------------------------------------
+
+                        closeActiveMenu();
+
+
+                        // ---------------------------------------------
+                        // MOVE DROPDOWN TO BODY
+                        // ---------------------------------------------
+
+                        if (
+                            dropdown.parentElement !==
+                            document.body
+                        ) {
+
+                            document.body.appendChild(
+                                dropdown
+                            );
+
+                        }
+
+
+                        // ---------------------------------------------
+                        // MAKE VISIBLE TEMPORARILY
+                        // SO HEIGHT CAN BE MEASURED
+                        // ---------------------------------------------
+
+                        dropdown.style.visibility =
+                            "hidden";
+
+                        dropdown.style.display =
+                            "block";
+
+
+                        dropdown.classList.add(
+                            "is-floating-open"
+                        );
+
+
+                        // ---------------------------------------------
+                        // POSITION
+                        // ---------------------------------------------
+
+                        positionDropdown(
+                            trigger,
+                            dropdown
+                        );
+
+
+                        // ---------------------------------------------
+                        // SHOW
+                        // ---------------------------------------------
+
+                        dropdown.style.visibility =
+                            "";
+
+
+                        trigger.classList.add(
+                            "is-active"
+                        );
+
+                        trigger.setAttribute(
+                            "aria-expanded",
+                            "true"
+                        );
+
+
+                        activeDropdown =
+                            dropdown;
+
+                        activeTrigger =
+                            trigger;
+
+                    }
+                );
+
+
+                // =====================================================
+                // PREVENT DROPDOWN CLICK FROM CLOSING IT
+                // =====================================================
+
+                dropdown.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.stopPropagation();
+
+                    }
+                );
+
+            });
+
+
+            // =========================================================
+            // CLICK OUTSIDE
+            // =========================================================
+
+            document.addEventListener(
+                "click",
+                function () {
+
+                    closeActiveMenu();
+
+                }
+            );
+
+
+            // =========================================================
+            // ESCAPE KEY
+            // =========================================================
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Escape"
+                    ) {
+
+                        closeActiveMenu();
+
+                    }
+
+                }
+            );
+
+
+            // =========================================================
+            // SCROLL
+            // Keep dropdown attached to its button.
+            // =========================================================
+
+            window.addEventListener(
+                "scroll",
+                function () {
+
+                    if (
+                        activeDropdown &&
+                        activeTrigger
+                    ) {
+
+                        positionDropdown(
+                            activeTrigger,
+                            activeDropdown
+                        );
+
+                    }
+
+                },
+                true
+            );
+
+
+            // =========================================================
+            // RESIZE
+            // =========================================================
+
+            window.addEventListener(
+                "resize",
+                function () {
+
+                    if (
+                        activeDropdown &&
+                        activeTrigger
+                    ) {
+
+                        positionDropdown(
+                            activeTrigger,
+                            activeDropdown
+                        );
+
+                    }
+
+                }
+            );
+
+
+            // =========================================================
+            // TABLE ROW ANIMATION
+            // =========================================================
+
+            const opportunityRows =
+                document.querySelectorAll(
+                    ".sc-volunteer-opportunities-table tbody tr"
+                );
+
+
+            opportunityRows.forEach(
+                function (row, index) {
+
+                    row.style.opacity = "0";
+
+                    row.style.transform =
+                        "translateY(10px)";
+
+
+                    setTimeout(
+                        function () {
+
+                            row.style.transition =
+                                "opacity 0.4s ease, transform 0.4s ease";
+
+                            row.style.opacity =
+                                "1";
+
+                            row.style.transform =
+                                "translateY(0)";
+
+                        },
+                        index * 60
+                    );
+
+                }
+            );
+
+        });
+
+            function closeTempDataMessage() {
+            const message = document.getElementById("scTempDataMessage");
+
+            if (!message) {
+                return;
+            }
+
+            message.classList.add("sc-tempdata-hiding");
+
+            setTimeout(() => {
+                message.remove();
+            }, 350);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const message = document.getElementById("scTempDataMessage");
+
+            if (!message) {
+                return;
+            }
+
+            // Automatically close after 4 seconds
+            setTimeout(() => {
+                closeTempDataMessage();
+            }, 4000);
+
+        });
+
+    </script>
+
+}

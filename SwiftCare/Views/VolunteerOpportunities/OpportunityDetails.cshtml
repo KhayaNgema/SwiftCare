@@ -1,0 +1,1044 @@
+﻿@using SwiftCare.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@model VolunteerOpportunity
+
+@{
+    ViewData["Title"] = "Opportunity Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    string GetDisplayName<T>(T value)
+    {
+        if (value == null)
+            return "Not specified";
+
+        var member = value.GetType().GetMember(value.ToString()!);
+
+        if (member.Length > 0)
+        {
+            var attribute = member[0]
+                .GetCustomAttribute<DisplayAttribute>();
+
+            if (attribute != null)
+                return attribute.GetName() ?? value.ToString()!;
+        }
+
+        return value.ToString()!;
+    }
+
+    string GetStatusClass(VolunteerOpportunityStatus status)
+    {
+        return status switch
+        {
+            VolunteerOpportunityStatus.Published => "sc-op-status-published",
+            VolunteerOpportunityStatus.Draft => "sc-op-status-draft",
+            VolunteerOpportunityStatus.Closed => "sc-op-status-closed",
+            VolunteerOpportunityStatus.Cancelled => "sc-op-status-cancelled",
+            _ => "sc-op-status-default"
+        };
+    }
+
+    string GetStatusIcon(VolunteerOpportunityStatus status)
+    {
+        return status switch
+        {
+            VolunteerOpportunityStatus.Published => "bi-check-circle-fill",
+            VolunteerOpportunityStatus.Draft => "bi-file-earmark-text-fill",
+            VolunteerOpportunityStatus.Closed => "bi-lock-fill",
+            VolunteerOpportunityStatus.Cancelled => "bi-x-circle-fill",
+            _ => "bi-circle-fill"
+        };
+    }
+
+    string GetCategoryIcon(VolunteerCategory? category)
+    {
+        return category switch
+        {
+            VolunteerCategory.ResidentSupport => "bi-heart-pulse-fill",
+            VolunteerCategory.Activities => "bi-controller",
+            VolunteerCategory.Companionship => "bi-people-fill",
+            VolunteerCategory.Events => "bi-calendar-event-fill",
+            VolunteerCategory.Administration => "bi-clipboard-data-fill",
+            VolunteerCategory.Recreation => "bi-trophy-fill",
+            VolunteerCategory.FoodService => "bi-cup-hot-fill",
+            VolunteerCategory.Gardening => "bi-flower1",
+            VolunteerCategory.Maintenance => "bi-tools",
+            VolunteerCategory.Fundraising => "bi-cash-coin",
+            VolunteerCategory.Transportation => "bi-car-front-fill",
+            VolunteerCategory.SocialSupport => "bi-chat-heart-fill",
+            _ => "bi-stars"
+        };
+    }
+
+    string GetAreaIcon(VolunteerArea? area)
+    {
+        return area switch
+        {
+            VolunteerArea.ResidentCare => "bi-person-heart",
+            VolunteerArea.ActivitiesAndRecreation => "bi-controller",
+            VolunteerArea.DiningServices => "bi-cup-straw",
+            VolunteerArea.Administration => "bi-building",
+            VolunteerArea.GardenAndOutdoor => "bi-tree-fill",
+            VolunteerArea.Events => "bi-calendar-event",
+            VolunteerArea.Transportation => "bi-car-front-fill",
+            VolunteerArea.CommunityOutreach => "bi-people-fill",
+            _ => "bi-grid"
+        };
+    }
+
+    var statusClass = GetStatusClass(Model.Status);
+    var statusIcon = GetStatusIcon(Model.Status);
+
+    var categoryName = GetDisplayName(Model.Category);
+    var areaName = GetDisplayName(Model.Area);
+
+    var startDate = Model.StartDate?.ToString("dd MMM yyyy");
+    var endDate = Model.EndDate?.ToString("dd MMM yyyy");
+
+    var startTime = Model.StartTime?.ToString(@"hh\:mm");
+    var endTime = Model.EndTime?.ToString(@"hh\:mm");
+
+    var deadline = Model.ApplicationDeadline?.ToString("dd MMM yyyy");
+
+    var isDeadlinePassed =
+        Model.ApplicationDeadline.HasValue &&
+        Model.ApplicationDeadline.Value.Date < DateTime.Today;
+
+    var availableSpaces =
+        (Model.VolunteersNeeded ?? 0) - Model.VolunteersAccepted;
+
+    if (availableSpaces < 0)
+    {
+        availableSpaces = 0;
+    }
+
+    var capacityPercent =
+        Model.VolunteersNeeded.HasValue &&
+        Model.VolunteersNeeded.Value > 0
+            ? Math.Min(
+                100,
+                (Model.VolunteersAccepted * 100) /
+                Model.VolunteersNeeded.Value)
+            : 0;
+
+    var posterPath = Model.PosterImage;
+
+    if (!string.IsNullOrWhiteSpace(posterPath) &&
+        !posterPath.StartsWith("/") &&
+        !posterPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+    {
+        posterPath = "/" + posterPath.TrimStart('~', '/');
+    }
+}
+
+<div class="sc-opportunity-details-page">
+
+  
+    <div class="sc-op-page-header">
+
+        <div>
+            <a asp-controller="VolunteerOpportunities"
+                   asp-action="VolunteerOpportunities"
+                   class="sc-op-back-btn">
+
+                <i class="bi bi-arrow-left"></i>
+
+                <span>Back to Opportunities</span>
+
+            </a>
+        </div>
+
+        <div class="sc-op-page-header-label">
+
+            <span class="sc-op-header-dot"></span>
+
+            Volunteer Opportunity
+
+        </div>
+
+    </div>
+
+    <!-- =========================================================
+         TEMP DATA MESSAGE
+         ========================================================= -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div id="scTempDataMessage" class="sc-tempdata-message sc-tempdata-success">
+            <div class="sc-tempdata-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+
+            <div class="sc-tempdata-content">
+                <strong>Success</strong>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+
+            <button type="button"
+                    class="sc-tempdata-close"
+                    onclick="closeTempDataMessage()"
+                    aria-label="Close">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div id="scTempDataMessage" class="sc-tempdata-message sc-tempdata-error">
+            <div class="sc-tempdata-icon">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </div>
+
+            <div class="sc-tempdata-content">
+                <strong>Error</strong>
+                <span>@TempData["ErrorMessage"]</span>
+            </div>
+
+            <button type="button"
+                    class="sc-tempdata-close"
+                    onclick="closeTempDataMessage()"
+                    aria-label="Close">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+
+    <!-- =========================================================
+         HERO
+         ========================================================= -->
+
+    <section class="sc-op-hero">
+
+        <div class="sc-op-hero-glow sc-op-hero-glow-one"></div>
+        <div class="sc-op-hero-glow sc-op-hero-glow-two"></div>
+
+        <div class="sc-op-hero-pattern"></div>
+
+        <div class="sc-op-hero-content">
+
+            <div class="sc-op-hero-top">
+
+                <div class="sc-op-hero-icon">
+
+                    <i class="bi @GetCategoryIcon(Model.Category)"></i>
+
+                </div>
+
+                <div class="sc-op-hero-badges">
+
+                    <span class="sc-op-category-badge">
+
+                        <i class="bi bi-tag-fill"></i>
+
+                        @categoryName
+
+                    </span>
+
+                    <span class="sc-op-status-badge @statusClass">
+
+                        <i class="bi @statusIcon"></i>
+
+                        @GetDisplayName(Model.Status)
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <h1>
+                @Model.Title
+            </h1>
+
+
+            <p class="sc-op-hero-description">
+                @Model.Description
+            </p>
+
+
+            <div class="sc-op-hero-meta">
+
+                <div class="sc-op-meta-item">
+
+                    <div class="sc-op-meta-icon">
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </div>
+
+                    <div>
+                        <small>Location</small>
+
+                        <strong>
+                            @(string.IsNullOrWhiteSpace(Model.CityName)
+                                ? "Location not specified"
+                                : Model.CityName)
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-meta-item">
+
+                    <div class="sc-op-meta-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div>
+                        <small>Volunteers Needed</small>
+
+                        <strong>
+                            @(Model.VolunteersNeeded?.ToString() ?? "Not specified")
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-meta-item">
+
+                    <div class="sc-op-meta-icon">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+
+                    <div>
+                        <small>Application Deadline</small>
+
+                        <strong>
+                            @(deadline ?? "No deadline")
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
+         POSTER
+         ========================================================= -->
+    @if (!string.IsNullOrWhiteSpace(posterPath))
+    {
+        <section class="sc-op-poster-card">
+
+            <div class="sc-op-poster-header">
+
+                <div class="sc-op-section-heading">
+
+                    <div class="sc-op-section-icon">
+                        <i class="bi bi-image-fill"></i>
+                    </div>
+
+                    <div>
+                        <h2>Opportunity Poster</h2>
+                        <p>Visual information about this volunteer opportunity.</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="sc-op-poster-container">
+
+                <img src="@posterPath"
+                     alt="@Model.Title poster"
+                     class="sc-op-poster-image" />
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- =========================================================
+         MAIN CONTENT
+         ========================================================= -->
+
+    <div class="sc-op-content-grid">
+
+
+        <!-- =====================================================
+             MAIN COLUMN
+             ===================================================== -->
+
+        <main class="sc-op-main-column">
+
+
+            <!-- =================================================
+                 OVERVIEW
+                 ================================================= -->
+
+            <section class="sc-op-glass-card">
+
+                <div class="sc-op-card-header">
+
+                    <div class="sc-op-section-heading">
+
+                        <div class="sc-op-section-icon">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+
+                        <div>
+                            <h2>Opportunity Overview</h2>
+                            <p>Important information about this opportunity.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-overview-grid">
+
+                    <div class="sc-op-info-box">
+
+                        <div class="sc-op-info-icon">
+                            <i class="bi @GetCategoryIcon(Model.Category)"></i>
+                        </div>
+
+                        <div>
+                            <span>Category</span>
+                            <strong>@categoryName</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-info-box">
+
+                        <div class="sc-op-info-icon">
+                            <i class="bi @GetAreaIcon(Model.Area)"></i>
+                        </div>
+
+                        <div>
+                            <span>Volunteer Area</span>
+                            <strong>@areaName</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-info-box">
+
+                        <div class="sc-op-info-icon">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+
+                        <div>
+                            <span>City</span>
+
+                            <strong>
+                                @(Model.CityName ?? "Not specified")
+                            </strong>
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Province))
+                            {
+                                <small>@Model.Province</small>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-info-box">
+
+                        <div class="sc-op-info-icon">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+
+                        <div>
+                            <span>Minimum Age</span>
+
+                            <strong>
+                                @(Model.MinimumAge?.ToString() ?? "No minimum")
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 SCHEDULE
+                 ================================================= -->
+
+            <section class="sc-op-glass-card">
+
+                <div class="sc-op-card-header">
+
+                    <div class="sc-op-section-heading">
+
+                        <div class="sc-op-section-icon">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+
+                        <div>
+                            <h2>Schedule</h2>
+                            <p>When volunteers will participate.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-schedule-grid">
+
+                    <div class="sc-op-schedule-box">
+
+                        <div class="sc-op-schedule-icon">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </div>
+
+                        <div>
+                            <span>Start Date</span>
+                            <strong>@(startDate ?? "Not specified")</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-schedule-box">
+
+                        <div class="sc-op-schedule-icon">
+                            <i class="bi bi-calendar-check-fill"></i>
+                        </div>
+
+                        <div>
+                            <span>End Date</span>
+                            <strong>@(endDate ?? "Not specified")</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-schedule-box">
+
+                        <div class="sc-op-schedule-icon">
+                            <i class="bi bi-clock-fill"></i>
+                        </div>
+
+                        <div>
+                            <span>Start Time</span>
+                            <strong>@(startTime ?? "Not specified")</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-schedule-box">
+
+                        <div class="sc-op-schedule-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+
+                        <div>
+                            <span>End Time</span>
+                            <strong>@(endTime ?? "Not specified")</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 REQUIREMENTS
+                 ================================================= -->
+            @if (Model.Requirements != null && Model.Requirements.Any())
+            {
+                <section class="sc-op-glass-card">
+
+                    <div class="sc-op-card-header">
+
+                        <div class="sc-op-section-heading">
+
+                            <div class="sc-op-section-icon">
+                                <i class="bi bi-list-check"></i>
+                            </div>
+
+                            <div>
+                                <h2>Requirements</h2>
+                                <p>What volunteers should be able to provide.</p>
+                            </div>
+
+                        </div>
+
+                        <span class="sc-op-count">
+                            @Model.Requirements.Count
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-op-list">
+
+                        @foreach (var requirement in Model.Requirements)
+                        {
+                            <div class="sc-op-list-item">
+
+                                <div class="sc-op-list-check">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+
+                                <span>
+                                    @requirement.Description
+                                </span>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </section>
+            }
+
+
+            <!-- =================================================
+                 RESPONSIBILITIES
+                 ================================================= -->
+            @if (Model.Responsibilities != null && Model.Responsibilities.Any())
+            {
+                <section class="sc-op-glass-card">
+
+                    <div class="sc-op-card-header">
+
+                        <div class="sc-op-section-heading">
+
+                            <div class="sc-op-section-icon">
+                                <i class="bi bi-clipboard-check-fill"></i>
+                            </div>
+
+                            <div>
+                                <h2>Responsibilities</h2>
+                                <p>What volunteers may be expected to do.</p>
+                            </div>
+
+                        </div>
+
+                        <span class="sc-op-count">
+                            @Model.Responsibilities.Count
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-op-list">
+
+                        @foreach (var responsibility in Model.Responsibilities)
+                        {
+                            <div class="sc-op-list-item">
+
+                                <div class="sc-op-list-check">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+
+                                <span>
+                                    @responsibility.Description
+                                </span>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </section>
+            }
+
+
+            <!-- =================================================
+                 REQUIRED SKILLS
+                 ================================================= -->
+            @if (Model.RequiredSkills != null && Model.RequiredSkills.Any())
+            {
+                <section class="sc-op-glass-card">
+
+                    <div class="sc-op-card-header">
+
+                        <div class="sc-op-section-heading">
+
+                            <div class="sc-op-section-icon">
+                                <i class="bi bi-stars"></i>
+                            </div>
+
+                            <div>
+                                <h2>Required Skills</h2>
+                                <p>Skills that may be useful for this opportunity.</p>
+                            </div>
+
+                        </div>
+
+                        <span class="sc-op-count">
+                            @Model.RequiredSkills.Count
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-op-skills">
+
+                        @foreach (var skill in Model.RequiredSkills)
+                        {
+                            <span class="sc-op-skill">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                @skill.Skill
+
+                            </span>
+                        }
+
+                    </div>
+
+                </section>
+            }
+
+        </main>
+
+
+        <!-- =====================================================
+             SIDEBAR
+             ===================================================== -->
+
+        <aside class="sc-op-sidebar">
+
+
+            <!-- =================================================
+                 CAPACITY
+                 ================================================= -->
+
+            <section class="sc-op-glass-card sc-op-capacity-card">
+
+                <div class="sc-op-card-header">
+
+                    <div class="sc-op-section-heading">
+
+                        <div class="sc-op-section-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+
+                        <div>
+                            <h2>Volunteer Capacity</h2>
+                            <p>Current opportunity capacity.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-capacity-body">
+
+                    <div class="sc-op-capacity-number">
+
+                        <div>
+                            <strong>@Model.VolunteersAccepted</strong>
+                            <span>accepted</span>
+                        </div>
+
+                        <div class="sc-op-capacity-total">
+                            / @(Model.VolunteersNeeded ?? 0)
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-progress">
+
+                        <div class="sc-op-progress-bar"
+                             style="width:@capacityPercent%">
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-op-capacity-footer">
+
+                        <span>
+                            <i class="bi bi-person-check-fill"></i>
+                            @Model.VolunteersAccepted accepted
+                        </span>
+
+                        <span>
+                            @availableSpaces spaces left
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 DEADLINE
+                 ================================================= -->
+
+            <section class="sc-op-glass-card sc-op-deadline-card">
+
+                <div class="sc-op-deadline-icon">
+
+                    <i class="bi bi-hourglass-split"></i>
+
+                </div>
+
+                <div class="sc-op-deadline-content">
+
+                    <span>Application Deadline</span>
+
+                    <strong>
+                        @(deadline ?? "No deadline")
+                    </strong>
+
+                    @if (isDeadlinePassed)
+                    {
+                        <small class="sc-op-deadline-expired">
+
+                            <i class="bi bi-exclamation-circle-fill"></i>
+
+                            Deadline has passed
+
+                        </small>
+                    }
+                    else if (Model.ApplicationDeadline.HasValue)
+                    {
+                        <small class="sc-op-deadline-open">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                            Applications are currently open
+
+                        </small>
+                    }
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 LOCATION
+                 ================================================= -->
+
+            <section class="sc-op-glass-card">
+
+                <div class="sc-op-card-header">
+
+                    <div class="sc-op-section-heading">
+
+                        <div class="sc-op-section-icon">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+
+                        <div>
+                            <h2>Location</h2>
+                            <p>Where this opportunity takes place.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-location">
+
+                    <div class="sc-op-location-icon">
+                        <i class="bi bi-pin-map-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            @(Model.CityName ?? "Location not specified")
+                        </strong>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Province))
+                        {
+                            <span>
+                                @Model.Province
+                            </span>
+                        }
+
+                        <small>
+                            South Africa
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 DETAILS
+                 ================================================= -->
+
+            <section class="sc-op-glass-card">
+
+                <div class="sc-op-card-header">
+
+                    <div class="sc-op-section-heading">
+
+                        <div class="sc-op-section-icon">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+
+                        <div>
+                            <h2>Details</h2>
+                            <p>Opportunity information.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sc-op-detail-list">
+
+                    <div class="sc-op-detail-row">
+
+                        <span>
+                            <i class="bi bi-hash"></i>
+                            Opportunity ID
+                        </span>
+
+                        <strong>
+                            #@Model.VolunteerOpportunityId
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sc-op-detail-row">
+
+                        <span>
+                            <i class="bi bi-people"></i>
+                            Volunteers Needed
+                        </span>
+
+                        <strong>
+                            @(Model.VolunteersNeeded?.ToString() ?? "—")
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sc-op-detail-row">
+
+                        <span>
+                            <i class="bi bi-person-plus"></i>
+                            Accepted
+                        </span>
+
+                        <strong>
+                            @Model.VolunteersAccepted
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sc-op-detail-row">
+
+                        <span>
+                            <i class="bi bi-calendar-plus"></i>
+                            Created
+                        </span>
+
+                        <strong>
+                            @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+     ACTIONS
+     ================================================= -->
+            <section class="sc-op-actions-card">
+
+                @if (Model.Status == VolunteerOpportunityStatus.Draft)
+                {
+                    <form asp-controller="VolunteerOpportunities"
+                          asp-action="Publish"
+                          asp-route-opportunityId="@Model.VolunteerOpportunityId"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <button type="submit" class="sc-op-action-primary">
+                            <i class="bi bi-cloud-upload"></i>
+                            <span>Publish Opportunity</span>
+                        </button>
+
+                    </form>
+                }
+                else if (Model.Status == VolunteerOpportunityStatus.Published)
+                {
+                    <form asp-controller="VolunteerOpportunities"
+                          asp-action="Close"
+                          asp-route-opportunityId="@Model.VolunteerOpportunityId"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <button type="submit" class="sc-op-action-secondary">
+                            <i class="bi bi-lock"></i>
+                            <span>Close Opportunity</span>
+                        </button>
+
+                    </form>
+                }
+
+            </section>
+        </aside>
+
+    </div>
+
+</div>
+
+<script>
+    function closeTempDataMessage() {
+        const message = document.getElementById("scTempDataMessage");
+
+        if (!message) {
+            return;
+        }
+
+        message.classList.add("sc-tempdata-hiding");
+
+        setTimeout(() => {
+            message.remove();
+        }, 350);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const message = document.getElementById("scTempDataMessage");
+
+        if (!message) {
+            return;
+        }
+
+        // Automatically close after 4 seconds
+        setTimeout(() => {
+            closeTempDataMessage();
+        }, 4000);
+
+    });
+</script>

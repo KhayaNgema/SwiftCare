@@ -131,6 +131,12 @@ namespace SwiftCare.Models
         Completed,
 
         [Display(Name = "Rejected")]
-        Rejected
+        Rejected,
+
+        [Display(Name = "Driver Approved")]
+        Driver_Approved,
+
+        [Display(Name = "Driver Rejected")]
+        Driver_Rejected
     }
 }

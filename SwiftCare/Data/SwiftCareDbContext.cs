@@ -87,11 +87,53 @@ namespace SwiftCare.Data
                 .HasForeignKey<PackageOrder>(p => p.OrderItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+            modelBuilder.Entity<VolunteerApplication>()
+    .HasIndex(a => new
+    {
+        a.ApplicantId,
+        a.VolunteerOpportunityId
+    })
+    .IsUnique();
+
         }
+
         public DbSet<DailyMaintenance> DailyMaintenance { get; set; }
         public DbSet<DailyCare> DailyCare { get; set; }
         public DbSet<PackageOrder> PackageOrders { get; set; }
+
+        public DbSet<SwiftCare.Models.City> Cities { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerRequiredSkill> VolunteerRequiredSkills { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerRequirement> VolunteerRequirements { get; set; }
+
         public DbSet<SwiftCare.Models.Administrator> Administrators { get; set; } = default!;
+        public DbSet<SwiftCare.Models.VolunteerOpportunity> VolunteerOpportunities { get; set; } = default!;
+
+        public DbSet<SwiftCare.Models.Volunteer> Volunteers { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerResponsibility> VolunteerResponsibilities { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerApplication> VolunteerApplications { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerExperience> VolunteerExperiences { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerSkill> VolunteerSkills { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerAvailability> VolunteerAvailabilities { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerTask> VolunteerTasks { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding> VolunteerOnboardings { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerDocument> VolunteerDocuments { get; set; }
+
+        public DbSet<VolunteerAgreement> VolunteerAgreements { get; set; }
+
+        public DbSet<VolunteerScreening> VolunteerScreenings { get; set; }
+
+        public DbSet<VolunteerOrientation> VolunteerOrientations { get; set; }
         public DbSet<SwiftCare.Models.TransportRequest> TransportRequests { get; set; } = default!;
         public DbSet<SwiftCare.Models.Doctor> Doctors { get; set; } = default!;
         public DbSet<SwiftCare.Models.Nurse> Nurses{ get; set; } = default!;

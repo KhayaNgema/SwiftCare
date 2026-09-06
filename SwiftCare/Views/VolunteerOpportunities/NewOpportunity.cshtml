@@ -1,0 +1,2038 @@
+﻿@model SwiftCare.ViewModels.NewOpportunityViewModel
+
+@{
+    ViewData["Title"] = "New Volunteer Opportunity";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="sc-new-opportunity">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <div class="op-header">
+
+        <div class="op-header-left">
+
+            <a asp-controller="VolunteerOpportunities"
+                   asp-action="Volunteers"
+                   class="op-back"
+                   title="Back to Volunteer Management">
+
+                <i class="bi bi-arrow-left"></i>
+
+            </a>
+
+            <div class="op-header-content">
+
+                <div class="op-badge">
+
+                    <i class="bi bi-plus-circle"></i>
+
+                    Volunteer Opportunities
+
+                </div>
+
+                <h1>
+                    Create New Opportunity
+                </h1>
+
+                <p class="op-header-description">
+                    Create a volunteer opportunity and provide applicants
+                    with everything they need to know before applying.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FORM
+         ===================================================== -->
+
+    <form asp-controller="VolunteerOpportunities"
+          asp-action="NewOpportunity"
+          method="post"
+          enctype="multipart/form-data">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="field-validation-error mb-3">
+        </div>
+
+
+        <div class="op-layout">
+
+
+            <!-- =================================================
+                 MAIN
+                 ================================================= -->
+
+            <div class="op-main">
+
+
+                <!-- =============================================
+                     OPPORTUNITY INFORMATION
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Opportunity Information
+                            </h2>
+
+                            <span>
+                                Tell volunteers what this opportunity is about.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="op-form-grid">
+
+
+                        <!-- TITLE -->
+
+                        <div class="op-form-group full">
+
+                            <label asp-for="Title"
+                                   class="op-label">
+
+                                Opportunity Title
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="Title"
+                                   class="op-input"
+                                   placeholder="e.g. Resident Companion Volunteer" />
+
+                            <span asp-validation-for="Title"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- DESCRIPTION -->
+
+                        <div class="op-form-group full">
+
+                            <label asp-for="Description"
+                                   class="op-label">
+
+                                Description
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="op-textarea"
+                                      placeholder="Describe the opportunity, what volunteers will do and what they can expect..."></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- CATEGORY -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="Category"
+                                   class="op-label">
+
+                                Category
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <select asp-for="Category"
+                                    asp-items="Html.GetEnumSelectList<SwiftCare.Models.VolunteerCategory>()"
+                                    class="op-select">
+
+                                <option value="">
+                                    Select category
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="Category"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- AREA -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="Area"
+                                   class="op-label">
+
+                                Volunteer Area
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <select asp-for="Area"
+                                    asp-items="Html.GetEnumSelectList<SwiftCare.Models.VolunteerArea>()"
+                                    class="op-select">
+
+                                <option value="">
+                                    Select area
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="Area"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             CITY
+                             ================================================= -->
+
+                        <div class="op-form-group full">
+
+                            <label asp-for="CityName"
+                                   class="op-label">
+
+                                City
+                                <span class="op-required">*</span>
+
+                            </label>
+
+
+                            <div class="city-search-wrapper">
+
+
+                                <!-- SEARCH INPUT -->
+
+                                <div class="city-search-input-wrapper">
+
+                                    <i class="bi bi-search city-search-icon"></i>
+
+                                    <input type="text"
+                                           id="citySearchInput"
+                                           class="op-input city-search-input"
+                                           placeholder="Search South African city..."
+                                           autocomplete="off" />
+
+                                    <span id="cityLoading"
+                                          class="city-loading">
+
+                                        <i class="bi bi-arrow-repeat"></i>
+
+                                    </span>
+
+                                </div>
+
+
+                                <!-- RESULTS -->
+
+                                <div id="cityResults"
+                                     class="city-results">
+                                </div>
+
+
+                                <!-- SELECTED CITY -->
+
+                                <div id="selectedCity"
+                                     class="selected-city">
+
+                                    <div class="selected-city-icon">
+
+                                        <i class="bi bi-geo-alt-fill"></i>
+
+                                    </div>
+
+                                    <div class="selected-city-content">
+
+                                        <strong id="selectedCityName">
+                                        </strong>
+
+                                        <span id="selectedCityProvince">
+                                        </span>
+
+                                    </div>
+
+
+                                    <button type="button"
+                                            id="clearCity"
+                                            class="clear-city"
+                                            title="Clear selected city">
+
+                                        <i class="bi bi-x"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 HIDDEN MODEL VALUES
+                                 ================================================= -->
+
+                            <input asp-for="CityName"
+                                   type="hidden"
+                                   id="cityName" />
+
+                            <input asp-for="GeoNameId"
+                                   type="hidden"
+                                   id="geoNameId" />
+
+                            <input asp-for="Province"
+                                   type="hidden"
+                                   id="cityProvince" />
+
+
+                            <span asp-validation-for="CityName"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     SCHEDULE
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Schedule
+                            </h2>
+
+                            <span>
+                                Set when volunteers will be needed.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="op-form-grid">
+
+
+                        <!-- START DATE -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="StartDate"
+                                   class="op-label">
+
+                                Start Date
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="StartDate"
+                                   type="date"
+                                   class="op-input" />
+
+                            <span asp-validation-for="StartDate"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- END DATE -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="EndDate"
+                                   class="op-label">
+
+                                End Date
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="EndDate"
+                                   type="date"
+                                   class="op-input" />
+
+                            <span asp-validation-for="EndDate"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- START TIME -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="StartTime"
+                                   class="op-label">
+
+                                Start Time
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="StartTime"
+                                   type="time"
+                                   class="op-input" />
+
+                            <span asp-validation-for="StartTime"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- END TIME -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="EndTime"
+                                   class="op-label">
+
+                                End Time
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="EndTime"
+                                   type="time"
+                                   class="op-input" />
+
+                            <span asp-validation-for="EndTime"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- VOLUNTEERS -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="VolunteersNeeded"
+                                   class="op-label">
+
+                                Volunteers Needed
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="VolunteersNeeded"
+                                   type="number"
+                                   min="1"
+                                   max="1000"
+                                   class="op-input"
+                                   placeholder="e.g. 10" />
+
+                            <span asp-validation-for="VolunteersNeeded"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- AGE -->
+
+                        <div class="op-form-group">
+
+                            <label asp-for="MinimumAge"
+                                   class="op-label">
+
+                                Minimum Age
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="MinimumAge"
+                                   type="number"
+                                   min="14"
+                                   max="100"
+                                   class="op-input"
+                                   placeholder="e.g. 18" />
+
+                            <span asp-validation-for="MinimumAge"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+
+                        <!-- DEADLINE -->
+
+                        <div class="op-form-group full">
+
+                            <label asp-for="ApplicationDeadline"
+                                   class="op-label">
+
+                                Application Deadline
+                                <span class="op-required">*</span>
+
+                            </label>
+
+                            <input asp-for="ApplicationDeadline"
+                                   type="date"
+                                   class="op-input" />
+
+                            <span asp-validation-for="ApplicationDeadline"
+                                  class="field-validation-error">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     REQUIREMENTS
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-check2-square"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Requirements
+                            </h2>
+
+                            <span>
+                                What applicants should have before applying.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="requirements-list"
+                         class="dynamic-list">
+
+                        <div class="dynamic-row">
+
+                            <input type="text"
+                                   name="Requirements"
+                                   class="op-input"
+                                   placeholder="e.g. Must be comfortable interacting with elderly residents" />
+
+                            <button type="button"
+                                    class="remove-item"
+                                    onclick="removeDynamicItem(this)"
+                                    title="Remove">
+
+                                <i class="bi bi-trash3"></i>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="add-item"
+                            onclick="addRequirement()">
+
+                        <i class="bi bi-plus"></i>
+
+                        Add Requirement
+
+                    </button>
+
+                </div>
+
+
+                <!-- =============================================
+                     RESPONSIBILITIES
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-list-check"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Responsibilities
+                            </h2>
+
+                            <span>
+                                What the volunteer will be expected to do.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="responsibilities-list"
+                         class="dynamic-list">
+
+                        <div class="dynamic-row">
+
+                            <input type="text"
+                                   name="Responsibilities"
+                                   class="op-input"
+                                   placeholder="e.g. Spend time talking with residents and provide companionship" />
+
+                            <button type="button"
+                                    class="remove-item"
+                                    onclick="removeDynamicItem(this)"
+                                    title="Remove">
+
+                                <i class="bi bi-trash3"></i>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="add-item"
+                            onclick="addResponsibility()">
+
+                        <i class="bi bi-plus"></i>
+
+                        Add Responsibility
+
+                    </button>
+
+                </div>
+
+
+                <!-- =============================================
+                     REQUIRED SKILLS
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-stars"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Required Skills
+                            </h2>
+
+                            <span>
+                                Skills that would help applicants succeed.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="skills-list"
+                         class="dynamic-list">
+
+                        <div class="dynamic-row">
+
+                            <input type="text"
+                                   name="RequiredSkills"
+                                   class="op-input"
+                                   placeholder="e.g. Communication" />
+
+                            <button type="button"
+                                    class="remove-item"
+                                    onclick="removeDynamicItem(this)"
+                                    title="Remove">
+
+                                <i class="bi bi-trash3"></i>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="add-item"
+                            onclick="addSkill()">
+
+                        <i class="bi bi-plus"></i>
+
+                        Add Skill
+
+                    </button>
+
+                </div>
+
+
+                <!-- =============================================
+                     ACTIONS
+                     ============================================= -->
+
+                <div class="op-actions">
+
+                    <a asp-controller="VolunteerOpportunities"
+                           asp-action="Volunteers"
+                           class="op-btn op-btn-cancel">
+
+                        <i class="bi bi-x-lg"></i>
+
+                        Cancel
+
+                    </a>
+
+
+                    <button type="submit"
+                            class="op-btn op-btn-submit">
+
+                        <i class="bi bi-check2-circle"></i>
+
+                        Create Opportunity
+
+                    </button>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 SIDEBAR
+                 ================================================= -->
+
+            <aside class="op-sidebar">
+
+
+                <!-- =============================================
+                     POSTER
+                     ============================================= -->
+
+                <div class="op-card poster-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon">
+                            <i class="bi bi-image"></i>
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Opportunity Poster
+                            </h2>
+
+                            <span>
+                                Add an image to attract volunteers.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="posterUpload"
+                         class="poster-upload">
+
+
+                        <div class="poster-upload-content">
+
+                            <div class="poster-upload-icon">
+
+                                <i class="bi bi-cloud-arrow-up"></i>
+
+                            </div>
+
+
+                            <h3>
+                                Upload Opportunity Poster
+                            </h3>
+
+
+                            <p>
+                                Drag & drop your image here
+                            </p>
+
+                            <p>
+                                or <strong>browse files</strong>
+                            </p>
+
+
+                            <p class="poster-formats">
+                                JPG, JPEG, PNG or WEBP
+                            </p>
+
+                        </div>
+
+
+                        <input asp-for="PosterImage"
+                               id="posterInput"
+                               class="poster-input"
+                               type="file"
+                               accept="image/png,image/jpeg,image/jpg,image/webp" />
+
+
+                        <!-- LIVE PREVIEW -->
+
+                        <div id="posterPreview"
+                             class="poster-preview">
+
+                            <img id="posterPreviewImage"
+                                 src=""
+                                 alt="Opportunity poster preview" />
+
+
+                            <div class="poster-preview-overlay">
+
+                                <span id="posterFileName"
+                                      class="poster-file-name">
+                                </span>
+
+
+                                <span class="poster-change">
+
+                                    <i class="bi bi-arrow-repeat"></i>
+
+                                    Change
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="poster-help">
+
+                        <i class="bi bi-info-circle"></i>
+
+                        <span>
+                            Use a clear image that represents this
+                            volunteer opportunity.
+                        </span>
+
+                    </div>
+
+
+                    <span asp-validation-for="PosterImage"
+                          class="field-validation-error">
+                    </span>
+
+                </div>
+
+
+                <!-- =============================================
+                     BEFORE PUBLISHING
+                     ============================================= -->
+
+                <div class="op-card">
+
+                    <div class="op-info">
+
+                        <div class="op-info-title">
+
+                            <i class="bi bi-lightbulb"></i>
+
+                            Before you publish
+
+                        </div>
+
+
+                        <ul>
+
+                            <li>
+                                Give the opportunity a clear and meaningful title.
+                            </li>
+
+                            <li>
+                                Explain exactly what volunteers will be doing.
+                            </li>
+
+                            <li>
+                                Add realistic requirements and responsibilities.
+                            </li>
+
+                            <li>
+                                Make sure the application deadline is correct.
+                            </li>
+
+                            <li>
+                                Use a professional poster representing SwiftCare.
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+
+            </aside>
+
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     PAGE SCRIPTS
+     ========================================================= -->
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            /* =====================================================
+               POSTER
+               ===================================================== */
+
+            const posterInput =
+                document.getElementById("posterInput");
+
+            const posterUpload =
+                document.getElementById("posterUpload");
+
+            const posterPreview =
+                document.getElementById("posterPreview");
+
+            const posterPreviewImage =
+                document.getElementById("posterPreviewImage");
+
+            const posterFileName =
+                document.getElementById("posterFileName");
+
+
+            function showPosterPreview(file) {
+
+                if (!file) {
+                    return;
+                }
+
+                if (!file.type.startsWith("image/")) {
+
+                    alert("Please select a valid image file.");
+
+                    if (posterInput) {
+                        posterInput.value = "";
+                    }
+
+                    if (posterPreview) {
+                        posterPreview.classList.remove("active");
+                    }
+
+                    return;
+                }
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        if (posterPreviewImage) {
+                            posterPreviewImage.src =
+                                event.target.result;
+                        }
+
+                        if (posterFileName) {
+                            posterFileName.textContent =
+                                file.name;
+                        }
+
+                        if (posterPreview) {
+                            posterPreview.classList.add(
+                                "active"
+                            );
+                        }
+                    };
+
+
+                reader.readAsDataURL(file);
+            }
+
+
+            if (posterInput) {
+
+                posterInput.addEventListener(
+                    "change",
+                    function () {
+
+                        const file =
+                            this.files &&
+                            this.files[0];
+
+                        showPosterPreview(file);
+                    }
+                );
+            }
+
+
+            if (posterUpload) {
+
+                posterUpload.addEventListener(
+                    "dragover",
+                    function (event) {
+
+                        event.preventDefault();
+
+                        posterUpload.classList.add(
+                            "dragover"
+                        );
+                    }
+                );
+
+
+                posterUpload.addEventListener(
+                    "dragleave",
+                    function () {
+
+                        posterUpload.classList.remove(
+                            "dragover"
+                        );
+                    }
+                );
+
+
+                posterUpload.addEventListener(
+                    "drop",
+                    function (event) {
+
+                        event.preventDefault();
+
+                        posterUpload.classList.remove(
+                            "dragover"
+                        );
+
+
+                        const files =
+                            event.dataTransfer.files;
+
+
+                        if (!files ||
+                            files.length === 0) {
+
+                            return;
+                        }
+
+
+                        const file =
+                            files[0];
+
+
+                        if (!file.type.startsWith("image/")) {
+
+                            alert(
+                                "Please drop a valid image file."
+                            );
+
+                            return;
+                        }
+
+
+                        try {
+
+                            const dataTransfer =
+                                new DataTransfer();
+
+                            dataTransfer.items.add(file);
+
+                            if (posterInput) {
+
+                                posterInput.files =
+                                    dataTransfer.files;
+                            }
+
+                        }
+                        catch (error) {
+
+                            console.error(
+                                "Could not assign dropped file.",
+                                error
+                            );
+                        }
+
+
+                        showPosterPreview(file);
+                    }
+                );
+            }
+
+
+            /* =====================================================
+               DYNAMIC REQUIREMENTS
+               ===================================================== */
+
+            window.addRequirement =
+                function () {
+
+                    const container =
+                        document.getElementById(
+                            "requirements-list"
+                        );
+
+
+                    if (!container) {
+                        return;
+                    }
+
+
+                    const row =
+                        document.createElement("div");
+
+
+                    row.className =
+                        "dynamic-row";
+
+
+                    row.innerHTML = `
+                        <input
+                            type="text"
+                            name="Requirements"
+                            class="op-input"
+                            placeholder="Enter requirement"
+                        />
+
+                        <button
+                            type="button"
+                            class="remove-item"
+                            onclick="removeDynamicItem(this)"
+                            title="Remove">
+
+                            <i class="bi bi-trash3"></i>
+
+                        </button>
+                    `;
+
+
+                    container.appendChild(row);
+                };
+
+
+            /* =====================================================
+               DYNAMIC RESPONSIBILITIES
+               ===================================================== */
+
+            window.addResponsibility =
+                function () {
+
+                    const container =
+                        document.getElementById(
+                            "responsibilities-list"
+                        );
+
+
+                    if (!container) {
+                        return;
+                    }
+
+
+                    const row =
+                        document.createElement("div");
+
+
+                    row.className =
+                        "dynamic-row";
+
+
+                    row.innerHTML = `
+                        <input
+                            type="text"
+                            name="Responsibilities"
+                            class="op-input"
+                            placeholder="Enter responsibility"
+                        />
+
+                        <button
+                            type="button"
+                            class="remove-item"
+                            onclick="removeDynamicItem(this)"
+                            title="Remove">
+
+                            <i class="bi bi-trash3"></i>
+
+                        </button>
+                    `;
+
+
+                    container.appendChild(row);
+                };
+
+
+            /* =====================================================
+               DYNAMIC SKILLS
+               ===================================================== */
+
+            window.addSkill =
+                function () {
+
+                    const container =
+                        document.getElementById(
+                            "skills-list"
+                        );
+
+
+                    if (!container) {
+                        return;
+                    }
+
+
+                    const row =
+                        document.createElement("div");
+
+
+                    row.className =
+                        "dynamic-row";
+
+
+                    row.innerHTML = `
+                        <input
+                            type="text"
+                            name="RequiredSkills"
+                            class="op-input"
+                            placeholder="Enter skill"
+                        />
+
+                        <button
+                            type="button"
+                            class="remove-item"
+                            onclick="removeDynamicItem(this)"
+                            title="Remove">
+
+                            <i class="bi bi-trash3"></i>
+
+                        </button>
+                    `;
+
+
+                    container.appendChild(row);
+                };
+
+
+            /* =====================================================
+               REMOVE DYNAMIC ITEM
+               ===================================================== */
+
+            window.removeDynamicItem =
+                function (button) {
+
+                    if (!button) {
+                        return;
+                    }
+
+
+                    const row =
+                        button.closest(
+                            ".dynamic-row"
+                        );
+
+
+                    if (!row) {
+                        return;
+                    }
+
+
+                    const container =
+                        row.parentElement;
+
+
+                    if (!container) {
+                        return;
+                    }
+
+
+                    const rows =
+                        container.querySelectorAll(
+                            ".dynamic-row"
+                        );
+
+
+                    /*
+                     * Always keep one row.
+                     */
+
+                    if (rows.length <= 1) {
+
+                        const input =
+                            row.querySelector(
+                                "input"
+                            );
+
+
+                        if (input) {
+                            input.value = "";
+                        }
+
+
+                        return;
+                    }
+
+
+                    row.remove();
+                };
+
+
+            /* =====================================================
+               SOUTH AFRICAN CITY SEARCH
+               ===================================================== */
+
+            const citySearchInput =
+                document.getElementById(
+                    "citySearchInput"
+                );
+
+            const cityResults =
+                document.getElementById(
+                    "cityResults"
+                );
+
+            const cityLoading =
+                document.getElementById(
+                    "cityLoading"
+                );
+
+            const cityName =
+                document.getElementById(
+                    "cityName"
+                );
+
+            const geoNameId =
+                document.getElementById(
+                    "geoNameId"
+                );
+
+            const cityProvince =
+                document.getElementById(
+                    "cityProvince"
+                );
+
+            const selectedCity =
+                document.getElementById(
+                    "selectedCity"
+                );
+
+            const selectedCityName =
+                document.getElementById(
+                    "selectedCityName"
+                );
+
+            const selectedCityProvince =
+                document.getElementById(
+                    "selectedCityProvince"
+                );
+
+            const clearCity =
+                document.getElementById(
+                    "clearCity"
+                );
+
+
+            let citySearchTimeout = null;
+
+
+            /*
+             * Make sure the city elements exist.
+             */
+
+            if (
+                !citySearchInput ||
+                !cityResults ||
+                !cityName ||
+                !geoNameId ||
+                !cityProvince
+            ) {
+
+                console.error(
+                    "City search HTML elements are missing."
+                );
+
+                return;
+            }
+
+
+            /* =====================================================
+               CITY INPUT
+               ===================================================== */
+
+            citySearchInput.addEventListener(
+                "input",
+                function () {
+
+                    const term =
+                        this.value.trim();
+
+
+                    clearTimeout(
+                        citySearchTimeout
+                    );
+
+
+                    /*
+                     * User is typing a new city.
+                     */
+
+                    cityName.value = "";
+                    geoNameId.value = "";
+                    cityProvince.value = "";
+
+
+                    if (selectedCity) {
+
+                        selectedCity.classList.remove(
+                            "active"
+                        );
+                    }
+
+
+                    if (term.length < 2) {
+
+                        cityResults.innerHTML = "";
+
+                        cityResults.classList.remove(
+                            "active"
+                        );
+
+                        if (cityLoading) {
+
+                            cityLoading.style.display =
+                                "none";
+                        }
+
+                        return;
+                    }
+
+
+                    /*
+                     * Wait 350ms before calling API.
+                     */
+
+                    citySearchTimeout =
+                        setTimeout(
+                            function () {
+
+                                searchCities(
+                                    term
+                                );
+
+                            },
+                            350
+                        );
+                }
+            );
+
+
+            /* =====================================================
+               SEARCH API
+               ===================================================== */
+
+            async function searchCities(term) {
+
+                if (!term ||
+                    term.trim().length < 2) {
+
+                    return;
+                }
+
+
+                if (cityLoading) {
+
+                    cityLoading.style.display =
+                        "block";
+                }
+
+
+                try {
+
+                    const url =
+                        `/VolunteerOpportunities/SearchCities?term=${encodeURIComponent(term)}`;
+
+
+                    console.log(
+                        "Searching cities:",
+                        url
+                    );
+
+
+                    const response =
+                        await fetch(
+                            url,
+                            {
+                                method: "GET",
+                                headers: {
+                                    "Accept":
+                                        "application/json"
+                                }
+                            }
+                        );
+
+
+                    console.log(
+                        "City API status:",
+                        response.status
+                    );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            `City search failed with status ${response.status}`
+                        );
+                    }
+
+
+                    const cities =
+                        await response.json();
+
+
+                    console.log(
+                        "Cities returned:",
+                        cities
+                    );
+
+
+                    displayCityResults(
+                        cities
+                    );
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "City search error:",
+                        error
+                    );
+
+
+                    cityResults.innerHTML = `
+                        <div class="city-no-results">
+                            <i class="bi bi-exclamation-circle me-2"></i>
+                            Unable to load cities. Please try again.
+                        </div>
+                    `;
+
+
+                    cityResults.classList.add(
+                        "active"
+                    );
+                }
+                finally {
+
+                    if (cityLoading) {
+
+                        cityLoading.style.display =
+                            "none";
+                    }
+                }
+            }
+
+
+            /* =====================================================
+               DISPLAY CITY RESULTS
+               ===================================================== */
+
+            function displayCityResults(cities) {
+
+                cityResults.innerHTML = "";
+
+
+                if (
+                    !cities ||
+                    !Array.isArray(cities) ||
+                    cities.length === 0
+                ) {
+
+                    cityResults.innerHTML = `
+                        <div class="city-no-results">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            No South African cities found.
+                        </div>
+                    `;
+
+
+                    cityResults.classList.add(
+                        "active"
+                    );
+
+
+                    return;
+                }
+
+
+                cities.forEach(
+                    function (city) {
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * Your controller returns:
+                         *
+                         * cityName
+                         * geoNameId
+                         * province
+                         *
+                         * NOT:
+                         *
+                         * name
+                         * id
+                         * adminName1
+                         */
+
+                        const name =
+                            city.cityName;
+
+                        const id =
+                            city.geoNameId;
+
+                        const province =
+                            city.province ||
+                            "South Africa";
+
+
+                        if (!name) {
+                            return;
+                        }
+
+
+                        const button =
+                            document.createElement(
+                                "button"
+                            );
+
+
+                        button.type =
+                            "button";
+
+
+                        button.className =
+                            "city-result";
+
+
+                        button.innerHTML = `
+                            <span class="city-result-icon">
+                                <i class="bi bi-geo-alt"></i>
+                            </span>
+
+                            <span class="city-result-content">
+
+                                <span class="city-result-name">
+                                    ${escapeHtml(name)}
+                                </span>
+
+                                <span class="city-result-province">
+                                    ${escapeHtml(province)}
+                                </span>
+
+                            </span>
+
+                            <span class="city-result-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </span>
+                        `;
+
+
+                        button.addEventListener(
+                            "click",
+                            function (event) {
+
+                                event.preventDefault();
+
+                                selectCity(
+                                    city
+                                );
+                            }
+                        );
+
+
+                        cityResults.appendChild(
+                            button
+                        );
+                    }
+                );
+
+
+                /*
+                 * Show dropdown.
+                 */
+
+                cityResults.classList.add(
+                    "active"
+                );
+
+
+                console.log(
+                    "City suggestions displayed:",
+                    cities.length
+                );
+            }
+
+
+            /* =====================================================
+               SELECT CITY
+               ===================================================== */
+
+            function selectCity(city) {
+
+                if (!city) {
+                    return;
+                }
+
+
+                const name =
+                    city.cityName ||
+                    "";
+
+
+                const id =
+                    city.geoNameId ||
+                    "";
+
+
+                const province =
+                    city.province ||
+                    "";
+
+
+                /*
+                 * Store values in hidden inputs.
+                 */
+
+                cityName.value =
+                    name;
+
+
+                geoNameId.value =
+                    id;
+
+
+                cityProvince.value =
+                    province;
+
+
+                /*
+                 * Display selected city
+                 * in search input.
+                 */
+
+                citySearchInput.value =
+                    name;
+
+
+                /*
+                 * Display selected city card.
+                 */
+
+                if (selectedCityName) {
+
+                    selectedCityName.textContent =
+                        name;
+                }
+
+
+                if (selectedCityProvince) {
+
+                    selectedCityProvince.textContent =
+                        `${province || "South Africa"} • South Africa`;
+                }
+
+
+                if (selectedCity) {
+
+                    selectedCity.classList.add(
+                        "active"
+                    );
+                }
+
+
+                /*
+                 * Hide results.
+                 */
+
+                cityResults.innerHTML = "";
+
+                cityResults.classList.remove(
+                    "active"
+                );
+
+
+                console.log(
+                    "Selected city:",
+                    {
+                        cityName: name,
+                        geoNameId: id,
+                        province: province
+                    }
+                );
+            }
+
+
+            /* =====================================================
+               CLEAR CITY
+               ===================================================== */
+
+            if (clearCity) {
+
+                clearCity.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+
+
+                        cityName.value =
+                            "";
+
+                        geoNameId.value =
+                            "";
+
+                        cityProvince.value =
+                            "";
+
+
+                        citySearchInput.value =
+                            "";
+
+
+                        cityResults.innerHTML =
+                            "";
+
+
+                        cityResults.classList.remove(
+                            "active"
+                        );
+
+
+                        if (selectedCity) {
+
+                            selectedCity.classList.remove(
+                                "active"
+                            );
+                        }
+
+
+                        if (selectedCityName) {
+
+                            selectedCityName.textContent =
+                                "";
+                        }
+
+
+                        if (selectedCityProvince) {
+
+                            selectedCityProvince.textContent =
+                                "";
+                        }
+
+
+                        citySearchInput.focus();
+                    }
+                );
+            }
+
+
+            /* =====================================================
+               CLOSE RESULTS OUTSIDE
+               ===================================================== */
+
+            document.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        !citySearchInput.contains(
+                            event.target
+                        ) &&
+                        !cityResults.contains(
+                            event.target
+                        )
+                    ) {
+
+                        cityResults.classList.remove(
+                            "active"
+                        );
+                    }
+                }
+            );
+
+
+            /* =====================================================
+               ESCAPE HTML
+               ===================================================== */
+
+            function escapeHtml(value) {
+
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                div.textContent =
+                    value ?? "";
+
+
+                return div.innerHTML;
+            }
+
+
+            /* =====================================================
+               REOPEN SEARCH
+               ===================================================== */
+
+            citySearchInput.addEventListener(
+                "focus",
+                function () {
+
+                    const term =
+                        this.value.trim();
+
+
+                    if (
+                        term.length >= 2 &&
+                        cityName.value === ""
+                    ) {
+
+                        clearTimeout(
+                            citySearchTimeout
+                        );
+
+
+                        citySearchTimeout =
+                            setTimeout(
+                                function () {
+
+                                    searchCities(
+                                        term
+                                    );
+
+                                },
+                                150
+                            );
+                    }
+                }
+            );
+
+
+            /* =====================================================
+               FORM VALIDATION
+               ===================================================== */
+
+            const form =
+                citySearchInput.closest("form");
+
+
+            if (form) {
+
+                form.addEventListener(
+                    "submit",
+                    function (event) {
+
+                        const typedCity =
+                            citySearchInput.value.trim();
+
+
+                        const selectedId =
+                            geoNameId.value.trim();
+
+
+                        /*
+                         * User typed a city but didn't
+                         * select an API suggestion.
+                         */
+
+                        if (
+                            typedCity.length > 0 &&
+                            selectedId.length === 0
+                        ) {
+
+                            event.preventDefault();
+
+
+                            cityResults.innerHTML = `
+                                <div class="city-no-results">
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                    Please select a city from the suggestions.
+                                </div>
+                            `;
+
+
+                            cityResults.classList.add(
+                                "active"
+                            );
+
+
+                            citySearchInput.focus();
+
+
+                            return;
+                        }
+                    }
+                );
+            }
+
+
+            console.log(
+                "SwiftCare New Opportunity page loaded."
+            );
+
+        });
+
+    </script>
+}

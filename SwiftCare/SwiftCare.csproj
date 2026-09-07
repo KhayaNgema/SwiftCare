@@ -32,8 +32,4 @@
     <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\UploadedFiles\" />
-  </ItemGroup>
-
 </Project>

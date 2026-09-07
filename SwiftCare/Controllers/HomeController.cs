@@ -4,6 +4,7 @@ using SwiftCare.Data;
 using SwiftCare.Models;
 using System.Diagnostics;
 using System.Numerics;
+using Microsoft.EntityFrameworkCore;
 
 namespace SwiftCare.Controllers
 {
@@ -38,8 +39,13 @@ namespace SwiftCare.Controllers
             }
             else
             {
+                var opportunities = await _context.VolunteerOpportunities
+                    .Where(x => x.Status == VolunteerOpportunityStatus.Published)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+
                 ViewBag.ActiveTab = string.IsNullOrEmpty(tab) ? "sportnews" : tab;
-                return View();
+                return View(opportunities);
             }
         }
 
@@ -114,6 +120,16 @@ namespace SwiftCare.Controllers
             {
 
                 return View("ChefDashboard");
+            }
+            else if (roles.Contains("Applicant"))
+            {
+                var opportunities = await _context.VolunteerOpportunities
+                        .Where(x => x.Status == VolunteerOpportunityStatus.Published)
+                        .OrderBy(x => x.ApplicationDeadline)
+                        .ThenBy(x => x.StartDate)
+                        .ToListAsync();
+
+                return View("ApplicantDashboard", opportunities);
             }
             else
             {

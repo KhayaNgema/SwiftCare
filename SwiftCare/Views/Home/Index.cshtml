@@ -1,4 +1,10 @@
-﻿@{
+﻿
+@using SwiftCare.Models
+@using SwiftCare.Helpers
+
+@model IEnumerable<VolunteerOpportunity>
+
+@{
     ViewData["Title"] = "SwiftCare";
 }
 
@@ -59,9 +65,11 @@
 
                     </p>
 
+
                     <div class="swiftcare-image-showcase">
 
                         <div class="swiftcare-image-frame">
+
                             <img src="~/Images/old_age_home.jpeg"
                                  alt="SwiftCare Nursing Home"
                                  class="swiftcare-main-image" />
@@ -69,29 +77,52 @@
                             <div class="swiftcare-image-overlay"></div>
 
                             <div class="swiftcare-image-badge">
+
                                 <div class="swiftcare-image-badge-icon">
+
                                     <i class="bi bi-heart-pulse-fill"></i>
+
                                 </div>
 
                                 <div>
+
                                     <strong>Compassionate Care</strong>
+
                                     <span>People come first</span>
+
                                 </div>
+
                             </div>
+
                         </div>
 
                         <div class="swiftcare-image-glow"></div>
 
                     </div>
-                    <a href="#about"
-                           class="swiftcare-enter-button">
 
-                        Discover SwiftCare
 
-                        <i class="bi bi-arrow-right"></i>
+                    <div class="swiftcare-hero-actions">
 
-                    </a>
+                        <a href="#about"
+                               class="swiftcare-enter-button">
 
+                            Discover SwiftCare
+
+                            <i class="bi bi-arrow-right"></i>
+
+                        </a>
+
+
+                        <a href="#volunteer-opportunities"
+                               class="swiftcare-join-button">
+
+                            Join Us
+
+                            <i class="bi bi-arrow-right"></i>
+
+                        </a>
+
+                    </div>
                 </div>
 
 
@@ -313,6 +344,7 @@
                     <h2>
 
                         One place for
+
                         <span>
                             better care.
                         </span>
@@ -449,6 +481,199 @@
 
 
     <!-- =========================================================
+         VOLUNTEER OPPORTUNITIES
+         ========================================================= -->
+
+    <section id="volunteer-opportunities"
+             class="swiftcare-volunteer-section">
+
+        <div class="swiftcare-volunteer-container">
+
+            <!-- SECTION HEADER -->
+
+            <div class="swiftcare-volunteer-header">
+
+                <div>
+
+                    <div class="swiftcare-section-label">
+
+                        <i class="bi bi-heart-pulse"></i>
+
+                        Volunteer With Us
+
+                    </div>
+
+                    <h2>
+
+                        Make a difference
+                        <span>with SwiftCare.</span>
+
+                    </h2>
+
+                    <p>
+
+                        Explore our current volunteer opportunities
+                        and find a meaningful way to support our
+                        residents and community.
+
+                    </p>
+
+                </div>
+
+
+                <a href="@Url.Action("VolunteerOpportunities", "Home")"
+                       class="swiftcare-volunteer-view-all">
+
+                    View All Opportunities
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+            @if (Model != null && Model.Any())
+            {
+                <div class="swiftcare-opportunities-grid">
+
+                    @foreach (var opportunity in Model.Take(8))
+                    {
+                        <article class="swiftcare-opportunity-card">
+
+                            <!-- CARD TOP -->
+                            <div class="swiftcare-opportunity-top">
+
+                                <div class="swiftcare-opportunity-icon">
+                                    <i class="bi bi-heart-fill"></i>
+                                </div>
+
+                                <span class="swiftcare-opportunity-status">
+                                    <span></span>
+                                    Open
+                                </span>
+
+                            </div>
+
+
+                            <!-- TITLE -->
+                            <h3 class="swiftcare-opportunity-title">
+                                @opportunity.Title
+                            </h3>
+
+
+                            <!-- DESCRIPTION -->
+                            <p class="swiftcare-opportunity-description">
+
+                                @if (!string.IsNullOrWhiteSpace(opportunity.Description))
+                                {
+                                    @(opportunity.Description.Length > 105
+                                        ? opportunity.Description.Substring(0, 105) + "..."
+                                        : opportunity.Description)
+                                }
+                                else
+                                {
+                                    <text>
+                                        Help make a meaningful difference
+                                        in the lives of our residents.
+                                    </text>
+                                }
+
+                            </p>
+
+
+                            <!-- DETAILS -->
+                            <div class="swiftcare-opportunity-details">
+
+                                <!-- CITY -->
+                                <div class="swiftcare-opportunity-detail">
+
+                                    <i class="bi bi-geo-alt-fill"></i>
+
+                                    <span>
+                                        @opportunity.CityName
+                                    </span>
+
+                                </div>
+
+
+                                <!-- VOLUNTEER AREA -->
+                                <div class="swiftcare-opportunity-detail">
+
+                                    <i class="bi bi-person-heart"></i>
+
+                                    <span>
+                                        @opportunity.Area?.GetDisplayName()
+                                    </span>
+
+                                </div>
+
+
+                                <!-- CATEGORY -->
+                                <div class="swiftcare-opportunity-detail">
+
+                                    <i class="bi bi-tag-fill"></i>
+
+                                    <span>
+                                        @opportunity.Category?.GetDisplayName()
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- VIEW OPPORTUNITY -->
+                            <a href="@Url.Action(
+                                                                       "Opportunity",
+                                                                       "VolunteerOpportunities",
+                                                                       new { opportunityId = opportunity.VolunteerOpportunityId }
+                                                                   )"
+                                   class="swiftcare-opportunity-button">
+
+                                View Opportunity
+
+                                <i class="bi bi-arrow-right"></i>
+
+                            </a>
+
+                        </article>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <!-- =================================================
+         EMPTY STATE
+         ================================================= -->
+
+                <div class="swiftcare-volunteer-empty">
+
+                    <div class="swiftcare-volunteer-empty-icon">
+
+                        <i class="bi bi-heart"></i>
+
+                    </div>
+
+                    <h3>
+                        No volunteer opportunities available
+                    </h3>
+
+                    <p>
+                        There are currently no open volunteer
+                        opportunities. Please check again soon.
+                    </p>
+
+                </div>
+            }
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================================
          FINAL CTA
          ========================================================= -->
 
@@ -484,3 +709,4 @@
 
 
 </div>
+

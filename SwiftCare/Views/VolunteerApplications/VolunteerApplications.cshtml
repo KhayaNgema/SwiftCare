@@ -1,0 +1,2638 @@
+﻿@using SwiftCare.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@model IEnumerable<VolunteerApplication>
+
+@{
+    ViewData["Title"] = "Volunteer Applications";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var applications = Model?.ToList()
+        ?? new List<VolunteerApplication>();
+
+    /*
+     * ============================================================
+     * DISPLAY NAME HELPER
+     * ============================================================
+     */
+
+    string GetDisplayName(Enum value)
+    {
+        var member = value.GetType()
+            .GetMember(value.ToString())
+            .FirstOrDefault();
+
+        var display =
+            member?.GetCustomAttribute<DisplayAttribute>();
+
+        return display?.Name ?? value.ToString();
+    }
+
+    /*
+     * ============================================================
+     * UNIQUE OPPORTUNITIES
+     * ============================================================
+     */
+
+    var opportunities = applications
+        .Where(x => x.VolunteerOpportunity != null)
+        .GroupBy(x => x.VolunteerOpportunityId)
+        .Select(x => new
+        {
+            Id = x.Key,
+            Title = x.First().VolunteerOpportunity!.Title,
+            ApplicationCount = x.Count()
+        })
+        .OrderBy(x => x.Title)
+        .ToList();
+}
+
+
+<div class="sc-admin-applications-page">
+
+    <div class="sc-admin-applications-container">
+
+        <!-- =====================================================
+             HEADER
+             ===================================================== -->
+
+        <div class="sc-admin-applications-header">
+
+            <div class="sc-admin-applications-header-left">
+
+                <div class="sc-admin-applications-header-icon">
+                    <i class="bi bi-file-earmark-person-fill"></i>
+                </div>
+
+                <div>
+
+                    <span class="sc-admin-applications-eyebrow">
+                        SWIFTCARE ADMINISTRATION
+                    </span>
+
+                    <h1>
+                        Volunteer Applications
+                    </h1>
+
+                    <p>
+                        Review applications, evaluate candidates,
+                        and manage the volunteer recruitment pipeline.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button type="button"
+                    class="sc-admin-applications-back-button"
+                    onclick="openShortlistingModal()">
+
+                <i class="bi bi-stars"></i>
+
+                <span>
+                    Run Shortlisting Pipeline
+                </span>
+
+            </button>
+
+
+            <a asp-controller="VolunteerApplications"
+               asp-action="ShortlistManagement"
+               class="sc-admin-applications-view-button">
+
+                <i class="bi bi-person-check-fill"></i>
+
+                Manage Shortlist
+
+            </a>
+
+        </div>
+
+
+        <!-- =====================================================
+             ATS SUMMARY
+             ===================================================== -->
+
+        <div class="sc-admin-applications-summary-grid">
+
+            <div class="sc-admin-applications-summary-card">
+
+                <div class="sc-admin-applications-summary-icon">
+                    <i class="bi bi-file-earmark-person-fill"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        TOTAL APPLICATIONS
+                    </span>
+
+                    <strong>
+                        @applications.Count
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-applications-summary-card">
+
+                <div class="sc-admin-applications-summary-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        PENDING
+                    </span>
+
+                    <strong>
+                        @applications.Count(x =>
+                            x.Status == VolunteerApplicationStatus.Pending)
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-applications-summary-card">
+
+                <div class="sc-admin-applications-summary-icon">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        SHORTLISTED
+                    </span>
+
+                    <strong>
+                        @applications.Count(x =>
+                            x.Stage == VolunteerApplicationStage.Shortlisted)
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-applications-summary-card">
+
+                <div class="sc-admin-applications-summary-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        INTERVIEW
+                    </span>
+
+                    <strong>
+                        @applications.Count(x =>
+                            x.Stage == VolunteerApplicationStage.Interview)
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-applications-summary-card">
+
+                <div class="sc-admin-applications-summary-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        APPROVED
+                    </span>
+
+                    <strong>
+                        @applications.Count(x =>
+                            x.Status == VolunteerApplicationStatus.Approved)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             APPLICATIONS CARD
+             ===================================================== -->
+
+        <div class="sc-admin-applications-card">
+
+            <div class="sc-admin-applications-card-header">
+
+                <div>
+
+                    <span class="sc-admin-applications-section-label">
+                        ATS APPLICATION MANAGEMENT
+                    </span>
+
+                    <h2>
+                        Candidate Applications
+                    </h2>
+
+                </div>
+
+                <div class="sc-admin-applications-count">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <span>
+
+                        @applications.Count
+
+                        @(applications.Count == 1
+                            ? "Application"
+                            : "Applications")
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            @if (!applications.Any())
+            {
+
+                <div class="sc-admin-applications-empty">
+
+                    <div class="sc-admin-applications-empty-icon">
+                        <i class="bi bi-folder2-open"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            NO APPLICATIONS
+                        </span>
+
+                        <h3>
+                            No volunteer applications have been submitted
+                        </h3>
+
+                        <p>
+                            Applications will appear here once applicants
+                            submit their volunteer applications.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            }
+            else
+            {
+
+                <div class="sc-admin-applications-table-wrapper">
+
+                    <table class="sc-admin-applications-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Reference</th>
+                                <th>Applicant</th>
+                                <th>Opportunity</th>
+                                <th>ATS Stage</th>
+                                <th>Eligibility</th>
+                                <th>Score</th>
+                                <th>Rank</th>
+                                <th>Status</th>
+                                <th>Action</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var application in applications)
+                            {
+
+                                var statusClass =
+                                    application.Status switch
+                                    {
+                                        VolunteerApplicationStatus.Pending
+                                            => "sc-admin-application-status-pending",
+
+                                        VolunteerApplicationStatus.Approved
+                                            => "sc-admin-application-status-approved",
+
+                                        VolunteerApplicationStatus.Rejected
+                                            => "sc-admin-application-status-rejected",
+
+                                        _
+                                            => "sc-admin-application-status-default"
+                                    };
+
+
+                                var statusIcon =
+                                    application.Status switch
+                                    {
+                                        VolunteerApplicationStatus.Pending
+                                            => "bi-hourglass-split",
+
+                                        VolunteerApplicationStatus.Approved
+                                            => "bi-check-circle-fill",
+
+                                        VolunteerApplicationStatus.Rejected
+                                            => "bi-x-circle-fill",
+
+                                        _
+                                            => "bi-info-circle-fill"
+                                    };
+
+
+                                var statusText =
+                                    application.Status switch
+                                    {
+                                        VolunteerApplicationStatus.Pending
+                                            => "Pending",
+
+                                        VolunteerApplicationStatus.Approved
+                                            => "Approved",
+
+                                        VolunteerApplicationStatus.Rejected
+                                            => "Rejected",
+
+                                        _
+                                            => GetDisplayName(application.Status)
+                                    };
+
+
+                                var stageClass =
+                                    application.Stage switch
+                                    {
+                                        VolunteerApplicationStage.Applied
+                                            => "sc-admin-ats-stage-applied",
+
+                                        VolunteerApplicationStage.EligibilityScreening
+                                            => "sc-admin-ats-stage-screening",
+
+                                        VolunteerApplicationStage.AIEvaluation
+                                            => "sc-admin-ats-stage-ai",
+
+                                        VolunteerApplicationStage.Shortlisted
+                                            => "sc-admin-ats-stage-shortlisted",
+
+                                        VolunteerApplicationStage.Interview
+                                            => "sc-admin-ats-stage-interview",
+
+                                        VolunteerApplicationStage.Approved
+                                            => "sc-admin-ats-stage-approved",
+
+                                        VolunteerApplicationStage.Rejected
+                                            => "sc-admin-ats-stage-rejected",
+
+                                        _
+                                            => "sc-admin-ats-stage-default"
+                                    };
+
+
+                                var stageIcon =
+                                    application.Stage switch
+                                    {
+                                        VolunteerApplicationStage.Applied
+                                            => "bi-send-fill",
+
+                                        VolunteerApplicationStage.EligibilityScreening
+                                            => "bi-search",
+
+                                        VolunteerApplicationStage.AIEvaluation
+                                            => "bi-stars",
+
+                                        VolunteerApplicationStage.Shortlisted
+                                            => "bi-person-check-fill",
+
+                                        VolunteerApplicationStage.Interview
+                                            => "bi-people-fill",
+
+                                        VolunteerApplicationStage.Approved
+                                            => "bi-check-circle-fill",
+
+                                        VolunteerApplicationStage.Rejected
+                                            => "bi-x-circle-fill",
+
+                                        _
+                                            => "bi-circle-fill"
+                                    };
+
+
+                                var eligibilityClass =
+                                    application.EligibilityStatus switch
+                                    {
+                                        VolunteerEligibilityStatus.Eligible
+                                            => "sc-admin-eligibility-eligible",
+
+                                        VolunteerEligibilityStatus.ReviewRequired
+                                            => "sc-admin-eligibility-review",
+
+                                        VolunteerEligibilityStatus.NotEligible
+                                            => "sc-admin-eligibility-not-eligible",
+
+                                        _
+                                            => "sc-admin-eligibility-not-checked"
+                                    };
+
+
+                                var eligibilityIcon =
+                                    application.EligibilityStatus switch
+                                    {
+                                        VolunteerEligibilityStatus.Eligible
+                                            => "bi-check-circle-fill",
+
+                                        VolunteerEligibilityStatus.ReviewRequired
+                                            => "bi-exclamation-circle-fill",
+
+                                        VolunteerEligibilityStatus.NotEligible
+                                            => "bi-x-circle-fill",
+
+                                        _
+                                            => "bi-question-circle-fill"
+                                    };
+
+
+                                var score = application.ATSScore;
+
+                                var scoreClass =
+                                    !score.HasValue
+                                        ? "sc-admin-score-none"
+                                        : score.Value >= 80
+                                            ? "sc-admin-score-high"
+                                            : score.Value >= 60
+                                                ? "sc-admin-score-medium"
+                                                : "sc-admin-score-low";
+
+
+                                <tr>
+
+                                    <td data-label="Reference">
+
+                                        <div class="sc-admin-application-reference">
+
+                                            <span class="sc-admin-reference-icon">
+                                                <i class="bi bi-hash"></i>
+                                            </span>
+
+                                            <strong>
+                                                @application.Reference
+                                            </strong>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td data-label="Applicant">
+
+                                        <div class="sc-admin-application-applicant">
+
+                                            <div class="sc-admin-applicant-avatar">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+                                                    @(application.Applicant != null
+                                                        ? $"{application.Applicant.FirstName} {application.Applicant.LastName}"
+                                                        : "Applicant")
+                                                </strong>
+
+                                                <small>
+                                                    Volunteer Applicant
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td data-label="Opportunity">
+
+                                        <div class="sc-admin-application-opportunity">
+
+                                            <i class="bi bi-heart-pulse-fill"></i>
+
+                                            <span>
+                                                @(application.VolunteerOpportunity?.Title
+                                                    ?? "Opportunity")
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td data-label="ATS Stage">
+
+                                        <span class="sc-admin-ats-stage @stageClass">
+
+                                            <i class="bi @stageIcon"></i>
+
+                                            <span>
+                                                @GetDisplayName(application.Stage)
+                                            </span>
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td data-label="Eligibility">
+
+                                        <span class="sc-admin-eligibility @eligibilityClass">
+
+                                            <i class="bi @eligibilityIcon"></i>
+
+                                            <span>
+                                                @GetDisplayName(
+                                                    application.EligibilityStatus)
+                                            </span>
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td data-label="Score">
+
+                                        <div class="sc-admin-application-score @scoreClass">
+
+                                            @if (score.HasValue)
+                                            {
+
+                                                <strong>
+                                                    @score.Value.ToString("0.0")
+                                                </strong>
+
+                                                <small>/ 100</small>
+
+                                            }
+                                            else
+                                            {
+
+                                                <span>
+                                                    Not evaluated
+                                                </span>
+
+                                            }
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td data-label="Rank">
+
+                                        <div class="sc-admin-application-ranking">
+
+                                            @if (application.ATSRanking.HasValue)
+                                            {
+
+                                                <span class="sc-admin-rank-badge">
+
+                                                    <i class="bi bi-bar-chart-fill"></i>
+
+                                                    #@application.ATSRanking
+
+                                                </span>
+
+                                            }
+                                            else
+                                            {
+
+                                                <span class="sc-admin-rank-none">
+
+                                                    <i class="bi bi-dash"></i>
+
+                                                </span>
+
+                                            }
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td data-label="Status">
+
+                                        <span class="sc-admin-application-status @statusClass">
+
+                                            <i class="bi @statusIcon"></i>
+
+                                            <span>
+                                                @statusText
+                                            </span>
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td data-label="Action">
+
+                                        <a asp-controller="VolunteerApplications"
+                                           asp-action="Details"
+                                           asp-route-id="@application.VolunteerApplicationId"
+                                           class="sc-admin-application-view-button">
+
+                                            <span>
+                                                View
+                                            </span>
+
+                                            <i class="bi bi-arrow-right"></i>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================================
+     SHORTLISTING PIPELINE MODAL
+     ============================================================ -->
+
+<div id="shortlistingModal"
+     class="sc-shortlisting-modal-overlay"
+     style="display:none;">
+
+    <div class="sc-shortlisting-modal-dialog">
+
+        <!-- HEADER -->
+        <div class="sc-shortlisting-modal-header">
+
+            <div class="sc-shortlisting-modal-title-area">
+
+                <div class="sc-shortlisting-modal-icon">
+                    <i class="bi bi-stars"></i>
+                </div>
+
+                <div>
+                    <div class="sc-shortlisting-modal-eyebrow">
+                        SwiftCare ATS
+                    </div>
+
+                    <h2>Run Shortlisting Pipeline</h2>
+                </div>
+
+            </div>
+
+            <button type="button"
+                    class="sc-shortlisting-modal-close"
+                    onclick="closeShortlistingModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+
+
+        <!-- BODY -->
+        <div class="sc-shortlisting-modal-body">
+
+            <!-- OPPORTUNITY SELECTOR -->
+            <div class="sc-shortlisting-opportunity-selector">
+
+                <div class="sc-shortlisting-opportunity-selector-header">
+
+                    <div class="sc-shortlisting-opportunity-selector-icon">
+                        <i class="bi bi-briefcase-fill"></i>
+                    </div>
+
+                    <div>
+                        <strong>Select Opportunity</strong>
+                        <span>
+                            Choose the volunteer opportunity to process.
+                        </span>
+                    </div>
+
+                </div>
+
+                <select id="shortlistingOpportunityId"
+                        class="sc-shortlisting-opportunity-select">
+
+                    <option value="">
+                        Select a volunteer opportunity
+                    </option>
+
+                    @foreach (var opportunity in opportunities)
+                    {
+                        var opportunityModel = applications
+                            .Where(x => x.VolunteerOpportunityId == opportunity.Id)
+                            .Select(x => x.VolunteerOpportunity)
+                            .FirstOrDefault();
+
+                        <option value="@opportunity.Id"
+                                data-pipeline-run="@(opportunityModel?.ShortlistingPipelineRun == true ? "true" : "false")">
+
+                            @opportunity.Title (@opportunity.ApplicationCount applications)
+
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <!-- CONFIRMATION -->
+            <div id="shortlistingConfirmation"
+                 class="sc-shortlisting-confirmation"
+                 style="display:none;">
+
+                <div class="sc-shortlisting-confirmation-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <div>
+                    <strong>Ready to run ATS evaluation</strong>
+
+                    <span>
+                        Applications will be evaluated through eligibility,
+                        AI evaluation and ATS ranking.
+                    </span>
+                </div>
+
+            </div>
+
+
+            <!-- ========================================================
+                 PIPELINE
+                 ======================================================== -->
+
+            <div id="shortlistingPipeline"
+                 class="sc-shortlisting-steps"
+                 style="display:none;">
+
+                <div class="sc-shortlisting-steps-header">
+
+                    <div>
+                        <h3>Candidate Evaluation Pipeline</h3>
+
+                        <p>
+                            Processing applications through the SwiftCare
+                            recruitment engine.
+                        </p>
+                    </div>
+
+                    <div class="sc-pipeline-live-badge">
+                        <span class="sc-pipeline-live-dot"></span>
+                        LIVE PROCESSING
+                    </div>
+
+                </div>
+
+
+               <div class="sc-pipeline-track" id="shortlistingPipeline">
+
+    <!-- STEP 1 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-top"
+         data-pipeline-step="1">
+
+        <div class="sc-shortlisting-step-number">1</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-collection-fill"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Collecting Applications</h4>
+            <p>Loading submitted applications</p>
+        </div>
+    </div>
+
+    <!-- CONNECTOR 1 -->
+    <div class="sc-pipeline-connection sc-pipeline-connection-down"
+         data-pipeline-connection="1"
+         aria-hidden="true">
+
+        <svg class="sc-pipeline-connector-svg"
+             viewBox="0 0 100 140"
+             preserveAspectRatio="none">
+
+            <path class="sc-pipeline-connector-base"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-completed-path"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-active-path"
+                  d="M0 12 L50 70 L100 128" />
+
+        </svg>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-bottom"
+         data-pipeline-step="2">
+
+        <div class="sc-shortlisting-step-number">2</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-file-earmark-text-fill"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Reviewing Application Information</h4>
+            <p>Analysing applications and responses</p>
+        </div>
+    </div>
+
+    <!-- CONNECTOR 2 -->
+    <div class="sc-pipeline-connection sc-pipeline-connection-up"
+         data-pipeline-connection="2"
+         aria-hidden="true">
+
+        <svg class="sc-pipeline-connector-svg"
+             viewBox="0 0 100 140"
+             preserveAspectRatio="none">
+
+            <path class="sc-pipeline-connector-base"
+                  d="M0 128 L50 70 L100 12" />
+
+            <path class="sc-pipeline-connector-completed-path"
+                  d="M0 128 L50 70 L100 12" />
+
+            <path class="sc-pipeline-connector-active-path"
+                  d="M0 128 L50 70 L100 12" />
+
+        </svg>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-top"
+         data-pipeline-step="3">
+
+        <div class="sc-shortlisting-step-number">3</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-shield-check"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Checking Eligibility</h4>
+            <p>Matching requirements and skills</p>
+        </div>
+    </div>
+
+    <!-- CONNECTOR 3 -->
+    <div class="sc-pipeline-connection sc-pipeline-connection-down"
+         data-pipeline-connection="3"
+         aria-hidden="true">
+
+        <svg class="sc-pipeline-connector-svg"
+             viewBox="0 0 100 140"
+             preserveAspectRatio="none">
+
+            <path class="sc-pipeline-connector-base"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-completed-path"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-active-path"
+                  d="M0 12 L50 70 L100 128" />
+
+        </svg>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-bottom"
+         data-pipeline-step="4">
+
+        <div class="sc-shortlisting-step-number">4</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-stars"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Running AI Evaluation</h4>
+            <p>Generating candidate evaluations</p>
+        </div>
+    </div>
+
+    <!-- CONNECTOR 4 -->
+    <div class="sc-pipeline-connection sc-pipeline-connection-up"
+         data-pipeline-connection="4"
+         aria-hidden="true">
+
+        <svg class="sc-pipeline-connector-svg"
+             viewBox="0 0 100 140"
+             preserveAspectRatio="none">
+
+            <path class="sc-pipeline-connector-base"
+                  d="M0 128 L50 70 L100 12" />
+
+            <path class="sc-pipeline-connector-completed-path"
+                  d="M0 128 L50 70 L100 12" />
+
+            <path class="sc-pipeline-connector-active-path"
+                  d="M0 128 L50 70 L100 12" />
+
+        </svg>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-top"
+         data-pipeline-step="5">
+
+        <div class="sc-shortlisting-step-number">5</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-bar-chart-line-fill"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Calculating Candidate Rankings</h4>
+            <p>Calculating ATS scores and ranking</p>
+        </div>
+    </div>
+
+    <!-- CONNECTOR 5 -->
+    <div class="sc-pipeline-connection sc-pipeline-connection-down"
+         data-pipeline-connection="5"
+         aria-hidden="true">
+
+        <svg class="sc-pipeline-connector-svg"
+             viewBox="0 0 100 140"
+             preserveAspectRatio="none">
+
+            <path class="sc-pipeline-connector-base"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-completed-path"
+                  d="M0 12 L50 70 L100 128" />
+
+            <path class="sc-pipeline-connector-active-path"
+                  d="M0 12 L50 70 L100 128" />
+
+        </svg>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="sc-shortlisting-step sc-pipeline-step-bottom"
+         data-pipeline-step="6">
+
+        <div class="sc-shortlisting-step-number">6</div>
+
+        <div class="sc-shortlisting-step-icon">
+            <i class="bi bi-person-check-fill"></i>
+        </div>
+
+        <div class="sc-shortlisting-step-content">
+            <h4>Creating Shortlist</h4>
+            <p>Identifying strongest candidates</p>
+        </div>
+    </div>
+
+</div>
+
+
+                <!-- ====================================================
+                     LIVE STATUS
+                     ==================================================== -->
+
+                <div class="sc-shortlisting-notice">
+
+                    <div class="sc-shortlisting-notice-icon">
+                        <i class="bi bi-activity"></i>
+                    </div>
+
+                    <div>
+                        <strong id="pipelineStatusTitle">
+                            Preparing pipeline
+                        </strong>
+
+                        <span id="pipelineStatusText">
+                            Initialising candidate evaluation...
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================================================
+                 RESULT
+                 ======================================================== -->
+
+            <div id="shortlistingResult"
+                 class="sc-shortlisting-result"
+                 style="display:none;">
+
+                <div class="sc-shortlisting-result-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+
+                <h3>Pipeline Completed</h3>
+
+                <p>
+                    Candidate evaluation has completed successfully.
+                </p>
+
+                <div class="sc-shortlisting-result-grid">
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Applications</span>
+                        <strong id="pipelineApplicationsCollected">0</strong>
+                    </div>
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Eligible</span>
+                        <strong id="pipelineEligible">0</strong>
+                    </div>
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Review Required</span>
+                        <strong id="pipelineReviewRequired">0</strong>
+                    </div>
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Not Eligible</span>
+                        <strong id="pipelineNotEligible">0</strong>
+                    </div>
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Strong Shortlist</span>
+                        <strong id="pipelineStrongShortlist">0</strong>
+                    </div>
+
+                    <div class="sc-shortlisting-result-card">
+                        <span>Review Recommended</span>
+                        <strong id="pipelineReviewRecommended">0</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FOOTER -->
+        <div class="sc-shortlisting-modal-footer">
+
+            <button type="button"
+                    class="sc-shortlisting-cancel-button"
+                    onclick="closeShortlistingModal()">
+                Close
+            </button>
+
+            <button type="button"
+                    id="shortlistingRunButton"
+                    class="sc-shortlisting-confirm-button"
+                    onclick="startShortlistingPipeline()">
+
+                <i class="bi bi-stars"></i>
+                Run Pipeline
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* ============================================================
+       SHORTLISTING PIPELINE STATE
+       ============================================================ */
+
+    let pipelineRunning = false;
+    let pipelineCompleted = false;
+    let selectedOpportunityPipelineRun = false;
+
+
+    const pipelineSteps = [
+        {
+            number: 1,
+            title: "Collecting Applications"
+        },
+        {
+            number: 2,
+            title: "Reviewing Application Information"
+        },
+        {
+            number: 3,
+            title: "Checking Eligibility"
+        },
+        {
+            number: 4,
+            title: "Running AI Evaluation"
+        },
+        {
+            number: 5,
+            title: "Calculating Candidate Rankings"
+        },
+        {
+            number: 6,
+            title: "Creating Shortlist"
+        }
+    ];
+
+
+    const originalPipelineIcons = [
+        "bi bi-collection-fill",
+        "bi bi-file-earmark-text-fill",
+        "bi bi-shield-check",
+        "bi bi-stars",
+        "bi bi-bar-chart-line-fill",
+        "bi bi-person-check-fill"
+    ];
+
+
+    /* ============================================================
+       GET ELEMENT
+       ============================================================ */
+
+    function pipelineElement(id) {
+
+        return document.getElementById(id);
+
+    }
+
+
+    /* ============================================================
+       OPEN MODAL
+       ============================================================ */
+
+    function openShortlistingModal() {
+
+        const modal =
+            pipelineElement("shortlistingModal");
+
+        if (!modal)
+            return;
+
+
+        modal.style.display = "flex";
+
+        document.body.style.overflow = "hidden";
+
+
+        /*
+         * Only prepare the modal if there is no active
+         * or completed pipeline in the current session.
+         */
+
+        if (!pipelineRunning && !pipelineCompleted) {
+
+            preparePipelineForNewRun();
+
+        }
+
+    }
+
+
+    /* ============================================================
+       CLOSE MODAL
+       ============================================================ */
+
+    function closeShortlistingModal() {
+
+        /*
+         * Never allow the administrator to close the modal
+         * while the pipeline is actually processing.
+         */
+
+        if (pipelineRunning) {
+
+            return;
+
+        }
+
+
+        const modal =
+            pipelineElement("shortlistingModal");
+
+        if (!modal)
+            return;
+
+
+        modal.style.display = "none";
+
+        document.body.style.overflow = "";
+
+    }
+
+
+    /* ============================================================
+       PREPARE NEW RUN
+       ============================================================ */
+
+    function preparePipelineForNewRun() {
+
+        pipelineCompleted = false;
+        selectedOpportunityPipelineRun = false;
+
+
+        const selector =
+            pipelineElement(
+                "shortlistingOpportunityId"
+            );
+
+        const confirmation =
+            pipelineElement(
+                "shortlistingConfirmation"
+            );
+
+        const pipeline =
+            pipelineElement(
+                "shortlistingPipeline"
+            );
+
+        const result =
+            pipelineElement(
+                "shortlistingResult"
+            );
+
+        const runButton =
+            pipelineElement(
+                "shortlistingRunButton"
+            );
+
+
+        if (selector) {
+
+            selector.disabled = false;
+            selector.value = "";
+
+        }
+
+
+        if (confirmation) {
+
+            confirmation.style.display = "none";
+
+        }
+
+
+        if (pipeline) {
+
+            pipeline.style.display = "none";
+
+        }
+
+
+        if (result) {
+
+            result.style.display = "none";
+
+        }
+
+
+        if (runButton) {
+
+            runButton.disabled = true;
+
+            runButton.onclick =
+                startShortlistingPipeline;
+
+            runButton.innerHTML =
+                '<i class="bi bi-stars"></i> Run Pipeline';
+
+        }
+
+
+        resetVisualPipeline();
+
+
+        updatePipelineMessage(
+            "Preparing pipeline",
+            "Select an opportunity to begin."
+        );
+
+    }
+
+
+    /* ============================================================
+       RESET VISUAL PIPELINE
+       ============================================================ */
+
+    function resetVisualPipeline() {
+
+        document
+            .querySelectorAll(
+                "[data-pipeline-step]"
+            )
+            .forEach(step => {
+
+                step.classList.remove(
+                    "sc-pipeline-step-active",
+                    "sc-pipeline-step-completed"
+                );
+
+            });
+
+
+        document
+            .querySelectorAll(
+                "[data-pipeline-connection]"
+            )
+            .forEach(connection => {
+
+                connection.classList.remove(
+                    "sc-pipeline-connection-active",
+                    "sc-pipeline-connection-completed"
+                );
+
+            });
+
+
+        document
+            .querySelectorAll(
+                ".sc-shortlisting-step-icon i"
+            )
+            .forEach((icon, index) => {
+
+                icon.className =
+                    originalPipelineIcons[index]
+                    || "bi bi-circle";
+
+            });
+
+    }
+
+
+    /* ============================================================
+       SHOW READY STATE
+       ============================================================ */
+
+    function showPipelineReadyState() {
+
+        const confirmation =
+            pipelineElement(
+                "shortlistingConfirmation"
+            );
+
+        const runButton =
+            pipelineElement(
+                "shortlistingRunButton"
+            );
+
+
+        if (confirmation) {
+
+            confirmation.style.display =
+                "flex";
+
+
+            confirmation.innerHTML = `
+                <div class="sc-shortlisting-confirmation-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <div>
+                    <strong>Ready to run ATS evaluation</strong>
+
+                    <span>
+                        Applications will be evaluated through eligibility,
+                        AI evaluation and ATS ranking.
+                    </span>
+                </div>
+            `;
+
+        }
+
+
+        if (runButton) {
+
+            runButton.disabled = false;
+
+            runButton.onclick =
+                startShortlistingPipeline;
+
+            runButton.innerHTML =
+                '<i class="bi bi-stars"></i> Run Pipeline';
+
+        }
+
+
+        updatePipelineMessage(
+            "Pipeline ready",
+            "This opportunity is ready for ATS evaluation."
+        );
+
+    }
+
+
+    /* ============================================================
+       SHOW ALREADY RUN STATE
+       ============================================================ */
+
+    function showPipelineAlreadyRunState(
+        pipelineRunDate,
+        pipelineRunBy
+    ) {
+
+        selectedOpportunityPipelineRun = true;
+        pipelineCompleted = true;
+
+
+        const confirmation =
+            pipelineElement(
+                "shortlistingConfirmation"
+            );
+
+        const pipeline =
+            pipelineElement(
+                "shortlistingPipeline"
+            );
+
+        const result =
+            pipelineElement(
+                "shortlistingResult"
+            );
+
+        const runButton =
+            pipelineElement(
+                "shortlistingRunButton"
+            );
+
+
+        if (pipeline) {
+
+            pipeline.style.display = "none";
+
+        }
+
+
+        if (result) {
+
+            result.style.display = "none";
+
+        }
+
+
+        if (confirmation) {
+
+            confirmation.style.display =
+                "flex";
+
+
+            let dateText =
+                "previously processed";
+
+
+            if (pipelineRunDate) {
+
+                const date =
+                    new Date(pipelineRunDate);
+
+
+                if (!isNaN(date.getTime())) {
+
+                    dateText =
+                        date.toLocaleString();
+
+                }
+
+            }
+
+
+            confirmation.innerHTML = `
+                <div class="sc-shortlisting-confirmation-icon"
+                     style="background:rgba(25,135,84,.12);color:#198754;">
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        Pipeline already completed
+                    </strong>
+
+                    <span>
+                        This opportunity has already been processed
+                        by the SwiftCare ATS on ${dateText}.
+                    </span>
+
+                </div>
+            `;
+
+        }
+
+
+        if (runButton) {
+
+            runButton.disabled = true;
+
+            runButton.onclick = null;
+
+            runButton.removeAttribute(
+                "onclick"
+            );
+
+            runButton.innerHTML =
+                '<i class="bi bi-check-circle-fill"></i> Already Completed';
+
+        }
+
+
+        updatePipelineMessage(
+            "Pipeline already completed",
+            pipelineRunBy
+                ? `Processed by ${pipelineRunBy}.`
+                : "This opportunity has already been processed."
+        );
+
+    }
+
+
+    /* ============================================================
+       CHECK SERVER PIPELINE STATUS
+       ============================================================ */
+
+    async function checkPipelineStatus(
+        opportunityId
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    '@Url.Action("GetShortlistingPipelineStatus", "VolunteerApplications")'
+                    + '?opportunityId='
+                    + encodeURIComponent(opportunityId),
+                    {
+                        method: "GET",
+                        headers: {
+                            "X-Requested-With":
+                                "XMLHttpRequest"
+                        },
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Unable to check pipeline status."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (!data.success) {
+
+                throw new Error(
+                    data.message ||
+                    "Unable to check pipeline status."
+                );
+
+            }
+
+
+            /*
+             * IMPORTANT:
+             *
+             * The database is the source of truth.
+             */
+
+            if (data.pipelineRun === true) {
+
+                showPipelineAlreadyRunState(
+                    data.pipelineRunDate,
+                    data.pipelineRunBy
+                );
+
+                return true;
+
+            }
+
+
+            selectedOpportunityPipelineRun =
+                false;
+
+            pipelineCompleted =
+                false;
+
+
+            showPipelineReadyState();
+
+
+            return false;
+
+        }
+        catch (error) {
+
+            console.error(
+                "Pipeline status check failed:",
+                error
+            );
+
+
+            const confirmation =
+                pipelineElement(
+                    "shortlistingConfirmation"
+                );
+
+            const runButton =
+                pipelineElement(
+                    "shortlistingRunButton"
+                );
+
+
+            if (confirmation) {
+
+                confirmation.style.display =
+                    "flex";
+
+
+                confirmation.innerHTML = `
+                    <div class="sc-shortlisting-confirmation-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            Unable to verify pipeline status
+                        </strong>
+
+                        <span>
+                            SwiftCare could not verify whether this
+                            opportunity has already been processed.
+                            The pipeline has been disabled for safety.
+                        </span>
+                    </div>
+                `;
+
+            }
+
+
+            if (runButton) {
+
+                runButton.disabled = true;
+
+                runButton.onclick = null;
+
+            }
+
+
+            return false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       OPPORTUNITY SELECTION
+       ============================================================ */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            const selector =
+                pipelineElement(
+                    "shortlistingOpportunityId"
+                );
+
+
+            if (!selector)
+                return;
+
+
+            selector.addEventListener(
+                "change",
+                async function () {
+
+                    if (pipelineRunning)
+                        return;
+
+
+                    const opportunityId =
+                        this.value;
+
+
+                    const confirmation =
+                        pipelineElement(
+                            "shortlistingConfirmation"
+                        );
+
+
+                    const runButton =
+                        pipelineElement(
+                            "shortlistingRunButton"
+                        );
+
+
+                    if (!opportunityId) {
+
+                        selectedOpportunityPipelineRun =
+                            false;
+
+                        pipelineCompleted =
+                            false;
+
+
+                        if (confirmation) {
+
+                            confirmation.style.display =
+                                "none";
+
+                        }
+
+
+                        if (runButton) {
+
+                            runButton.disabled = true;
+
+                            runButton.onclick =
+                                startShortlistingPipeline;
+
+                            runButton.innerHTML =
+                                '<i class="bi bi-stars"></i> Run Pipeline';
+
+                        }
+
+
+                        resetVisualPipeline();
+
+
+                        return;
+
+                    }
+
+
+                    /*
+                     * Temporarily disable everything while
+                     * the server is checked.
+                     */
+
+                    if (runButton) {
+
+                        runButton.disabled = true;
+
+                        runButton.onclick = null;
+
+                        runButton.innerHTML =
+                            '<i class="bi bi-hourglass-split"></i> Checking...';
+
+                    }
+
+
+                    if (confirmation) {
+
+                        confirmation.style.display =
+                            "flex";
+
+
+                        confirmation.innerHTML = `
+                            <div class="sc-shortlisting-confirmation-icon">
+                                <i class="bi bi-cloud-check"></i>
+                            </div>
+
+                            <div>
+                                <strong>
+                                    Checking pipeline status
+                                </strong>
+
+                                <span>
+                                    Verifying this opportunity with the
+                                    SwiftCare server...
+                                </span>
+                            </div>
+                        `;
+
+                    }
+
+
+                    resetVisualPipeline();
+
+
+                    selectedOpportunityPipelineRun =
+                        await checkPipelineStatus(
+                            opportunityId
+                        );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ============================================================
+       DELAY
+       ============================================================ */
+
+    function pipelineDelay(milliseconds) {
+
+        return new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    milliseconds
+                )
+        );
+
+    }
+
+
+    /* ============================================================
+       STATUS MESSAGE
+       ============================================================ */
+
+    function updatePipelineMessage(
+        title,
+        text
+    ) {
+
+        const titleElement =
+            pipelineElement(
+                "pipelineStatusTitle"
+            );
+
+        const textElement =
+            pipelineElement(
+                "pipelineStatusText"
+            );
+
+
+        if (titleElement) {
+
+            titleElement.textContent =
+                title;
+
+        }
+
+
+        if (textElement) {
+
+            textElement.textContent =
+                text;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       START VISUAL STEP
+       ============================================================ */
+
+    function startVisualPipelineStep(
+        stepNumber
+    ) {
+
+        const step =
+            document.querySelector(
+                `[data-pipeline-step="${stepNumber}"]`
+            );
+
+
+        if (!step)
+            return;
+
+
+        step.classList.remove(
+            "sc-pipeline-step-completed"
+        );
+
+
+        step.classList.add(
+            "sc-pipeline-step-active"
+        );
+
+
+        if (stepNumber > 1) {
+
+            const connection =
+                document.querySelector(
+                    `[data-pipeline-connection="${stepNumber - 1}"]`
+                );
+
+
+            if (connection) {
+
+                connection.classList.remove(
+                    "sc-pipeline-connection-completed"
+                );
+
+
+                connection.classList.add(
+                    "sc-pipeline-connection-active"
+                );
+
+            }
+
+        }
+
+
+        const icon =
+            step.querySelector(
+                ".sc-shortlisting-step-icon i"
+            );
+
+
+        if (icon) {
+
+            icon.className =
+                "bi bi-gear-fill sc-pipeline-gear";
+
+        }
+
+
+        updatePipelineMessage(
+            pipelineSteps[stepNumber - 1].title,
+            "Processing candidate information..."
+        );
+
+    }
+
+
+    /* ============================================================
+       COMPLETE VISUAL STEP
+       ============================================================ */
+
+    function completeVisualPipelineStep(
+        stepNumber
+    ) {
+
+        const step =
+            document.querySelector(
+                `[data-pipeline-step="${stepNumber}"]`
+            );
+
+
+        if (!step)
+            return;
+
+
+        step.classList.remove(
+            "sc-pipeline-step-active"
+        );
+
+
+        step.classList.add(
+            "sc-pipeline-step-completed"
+        );
+
+
+        const icon =
+            step.querySelector(
+                ".sc-shortlisting-step-icon i"
+            );
+
+
+        if (icon) {
+
+            icon.className =
+                "bi bi-check-lg";
+
+        }
+
+
+        if (
+            stepNumber <
+            pipelineSteps.length
+        ) {
+
+            const connection =
+                document.querySelector(
+                    `[data-pipeline-connection="${stepNumber}"]`
+                );
+
+
+            if (connection) {
+
+                connection.classList.remove(
+                    "sc-pipeline-connection-active"
+                );
+
+
+                connection.classList.add(
+                    "sc-pipeline-connection-completed"
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* ============================================================
+       VISUAL PIPELINE
+       ============================================================ */
+
+    async function runVisualPipeline() {
+
+        const delays = [
+            1200,
+            1600,
+            1900,
+            2600,
+            1700,
+            1500
+        ];
+
+
+        for (
+            let stepNumber = 1;
+            stepNumber <= pipelineSteps.length;
+            stepNumber++
+        ) {
+
+            if (!pipelineRunning) {
+
+                return;
+
+            }
+
+
+            startVisualPipelineStep(
+                stepNumber
+            );
+
+
+            await pipelineDelay(
+                delays[stepNumber - 1]
+            );
+
+
+            if (!pipelineRunning) {
+
+                return;
+
+            }
+
+
+            completeVisualPipelineStep(
+                stepNumber
+            );
+
+
+            await pipelineDelay(
+                350
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       MARK PIPELINE COMPLETED
+       ============================================================ */
+
+    function markPipelineCompleted() {
+
+        document
+            .querySelectorAll(
+                "[data-pipeline-step]"
+            )
+            .forEach(step => {
+
+                step.classList.remove(
+                    "sc-pipeline-step-active"
+                );
+
+
+                step.classList.add(
+                    "sc-pipeline-step-completed"
+                );
+
+
+                const icon =
+                    step.querySelector(
+                        ".sc-shortlisting-step-icon i"
+                    );
+
+
+                if (icon) {
+
+                    icon.className =
+                        "bi bi-check-lg";
+
+                }
+
+            });
+
+
+        document
+            .querySelectorAll(
+                "[data-pipeline-connection]"
+            )
+            .forEach(connection => {
+
+                connection.classList.remove(
+                    "sc-pipeline-connection-active"
+                );
+
+
+                connection.classList.add(
+                    "sc-pipeline-connection-completed"
+                );
+
+            });
+
+
+        pipelineRunning = false;
+
+        pipelineCompleted = true;
+
+
+        updatePipelineMessage(
+            "Pipeline processing complete",
+            "All ATS evaluation stages have completed successfully."
+        );
+
+
+        const runButton =
+            pipelineElement(
+                "shortlistingRunButton"
+            );
+
+
+        if (runButton) {
+
+            runButton.disabled = true;
+
+            runButton.onclick = null;
+
+            runButton.removeAttribute(
+                "onclick"
+            );
+
+
+            runButton.innerHTML =
+                '<i class="bi bi-check-lg"></i> Completed';
+
+        }
+
+    }
+
+
+    /* ============================================================
+       MAIN PIPELINE
+       ============================================================ */
+
+    async function startShortlistingPipeline() {
+
+        /*
+         * HARD CLIENT-SIDE PROTECTION
+         */
+
+        if (pipelineRunning)
+            return;
+
+
+        if (pipelineCompleted)
+            return;
+
+
+        if (selectedOpportunityPipelineRun)
+            return;
+
+
+        const selector =
+            pipelineElement(
+                "shortlistingOpportunityId"
+            );
+
+
+        if (!selector ||
+            !selector.value) {
+
+            alert(
+                "Please select a volunteer opportunity first."
+            );
+
+            return;
+
+        }
+
+
+        const opportunityId =
+            selector.value;
+
+
+        /*
+         * START
+         */
+
+        pipelineRunning = true;
+
+        pipelineCompleted = false;
+
+
+        selector.disabled = true;
+
+
+        const confirmation =
+            pipelineElement(
+                "shortlistingConfirmation"
+            );
+
+        const pipeline =
+            pipelineElement(
+                "shortlistingPipeline"
+            );
+
+        const result =
+            pipelineElement(
+                "shortlistingResult"
+            );
+
+        const runButton =
+            pipelineElement(
+                "shortlistingRunButton"
+            );
+
+
+        if (confirmation) {
+
+            confirmation.style.display =
+                "none";
+
+        }
+
+
+        if (pipeline) {
+
+            pipeline.style.display =
+                "block";
+
+        }
+
+
+        if (result) {
+
+            result.style.display =
+                "none";
+
+        }
+
+
+        if (runButton) {
+
+            runButton.disabled = true;
+
+            runButton.onclick = null;
+
+            runButton.innerHTML =
+                '<i class="bi bi-hourglass-split"></i> Processing...';
+
+        }
+
+
+        resetVisualPipeline();
+
+
+        updatePipelineMessage(
+            "Starting ATS pipeline",
+            "Preparing candidate applications..."
+        );
+
+
+        /*
+         * ANTI-FORGERY TOKEN
+         */
+
+        const tokenElement =
+            document.querySelector(
+                'input[name="__RequestVerificationToken"]'
+            );
+
+
+        const requestBody =
+            new URLSearchParams();
+
+
+        requestBody.append(
+            "opportunityId",
+            opportunityId
+        );
+
+
+        if (tokenElement) {
+
+            requestBody.append(
+                "__RequestVerificationToken",
+                tokenElement.value
+            );
+
+        }
+
+
+        /*
+         * BACKEND REQUEST
+         */
+
+        const backendPromise =
+            fetch(
+                '@Url.Action("RunShortlistingPipeline", "VolunteerApplications")',
+                {
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/x-www-form-urlencoded; charset=UTF-8"
+
+                    },
+
+                    body:
+                        requestBody.toString()
+
+                }
+            )
+            .then(async response => {
+
+                const data =
+                    await response.json()
+                        .catch(() => null);
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data?.message ||
+                        "Pipeline request failed."
+                    );
+
+                }
+
+
+                return data;
+
+            });
+
+
+        try {
+
+            const visualPromise =
+                runVisualPipeline();
+
+
+            const backendResult =
+                await backendPromise;
+
+
+            /*
+             * SERVER-SIDE ALREADY-RUN CHECK
+             *
+             * This is extremely important.
+             */
+
+            if (
+                backendResult &&
+                backendResult.alreadyRun === true
+            ) {
+
+                throw new Error(
+                    backendResult.message ||
+                    "This opportunity has already been processed."
+                );
+
+            }
+
+
+            if (
+                !backendResult ||
+                !backendResult.success
+            ) {
+
+                throw new Error(
+                    backendResult?.message ||
+                    "The shortlisting pipeline failed."
+                );
+
+            }
+
+
+            await visualPromise;
+
+
+            /*
+             * RESULT VALUES
+             */
+
+            const applicationsCollected =
+                pipelineElement(
+                    "pipelineApplicationsCollected"
+                );
+
+            const eligible =
+                pipelineElement(
+                    "pipelineEligible"
+                );
+
+            const reviewRequired =
+                pipelineElement(
+                    "pipelineReviewRequired"
+                );
+
+            const notEligible =
+                pipelineElement(
+                    "pipelineNotEligible"
+                );
+
+            const strongShortlist =
+                pipelineElement(
+                    "pipelineStrongShortlist"
+                );
+
+            const reviewRecommended =
+                pipelineElement(
+                    "pipelineReviewRecommended"
+                );
+
+
+            if (applicationsCollected) {
+
+                applicationsCollected.textContent =
+                    backendResult.applicationsCollected ?? 0;
+
+            }
+
+
+            if (eligible) {
+
+                eligible.textContent =
+                    backendResult.eligible ?? 0;
+
+            }
+
+
+            if (reviewRequired) {
+
+                reviewRequired.textContent =
+                    backendResult.reviewRequired ?? 0;
+
+            }
+
+
+            if (notEligible) {
+
+                notEligible.textContent =
+                    backendResult.notEligible ?? 0;
+
+            }
+
+
+            if (strongShortlist) {
+
+                strongShortlist.textContent =
+                    backendResult.strongShortlist ?? 0;
+
+            }
+
+
+            if (reviewRecommended) {
+
+                reviewRecommended.textContent =
+                    backendResult.reviewRecommended ?? 0;
+
+            }
+
+
+            /*
+             * FINAL STATE
+             */
+
+            markPipelineCompleted();
+
+
+            if (pipeline) {
+
+                pipeline.style.display =
+                    "none";
+
+            }
+
+
+            if (result) {
+
+                result.style.display =
+                    "block";
+
+            }
+
+        }
+        catch (error) {
+
+            console.error(
+                "Shortlisting pipeline error:",
+                error
+            );
+
+
+            pipelineRunning = false;
+
+            pipelineCompleted = false;
+
+
+            if (pipeline) {
+
+                pipeline.style.display =
+                    "none";
+
+            }
+
+
+            /*
+             * If the SERVER says it was already run,
+             * permanently lock the UI for this opportunity.
+             */
+
+            if (
+                error.message &&
+                error.message.toLowerCase()
+                    .includes("already")
+            ) {
+
+                selectedOpportunityPipelineRun =
+                    true;
+
+                pipelineCompleted =
+                    true;
+
+
+                showPipelineAlreadyRunState();
+
+            }
+            else {
+
+                if (runButton) {
+
+                    runButton.disabled = false;
+
+                    runButton.onclick =
+                        startShortlistingPipeline;
+
+                    runButton.innerHTML =
+                        '<i class="bi bi-arrow-clockwise"></i> Try Again';
+
+                }
+
+
+                if (selector) {
+
+                    selector.disabled = false;
+
+                }
+
+
+                alert(
+                    error.message ||
+                    "The shortlisting pipeline could not be completed."
+                );
+
+            }
+
+        }
+
+    }
+
+</script>

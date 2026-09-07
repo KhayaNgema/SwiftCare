@@ -11,7 +11,7 @@ namespace SwiftCare.Models
         public int VolunteerScreeningId { get; set; }
 
         public VolunteerScreeningStatus Status { get; set; }
-            = VolunteerScreeningStatus.Pending;
+            = VolunteerScreeningStatus.NotScreened;
 
         public DateTime? ScreeningDate { get; set; }
 
@@ -28,16 +28,16 @@ namespace SwiftCare.Models
 
     public enum VolunteerScreeningStatus
     {
-        [Display(Name = "Pending")]
-        Pending,
+        [Display(Name = "Not Screened")]
+        NotScreened,
 
-        [Display(Name = "In Progress")]
-        InProgress,
+        [Display(Name = "Screening")]
+        Screening,
 
-        [Display(Name = "Passed")]
-        Passed,
+        [Display(Name = "Screened")]
+        Screened,
 
-        [Display(Name = "Failed")]
-        Failed
+        [Display(Name = "Requires Review")]
+        RequiresReview
     }
 }

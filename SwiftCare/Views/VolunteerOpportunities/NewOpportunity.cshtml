@@ -16,9 +16,9 @@
         <div class="op-header-left">
 
             <a asp-controller="VolunteerOpportunities"
-                   asp-action="Volunteers"
-                   class="op-back"
-                   title="Back to Volunteer Management">
+               asp-action="Volunteers"
+               class="op-back"
+               title="Back to Volunteer Management">
 
                 <i class="bi bi-arrow-left"></i>
 
@@ -166,7 +166,8 @@
 
                             <select asp-for="Category"
                                     asp-items="Html.GetEnumSelectList<SwiftCare.Models.VolunteerCategory>()"
-                                    class="op-select">
+                                    class="op-select"
+                                    id="opportunityCategory">
 
                                 <option value="">
                                     Select category
@@ -195,7 +196,8 @@
 
                             <select asp-for="Area"
                                     asp-items="Html.GetEnumSelectList<SwiftCare.Models.VolunteerArea>()"
-                                    class="op-select">
+                                    class="op-select"
+                                    id="opportunityArea">
 
                                 <option value="">
                                     Select area
@@ -293,9 +295,7 @@
                             </div>
 
 
-                            <!-- =================================================
-                                 HIDDEN MODEL VALUES
-                                 ================================================= -->
+                            <!-- HIDDEN MODEL VALUES -->
 
                             <input asp-for="CityName"
                                    type="hidden"
@@ -715,14 +715,381 @@
 
 
                 <!-- =============================================
+                     APPLICATION QUESTIONS
+                     ============================================= -->
+
+                <div class="op-card sc-question-card">
+
+                    <div class="op-card-header">
+
+                        <div class="op-section-icon sc-question-section-icon">
+                            <i class="bi bi-chat-square-text-fill"></i>
+                        </div>
+
+                        <div class="sc-question-header-content">
+
+                            <h2>
+                                Application Questions
+                            </h2>
+
+                            <span>
+                                Choose questions applicants should answer when applying.
+                            </span>
+
+                        </div>
+
+                        <div class="sc-question-count-badge">
+
+                            <i class="bi bi-check2"></i>
+
+                            <span id="selectedQuestionCount">
+                                0
+                            </span>
+
+                            selected
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- QUESTION EXPLANATION -->
+
+                    <div class="sc-question-info">
+
+                        <div class="sc-question-info-icon">
+
+                            <i class="bi bi-stars"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Smart question recommendations
+                            </strong>
+
+                            <p>
+                                Select a category and volunteer area above.
+                                SwiftCare will automatically show questions
+                                relevant to this opportunity, including general,
+                                category-specific and area-specific questions.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- QUESTION FILTER BAR -->
+
+                    <div class="sc-question-toolbar">
+
+                        <div class="sc-question-filter-group">
+
+                            <label for="questionFilter">
+                                Question Library
+                            </label>
+
+                            <div class="sc-question-select-wrapper">
+
+                                <i class="bi bi-funnel-fill"></i>
+
+                                <select id="questionFilter"
+                                        class="sc-question-filter">
+
+                                    <option value="recommended">
+                                        Recommended for this opportunity
+                                    </option>
+
+                                    <option value="all">
+                                        All Available Questions
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="sc-question-search-group">
+
+                            <label for="questionSearch">
+                                Search Questions
+                            </label>
+
+                            <div class="sc-question-search-wrapper">
+
+                                <i class="bi bi-search"></i>
+
+                                <input type="text"
+                                       id="questionSearch"
+                                       placeholder="Search questions..." />
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SELECTED QUESTIONS SUMMARY -->
+
+                    <div id="selectedQuestionsSummary"
+                         class="sc-selected-question-summary">
+
+                        <div class="sc-selected-question-summary-icon">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                No questions selected yet
+                            </strong>
+
+                            <span>
+                                Choose questions below to add them to this opportunity.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- QUESTION LIST -->
+
+                    <div id="questionList"
+                         class="sc-question-list">
+
+                        @if (Model.AvailableQuestions != null &&
+                             Model.AvailableQuestions.Any())
+                        {
+                            foreach (var question in Model.AvailableQuestions)
+                            {
+                                var categoryValue =
+                                    question.Category.HasValue
+                                        ? ((int)question.Category.Value).ToString()
+                                        : "";
+
+                                var areaValue =
+                                    question.Area.HasValue
+                                        ? ((int)question.Area.Value).ToString()
+                                        : "";
+
+                                var isGeneral =
+                                    !question.Category.HasValue &&
+                                    !question.Area.HasValue;
+
+                                var isCategoryOnly =
+                                    question.Category.HasValue &&
+                                    !question.Area.HasValue;
+
+                                var isAreaOnly =
+                                    !question.Area.HasValue &&
+                                    question.Area.HasValue;
+
+                                <label class="sc-question-item"
+                                       data-question-id="@question.VolunteerQuestionId"
+                                       data-category="@categoryValue"
+                                       data-area="@areaValue"
+                                       data-general="@(isGeneral ? "true" : "false")"
+                                       data-category-only="@(isCategoryOnly ? "true" : "false")"
+                                       data-area-only="@(isAreaOnly ? "true" : "false")"
+                                       data-question-text="@question.Question.ToLowerInvariant()">
+
+                                    <input type="checkbox"
+                                           name="SelectedQuestionIds"
+                                           value="@question.VolunteerQuestionId"
+                                           class="sc-question-checkbox"
+                                           @(Model.SelectedQuestionIds != null &&
+                                             Model.SelectedQuestionIds.Contains(question.VolunteerQuestionId)
+                                                ? "checked"
+                                                : "") />
+
+                                    <span class="sc-question-checkmark">
+
+                                        <i class="bi bi-check-lg"></i>
+
+                                    </span>
+
+
+                                    <span class="sc-question-content">
+
+                                        <span class="sc-question-text">
+                                            @question.Question
+                                        </span>
+
+                                        <span class="sc-question-meta">
+
+                                            <span class="sc-question-type">
+
+                                                @if (question.QuestionType ==
+                                                     SwiftCare.Models.VolunteerQuestionType.ShortAnswer)
+                                                {
+                                                    <i class="bi bi-input-cursor-text"></i>
+                                                    <span>Short Answer</span>
+                                                }
+                                                else if (question.QuestionType ==
+                                                         SwiftCare.Models.VolunteerQuestionType.LongAnswer)
+                                                {
+                                                    <i class="bi bi-textarea-t"></i>
+                                                    <span>Long Answer</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-toggle2-on"></i>
+                                                    <span>Yes / No</span>
+                                                }
+
+                                            </span>
+
+
+                                            @if (question.IsRequired)
+                                            {
+                                                <span class="sc-question-required">
+                                                    <i class="bi bi-asterisk"></i>
+                                                    Required
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="sc-question-optional">
+                                                    Optional
+                                                </span>
+                                            }
+
+
+                                            @if (isGeneral)
+                                            {
+                                                <span class="sc-question-source sc-question-source-general">
+                                                    <i class="bi bi-globe2"></i>
+                                                    General
+                                                </span>
+                                            }
+                                            else if (question.Category.HasValue &&
+                                                     question.Area.HasValue)
+                                            {
+                                                <span class="sc-question-source sc-question-source-specific">
+                                                    <i class="bi bi-stars"></i>
+                                                    Category + Area
+                                                </span>
+                                            }
+                                            else if (question.Category.HasValue)
+                                            {
+                                                <span class="sc-question-source sc-question-source-category">
+                                                    <i class="bi bi-folder2-open"></i>
+                                                    Category
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="sc-question-source sc-question-source-area">
+                                                    <i class="bi bi-geo-alt"></i>
+                                                    Area
+                                                </span>
+                                            }
+
+                                        </span>
+
+                                    </span>
+
+
+                                    <span class="sc-question-selection-indicator">
+
+                                        <i class="bi bi-plus-lg"></i>
+
+                                    </span>
+
+                                </label>
+                            }
+                        }
+                        else
+                        {
+                            <div class="sc-question-empty">
+
+                                <div class="sc-question-empty-icon">
+                                    <i class="bi bi-chat-square-x"></i>
+                                </div>
+
+                                <h3>
+                                    No questions available
+                                </h3>
+
+                                <p>
+                                    There are currently no active application
+                                    questions in the question library.
+                                </p>
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                    <!-- NO FILTER RESULTS -->
+
+                    <div id="noQuestionResults"
+                         class="sc-question-empty sc-question-empty-filtered"
+                         style="display:none;">
+
+                        <div class="sc-question-empty-icon">
+                            <i class="bi bi-search"></i>
+                        </div>
+
+                        <h3>
+                            No matching questions
+                        </h3>
+
+                        <p>
+                            Try changing the category, area or search term.
+                        </p>
+
+                    </div>
+
+
+                    <!-- SELECTED QUESTIONS FOOTER -->
+
+                    <div class="sc-question-footer">
+
+                        <div class="sc-question-footer-left">
+
+                            <i class="bi bi-lightbulb-fill"></i>
+
+                            <span>
+                                You can select as many questions as needed
+                                for this opportunity.
+                            </span>
+
+                        </div>
+
+                        <button type="button"
+                                id="clearSelectedQuestions"
+                                class="sc-question-clear-button">
+
+                            <i class="bi bi-x-circle"></i>
+
+                            Clear Selection
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
                      ACTIONS
                      ============================================= -->
 
                 <div class="op-actions">
 
                     <a asp-controller="VolunteerOpportunities"
-                           asp-action="Volunteers"
-                           class="op-btn op-btn-cancel">
+                       asp-action="Volunteers"
+                       class="op-btn op-btn-cancel">
 
                         <i class="bi bi-x-lg"></i>
 
@@ -762,7 +1129,9 @@
                     <div class="op-card-header">
 
                         <div class="op-section-icon">
+
                             <i class="bi bi-image"></i>
+
                         </div>
 
                         <div>
@@ -911,6 +1280,10 @@
                                 Use a professional poster representing SwiftCare.
                             </li>
 
+                            <li>
+                                Select relevant application questions for applicants.
+                            </li>
+
                         </ul>
 
                     </div>
@@ -931,6 +1304,7 @@
 <!-- =========================================================
      PAGE SCRIPTS
      ========================================================= -->
+
 @section Scripts {
 
     <partial name="_ValidationScriptsPartial" />
@@ -938,6 +1312,7 @@
     <script>
 
         document.addEventListener("DOMContentLoaded", function () {
+
 
             /* =====================================================
                POSTER
@@ -965,6 +1340,7 @@
                     return;
                 }
 
+
                 if (!file.type.startsWith("image/")) {
 
                     alert("Please select a valid image file.");
@@ -989,20 +1365,29 @@
                     function (event) {
 
                         if (posterPreviewImage) {
+
                             posterPreviewImage.src =
                                 event.target.result;
+
                         }
+
 
                         if (posterFileName) {
+
                             posterFileName.textContent =
                                 file.name;
+
                         }
 
+
                         if (posterPreview) {
+
                             posterPreview.classList.add(
                                 "active"
                             );
+
                         }
+
                     };
 
 
@@ -1021,8 +1406,10 @@
                             this.files[0];
 
                         showPosterPreview(file);
+
                     }
                 );
+
             }
 
 
@@ -1037,6 +1424,7 @@
                         posterUpload.classList.add(
                             "dragover"
                         );
+
                     }
                 );
 
@@ -1048,6 +1436,7 @@
                         posterUpload.classList.remove(
                             "dragover"
                         );
+
                     }
                 );
 
@@ -1099,6 +1488,7 @@
 
                                 posterInput.files =
                                     dataTransfer.files;
+
                             }
 
                         }
@@ -1108,12 +1498,15 @@
                                 "Could not assign dropped file.",
                                 error
                             );
+
                         }
 
 
                         showPosterPreview(file);
+
                     }
                 );
+
             }
 
 
@@ -1164,6 +1557,7 @@
 
 
                     container.appendChild(row);
+
                 };
 
 
@@ -1214,6 +1608,7 @@
 
 
                     container.appendChild(row);
+
                 };
 
 
@@ -1264,6 +1659,7 @@
 
 
                     container.appendChild(row);
+
                 };
 
 
@@ -1305,10 +1701,6 @@
                         );
 
 
-                    /*
-                     * Always keep one row.
-                     */
-
                     if (rows.length <= 1) {
 
                         const input =
@@ -1327,7 +1719,495 @@
 
 
                     row.remove();
+
                 };
+
+
+            /* =====================================================
+               QUESTION SYSTEM
+               ===================================================== */
+
+            const categorySelect =
+                document.getElementById(
+                    "opportunityCategory"
+                );
+
+            const areaSelect =
+                document.getElementById(
+                    "opportunityArea"
+                );
+
+            const questionFilter =
+                document.getElementById(
+                    "questionFilter"
+                );
+
+            const questionSearch =
+                document.getElementById(
+                    "questionSearch"
+                );
+
+            const questionList =
+                document.getElementById(
+                    "questionList"
+                );
+
+            const noQuestionResults =
+                document.getElementById(
+                    "noQuestionResults"
+                );
+
+            const selectedQuestionCount =
+                document.getElementById(
+                    "selectedQuestionCount"
+                );
+
+            const selectedQuestionsSummary =
+                document.getElementById(
+                    "selectedQuestionsSummary"
+                );
+
+            const clearSelectedQuestions =
+                document.getElementById(
+                    "clearSelectedQuestions"
+                );
+
+
+            const questionItems =
+                questionList
+                    ? Array.from(
+                        questionList.querySelectorAll(
+                            ".sc-question-item"
+                        )
+                    )
+                    : [];
+
+
+            function getSelectedQuestions() {
+
+                return questionItems.filter(
+                    function (item) {
+
+                        const checkbox =
+                            item.querySelector(
+                                ".sc-question-checkbox"
+                            );
+
+                        return checkbox &&
+                               checkbox.checked;
+
+                    }
+                );
+
+            }
+
+
+            function updateQuestionCount() {
+
+                const selected =
+                    getSelectedQuestions();
+
+
+                if (selectedQuestionCount) {
+
+                    selectedQuestionCount.textContent =
+                        selected.length;
+
+                }
+
+
+                if (selectedQuestionsSummary) {
+
+                    if (selected.length === 0) {
+
+                        selectedQuestionsSummary.innerHTML = `
+
+                            <div class="sc-selected-question-summary-icon">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    No questions selected yet
+                                </strong>
+
+                                <span>
+                                    Choose questions below to add them to this opportunity.
+                                </span>
+
+                            </div>
+
+                        `;
+
+                    }
+                    else {
+
+                        selectedQuestionsSummary.innerHTML = `
+
+                            <div class="sc-selected-question-summary-icon active">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    ${selected.length}
+                                    ${selected.length === 1
+                                        ? "question"
+                                        : "questions"} selected
+                                </strong>
+
+                                <span>
+                                    These questions will appear on the volunteer application form.
+                                </span>
+
+                            </div>
+
+                        `;
+
+                    }
+
+                }
+
+            }
+
+
+            function getQuestionMatch(item) {
+
+                const selectedCategory =
+                    categorySelect
+                        ? categorySelect.value
+                        : "";
+
+                const selectedArea =
+                    areaSelect
+                        ? areaSelect.value
+                        : "";
+
+
+                const itemCategory =
+                    item.dataset.category || "";
+
+                const itemArea =
+                    item.dataset.area || "";
+
+                const isGeneral =
+                    item.dataset.general === "true";
+
+
+                const matchesCategory =
+                    itemCategory === selectedCategory &&
+                    selectedCategory !== "";
+
+
+                const matchesArea =
+                    itemArea === selectedArea &&
+                    selectedArea !== "";
+
+
+                const matchesBoth =
+                    matchesCategory &&
+                    matchesArea;
+
+
+                return {
+                    general: isGeneral,
+                    category: matchesCategory,
+                    area: matchesArea,
+                    both: matchesBoth
+                };
+
+            }
+
+
+            function shouldShowQuestion(item) {
+
+                const filter =
+                    questionFilter
+                        ? questionFilter.value
+                        : "recommended";
+
+                const searchTerm =
+                    questionSearch
+                        ? questionSearch.value
+                            .trim()
+                            .toLowerCase()
+                        : "";
+
+
+                const text =
+                    item.dataset.questionText || "";
+
+
+                const matchesSearch =
+                    searchTerm === "" ||
+                    text.includes(searchTerm);
+
+
+                if (!matchesSearch) {
+                    return false;
+                }
+
+
+                const match =
+                    getQuestionMatch(item);
+
+
+                if (filter === "all") {
+
+                    return true;
+
+                }
+
+
+                /*
+                 * Recommended questions:
+                 *
+                 * 1. General questions
+                 * 2. Category questions
+                 * 3. Area questions
+                 * 4. Questions matching BOTH
+                 */
+
+                return match.general ||
+                       match.category ||
+                       match.area;
+
+            }
+
+
+            function updateQuestionList() {
+
+                let visibleCount = 0;
+
+
+                questionItems.forEach(
+                    function (item) {
+
+                        const matches =
+                            shouldShowQuestion(item);
+
+
+                        if (matches) {
+
+                            item.style.display =
+                                "flex";
+
+                            visibleCount++;
+
+                        }
+                        else {
+
+                            item.style.display =
+                                "none";
+
+                        }
+
+                    }
+                );
+
+
+                if (noQuestionResults) {
+
+                    noQuestionResults.style.display =
+                        visibleCount === 0
+                            ? "flex"
+                            : "none";
+
+                }
+
+
+                /*
+                 * Update visual badge for
+                 * questions matching both.
+                 */
+
+                questionItems.forEach(
+                    function (item) {
+
+                        const match =
+                            getQuestionMatch(item);
+
+
+                        item.classList.toggle(
+                            "sc-question-perfect-match",
+                            match.both
+                        );
+
+                    }
+                );
+
+            }
+
+
+            function bindQuestionCheckboxes() {
+
+                questionItems.forEach(
+                    function (item) {
+
+                        const checkbox =
+                            item.querySelector(
+                                ".sc-question-checkbox"
+                            );
+
+
+                        if (!checkbox) {
+                            return;
+                        }
+
+
+                        checkbox.addEventListener(
+                            "change",
+                            function () {
+
+                                item.classList.toggle(
+                                    "selected",
+                                    checkbox.checked
+                                );
+
+
+                                updateQuestionCount();
+
+                            }
+                        );
+
+
+                        item.classList.toggle(
+                            "selected",
+                            checkbox.checked
+                        );
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Category changed.
+             */
+
+            if (categorySelect) {
+
+                categorySelect.addEventListener(
+                    "change",
+                    function () {
+
+                        updateQuestionList();
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Area changed.
+             */
+
+            if (areaSelect) {
+
+                areaSelect.addEventListener(
+                    "change",
+                    function () {
+
+                        updateQuestionList();
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Question filter changed.
+             */
+
+            if (questionFilter) {
+
+                questionFilter.addEventListener(
+                    "change",
+                    function () {
+
+                        updateQuestionList();
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Search questions.
+             */
+
+            if (questionSearch) {
+
+                questionSearch.addEventListener(
+                    "input",
+                    function () {
+
+                        updateQuestionList();
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Clear selected questions.
+             */
+
+            if (clearSelectedQuestions) {
+
+                clearSelectedQuestions.addEventListener(
+                    "click",
+                    function () {
+
+                        questionItems.forEach(
+                            function (item) {
+
+                                const checkbox =
+                                    item.querySelector(
+                                        ".sc-question-checkbox"
+                                    );
+
+
+                                if (checkbox) {
+
+                                    checkbox.checked =
+                                        false;
+
+                                }
+
+
+                                item.classList.remove(
+                                    "selected"
+                                );
+
+                            }
+                        );
+
+
+                        updateQuestionCount();
+
+                    }
+                );
+
+            }
+
+
+            bindQuestionCheckboxes();
+
+            updateQuestionCount();
+
+            updateQuestionList();
 
 
             /* =====================================================
@@ -1388,10 +2268,6 @@
             let citySearchTimeout = null;
 
 
-            /*
-             * Make sure the city elements exist.
-             */
-
             if (
                 !citySearchInput ||
                 !cityResults ||
@@ -1405,6 +2281,7 @@
                 );
 
                 return;
+
             }
 
 
@@ -1425,10 +2302,6 @@
                     );
 
 
-                    /*
-                     * User is typing a new city.
-                     */
-
                     cityName.value = "";
                     geoNameId.value = "";
                     cityProvince.value = "";
@@ -1439,6 +2312,7 @@
                         selectedCity.classList.remove(
                             "active"
                         );
+
                     }
 
 
@@ -1450,19 +2324,18 @@
                             "active"
                         );
 
+
                         if (cityLoading) {
 
                             cityLoading.style.display =
                                 "none";
+
                         }
 
                         return;
+
                     }
 
-
-                    /*
-                     * Wait 350ms before calling API.
-                     */
 
                     citySearchTimeout =
                         setTimeout(
@@ -1475,6 +2348,7 @@
                             },
                             350
                         );
+
                 }
             );
 
@@ -1489,6 +2363,7 @@
                     term.trim().length < 2) {
 
                     return;
+
                 }
 
 
@@ -1496,6 +2371,7 @@
 
                     cityLoading.style.display =
                         "block";
+
                 }
 
 
@@ -1503,12 +2379,6 @@
 
                     const url =
                         `/VolunteerOpportunities/SearchCities?term=${encodeURIComponent(term)}`;
-
-
-                    console.log(
-                        "Searching cities:",
-                        url
-                    );
 
 
                     const response =
@@ -1524,28 +2394,17 @@
                         );
 
 
-                    console.log(
-                        "City API status:",
-                        response.status
-                    );
-
-
                     if (!response.ok) {
 
                         throw new Error(
                             `City search failed with status ${response.status}`
                         );
+
                     }
 
 
                     const cities =
                         await response.json();
-
-
-                    console.log(
-                        "Cities returned:",
-                        cities
-                    );
 
 
                     displayCityResults(
@@ -1562,16 +2421,23 @@
 
 
                     cityResults.innerHTML = `
+
                         <div class="city-no-results">
+
                             <i class="bi bi-exclamation-circle me-2"></i>
-                            Unable to load cities. Please try again.
+
+                            Unable to load cities.
+                            Please try again.
+
                         </div>
+
                     `;
 
 
                     cityResults.classList.add(
                         "active"
                     );
+
                 }
                 finally {
 
@@ -1579,8 +2445,11 @@
 
                         cityLoading.style.display =
                             "none";
+
                     }
+
                 }
+
             }
 
 
@@ -1600,10 +2469,15 @@
                 ) {
 
                     cityResults.innerHTML = `
+
                         <div class="city-no-results">
+
                             <i class="bi bi-geo-alt me-2"></i>
+
                             No South African cities found.
+
                         </div>
+
                     `;
 
 
@@ -1613,27 +2487,12 @@
 
 
                     return;
+
                 }
 
 
                 cities.forEach(
                     function (city) {
-
-                        /*
-                         * IMPORTANT:
-                         *
-                         * Your controller returns:
-                         *
-                         * cityName
-                         * geoNameId
-                         * province
-                         *
-                         * NOT:
-                         *
-                         * name
-                         * id
-                         * adminName1
-                         */
 
                         const name =
                             city.cityName;
@@ -1666,25 +2525,38 @@
 
 
                         button.innerHTML = `
+
                             <span class="city-result-icon">
+
                                 <i class="bi bi-geo-alt"></i>
+
                             </span>
+
 
                             <span class="city-result-content">
 
                                 <span class="city-result-name">
+
                                     ${escapeHtml(name)}
+
                                 </span>
+
 
                                 <span class="city-result-province">
+
                                     ${escapeHtml(province)}
+
                                 </span>
 
                             </span>
 
+
                             <span class="city-result-arrow">
+
                                 <i class="bi bi-chevron-right"></i>
+
                             </span>
+
                         `;
 
 
@@ -1697,6 +2569,7 @@
                                 selectCity(
                                     city
                                 );
+
                             }
                         );
 
@@ -1704,23 +2577,15 @@
                         cityResults.appendChild(
                             button
                         );
+
                     }
                 );
 
-
-                /*
-                 * Show dropdown.
-                 */
 
                 cityResults.classList.add(
                     "active"
                 );
 
-
-                console.log(
-                    "City suggestions displayed:",
-                    cities.length
-                );
             }
 
 
@@ -1750,10 +2615,6 @@
                     "";
 
 
-                /*
-                 * Store values in hidden inputs.
-                 */
-
                 cityName.value =
                     name;
 
@@ -1766,23 +2627,15 @@
                     province;
 
 
-                /*
-                 * Display selected city
-                 * in search input.
-                 */
-
                 citySearchInput.value =
                     name;
 
-
-                /*
-                 * Display selected city card.
-                 */
 
                 if (selectedCityName) {
 
                     selectedCityName.textContent =
                         name;
+
                 }
 
 
@@ -1790,6 +2643,7 @@
 
                     selectedCityProvince.textContent =
                         `${province || "South Africa"} • South Africa`;
+
                 }
 
 
@@ -1798,12 +2652,9 @@
                     selectedCity.classList.add(
                         "active"
                     );
+
                 }
 
-
-                /*
-                 * Hide results.
-                 */
 
                 cityResults.innerHTML = "";
 
@@ -1811,15 +2662,6 @@
                     "active"
                 );
 
-
-                console.log(
-                    "Selected city:",
-                    {
-                        cityName: name,
-                        geoNameId: id,
-                        province: province
-                    }
-                );
             }
 
 
@@ -1839,8 +2681,10 @@
                         cityName.value =
                             "";
 
+
                         geoNameId.value =
                             "";
+
 
                         cityProvince.value =
                             "";
@@ -1864,6 +2708,7 @@
                             selectedCity.classList.remove(
                                 "active"
                             );
+
                         }
 
 
@@ -1871,6 +2716,7 @@
 
                             selectedCityName.textContent =
                                 "";
+
                         }
 
 
@@ -1878,17 +2724,20 @@
 
                             selectedCityProvince.textContent =
                                 "";
+
                         }
 
 
                         citySearchInput.focus();
+
                     }
                 );
+
             }
 
 
             /* =====================================================
-               CLOSE RESULTS OUTSIDE
+               CLOSE CITY RESULTS
                ===================================================== */
 
             document.addEventListener(
@@ -1907,7 +2756,9 @@
                         cityResults.classList.remove(
                             "active"
                         );
+
                     }
+
                 }
             );
 
@@ -1929,11 +2780,12 @@
 
 
                 return div.innerHTML;
+
             }
 
 
             /* =====================================================
-               REOPEN SEARCH
+               REOPEN CITY SEARCH
                ===================================================== */
 
             citySearchInput.addEventListener(
@@ -1965,7 +2817,9 @@
                                 },
                                 150
                             );
+
                     }
+
                 }
             );
 
@@ -1992,11 +2846,6 @@
                             geoNameId.value.trim();
 
 
-                        /*
-                         * User typed a city but didn't
-                         * select an API suggestion.
-                         */
-
                         if (
                             typedCity.length > 0 &&
                             selectedId.length === 0
@@ -2006,10 +2855,15 @@
 
 
                             cityResults.innerHTML = `
+
                                 <div class="city-no-results">
+
                                     <i class="bi bi-exclamation-circle me-2"></i>
+
                                     Please select a city from the suggestions.
+
                                 </div>
+
                             `;
 
 
@@ -2022,9 +2876,12 @@
 
 
                             return;
+
                         }
+
                     }
                 );
+
             }
 
 
@@ -2036,3 +2893,4 @@
 
     </script>
 }
+

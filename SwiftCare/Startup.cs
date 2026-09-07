@@ -10,13 +10,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SwiftCare.Data;
 using SwiftCare.Helpers;
 using SwiftCare.Interfaces;
 using SwiftCare.Models;
-using SwiftCare.Services;
-using Serilog;
 using SwiftCare.Models;
+using SwiftCare.Services;
+using SwiftCare.Services.VolunteerATS;
 using System;
 using System.Globalization;
 using System.Security.Claims;
@@ -108,7 +109,18 @@ public class Startup
         services.AddScoped<SmsService>();
         services.AddScoped<BarcodeService>();
         services.AddScoped<QrCodeService>();
+        services.AddScoped<VolunteerEligibilityEngine>();
 
+        services.AddScoped<VolunteerScoringEngine>();
+
+        services.AddScoped<VolunteerRankingEngine>();
+
+        services.AddScoped<VolunteerATSAuditService>();
+
+        services.AddScoped<IVolunteerAIEvaluationEngine,
+            VolunteerAIEvaluationEngine>();
+
+        services.AddScoped<VolunteerShortlistingPipeline>();
         services.AddLogging(logging =>
         {
             logging.AddConsole();

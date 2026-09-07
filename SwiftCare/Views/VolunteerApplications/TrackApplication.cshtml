@@ -1,0 +1,296 @@
+﻿@using SwiftCare.Models
+@model IEnumerable<VolunteerApplication>
+
+@{
+    ViewData["Title"] = "Track Application";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var applications = Model?.ToList()
+        ?? new List<VolunteerApplication>();
+}
+
+<div class="sc-track-page">
+
+    <div class="sc-track-background">
+        <div class="sc-track-glow sc-track-glow-one"></div>
+        <div class="sc-track-glow sc-track-glow-two"></div>
+        <div class="sc-track-pattern"></div>
+    </div>
+
+    <div class="sc-track-container">
+
+        <!-- HEADER -->
+        <div class="sc-track-header">
+
+            <div class="sc-track-header-left">
+
+                <div class="sc-track-header-icon">
+                    <i class="bi bi-clipboard2-check-fill"></i>
+                </div>
+
+                <div class="sc-track-header-content">
+
+                    <span class="sc-track-eyebrow">
+                        SWIFTCARE
+                    </span>
+
+                    <h1>
+                        Track Your Applications
+                    </h1>
+
+                    <p>
+                        Keep track of your volunteer applications and their latest status.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <a asp-controller="VolunteerOpportunities"
+                   asp-action="Index"
+                   class="sc-track-browse-button">
+
+                <i class="bi bi-search"></i>
+
+                <span>
+                    Browse Opportunities
+                </span>
+
+            </a>
+
+        </div>
+
+
+        @if (!applications.Any())
+        {
+            <!-- EMPTY STATE -->
+            <div class="sc-track-empty">
+
+                <div class="sc-track-empty-icon">
+                    <i class="bi bi-folder2-open"></i>
+                </div>
+
+                <div class="sc-track-empty-content">
+
+                    <span class="sc-track-empty-label">
+                        NO APPLICATIONS
+                    </span>
+
+                    <h2>
+                        You have no applications yet
+                    </h2>
+
+                    <p>
+                        Once you apply for a volunteer opportunity,
+                        your application will appear here so you can
+                        easily follow its progress.
+                    </p>
+
+                    <a asp-controller="VolunteerOpportunities"
+                           asp-action="Index"
+                           class="sc-track-primary-button">
+
+                        <i class="bi bi-search"></i>
+
+                        Browse Volunteer Opportunities
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <!-- APPLICATION LIST -->
+            <div class="sc-track-section-header">
+
+                <div>
+                    <span class="sc-track-section-eyebrow">
+                        MY APPLICATIONS
+                    </span>
+
+                    <h2>
+                        Your Volunteer Applications
+                    </h2>
+                </div>
+
+                <span class="sc-track-application-count">
+                    @applications.Count
+                    @(applications.Count == 1 ? "Application" : "Applications")
+                </span>
+
+            </div>
+
+
+            <div class="sc-track-applications">
+
+                @foreach (var application in applications)
+                {
+                    var statusClass =
+                        application.Status switch
+                        {
+                            VolunteerApplicationStatus.Pending
+                                => "sc-track-status-pending",
+
+                            VolunteerApplicationStatus.Approved
+                                => "sc-track-status-approved",
+
+                            VolunteerApplicationStatus.Rejected
+                                => "sc-track-status-rejected",
+
+                            _ => "sc-track-status-default"
+                        };
+
+                    var statusIcon =
+                        application.Status switch
+                        {
+                            VolunteerApplicationStatus.Pending
+                                => "bi-hourglass-split",
+
+                            VolunteerApplicationStatus.Approved
+                                => "bi-check-circle-fill",
+
+                            VolunteerApplicationStatus.Rejected
+                                => "bi-x-circle-fill",
+
+                            _ => "bi-info-circle-fill"
+                        };
+
+                    var statusText =
+                        application.Status switch
+                        {
+                            VolunteerApplicationStatus.Pending
+                                => "Pending Review",
+
+                            VolunteerApplicationStatus.Approved
+                                => "Approved",
+
+                            VolunteerApplicationStatus.Rejected
+                                => "Not Approved",
+
+                            _ => application.Status.ToString()
+                        };
+
+                    <div class="sc-track-application-card">
+
+                        <!-- TOP -->
+                        <div class="sc-track-card-top">
+
+                            <div class="sc-track-application-main">
+
+                                <div class="sc-track-application-icon">
+                                    <i class="bi bi-heart-pulse-fill"></i>
+                                </div>
+
+                                <div class="sc-track-application-info">
+
+                                    <span class="sc-track-application-label">
+                                        VOLUNTEER APPLICATION
+                                    </span>
+
+                                    <h3>
+                                        @(application.VolunteerOpportunity?.Title
+                                            ?? "Volunteer Opportunity")
+                                    </h3>
+
+                                </div>
+
+                            </div>
+
+                            <div class="sc-track-status @statusClass">
+
+                                <i class="bi @statusIcon"></i>
+
+                                <span>
+                                    @statusText
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- DIVIDER -->
+                        <div class="sc-track-divider"></div>
+
+
+                        <!-- BOTTOM -->
+                        <div class="sc-track-card-bottom">
+
+                            <div class="sc-track-application-details">
+
+                                <div class="sc-track-detail-item">
+
+                                    <div class="sc-track-detail-icon">
+                                        <i class="bi bi-hash"></i>
+                                    </div>
+
+                                    <div>
+                                        <span>
+                                            REFERENCE
+                                        </span>
+
+                                        <strong>
+                                            @application.Reference
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+
+                                <div class="sc-track-detail-item">
+
+                                    <div class="sc-track-detail-icon">
+                                        <i class="bi bi-calendar3"></i>
+                                    </div>
+
+                                    <div>
+                                        <span>
+                                            APPLIED ON
+                                        </span>
+
+                                        <strong>
+                                            @application.AppliedDate.ToString("dd MMM yyyy")
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+
+                                @if (application.VolunteerOpportunity != null)
+                                {
+                                    <div class="sc-track-detail-item">
+
+                                        <div class="sc-track-detail-icon">
+                                            <i class="bi bi-geo-alt-fill"></i>
+                                        </div>
+
+                                        <div>
+                                            <span>
+                                                LOCATION
+                                            </span>
+
+                                            <strong>
+                                                @application.VolunteerOpportunity.CityName
+                                            </strong>
+                                        </div>
+
+                                    </div>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</div>

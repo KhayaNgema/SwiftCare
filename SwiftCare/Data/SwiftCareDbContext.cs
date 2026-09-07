@@ -96,11 +96,30 @@ namespace SwiftCare.Data
     })
     .IsUnique();
 
+            modelBuilder.Entity<VolunteerApplicationEvaluation>()
+                .HasOne(x => x.VolunteerApplication)
+                .WithOne(x => x.Evaluation)
+                .HasForeignKey<VolunteerApplicationEvaluation>(
+                    x => x.VolunteerApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
 
-        public DbSet<DailyMaintenance> DailyMaintenance { get; set; }
-        public DbSet<DailyCare> DailyCare { get; set; }
-        public DbSet<PackageOrder> PackageOrders { get; set; }
+        public DbSet<VolunteerApplicationEvaluation>VolunteerApplicationEvaluations{ get; set; }
+
+        public DbSet<VolunteerApplicationAudit>VolunteerApplicationAudits { get; set; }
+
+        public DbSet<VolunteerOpportunityScoringConfiguration>VolunteerOpportunityScoringConfigurations{ get; set; }
+        public DbSet<SwiftCare.Models.Applicant> Applicants { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerQuestion> VolunteerQuestions{ get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerOpportunityQuestion>VolunteerOpportunityQuestions{ get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerApplicationAnswer>VolunteerApplicationAnswers{ get; set; }
+        public DbSet<SwiftCare.Models.DailyMaintenance> DailyMaintenance { get; set; }
+        public DbSet<SwiftCare.Models.DailyCare> DailyCare { get; set; }
+        public DbSet<SwiftCare.Models.PackageOrder> PackageOrders { get; set; }
 
         public DbSet<SwiftCare.Models.City> Cities { get; set; }
 

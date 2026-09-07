@@ -1,0 +1,900 @@
+﻿@using SwiftCare.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@model IEnumerable<VolunteerApplication>
+
+@{
+    ViewData["Title"] = "Shortlist Management";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var applications = Model?.ToList()
+        ?? new List<VolunteerApplication>();
+
+    string GetDisplayName(Enum value)
+    {
+        var member = value.GetType()
+            .GetMember(value.ToString())
+            .FirstOrDefault();
+
+        var display = member?
+            .GetCustomAttribute<DisplayAttribute>();
+
+        return display?.Name ?? value.ToString();
+    }
+
+    var totalShortlisted = applications.Count;
+
+    var strongShortlist = applications
+        .Count(x => x.ATSScore >= 85);
+
+    var reviewRecommended = applications
+        .Count(x => x.ATSScore >= 70 && x.ATSScore < 85);
+
+    var eligibleCount = applications
+        .Count(x => x.EligibilityStatus ==
+                    VolunteerEligibilityStatus.Eligible);
+
+    var opportunities = applications
+        .Where(x => x.VolunteerOpportunity != null)
+        .GroupBy(x => x.VolunteerOpportunityId)
+        .Select(x => new
+        {
+            Id = x.Key,
+            Title = x.First().VolunteerOpportunity!.Title,
+            Count = x.Count()
+        })
+        .OrderBy(x => x.Title)
+        .ToList();
+}
+
+<div class="sc-shortlist-page">
+
+    <div class="sc-shortlist-container">
+
+        <!-- =====================================================
+             HEADER
+             ===================================================== -->
+
+        <div class="sc-shortlist-header">
+
+            <div class="sc-shortlist-header-left">
+
+                <a asp-controller="VolunteerApplications"
+                       asp-action="Index"
+                       class="sc-shortlist-back-button">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                </a>
+
+                <div class="sc-shortlist-header-icon">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
+
+                <div>
+                    <div class="sc-shortlist-eyebrow">
+                        VOLUNTEER RECRUITMENT
+                    </div>
+
+                    <h1>
+                        Shortlist Management
+                    </h1>
+
+                    <p>
+                        Review candidates selected by the ATS shortlisting pipeline.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             SUMMARY
+             ===================================================== -->
+
+        <div class="sc-shortlist-summary-grid">
+
+            <div class="sc-shortlist-summary-card">
+
+                <div class="sc-shortlist-summary-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <div>
+                    <span>Total Shortlisted</span>
+                    <strong>@totalShortlisted</strong>
+                </div>
+
+            </div>
+
+
+            <div class="sc-shortlist-summary-card">
+
+                <div class="sc-shortlist-summary-icon sc-shortlist-summary-icon-success">
+                    <i class="bi bi-stars"></i>
+                </div>
+
+                <div>
+                    <span>Strong Shortlist</span>
+                    <strong>@strongShortlist</strong>
+                </div>
+
+            </div>
+
+
+            <div class="sc-shortlist-summary-card">
+
+                <div class="sc-shortlist-summary-icon sc-shortlist-summary-icon-warning">
+                    <i class="bi bi-search"></i>
+                </div>
+
+                <div>
+                    <span>Review Recommended</span>
+                    <strong>@reviewRecommended</strong>
+                </div>
+
+            </div>
+
+
+            <div class="sc-shortlist-summary-card">
+
+                <div class="sc-shortlist-summary-icon sc-shortlist-summary-icon-eligible">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <div>
+                    <span>Eligible</span>
+                    <strong>@eligibleCount</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             MAIN CARD
+             ===================================================== -->
+
+        <div class="sc-shortlist-card">
+
+            <div class="sc-shortlist-card-header">
+
+                <div>
+
+                    <div class="sc-shortlist-section-label">
+                        SHORTLISTED CANDIDATES
+                    </div>
+
+                    <h2>
+                        ATS Candidate Review
+                    </h2>
+
+                    <p>
+                        Candidates who have successfully reached the shortlist stage.
+                    </p>
+
+                </div>
+
+                <div class="sc-shortlist-count">
+                    @totalShortlisted Candidates
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 FILTERS
+                 ================================================= -->
+
+            <div class="sc-shortlist-filters">
+
+                <div class="sc-shortlist-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input type="text"
+                           id="shortlistSearch"
+                           placeholder="Search applicant or reference..."
+                           autocomplete="off" />
+
+                </div>
+
+
+                <div class="sc-shortlist-filter">
+
+                    <select id="shortlistOpportunityFilter">
+
+                        <option value="">
+                            All Opportunities
+                        </option>
+
+                        @foreach (var opportunity in opportunities)
+                        {
+                            <option value="@opportunity.Id">
+                                @opportunity.Title (@opportunity.Count)
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+
+                <div class="sc-shortlist-filter">
+
+                    <select id="shortlistRecommendationFilter">
+
+                        <option value="">
+                            All Recommendations
+                        </option>
+
+                        <option value="strong">
+                            Strong Shortlist
+                        </option>
+
+                        <option value="review">
+                            Review Recommended
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TABLE
+                 ================================================= -->
+            @if (!applications.Any())
+            {
+                <div class="sc-shortlist-empty">
+
+                    <div class="sc-shortlist-empty-icon">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+
+                    <h3>
+                        No shortlisted candidates
+                    </h3>
+
+                    <p>
+                        Run the shortlisting pipeline from the Volunteer Applications page
+                        to generate your shortlist.
+                    </p>
+
+                    <a asp-controller="VolunteerApplications"
+                           asp-action="Index"
+                           class="sc-shortlist-empty-button">
+
+                        <i class="bi bi-arrow-left"></i>
+                        View Applications
+
+                    </a>
+
+                </div>
+            }
+            else
+            {
+                <div class="sc-shortlist-table-wrapper">
+
+                    <table class="sc-shortlist-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    RANK
+                                </th>
+
+                                <th>
+                                    APPLICANT
+                                </th>
+
+                                <th>
+                                    OPPORTUNITY
+                                </th>
+
+                                <th>
+                                    ELIGIBILITY
+                                </th>
+
+                                <th>
+                                    ATS SCORE
+                                </th>
+
+                                <th>
+                                    RECOMMENDATION
+                                </th>
+
+                                <th>
+                                    STAGE
+                                </th>
+
+                                <th>
+                                    ACTION
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="shortlistTableBody">
+
+                            @foreach (var application in applications)
+                            {
+                                var applicantName =
+                                    application.Applicant != null
+                                        ? $"{application.Applicant.FirstName} {application.Applicant.LastName}"
+                                        : "Unknown Applicant";
+
+                                var score = application.ATSScore;
+
+                                string recommendation;
+                                string recommendationClass;
+
+                                if (score >= 85)
+                                {
+                                    recommendation = "Strong Shortlist";
+                                    recommendationClass = "sc-shortlist-recommendation-strong";
+                                }
+                                else if (score >= 70)
+                                {
+                                    recommendation = "Review Recommended";
+                                    recommendationClass = "sc-shortlist-recommendation-review";
+                                }
+                                else
+                                {
+                                    recommendation = "Not Recommended";
+                                    recommendationClass = "sc-shortlist-recommendation-not";
+                                }
+
+
+                                string eligibilityClass;
+
+                                switch (application.EligibilityStatus)
+                                {
+                                    case VolunteerEligibilityStatus.Eligible:
+                                        eligibilityClass = "sc-shortlist-eligibility-eligible";
+                                        break;
+
+                                    case VolunteerEligibilityStatus.ReviewRequired:
+                                        eligibilityClass = "sc-shortlist-eligibility-review";
+                                        break;
+
+                                    case VolunteerEligibilityStatus.NotEligible:
+                                        eligibilityClass = "sc-shortlist-eligibility-not";
+                                        break;
+
+                                    default:
+                                        eligibilityClass = "sc-shortlist-eligibility-default";
+                                        break;
+                                }
+
+
+                                <tr class="sc-shortlist-row"
+                                    data-opportunity="@application.VolunteerOpportunityId"
+                                    data-recommendation="@(score >= 85 ? "strong" : score >= 70 ? "review" : "not")"
+                                    data-search="@($"{applicantName} {application.Reference} {application.VolunteerOpportunity?.Title}".ToLower())">
+
+                                    <!-- RANK -->
+
+                                    <td>
+
+                                        <div class="sc-shortlist-rank">
+
+                                            <span class="sc-shortlist-rank-number">
+                                                @(application.ATSRanking > 0
+                                                    ? $"#{application.ATSRanking}"
+                                                    : "—")
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- APPLICANT -->
+
+                                    <td>
+
+                                        <div class="sc-shortlist-applicant">
+
+                                            <div class="sc-shortlist-avatar">
+
+                                                @if (application.Applicant != null &&
+                                                     !string.IsNullOrWhiteSpace(application.Applicant.ProfilePicture))
+                                                {
+                                                    <img src="~/@application.Applicant.ProfilePicture"
+                                                         alt="@applicantName" />
+                                                }
+                                                else
+                                                {
+                                                    <span>
+                                                        @(applicantName.Length > 0
+                                                            ? applicantName.Substring(0, 1).ToUpper()
+                                                            : "?")
+                                                    </span>
+                                                }
+
+                                            </div>
+
+
+                                            <div class="sc-shortlist-applicant-info">
+
+                                                <strong>
+                                                    @applicantName
+                                                </strong>
+
+                                                <span>
+                                                    @application.Reference
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- OPPORTUNITY -->
+
+                                    <td>
+
+                                        <div class="sc-shortlist-opportunity">
+
+                                            <i class="bi bi-briefcase-fill"></i>
+
+                                            <span>
+                                                @(application.VolunteerOpportunity?.Title
+                                                    ?? "Unknown Opportunity")
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- ELIGIBILITY -->
+
+                                    <td>
+
+                                        <span class="sc-shortlist-eligibility @eligibilityClass">
+
+                                            @if (application.EligibilityStatus ==
+                                                VolunteerEligibilityStatus.Eligible)
+                                            {
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            }
+                                            else if (application.EligibilityStatus ==
+                                                     VolunteerEligibilityStatus.ReviewRequired)
+                                            {
+                                                <i class="bi bi-exclamation-circle-fill"></i>
+                                            }
+                                            else if (application.EligibilityStatus ==
+                                                     VolunteerEligibilityStatus.NotEligible)
+                                            {
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-question-circle-fill"></i>
+                                            }
+
+                                            @GetDisplayName(application.EligibilityStatus)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- SCORE -->
+
+                                    <td>
+
+                                        <div class="sc-shortlist-score">
+
+                                            <strong>
+                                                @score
+                                            </strong>
+
+                                            <span>
+                                                / 100
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- RECOMMENDATION -->
+
+                                    <td>
+
+                                        <span class="sc-shortlist-recommendation @recommendationClass">
+
+                                            @if (score >= 85)
+                                            {
+                                                <i class="bi bi-stars"></i>
+                                            }
+                                            else if (score >= 70)
+                                            {
+                                                <i class="bi bi-eye-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-dash-circle-fill"></i>
+                                            }
+
+                                            @recommendation
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- STAGE -->
+
+                                    <td>
+
+                                        <span class="sc-shortlist-stage">
+
+                                            <i class="bi bi-person-check-fill"></i>
+
+                                            @GetDisplayName(application.Stage)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- ACTION -->
+
+                                    <td>
+
+                                        <div class="sc-shortlist-actions">
+
+                                            <a asp-controller="VolunteerApplications"
+                                                   asp-action="Details"
+                                                   asp-route-id="@application.VolunteerApplicationId"
+                                                   class="sc-shortlist-view-button">
+
+                                                <i class="bi bi-eye-fill"></i>
+
+                                                View
+
+                                            </a>
+
+
+                                            <button type="button"
+                                                    class="sc-shortlist-interview-button"
+                                                    onclick="openInterviewNotice('@applicantName.Replace("'", "\\'")')">
+
+                                                <i class="bi bi-calendar-event"></i>
+
+                                                Interview
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- NO SEARCH RESULTS -->
+
+                <div id="shortlistNoResults"
+                     class="sc-shortlist-no-results"
+                     style="display:none;">
+
+                    <div class="sc-shortlist-no-results-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+
+                    <h3>
+                        No candidates found
+                    </h3>
+
+                    <p>
+                        Try changing your search or filters.
+                    </p>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     INTERVIEW NOTICE MODAL
+     ========================================================= -->
+
+<div id="interviewNoticeModal"
+     class="sc-shortlist-modal"
+     aria-hidden="true">
+
+    <div class="sc-shortlist-modal-overlay"
+         onclick="closeInterviewNotice()">
+    </div>
+
+    <div class="sc-shortlist-modal-dialog">
+
+        <div class="sc-shortlist-modal-header">
+
+            <div class="sc-shortlist-modal-icon">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+
+            <div>
+
+                <div class="sc-shortlist-modal-eyebrow">
+                    NEXT RECRUITMENT STAGE
+                </div>
+
+                <h3>
+                    Interview Management
+                </h3>
+
+            </div>
+
+            <button type="button"
+                    class="sc-shortlist-modal-close"
+                    onclick="closeInterviewNotice()">
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="sc-shortlist-modal-body">
+
+            <div class="sc-shortlist-modal-message">
+
+                <div class="sc-shortlist-modal-message-icon">
+                    <i class="bi bi-info-circle-fill"></i>
+                </div>
+
+                <div>
+
+                    <strong id="interviewApplicantName">
+                        Candidate
+                    </strong>
+
+                    <p>
+                        Interview scheduling will be the next stage of the
+                        recruitment workflow.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="sc-shortlist-modal-footer">
+
+            <button type="button"
+                    class="sc-shortlist-modal-cancel"
+                    onclick="closeInterviewNotice()">
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+    (function () {
+
+        const searchInput =
+            document.getElementById("shortlistSearch");
+
+        const opportunityFilter =
+            document.getElementById("shortlistOpportunityFilter");
+
+        const recommendationFilter =
+            document.getElementById("shortlistRecommendationFilter");
+
+        const rows =
+            Array.from(
+                document.querySelectorAll(".sc-shortlist-row")
+            );
+
+        const noResults =
+            document.getElementById("shortlistNoResults");
+
+
+        function filterRows() {
+
+            const search =
+                (searchInput?.value || "")
+                    .trim()
+                    .toLowerCase();
+
+            const opportunity =
+                opportunityFilter?.value || "";
+
+            const recommendation =
+                recommendationFilter?.value || "";
+
+            let visibleCount = 0;
+
+
+            rows.forEach(function (row) {
+
+                const rowSearch =
+                    row.dataset.search || "";
+
+                const rowOpportunity =
+                    row.dataset.opportunity || "";
+
+                const rowRecommendation =
+                    row.dataset.recommendation || "";
+
+
+                const matchesSearch =
+                    !search ||
+                    rowSearch.includes(search);
+
+                const matchesOpportunity =
+                    !opportunity ||
+                    rowOpportunity === opportunity;
+
+                const matchesRecommendation =
+                    !recommendation ||
+                    rowRecommendation === recommendation;
+
+
+                const visible =
+                    matchesSearch &&
+                    matchesOpportunity &&
+                    matchesRecommendation;
+
+
+                row.style.display =
+                    visible ? "" : "none";
+
+
+                if (visible) {
+                    visibleCount++;
+                }
+
+            });
+
+
+            if (noResults) {
+
+                noResults.style.display =
+                    visibleCount === 0
+                        ? "block"
+                        : "none";
+
+            }
+
+        }
+
+
+        if (searchInput) {
+            searchInput.addEventListener(
+                "input",
+                filterRows
+            );
+        }
+
+
+        if (opportunityFilter) {
+            opportunityFilter.addEventListener(
+                "change",
+                filterRows
+            );
+        }
+
+
+        if (recommendationFilter) {
+            recommendationFilter.addEventListener(
+                "change",
+                filterRows
+            );
+        }
+
+
+        window.openInterviewNotice =
+            function (name) {
+
+                const modal =
+                    document.getElementById(
+                        "interviewNoticeModal"
+                    );
+
+                const nameElement =
+                    document.getElementById(
+                        "interviewApplicantName"
+                    );
+
+                if (nameElement) {
+                    nameElement.textContent = name;
+                }
+
+                if (modal) {
+
+                    modal.classList.add("visible");
+
+                    modal.setAttribute(
+                        "aria-hidden",
+                        "false"
+                    );
+
+                    document.body.style.overflow =
+                        "hidden";
+                }
+            };
+
+
+        window.closeInterviewNotice =
+            function () {
+
+                const modal =
+                    document.getElementById(
+                        "interviewNoticeModal"
+                    );
+
+                if (modal) {
+
+                    modal.classList.remove("visible");
+
+                    modal.setAttribute(
+                        "aria-hidden",
+                        "true"
+                    );
+
+                }
+
+                document.body.style.overflow = "";
+
+            };
+
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Escape") {
+                    window.closeInterviewNotice();
+                }
+
+            }
+        );
+
+    })();
+
+</script>

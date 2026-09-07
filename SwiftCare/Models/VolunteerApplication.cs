@@ -36,11 +36,53 @@ namespace SwiftCare.Models
         [ForeignKey(nameof(ApplicantId))]
         public Applicant? Applicant { get; set; }
 
+        public string CoverMessage { get; set; }
+
+
+        [Required]
+        [StringLength(30)]
+        public string Reference { get; set; } = string.Empty;
 
         public int VolunteerOpportunityId { get; set; }
 
         [ForeignKey(nameof(VolunteerOpportunityId))]
         public VolunteerOpportunity? VolunteerOpportunity { get; set; }
+
+           public ICollection<VolunteerApplicationAnswer> Answers { get; set; }
+     = new List<VolunteerApplicationAnswer>();
+
+        // ============================================================
+        // ATS
+        // ============================================================
+
+        public VolunteerApplicationStage Stage { get; set; }
+            = VolunteerApplicationStage.Applied;
+
+        public VolunteerScreeningStatus ScreeningStatus { get; set; }
+            = VolunteerScreeningStatus.NotScreened;
+
+        public VolunteerEligibilityStatus EligibilityStatus { get; set; }
+            = VolunteerEligibilityStatus.NotChecked;
+
+        public VolunteerAIRecommendation AIRecommendation { get; set; }
+            = VolunteerAIRecommendation.NotEvaluated;
+
+        public VolunteerAdminDecision AdminDecision { get; set; }
+            = VolunteerAdminDecision.NoDecision;
+
+        public decimal? ATSScore { get; set; }
+
+        public int? ATSRanking { get; set; }
+
+        public DateTime? LastEvaluatedDate { get; set; }
+
+        public DateTime? ShortlistedDate { get; set; }
+
+        public DateTime? InterviewDate { get; set; }
+
+        public DateTime? DecisionDate { get; set; }
+
+        public VolunteerApplicationEvaluation? Evaluation { get; set; }
     }
 
     public enum VolunteerApplicationStatus

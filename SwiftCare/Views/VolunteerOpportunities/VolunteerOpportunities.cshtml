@@ -594,7 +594,18 @@
 
                                         <div class="sc-volunteer-action-dropdown">
 
+                                            <a asp-controller="VolunteerOpportunities"
+                                                   asp-action="OpportunityDetails"
+                                                   asp-route-opportunityId="@opportunity.VolunteerOpportunityId"
+                                                   class="sc-volunteer-dropdown-item">
 
+                                                <span class="sc-volunteer-dropdown-icon sc-action-view-icon">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </span>
+
+                                                <span>View</span>
+
+                                            </a>
                                             <!-- DRAFT -->
                                             @if (opportunity.Status == VolunteerOpportunityStatus.Draft)
                                             {

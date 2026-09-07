@@ -1,0 +1,253 @@
+﻿@using SwiftCare.Models
+
+@model VolunteerApplication
+
+@{
+    ViewData["Title"] = "Application Submitted";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="sc-application-submitted-page">
+
+    <!-- =========================================================
+         BACKGROUND
+         ========================================================= -->
+    <div class="sc-application-submitted-background">
+
+        <div class="sc-application-submitted-pattern"></div>
+
+        <div class="sc-application-submitted-glow
+            sc-application-submitted-glow-one">
+        </div>
+
+        <div class="sc-application-submitted-glow
+            sc-application-submitted-glow-two">
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         SUCCESS CONTENT
+         ========================================================= -->
+    <div class="sc-application-submitted-container">
+
+        <div class="sc-application-submitted-card">
+
+            <!-- Success Icon -->
+            <div class="sc-application-submitted-icon-wrapper">
+
+                <div class="sc-application-submitted-icon">
+
+                    <i class="bi bi-check-lg"></i>
+
+                </div>
+
+            </div>
+
+
+            <!-- Heading -->
+            <div class="sc-application-submitted-heading">
+
+                <span class="sc-application-submitted-eyebrow">
+                    APPLICATION RECEIVED
+                </span>
+
+                <h1>
+                    Application Submitted Successfully
+                </h1>
+
+                <p>
+                    Thank you for applying to volunteer with SwiftCare.
+                    Your application has been received and is now awaiting review.
+                </p>
+
+            </div>
+
+            <div class="sc-application-submitted-reference">
+
+                <div class="sc-application-submitted-reference-icon">
+                    <i class="bi bi-file-earmark-check-fill"></i>
+                </div>
+
+                <div class="sc-application-submitted-reference-content">
+
+                    <span>
+                        APPLICATION REFERENCE
+                    </span>
+
+                    <strong>
+                        @Model.Reference
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- Application Details -->
+            <div class="sc-application-submitted-details">
+
+                <div class="sc-application-submitted-detail">
+
+                    <div class="sc-application-submitted-detail-icon">
+                        <i class="bi bi-briefcase-fill"></i>
+                    </div>
+
+                    <div>
+                        <span>
+                            Opportunity
+                        </span>
+
+                        <strong>
+                            @(Model.VolunteerOpportunity?.Title
+                                ?? "Volunteer Opportunity")
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="sc-application-submitted-detail">
+
+                    <div class="sc-application-submitted-detail-icon">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+
+                    <div>
+                        <span>
+                            Submitted
+                        </span>
+
+                        <strong>
+                            @Model.AppliedDate.ToString("dd MMMM yyyy")
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="sc-application-submitted-detail">
+
+                    <div class="sc-application-submitted-detail-icon">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+
+                    <div>
+                        <span>
+                            Status
+                        </span>
+
+                        <strong class="sc-application-submitted-status">
+                            <i class="bi bi-hourglass-split"></i>
+                            Pending Review
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Email Notice -->
+            <div class="sc-application-submitted-notice">
+
+                <div class="sc-application-submitted-notice-icon">
+
+                    <i class="bi bi-envelope-check-fill"></i>
+
+                </div>
+
+                <div class="sc-application-submitted-notice-content">
+
+                    <h3>
+                        Check your email
+                    </h3>
+
+                    <p>
+                        We've sent confirmation details to the email
+                        address provided with your application.
+                        Please keep your application reference for future use.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Account Information -->
+            <div class="sc-application-submitted-account">
+
+                <div class="sc-application-submitted-account-icon">
+
+                    <i class="bi bi-person-check-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Your SwiftCare account
+                    </h3>
+
+                    <p>
+                        You can use your SwiftCare account to keep track of
+                        your volunteer applications and their progress.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-application-submitted-actions">
+
+                <a asp-controller="VolunteerApplications"
+                       asp-action="TrackApplication"
+                       class="sc-application-submitted-primary-button">
+
+                    <i class="bi bi-activity"></i>
+
+                    <span>
+                        Track Application Status
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+
+
+                <a asp-controller="VolunteerOpportunities"
+                       asp-action="Index"
+                       class="sc-application-submitted-secondary-button">
+
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+
+                    <span>
+                        Browse More Opportunities
+                    </span>
+
+                </a>
+
+            </div>
+
+
+            <!-- Footer -->
+            <div class="sc-application-submitted-footer">
+
+                <div>
+                    <i class="bi bi-shield-check"></i>
+                    Your application has been securely recorded.
+                </div>
+
+                <span>
+                    SwiftCare Volunteer Services
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

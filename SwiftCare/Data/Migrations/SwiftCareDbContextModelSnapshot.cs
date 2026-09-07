@@ -853,6 +853,18 @@ namespace SwiftCare.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerApplicationId"));
 
+                    b.Property<int>("AIRecommendation")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ATSRanking")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ATSScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("AdminDecision")
+                        .HasColumnType("int");
+
                     b.Property<string>("AdminNotes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -875,11 +887,41 @@ namespace SwiftCare.Data.Migrations
                     b.Property<DateTime?>("CVUploadedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CoverMessage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EligibilityStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("InterviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastEvaluatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<string>("ReviewedById")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ReviewedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ScreeningStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ShortlistedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -900,6 +942,146 @@ namespace SwiftCare.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("VolunteerApplications");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationAnswer", b =>
+                {
+                    b.Property<int>("VolunteerApplicationAnswerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerApplicationAnswerId"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<int>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VolunteerQuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerApplicationAnswerId");
+
+                    b.HasIndex("VolunteerApplicationId");
+
+                    b.HasIndex("VolunteerQuestionId");
+
+                    b.ToTable("VolunteerApplicationAnswers");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationAudit", b =>
+                {
+                    b.Property<int>("VolunteerApplicationAuditId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerApplicationAuditId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PerformedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerApplicationAuditId");
+
+                    b.HasIndex("VolunteerApplicationId");
+
+                    b.ToTable("VolunteerApplicationAudits");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationEvaluation", b =>
+                {
+                    b.Property<int>("VolunteerApplicationEvaluationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerApplicationEvaluationId"));
+
+                    b.Property<string>("AIConcerns")
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("AIConfidence")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("AIExplanation")
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AIRecommendation")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AIRequirementMatches")
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AIStrengths")
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("AvailabilityScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("EligibilityScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("EligibilityStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EvaluatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EvaluationVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("ExperienceScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MotivationScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OverallScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QualificationScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QuestionScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("RankingPosition")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SkillsScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerApplicationEvaluationId");
+
+                    b.HasIndex("VolunteerApplicationId")
+                        .IsUnique();
+
+                    b.ToTable("VolunteerApplicationEvaluations");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerAvailability", b =>
@@ -1113,6 +1295,16 @@ namespace SwiftCare.Data.Migrations
                     b.Property<string>("Province")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("ShortlistingPipelineRun")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ShortlistingPipelineRunBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ShortlistingPipelineRunDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -1137,6 +1329,74 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("CityId");
 
                     b.ToTable("VolunteerOpportunities");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunityQuestion", b =>
+                {
+                    b.Property<int>("VolunteerOpportunityQuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerOpportunityQuestionId"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VolunteerOpportunityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VolunteerQuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerOpportunityQuestionId");
+
+                    b.HasIndex("VolunteerOpportunityId");
+
+                    b.HasIndex("VolunteerQuestionId");
+
+                    b.ToTable("VolunteerOpportunityQuestions");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunityScoringConfiguration", b =>
+                {
+                    b.Property<int>("VolunteerOpportunityScoringConfigurationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerOpportunityScoringConfigurationId"));
+
+                    b.Property<decimal>("AvailabilityWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ExperienceWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("MotivationWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QualificationWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QuestionWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SkillsWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("VolunteerOpportunityId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerOpportunityScoringConfigurationId");
+
+                    b.HasIndex("VolunteerOpportunityId");
+
+                    b.ToTable("VolunteerOpportunityScoringConfigurations");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOrientation", b =>
@@ -1169,6 +1429,42 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("VolunteerId");
 
                     b.ToTable("VolunteerOrientations");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerQuestion", b =>
+                {
+                    b.Property<int>("VolunteerQuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerQuestionId"));
+
+                    b.Property<int?>("Area")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("QuestionType")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerQuestionId");
+
+                    b.ToTable("VolunteerQuestions");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerRequiredSkill", b =>
@@ -1748,6 +2044,47 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("VolunteerOpportunity");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationAnswer", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithMany("Answers")
+                        .HasForeignKey("VolunteerApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.VolunteerQuestion", "VolunteerQuestion")
+                        .WithMany()
+                        .HasForeignKey("VolunteerQuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerApplication");
+
+                    b.Navigation("VolunteerQuestion");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationAudit", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithMany()
+                        .HasForeignKey("VolunteerApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerApplication");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplicationEvaluation", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithOne("Evaluation")
+                        .HasForeignKey("SwiftCare.Models.VolunteerApplicationEvaluation", "VolunteerApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerApplication");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerAvailability", b =>
                 {
                     b.HasOne("SwiftCare.Models.Volunteer", "Volunteer")
@@ -1797,6 +2134,36 @@ namespace SwiftCare.Data.Migrations
                     b.HasOne("SwiftCare.Models.City", null)
                         .WithMany("VolunteerOpportunities")
                         .HasForeignKey("CityId");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunityQuestion", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerOpportunity", "VolunteerOpportunity")
+                        .WithMany("ApplicationQuestions")
+                        .HasForeignKey("VolunteerOpportunityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.VolunteerQuestion", "VolunteerQuestion")
+                        .WithMany()
+                        .HasForeignKey("VolunteerQuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerOpportunity");
+
+                    b.Navigation("VolunteerQuestion");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunityScoringConfiguration", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerOpportunity", "VolunteerOpportunity")
+                        .WithMany()
+                        .HasForeignKey("VolunteerOpportunityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerOpportunity");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOrientation", b =>
@@ -1925,8 +2292,17 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Trip");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerApplication", b =>
+                {
+                    b.Navigation("Answers");
+
+                    b.Navigation("Evaluation");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>
                 {
+                    b.Navigation("ApplicationQuestions");
+
                     b.Navigation("RequiredSkills");
 
                     b.Navigation("Requirements");

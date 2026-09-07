@@ -136,5 +136,51 @@ namespace SwiftCare.ViewModels
 
         public List<string> RequiredSkills { get; set; }
             = new List<string>();
+
+
+        // =========================================================
+        // SELECTED APPLICATION QUESTIONS
+        // =========================================================
+
+        public List<int> SelectedQuestionIds { get; set; }
+            = new List<int>();
+
+
+        // =========================================================
+        // AVAILABLE APPLICATION QUESTIONS
+        // =========================================================
+
+        public List<VolunteerQuestionSelectionViewModel>
+            AvailableQuestions
+        { get; set; }
+            = new List<VolunteerQuestionSelectionViewModel>();
+    }
+
+
+    // =========================================================
+    // VOLUNTEER QUESTION SELECTION VIEW MODEL
+    // =========================================================
+
+    public class VolunteerQuestionSelectionViewModel
+    {
+        public int VolunteerQuestionId { get; set; }
+
+
+        public string Question { get; set; }
+            = string.Empty;
+
+
+        public VolunteerQuestionType QuestionType { get; set; }
+
+
+        public bool IsRequired { get; set; }
+
+
+        public VolunteerCategory? Category { get; set; }
+
+
+        public VolunteerArea? Area { get; set; }
+
+        public int? DisplayOrder { get; set; }
     }
 }

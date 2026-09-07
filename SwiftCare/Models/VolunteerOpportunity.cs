@@ -78,7 +78,6 @@ namespace SwiftCare.Models
         public int? MinimumAge { get; set; }
 
 
-
         [DataType(DataType.Date)]
         public DateTime? ApplicationDeadline { get; set; }
 
@@ -92,12 +91,46 @@ namespace SwiftCare.Models
             = VolunteerOpportunityStatus.Draft;
 
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
+            = DateTime.UtcNow;
 
 
         [StringLength(450)]
         public string? CreatedById { get; set; }
+
+
+        public ICollection<VolunteerOpportunityQuestion>
+            ApplicationQuestions
+        { get; set; }
+            = new List<VolunteerOpportunityQuestion>();
+
+
+        // ============================================================
+        // SHORTLISTING PIPELINE
+        // ============================================================
+
+        /// <summary>
+        /// Indicates whether the ATS shortlisting pipeline has
+        /// successfully been executed for this opportunity.
+        /// </summary>
+        public bool ShortlistingPipelineRun { get; set; } = false;
+
+
+        /// <summary>
+        /// Date and time when the shortlisting pipeline was
+        /// successfully completed.
+        /// </summary>
+        public DateTime? ShortlistingPipelineRunDate { get; set; }
+
+
+        /// <summary>
+        /// Identity/user name of the administrator who ran
+        /// the shortlisting pipeline.
+        /// </summary>
+        [StringLength(450)]
+        public string? ShortlistingPipelineRunBy { get; set; }
     }
+
 
     public enum VolunteerArea
     {
@@ -125,6 +158,7 @@ namespace SwiftCare.Models
         [Display(Name = "Community Outreach")]
         CommunityOutreach
     }
+
 
     public enum VolunteerOpportunityStatus
     {
@@ -176,8 +210,4 @@ namespace SwiftCare.Models
         [Display(Name = "Other")]
         Other
     }
-
 }
-
-
-

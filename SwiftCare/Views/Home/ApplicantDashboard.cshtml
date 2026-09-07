@@ -1,0 +1,495 @@
+﻿@using SwiftCare.Models
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+
+@model IEnumerable<VolunteerOpportunity>
+
+@{
+    ViewData["Title"] = "Applicant Dashboard";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var opportunities = Model?.ToList()
+        ?? new List<VolunteerOpportunity>();
+
+    string GetDisplayName<T>(T? value) where T : struct, Enum
+    {
+        if (!value.HasValue)
+            return "Not specified";
+
+        var enumValue = value.Value;
+
+        var member = enumValue
+            .GetType()
+            .GetMember(enumValue.ToString())
+            .FirstOrDefault();
+
+        if (member != null)
+        {
+            var attribute = member
+                .GetCustomAttribute<DisplayAttribute>();
+
+            if (attribute != null)
+            {
+                return attribute.GetName()
+                    ?? enumValue.ToString();
+            }
+        }
+
+        return enumValue.ToString();
+    }
+
+    string GetCategoryIcon(VolunteerCategory? category)
+    {
+        if (!category.HasValue)
+            return "bi-stars";
+
+        return category.Value switch
+        {
+            VolunteerCategory.ResidentSupport
+                => "bi-heart-pulse-fill",
+
+            VolunteerCategory.Activities
+                => "bi-controller",
+
+            VolunteerCategory.Companionship
+                => "bi-people-fill",
+
+            VolunteerCategory.Events
+                => "bi-calendar-event-fill",
+
+            VolunteerCategory.Administration
+                => "bi-clipboard-data-fill",
+
+            VolunteerCategory.Recreation
+                => "bi-trophy-fill",
+
+            VolunteerCategory.FoodService
+                => "bi-cup-hot-fill",
+
+            VolunteerCategory.Gardening
+                => "bi-flower1",
+
+            VolunteerCategory.Maintenance
+                => "bi-tools",
+
+            VolunteerCategory.Fundraising
+                => "bi-cash-coin",
+
+            VolunteerCategory.Transportation
+                => "bi-car-front-fill",
+
+            VolunteerCategory.SocialSupport
+                => "bi-chat-heart-fill",
+
+            _ => "bi-stars"
+        };
+    }
+
+    string GetPosterPath(string? posterPath)
+    {
+        if (string.IsNullOrWhiteSpace(posterPath))
+            return "";
+
+        if (posterPath.StartsWith(
+            "http",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return posterPath;
+        }
+
+        if (!posterPath.StartsWith("/"))
+        {
+            posterPath =
+                "/" + posterPath.TrimStart('~', '/');
+        }
+
+        return posterPath;
+    }
+}
+
+<div class="sc-applicant-dashboard">
+
+    <!-- =========================================================
+         PAGE BACKGROUND
+         ========================================================= -->
+
+    <div class="sc-applicant-dashboard-background">
+
+        <div class="sc-applicant-dashboard-glow
+            sc-applicant-dashboard-glow-one">
+        </div>
+
+        <div class="sc-applicant-dashboard-glow
+            sc-applicant-dashboard-glow-two">
+        </div>
+
+        <div class="sc-applicant-dashboard-pattern">
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         MAIN CONTAINER
+         ========================================================= -->
+
+    <div class="sc-applicant-dashboard-container">
+
+
+        <!-- =====================================================
+             HEADER
+             ===================================================== -->
+
+        <div class="sc-applicant-dashboard-header">
+
+            <div class="sc-applicant-dashboard-header-content">
+
+                <span class="sc-applicant-dashboard-eyebrow">
+                    SWIFTCARE
+                </span>
+
+                <h1>
+                    Make a difference with SwiftCare.
+                </h1>
+
+                <p>
+                    Explore our current volunteer opportunities
+                    and find a meaningful way to support our
+                    residents and community.
+                </p>
+
+            </div>
+
+
+            <!-- TRACK APPLICATION BUTTON -->
+
+            <a asp-controller="VolunteerApplications"
+                   asp-action="TrackApplication"
+                   class="sc-applicant-track-button">
+
+                <span class="sc-applicant-track-button-icon">
+                    <i class="bi bi-clipboard2-check-fill"></i>
+                </span>
+
+                <span class="sc-applicant-track-button-content">
+
+                    <small>
+                        YOUR APPLICATIONS
+                    </small>
+
+                    <strong>
+                        Track My Applications
+                    </strong>
+
+                </span>
+
+                <i class="bi bi-arrow-right
+                    sc-applicant-track-arrow">
+                </i>
+
+            </a>
+
+        </div>
+
+
+        <!-- =====================================================
+             OPPORTUNITIES HEADER
+             ===================================================== -->
+
+        <div class="sc-applicant-opportunities-header">
+
+            <div>
+
+                <span class="sc-applicant-section-eyebrow">
+                    VOLUNTEER OPPORTUNITIES
+                </span>
+
+                <h2>
+                    Available Opportunities
+                </h2>
+
+            </div>
+
+            <div class="sc-applicant-opportunity-count">
+
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+
+                <span>
+                    @opportunities.Count
+                    @(opportunities.Count == 1
+                        ? "Opportunity"
+                        : "Opportunities")
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             NO OPPORTUNITIES
+             ===================================================== -->
+        @if (!opportunities.Any())
+        {
+            <div class="sc-applicant-empty">
+
+                <div class="sc-applicant-empty-icon">
+                    <i class="bi bi-search"></i>
+                </div>
+
+                <div class="sc-applicant-empty-content">
+
+                    <span>
+                        NO OPPORTUNITIES AVAILABLE
+                    </span>
+
+                    <h2>
+                        There are currently no volunteer
+                        opportunities
+                    </h2>
+
+                    <p>
+                        Please check back later. New volunteer
+                        opportunities will appear here when
+                        they become available.
+                    </p>
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+
+            <!-- =================================================
+                 OPPORTUNITY CARDS
+                 ================================================= -->
+
+            <div class="sc-applicant-opportunity-grid">
+
+                @foreach (var opportunity in opportunities)
+                {
+                    var posterPath =
+                        GetPosterPath(
+                            opportunity.PosterImage);
+
+                    var categoryName =
+                        GetDisplayName(
+                            opportunity.Category);
+
+                    var categoryIcon =
+                        GetCategoryIcon(
+                            opportunity.Category);
+
+                    <div class="sc-applicant-opportunity-card">
+
+
+                        <!-- =====================================
+                             IMAGE
+                             ===================================== -->
+
+                        <div class="sc-applicant-opportunity-poster">
+
+                            @if (!string.IsNullOrWhiteSpace(posterPath))
+                            {
+                                <img src="@posterPath"
+                                     alt="@opportunity.Title"
+                                     loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="sc-applicant-no-poster">
+
+                                    <i class="bi @categoryIcon"></i>
+
+                                    <span>
+                                        SWIFTCARE
+                                    </span>
+
+                                </div>
+                            }
+
+
+                            <!-- OPEN BADGE -->
+
+                            <div class="sc-applicant-open-badge">
+
+                                <span class="sc-applicant-open-dot">
+                                </span>
+
+                                <span>
+                                    Open
+                                </span>
+
+                            </div>
+
+
+                            <!-- CATEGORY -->
+
+                            <div class="sc-applicant-category-badge">
+
+                                <i class="bi @categoryIcon"></i>
+
+                                <span>
+                                    @categoryName
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =====================================
+                             CARD BODY
+                             ===================================== -->
+
+                        <div class="sc-applicant-opportunity-body">
+
+
+                            <!-- TITLE -->
+
+                            <h3>
+                                @opportunity.Title
+                            </h3>
+
+
+                            <!-- DESCRIPTION -->
+
+                            <p class="sc-applicant-opportunity-description">
+
+                                @if (!string.IsNullOrWhiteSpace(
+                                    opportunity.Description))
+                                {
+                                    if (opportunity.Description.Length > 135)
+                                    {
+                                        @opportunity.Description.Substring(
+                                            0,
+                                            135)
+
+                                        <text>...</text>
+                                    }
+                                    else
+                                    {
+                                        @opportunity.Description
+                                    }
+                                }
+                                else
+                                {
+                                    <text>
+                                        Help make a meaningful
+                                        difference through
+                                        volunteering at SwiftCare.
+                                    </text>
+                                }
+
+                            </p>
+
+
+                            <!-- DIVIDER -->
+
+                            <div class="sc-applicant-card-divider">
+                            </div>
+
+
+                            <!-- DETAILS -->
+
+                            <div class="sc-applicant-simple-details">
+
+
+                                <!-- LOCATION -->
+
+                                <div class="sc-applicant-simple-detail">
+
+                                    <i class="bi bi-geo-alt-fill"></i>
+
+                                    <span>
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                            opportunity.CityName))
+                                        {
+                                            @opportunity.CityName
+                                        }
+                                        else
+                                        {
+                                            <text>
+                                                Location not specified
+                                            </text>
+                                        }
+
+                                    </span>
+
+                                </div>
+
+
+                                <!-- AREA -->
+
+                                <div class="sc-applicant-simple-detail">
+
+                                    <i class="bi bi-people-fill"></i>
+
+                                    <span>
+                                        @GetDisplayName(
+                                            opportunity.Area)
+                                    </span>
+
+                                </div>
+
+
+                                <!-- DATE -->
+
+                                <div class="sc-applicant-simple-detail">
+
+                                    <i class="bi bi-calendar-event-fill"></i>
+
+                                    <span>
+                                        @(opportunity.StartDate?
+                                            .ToString("dd MMM yyyy")
+                                            ?? "Date not specified")
+                                    </span>
+
+                                </div>
+
+
+                                <!-- VOLUNTEERS -->
+
+                                <div class="sc-applicant-simple-detail">
+
+                                    <i class="bi bi-person-plus-fill"></i>
+
+                                    <span>
+                                        @opportunity.VolunteersNeeded
+                                        @(opportunity.VolunteersNeeded == 1
+                                            ? "Volunteer needed"
+                                            : "Volunteers needed")
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <a asp-controller="VolunteerOpportunities"
+                                   asp-action="Opportunity"
+                                   asp-route-opportunityId="@opportunity.VolunteerOpportunityId"
+                                   class="sc-applicant-view-button">
+
+                                <span>
+                                    View Opportunity
+                                </span>
+
+                                <i class="bi bi-arrow-right"></i>
+
+                            </a>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        }
+
+    </div>
+
+</div>

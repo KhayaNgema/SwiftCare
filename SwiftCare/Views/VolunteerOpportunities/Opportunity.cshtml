@@ -1,0 +1,364 @@
+﻿@using SwiftCare.Models
+
+@model VolunteerOpportunity
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var posterPath = Model.PosterImage;
+
+    if (!string.IsNullOrWhiteSpace(posterPath) &&
+        !posterPath.StartsWith("/") &&
+        !posterPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+    {
+        posterPath = "/" + posterPath.TrimStart('~', '/');
+    }
+}
+
+
+<div class="sc-applicant-opportunity-page">
+
+    <div class="sc-op-details-background">
+        <div class="sc-op-details-hero-glow sc-op-details-hero-glow-one"></div>
+        <div class="sc-op-details-hero-glow sc-op-details-hero-glow-two"></div>
+        <div class="sc-op-details-hero-pattern"></div>
+    </div>
+    <div>
+        <a asp-controller="Home"
+               asp-action="Index"
+               class="sc-op-back-btn">
+
+            <i class="bi bi-arrow-left"></i>
+
+            <span>Home</span>
+
+        </a>
+    </div>
+    <div class="sc-applicant-opportunity-card">
+
+
+
+        <div class="sc-applicant-top">
+
+
+            <div class="sc-applicant-poster">
+
+                @if (!string.IsNullOrWhiteSpace(posterPath))
+                {
+                    <img src="@posterPath"
+                         alt="@Model.Title"
+                         class="sc-applicant-poster-image"
+                         onerror="this.src='@Url.Content("~/UploadedFiles/volunteer_wanted.jpg")'" />
+                }
+                else
+                {
+                    <div class="sc-applicant-poster-placeholder">
+                        <i class="bi bi-heart-pulse"></i>
+                        <span>SwiftCare</span>
+                    </div>
+                }
+
+            </div>
+
+
+            <div class="sc-applicant-introduction">
+
+                <div class="sc-applicant-status">
+                    <span></span>
+                    Open Opportunity
+                </div>
+
+                <h1 class="sc-applicant-title">
+                    @Model.Title
+                </h1>
+
+                <p class="sc-applicant-description">
+                    @Model.Description
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+             OPPORTUNITY INFORMATION
+             ========================================================= -->
+
+        <div class="sc-applicant-information">
+
+            <!-- LOCATION -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Location</span>
+
+                    <strong>
+                        @Model.CityName
+                        @if (!string.IsNullOrWhiteSpace(Model.Province))
+                        {
+                            <text>, @Model.Province</text>
+                        }
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- CATEGORY -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-tag-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Category</span>
+
+                    <strong>
+                        @Model.Category?.GetDisplayName()
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- VOLUNTEER AREA -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-person-heart"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Volunteer Area</span>
+
+                    <strong>
+                        @Model.Area?.GetDisplayName()
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- VOLUNTEER DATES -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Volunteer Dates</span>
+
+                    <strong>
+                        @if (Model.StartDate.HasValue && Model.EndDate.HasValue)
+                        {
+                            @Model.StartDate.Value.ToString("dd MMMM yyyy")
+                            <text> - </text>
+                            @Model.EndDate.Value.ToString("dd MMMM yyyy")
+                        }
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- VOLUNTEER TIME -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Volunteer Time</span>
+
+                    <strong>
+                        @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                        {
+                            @Model.StartTime.Value.ToString(@"hh\:mm")
+                            <text> - </text>
+                            @Model.EndTime.Value.ToString(@"hh\:mm")
+                        }
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- VOLUNTEERS NEEDED -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Volunteers Needed</span>
+
+                    <strong>
+                        @Model.VolunteersNeeded
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- MINIMUM AGE -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Minimum Age</span>
+
+                    <strong>
+                        @Model.MinimumAge years
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- APPLICATION DEADLINE -->
+            <div class="sc-applicant-information-item">
+
+                <div class="sc-applicant-information-icon">
+                    <i class="bi bi-calendar-x-fill"></i>
+                </div>
+
+                <div class="sc-applicant-information-content">
+                    <span>Application Deadline</span>
+
+                    <strong>
+                        @if (Model.ApplicationDeadline.HasValue)
+                        {
+                            @Model.ApplicationDeadline.Value.ToString("dd MMMM yyyy")
+                        }
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        @if (Model.Requirements != null &&
+             Model.Requirements.Any(x => !string.IsNullOrWhiteSpace(x.Description)))
+        {
+            <div class="sc-applicant-list-section">
+
+                <div class="sc-applicant-section-heading">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <h2>Requirements</h2>
+                </div>
+
+                <ul class="sc-applicant-list">
+
+                    @foreach (var requirement in Model.Requirements)
+                    {
+                        if (!string.IsNullOrWhiteSpace(requirement.Description))
+                        {
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                <span>@requirement.Description</span>
+                            </li>
+                        }
+                    }
+
+                </ul>
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+     RESPONSIBILITIES
+     ========================================================= -->
+        @if (Model.Responsibilities != null &&
+             Model.Responsibilities.Any(x => !string.IsNullOrWhiteSpace(x.Description)))
+        {
+            <div class="sc-applicant-list-section">
+
+                <div class="sc-applicant-section-heading">
+                    <i class="bi bi-clipboard-check-fill"></i>
+                    <h2>Responsibilities</h2>
+                </div>
+
+                <ul class="sc-applicant-list">
+
+                    @foreach (var responsibility in Model.Responsibilities)
+                    {
+                        if (!string.IsNullOrWhiteSpace(responsibility.Description))
+                        {
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                <span>@responsibility.Description</span>
+                            </li>
+                        }
+                    }
+
+                </ul>
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+     REQUIRED SKILLS
+     ========================================================= -->
+        @if (Model.RequiredSkills != null &&
+             Model.RequiredSkills.Any(x => !string.IsNullOrWhiteSpace(x.Skill)))
+        {
+            <div class="sc-applicant-list-section">
+
+                <div class="sc-applicant-section-heading">
+                    <i class="bi bi-stars"></i>
+                    <h2>Required Skills</h2>
+                </div>
+
+                <ul class="sc-applicant-list">
+
+                    @foreach (var skill in Model.RequiredSkills)
+                    {
+                        if (!string.IsNullOrWhiteSpace(skill.Skill))
+                        {
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                <span>@skill.Skill</span>
+                            </li>
+                        }
+                    }
+
+                </ul>
+
+            </div>
+        }
+
+
+        <div class="sc-applicant-footer">
+
+            <a asp-controller="VolunteerOpportunities"
+                   asp-action="Apply"
+                   asp-route-opportunityId="@Model.VolunteerOpportunityId"
+                   class="sc-applicant-apply-button">
+
+                APPLY NOW
+
+                <i class="bi bi-arrow-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

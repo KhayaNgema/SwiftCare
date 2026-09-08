@@ -6,6 +6,7 @@ using SwiftCare.Data;
 using SwiftCare.Models;
 using SwiftCare.Services;
 using SwiftCare.Services.VolunteerATS;
+using SwiftCare.ViewModels.Volunteer;
 
 namespace SwiftCare.Controllers
 {
@@ -43,7 +44,46 @@ namespace SwiftCare.Controllers
             _shortlistingPipeline =
                                   shortlistingPipeline;
         }
+        // ============================================================
+        // APPLICATION DETAILS
+        // ============================================================
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ApplicationDetails(int id)
+        {
+            var application =
+                await _context.VolunteerApplications
+                    .Include(x => x.Applicant)
+                    .Include(x => x.VolunteerOpportunity)
+                    .Include(x => x.Evaluation)
+                    .Include(x => x.Answers)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerApplicationId == id);
+
+            if (application == null)
+            {
+                return NotFound();
+            }
+
+            var auditHistory =
+                await _context.VolunteerApplicationAudits
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.VolunteerApplicationId == id)
+                    .OrderByDescending(x => x.CreatedDate)
+                    .ToListAsync();
+
+            var viewModel =
+                new ApplicationDetailsViewModel
+                {
+                    Application = application,
+                    Evaluation = application.Evaluation,
+                    AuditHistory = auditHistory
+                };
+
+            return View(viewModel);
+        }
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ShortlistManagement()

@@ -61,7 +61,7 @@
             <div class="sc-shortlist-header-left">
 
                 <a asp-controller="VolunteerApplications"
-                       asp-action="Index"
+                       asp-action="VolunteerApplications"
                        class="sc-shortlist-back-button">
 
                     <i class="bi bi-arrow-left"></i>
@@ -561,26 +561,15 @@
                                         <div class="sc-shortlist-actions">
 
                                             <a asp-controller="VolunteerApplications"
-                                                   asp-action="Details"
+                                                   asp-action="ApplicationDetails"
                                                    asp-route-id="@application.VolunteerApplicationId"
-                                                   class="sc-shortlist-view-button">
+                                                   class="sc-admin-applications-view-button">
 
                                                 <i class="bi bi-eye-fill"></i>
 
-                                                View
+                                                View Details
 
                                             </a>
-
-
-                                            <button type="button"
-                                                    class="sc-shortlist-interview-button"
-                                                    onclick="openInterviewNotice('@applicantName.Replace("'", "\\'")')">
-
-                                                <i class="bi bi-calendar-event"></i>
-
-                                                Interview
-
-                                            </button>
 
                                         </div>
 

@@ -1,0 +1,1752 @@
+﻿@using SwiftCare.Models
+@using System
+@using System.Linq
+@model SwiftCare.ViewModels.Volunteer.ApplicationDetailsViewModel
+
+@{
+    ViewData["Title"] = "Application Details";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var application = Model.Application;
+    var evaluation = Model.Evaluation;
+
+    /*
+     * ============================================================
+     * ENUM DISPLAY HELPER
+     * ============================================================
+     *
+     * Uses the GetDisplayName() extension method supplied for
+     * enums decorated with [Display(Name = "...")].
+     */
+
+    string DisplayEnum(Enum value)
+    {
+        return value.GetDisplayName();
+    }
+
+
+    /*
+     * ============================================================
+     * RECOMMENDATION HELPERS
+     * ============================================================
+     */
+
+    string GetRecommendationClass(
+        VolunteerAIRecommendation recommendation)
+    {
+        return recommendation switch
+        {
+            VolunteerAIRecommendation.StrongShortlist
+                => "sc-application-status-success",
+
+            VolunteerAIRecommendation.ReviewRecommended
+                => "sc-application-status-warning",
+
+            VolunteerAIRecommendation.NotRecommended
+                => "sc-application-status-danger",
+
+            _ => "sc-application-status-neutral"
+        };
+    }
+
+
+    string GetRecommendationIcon(
+        VolunteerAIRecommendation recommendation)
+    {
+        return recommendation switch
+        {
+            VolunteerAIRecommendation.StrongShortlist
+                => "bi-check-circle-fill",
+
+            VolunteerAIRecommendation.ReviewRecommended
+                => "bi-exclamation-circle-fill",
+
+            VolunteerAIRecommendation.NotRecommended
+                => "bi-x-circle-fill",
+
+            _ => "bi-hourglass-split"
+        };
+    }
+
+
+    /*
+     * ============================================================
+     * ELIGIBILITY HELPERS
+     * ============================================================
+     */
+
+    string GetEligibilityClass(
+        VolunteerEligibilityStatus status)
+    {
+        return status switch
+        {
+            VolunteerEligibilityStatus.Eligible
+                => "sc-application-status-success",
+
+            VolunteerEligibilityStatus.ReviewRequired
+                => "sc-application-status-warning",
+
+            VolunteerEligibilityStatus.NotEligible
+                => "sc-application-status-danger",
+
+            _ => "sc-application-status-neutral"
+        };
+    }
+
+
+    /*
+     * ============================================================
+     * SCORE HELPERS
+     * ============================================================
+     */
+
+    string GetScoreClass(decimal score)
+    {
+        if (score >= 80m)
+            return "sc-score-good";
+
+        if (score >= 60m)
+            return "sc-score-average";
+
+        return "sc-score-low";
+    }
+
+
+    /*
+     * ============================================================
+     * MULTILINE TEXT HELPER
+     * ============================================================
+     */
+
+    string FormatMultiline(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "No information available.";
+
+        return value
+            .Replace("\r\n", "<br />")
+            .Replace("\n", "<br />");
+    }
+
+
+    /*
+     * ============================================================
+     * AUDIT HISTORY
+     * ============================================================
+     *
+     * Remove duplicate audit entries that contain exactly the
+     * same action, description and performer.
+     *
+     * The latest occurrence is kept.
+     */
+
+    var auditHistory = Model.AuditHistory
+        .GroupBy(x => new
+        {
+            Action = x.Action?.Trim(),
+            Description = x.Description?.Trim(),
+            PerformedBy = x.PerformedBy?.Trim()
+        })
+        .Select(g => g
+            .OrderByDescending(x => x.CreatedDate)
+            .First())
+        .OrderByDescending(x => x.CreatedDate)
+        .ToList();
+}
+
+
+<div class="sc-application-details-page">
+
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="sc-application-details-header">
+
+        <div class="sc-application-details-header-left">
+
+            <a asp-controller="VolunteerApplications"
+                   asp-action="ShortlistManagement"
+                   class="sc-application-back-button">
+
+                <i class="bi bi-arrow-left"></i>
+
+                <span>Back to Applications</span>
+
+            </a>
+
+
+            <div class="sc-application-title-row">
+
+                <div class="sc-application-avatar">
+
+                    <i class="bi bi-person-fill"></i>
+
+                </div>
+
+
+                <div>
+
+                    <div class="sc-application-eyebrow">
+                        VOLUNTEER APPLICATION
+                    </div>
+
+
+                    <h1>
+                        @Model.ApplicantName
+                    </h1>
+
+
+                    <p>
+                        @Model.OpportunityTitle
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="sc-application-header-score">
+
+            <div class="sc-application-header-score-label">
+                ATS SCORE
+            </div>
+
+
+            <div class="sc-application-header-score-value @GetScoreClass(Model.ATSScore)">
+
+                @Model.ATSScore.ToString("0.0")
+
+            </div>
+
+
+            <div class="sc-application-header-score-total">
+                / 100
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ========================================================= -->
+    <!-- APPLICATION META -->
+    <!-- ========================================================= -->
+
+    <div class="sc-application-meta-grid">
+
+
+        <!-- REFERENCE -->
+
+        <div class="sc-application-meta-card">
+
+            <div class="sc-application-meta-icon">
+
+                <i class="bi bi-hash"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Reference
+                </span>
+
+
+                <strong>
+                    @application.Reference
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- APPLIED DATE -->
+
+        <div class="sc-application-meta-card">
+
+            <div class="sc-application-meta-icon">
+
+                <i class="bi bi-calendar3"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Applied Date
+                </span>
+
+
+                <strong>
+                    @application.AppliedDate.ToString("dd MMM yyyy")
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- CURRENT STAGE -->
+
+        <div class="sc-application-meta-card">
+
+            <div class="sc-application-meta-icon">
+
+                <i class="bi bi-diagram-3-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Current Stage
+                </span>
+
+
+                <strong>
+                    @DisplayEnum(application.Stage)
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- APPLICATION STATUS -->
+
+        <div class="sc-application-meta-card">
+
+            <div class="sc-application-meta-icon">
+
+                <i class="bi bi-clipboard-check-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Application Status
+                </span>
+
+
+                <strong>
+                    @DisplayEnum(application.Status)
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ========================================================= -->
+    <!-- ATS RECOMMENDATION -->
+    <!-- ========================================================= -->
+
+    <section class="sc-application-section">
+
+
+        <div class="sc-application-section-heading">
+
+            <div class="sc-application-section-heading-icon">
+
+                <i class="bi bi-stars"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    SWIFTCARE ATS
+                </span>
+
+
+                <h2>
+                    ATS Evaluation & Recommendation
+                </h2>
+
+
+                <p>
+                    Automated assessment of the applicant's
+                    eligibility, application evidence and
+                    recruitment suitability.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        @if (evaluation == null)
+        {
+
+            <div class="sc-application-empty-state">
+
+                <div class="sc-application-empty-icon">
+
+                    <i class="bi bi-hourglass-split"></i>
+
+                </div>
+
+
+                <h3>
+                    Application Has Not Been Evaluated
+                </h3>
+
+
+                <p>
+                    The ATS evaluation has not yet been completed
+                    for this application.
+                </p>
+
+            </div>
+
+        }
+        else
+        {
+
+            <div class="sc-ats-summary-grid">
+
+
+                <!-- ATS SCORE -->
+
+                <div class="sc-ats-summary-card">
+
+                    <div class="sc-ats-summary-card-top">
+
+                        <span>
+                            ATS SCORE
+                        </span>
+
+                        <i class="bi bi-speedometer2"></i>
+
+                    </div>
+
+
+                    <strong class="@GetScoreClass(Model.ATSScore)">
+
+                        @Model.ATSScore.ToString("0.0")
+
+                    </strong>
+
+
+                    <small>
+                        Overall candidate score
+                    </small>
+
+                </div>
+
+
+
+                <!-- AI CONFIDENCE -->
+
+                <div class="sc-ats-summary-card">
+
+                    <div class="sc-ats-summary-card-top">
+
+                        <span>
+                            CONFIDENCE
+                        </span>
+
+                        <i class="bi bi-shield-check"></i>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.AIConfidence.ToString("0.0")%
+                    </strong>
+
+
+                    <small>
+                        Evaluation confidence
+                    </small>
+
+                </div>
+
+
+
+                <!-- RANKING -->
+
+                <div class="sc-ats-summary-card">
+
+                    <div class="sc-ats-summary-card-top">
+
+                        <span>
+                            ATS RANKING
+                        </span>
+
+                        <i class="bi bi-trophy-fill"></i>
+
+                    </div>
+
+
+                    <strong>
+
+                        @if (Model.Ranking.HasValue)
+                        {
+                            <text>#@Model.Ranking.Value</text>
+                        }
+                        else
+                        {
+                            <text>—</text>
+                        }
+
+                    </strong>
+
+
+                    <small>
+                        Candidate position
+                    </small>
+
+                </div>
+
+
+
+                <!-- ELIGIBILITY -->
+
+                <div class="sc-ats-summary-card">
+
+                    <div class="sc-ats-summary-card-top">
+
+                        <span>
+                            ELIGIBILITY
+                        </span>
+
+                        <i class="bi bi-person-check-fill"></i>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.EligibilityScore.ToString("0.0")
+                    </strong>
+
+
+                    <small>
+                        @DisplayEnum(evaluation.EligibilityStatus)
+                    </small>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- RECOMMENDATION -->
+
+            <div class="sc-ats-recommendation @GetRecommendationClass(evaluation.AIRecommendation)">
+
+                <div class="sc-ats-recommendation-icon">
+
+                    <i class="bi @GetRecommendationIcon(evaluation.AIRecommendation)"></i>
+
+                </div>
+
+
+                <div class="sc-ats-recommendation-content">
+
+                    <span>
+                        AUTOMATED RECOMMENDATION
+                    </span>
+
+
+                    <h3>
+                        @DisplayEnum(evaluation.AIRecommendation)
+                    </h3>
+
+
+                    <p>
+                        Based on the available application
+                        evidence and configured ATS evaluation.
+                    </p>
+
+                </div>
+
+            </div>
+
+        }
+
+    </section>
+
+
+
+    @if (evaluation != null)
+    {
+
+        <!-- ===================================================== -->
+        <!-- AI EXPLANATION -->
+        <!-- ===================================================== -->
+
+        <section class="sc-application-section">
+
+            <div class="sc-application-section-heading">
+
+                <div class="sc-application-section-heading-icon">
+
+                    <i class="bi bi-chat-square-text-fill"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        AUTOMATED ANALYSIS
+                    </span>
+
+
+                    <h2>
+                        Evaluation Explanation
+                    </h2>
+
+
+                    <p>
+                        Why the ATS reached its recommendation.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="sc-ats-explanation-card">
+
+                <div class="sc-ats-explanation-icon">
+
+                    <i class="bi bi-stars"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3>
+                        ATS Assessment
+                    </h3>
+
+
+                    <p>
+                        @Html.Raw(FormatMultiline(evaluation.AIExplanation))
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===================================================== -->
+        <!-- STRENGTHS / CONCERNS -->
+        <!-- ===================================================== -->
+
+        <section class="sc-application-section">
+
+            <div class="sc-ats-feedback-grid">
+
+
+                <!-- STRENGTHS -->
+
+                <div class="sc-ats-feedback-card">
+
+                    <div class="sc-ats-feedback-header">
+
+                        <div class="sc-ats-feedback-header-icon sc-feedback-success">
+
+                            <i class="bi bi-check-lg"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                POSITIVE EVIDENCE
+                            </span>
+
+
+                            <h3>
+                                Strengths
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sc-ats-feedback-content">
+
+                        @if (!string.IsNullOrWhiteSpace(evaluation.AIStrengths))
+                        {
+
+                            foreach (
+                                var strength in
+                                evaluation.AIStrengths.Split(
+                                    new[] { '\r', '\n' },
+                                    StringSplitOptions.RemoveEmptyEntries))
+                            {
+
+                                <div class="sc-feedback-item">
+
+                                    <i class="bi bi-check-circle-fill"></i>
+
+                                    <span>
+                                        @strength
+                                    </span>
+
+                                </div>
+
+                            }
+
+                        }
+                        else
+                        {
+
+                            <div class="sc-feedback-empty">
+                                No strengths recorded.
+                            </div>
+
+                        }
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- CONCERNS -->
+
+                <div class="sc-ats-feedback-card">
+
+                    <div class="sc-ats-feedback-header">
+
+                        <div class="sc-ats-feedback-header-icon sc-feedback-warning">
+
+                            <i class="bi bi-exclamation-lg"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                REVIEW POINTS
+                            </span>
+
+
+                            <h3>
+                                Concerns
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="sc-ats-feedback-content">
+
+                        @if (!string.IsNullOrWhiteSpace(evaluation.AIConcerns))
+                        {
+
+                            foreach (
+                                var concern in
+                                evaluation.AIConcerns.Split(
+                                    new[] { '\r', '\n' },
+                                    StringSplitOptions.RemoveEmptyEntries))
+                            {
+
+                                <div class="sc-feedback-item sc-feedback-concern">
+
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+
+                                    <span>
+                                        @concern
+                                    </span>
+
+                                </div>
+
+                            }
+
+                        }
+                        else
+                        {
+
+                            <div class="sc-feedback-empty">
+                                No concerns recorded.
+                            </div>
+
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===================================================== -->
+        <!-- REQUIREMENT MATCHES -->
+        <!-- ===================================================== -->
+
+        <section class="sc-application-section">
+
+            <div class="sc-application-section-heading">
+
+                <div class="sc-application-section-heading-icon">
+
+                    <i class="bi bi-list-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        REQUIREMENT ANALYSIS
+                    </span>
+
+
+                    <h2>
+                        Requirement Evidence
+                    </h2>
+
+
+                    <p>
+                        Evidence identified by the ATS during
+                        evaluation.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="sc-requirement-match-card">
+
+                <div class="sc-requirement-match-icon">
+
+                    <i class="bi bi-check2-square"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3>
+                        Requirement Matches
+                    </h3>
+
+
+                    <p>
+                        @Html.Raw(FormatMultiline(evaluation.AIRequirementMatches))
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===================================================== -->
+        <!-- ELIGIBILITY -->
+        <!-- ===================================================== -->
+
+        <section class="sc-application-section">
+
+            <div class="sc-application-section-heading">
+
+                <div class="sc-application-section-heading-icon">
+
+                    <i class="bi bi-shield-check"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        ELIGIBILITY SCREENING
+                    </span>
+
+
+                    <h2>
+                        Eligibility Assessment
+                    </h2>
+
+
+                    <p>
+                        Results produced by the eligibility engine.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="sc-eligibility-card">
+
+
+                <div class="sc-eligibility-status @GetEligibilityClass(evaluation.EligibilityStatus)">
+
+                    <i class="bi bi-person-check-fill"></i>
+
+
+                    <div>
+
+                        <span>
+                            ELIGIBILITY STATUS
+                        </span>
+
+
+                        <strong>
+                            @DisplayEnum(evaluation.EligibilityStatus)
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="sc-eligibility-score">
+
+                    <span>
+                        Eligibility Score
+                    </span>
+
+
+                    <strong>
+
+                        @evaluation.EligibilityScore.ToString("0.0")
+
+                        <small>
+                            / 100
+                        </small>
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===================================================== -->
+        <!-- SCORING BREAKDOWN -->
+        <!-- ===================================================== -->
+
+        <section class="sc-application-section">
+
+            <div class="sc-application-section-heading">
+
+                <div class="sc-application-section-heading-icon">
+
+                    <i class="bi bi-bar-chart-fill"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        ATS SCORING ENGINE
+                    </span>
+
+
+                    <h2>
+                        Scoring Breakdown
+                    </h2>
+
+
+                    <p>
+                        Individual evaluation dimensions used to
+                        calculate the overall candidate score.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="sc-scoring-card">
+
+
+                <!-- QUALIFICATION -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-mortarboard-fill"></i>
+
+                        </div>
+
+
+                        <span>
+                            Qualification
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.QualificationScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.QualificationScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- EXPERIENCE -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-briefcase-fill"></i>
+
+                        </div>
+
+
+                        <span>
+                            Experience
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.ExperienceScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.ExperienceScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- SKILLS -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-tools"></i>
+
+                        </div>
+
+
+                        <span>
+                            Skills
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.SkillsScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.SkillsScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- QUESTIONS -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-question-circle-fill"></i>
+
+                        </div>
+
+
+                        <span>
+                            Application Questions
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.QuestionScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.QuestionScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- AVAILABILITY -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-calendar-check-fill"></i>
+
+                        </div>
+
+
+                        <span>
+                            Availability
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.AvailabilityScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.AvailabilityScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- MOTIVATION -->
+
+                <div class="sc-score-row">
+
+                    <div class="sc-score-label">
+
+                        <div class="sc-score-icon">
+
+                            <i class="bi bi-heart-fill"></i>
+
+                        </div>
+
+
+                        <span>
+                            Motivation
+                        </span>
+
+                    </div>
+
+
+                    <div class="sc-score-progress">
+
+                        <div class="sc-score-track">
+
+                            <div class="sc-score-fill"
+                                 style="width:@evaluation.MotivationScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        @evaluation.MotivationScore.ToString("0.0")
+                    </strong>
+
+                </div>
+
+
+
+                <!-- OVERALL -->
+
+                <div class="sc-score-overall">
+
+                    <span>
+                        Overall Evaluation Score
+                    </span>
+
+
+                    <strong>
+
+                        @evaluation.OverallScore.ToString("0.0")
+
+                        <small>
+                            / 100
+                        </small>
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    }
+
+
+
+    <!-- ========================================================= -->
+    <!-- APPLICATION INFORMATION -->
+    <!-- ========================================================= -->
+
+    <section class="sc-application-section">
+
+        <div class="sc-application-section-heading">
+
+            <div class="sc-application-section-heading-icon">
+
+                <i class="bi bi-file-earmark-person-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    APPLICATION
+                </span>
+
+
+                <h2>
+                    Application Information
+                </h2>
+
+
+                <p>
+                    Original information submitted by the applicant.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="sc-application-information-grid">
+
+
+            <!-- CV -->
+
+            <div class="sc-application-info-card">
+
+                <div class="sc-application-info-card-header">
+
+                    <div class="sc-application-info-icon">
+
+                        <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            CURRICULUM VITAE
+                        </span>
+
+
+                        <h3>
+                            Applicant CV
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+
+                @if (Model.HasCV)
+                {
+
+                    <div class="sc-cv-file">
+
+                        <div class="sc-cv-file-icon">
+
+                            <i class="bi bi-file-earmark-text-fill"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                @application.CVFileName
+                            </strong>
+
+
+                            @if (application.CVUploadedDate.HasValue)
+                            {
+
+                                <span>
+                                    Uploaded @application.CVUploadedDate.Value.ToString("dd MMM yyyy")
+                                </span>
+
+                            }
+
+                        </div>
+
+
+                        <a href="@application.CVFilePath"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="sc-cv-view-button">
+
+                            <i class="bi bi-eye-fill"></i>
+
+                            View CV
+
+                        </a>
+
+                    </div>
+
+                }
+                else
+                {
+
+                    <div class="sc-info-empty">
+
+                        <i class="bi bi-file-earmark-x"></i>
+
+                        No CV was uploaded.
+
+                    </div>
+
+                }
+
+            </div>
+
+
+
+            <!-- COVER MESSAGE -->
+
+            <div class="sc-application-info-card">
+
+                <div class="sc-application-info-card-header">
+
+                    <div class="sc-application-info-icon">
+
+                        <i class="bi bi-chat-left-text-fill"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            APPLICANT MESSAGE
+                        </span>
+
+
+                        <h3>
+                            Cover Message
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="sc-cover-message">
+
+                    @if (!string.IsNullOrWhiteSpace(application.CoverMessage))
+                    {
+
+                        @application.CoverMessage
+
+                    }
+                    else
+                    {
+
+                        <span class="sc-muted">
+                            No cover message was provided.
+                        </span>
+
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================================================= -->
+    <!-- ADMIN DECISION -->
+    <!-- ========================================================= -->
+
+    <section class="sc-application-section">
+
+        <div class="sc-application-section-heading">
+
+            <div class="sc-application-section-heading-icon">
+
+                <i class="bi bi-person-check-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    ADMINISTRATIVE REVIEW
+                </span>
+
+
+                <h2>
+                    Recruitment Decision
+                </h2>
+
+
+                <p>
+                    Current administrative decision for this candidate.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="sc-admin-decision-card">
+
+
+            <!-- DECISION -->
+
+            <div class="sc-admin-decision-item">
+
+                <span>
+                    Current Decision
+                </span>
+
+
+                <strong>
+                    @DisplayEnum(application.AdminDecision)
+                </strong>
+
+            </div>
+
+
+
+            <!-- STATUS -->
+
+            <div class="sc-admin-decision-item">
+
+                <span>
+                    Application Status
+                </span>
+
+
+                <strong>
+                    @DisplayEnum(application.Status)
+                </strong>
+
+            </div>
+
+
+
+            <!-- STAGE -->
+
+            <div class="sc-admin-decision-item">
+
+                <span>
+                    Current Stage
+                </span>
+
+
+                <strong>
+                    @DisplayEnum(application.Stage)
+                </strong>
+
+            </div>
+
+
+
+            <!-- LAST EVALUATED -->
+
+            <div class="sc-admin-decision-item">
+
+                <span>
+                    Last Evaluated
+                </span>
+
+
+                <strong>
+
+                    @if (application.LastEvaluatedDate.HasValue)
+                    {
+                        @application.LastEvaluatedDate.Value.ToString("dd MMM yyyy HH:mm")
+                    }
+                    else
+                    {
+                        <text>Not evaluated</text>
+                    }
+
+                </strong>
+
+            </div>
+
+        </div>
+
+
+
+        @if (!string.IsNullOrWhiteSpace(application.AdminNotes))
+        {
+
+            <div class="sc-admin-notes">
+
+                <div class="sc-admin-notes-icon">
+
+                    <i class="bi bi-sticky-fill"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        ADMIN NOTES
+                    </span>
+
+
+                    <p>
+                        @application.AdminNotes
+                    </p>
+
+                </div>
+
+            </div>
+
+        }
+
+    </section>
+
+
+
+    <!-- ========================================================= -->
+    <!-- ATS AUDIT TRAIL -->
+    <!-- ========================================================= -->
+
+    <section class="sc-application-section">
+
+        <div class="sc-application-section-heading">
+
+            <div class="sc-application-section-heading-icon">
+
+                <i class="bi bi-clock-history"></i>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    ATS HISTORY
+                </span>
+
+
+                <h2>
+                    Audit Trail
+                </h2>
+
+
+                <p>
+                    Recorded actions performed during candidate processing.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        @if (auditHistory.Any())
+        {
+
+            <div class="sc-audit-timeline">
+
+                @foreach (var audit in auditHistory)
+                {
+
+                    <div class="sc-audit-item">
+
+
+                        <div class="sc-audit-marker">
+
+                            <i class="bi bi-check-lg"></i>
+
+                        </div>
+
+
+                        <div class="sc-audit-content">
+
+                            <div class="sc-audit-top">
+
+                                <strong>
+                                    @audit.Action
+                                </strong>
+
+
+                                <time>
+                                    @audit.CreatedDate.ToString("dd MMM yyyy HH:mm")
+                                </time>
+
+                            </div>
+
+
+                            @if (!string.IsNullOrWhiteSpace(audit.Description))
+                            {
+
+                                <p>
+                                    @audit.Description
+                                </p>
+
+                            }
+
+
+                            @if (!string.IsNullOrWhiteSpace(audit.PerformedBy))
+                            {
+
+                                <span class="sc-audit-performed-by">
+
+                                    <i class="bi bi-person"></i>
+
+                                    @audit.PerformedBy
+
+                                </span>
+
+                            }
+
+                        </div>
+
+                    </div>
+
+                }
+
+            </div>
+
+        }
+        else
+        {
+
+            <div class="sc-application-empty-state">
+
+                <div class="sc-application-empty-icon">
+
+                    <i class="bi bi-clock-history"></i>
+
+                </div>
+
+
+                <h3>
+                    No Audit History
+                </h3>
+
+
+                <p>
+                    No ATS processing events have been recorded
+                    for this application.
+                </p>
+
+            </div>
+
+        }
+
+    </section>
+
+</div>

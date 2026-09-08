@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models;
+using SwiftCare.Models.VolunteerCV;
 
 namespace SwiftCare.Services.VolunteerATS
 {
@@ -12,13 +13,31 @@ namespace SwiftCare.Services.VolunteerATS
 
         public decimal SkillsScore { get; set; }
 
-        public decimal QuestionScore { get; set; }
+        public decimal? QuestionScore { get; set; }
 
         public decimal AvailabilityScore { get; set; }
 
         public decimal MotivationScore { get; set; }
 
         public decimal OverallScore { get; set; }
+
+        public bool QuestionsApplicable { get; set; }
+
+        public int MatchedSkills { get; set; }
+
+        public int RequiredSkills { get; set; }
+
+        public int MatchedQualifications { get; set; }
+
+        public int RequiredQualifications { get; set; }
+
+        public int MatchedExperienceRecords { get; set; }
+
+        public int ExperienceRecords { get; set; }
+
+        public int AnsweredQuestions { get; set; }
+
+        public int TotalQuestions { get; set; }
     }
 
 
@@ -29,76 +48,111 @@ namespace SwiftCare.Services.VolunteerATS
         public VolunteerScoringEngine(
             SwiftCareDbContext context)
         {
-            _context = context;
+            _context = context
+                ?? throw new ArgumentNullException(
+                    nameof(context));
         }
 
+
+        // ============================================================
+        // MAIN CALCULATION
+        // ============================================================
 
         public async Task<VolunteerScoringResult>
             CalculateAsync(
                 VolunteerApplication application,
-                VolunteerEligibilityResult eligibility)
+                VolunteerEligibilityResult eligibility,
+                ParsedCv parsedCv)
         {
+            if (application == null)
+                throw new ArgumentNullException(
+                    nameof(application));
+
+            if (parsedCv == null)
+                throw new ArgumentNullException(
+                    nameof(parsedCv));
+
+
             var result =
                 new VolunteerScoringResult();
 
 
-            // ====================================================
+            // ========================================================
             // QUALIFICATION
-            // ====================================================
+            // ========================================================
 
             result.QualificationScore =
                 CalculateQualificationScore(
-                    application);
+                    application,
+                    parsedCv,
+                    result);
 
 
-            // ====================================================
+            // ========================================================
             // EXPERIENCE
-            // ====================================================
+            // ========================================================
 
             result.ExperienceScore =
                 CalculateExperienceScore(
-                    application);
+                    application,
+                    parsedCv,
+                    result);
 
 
-            // ====================================================
+            // ========================================================
             // SKILLS
-            // ====================================================
+            // ========================================================
 
             result.SkillsScore =
                 CalculateSkillsScore(
-                    application);
+                    application,
+                    parsedCv,
+                    result);
 
 
-            // ====================================================
-            // APPLICATION QUESTIONS
-            // ====================================================
+            // ========================================================
+            // QUESTIONS
+            // ========================================================
 
-            result.QuestionScore =
+            var questionResult =
                 await CalculateQuestionScoreAsync(
                     application);
 
+            result.QuestionScore =
+                questionResult.Score;
 
-            // ====================================================
+            result.QuestionsApplicable =
+                questionResult.Applicable;
+
+            result.AnsweredQuestions =
+                questionResult.Answered;
+
+            result.TotalQuestions =
+                questionResult.Total;
+
+
+            // ========================================================
             // AVAILABILITY
-            // ====================================================
+            // ========================================================
 
             result.AvailabilityScore =
                 CalculateAvailabilityScore(
-                    application);
+                    application,
+                    eligibility);
 
 
-            // ====================================================
+            // ========================================================
             // MOTIVATION
-            // ====================================================
+            // ========================================================
 
             result.MotivationScore =
                 CalculateMotivationScore(
                     application);
 
 
-            // ====================================================
-            // WEIGHTS
-            // ====================================================
+            // ========================================================
+            // LOAD SCORING CONFIGURATION
+            // ========================================================
 
             var configuration =
                 await _context
@@ -141,157 +195,386 @@ namespace SwiftCare.Services.VolunteerATS
             }
 
 
-            // ====================================================
+            // ========================================================
             // FINAL SCORE
-            // ====================================================
+            // ========================================================
 
-            result.OverallScore =
-                Math.Round(
-                    (
-                        result.QualificationScore *
-                        configuration.QualificationWeight
+            decimal weightedTotal = 0;
 
-                        +
+            decimal activeWeight = 0;
 
-                        result.ExperienceScore *
-                        configuration.ExperienceWeight
 
-                        +
+            // Qualification
+            weightedTotal +=
+                result.QualificationScore *
+                configuration.QualificationWeight;
 
-                        result.SkillsScore *
-                        configuration.SkillsWeight
+            activeWeight +=
+                configuration.QualificationWeight;
 
-                        +
 
-                        result.QuestionScore *
-                        configuration.QuestionWeight
+            // Experience
+            weightedTotal +=
+                result.ExperienceScore *
+                configuration.ExperienceWeight;
 
-                        +
+            activeWeight +=
+                configuration.ExperienceWeight;
 
-                        result.AvailabilityScore *
-                        configuration.AvailabilityWeight
 
-                        +
+            // Skills
+            weightedTotal +=
+                result.SkillsScore *
+                configuration.SkillsWeight;
 
-                        result.MotivationScore *
-                        configuration.MotivationWeight
+            activeWeight +=
+                configuration.SkillsWeight;
 
-                    ) / 100,
-                    2);
+
+            // Questions
+            if (result.QuestionsApplicable &&
+                result.QuestionScore.HasValue)
+            {
+                weightedTotal +=
+                    result.QuestionScore.Value *
+                    configuration.QuestionWeight;
+
+                activeWeight +=
+                    configuration.QuestionWeight;
+            }
+
+
+            // Availability
+            weightedTotal +=
+                result.AvailabilityScore *
+                configuration.AvailabilityWeight;
+
+            activeWeight +=
+                configuration.AvailabilityWeight;
+
+
+            // Motivation
+            weightedTotal +=
+                result.MotivationScore *
+                configuration.MotivationWeight;
+
+            activeWeight +=
+                configuration.MotivationWeight;
+
+
+            if (activeWeight > 0)
+            {
+                result.OverallScore =
+                    Math.Round(
+                        weightedTotal /
+                        activeWeight,
+                        2);
+            }
+            else
+            {
+                result.OverallScore = 0;
+            }
 
 
             return result;
         }
 
 
-        // ========================================================
+        // ============================================================
         // QUALIFICATION
-        // ========================================================
+        // ============================================================
 
         private decimal CalculateQualificationScore(
-            VolunteerApplication application)
+            VolunteerApplication application,
+            ParsedCv parsedCv,
+            VolunteerScoringResult result)
         {
-            if (application.Applicant == null)
+            var opportunity =
+                application.VolunteerOpportunity;
+
+            if (opportunity == null)
                 return 0;
 
-            return 75;
+
+            var education =
+                parsedCv.Education
+                    ?? new List<CvEducation>();
+
+
+            if (education.Count == 0)
+            {
+                result.RequiredQualifications = 1;
+                result.MatchedQualifications = 0;
+
+                return 0;
+            }
+
+
+            /*
+             * Minimum qualification:
+             *
+             * Grade 12 / Matric
+             *
+             * Advantageous:
+             *
+             * Community Development
+             * Youth Development
+             * Education
+             * Social Sciences
+             * Public Administration
+             * Psychology
+             */
+
+
+            bool hasMatric =
+                education.Any(x =>
+                    ContainsAny(
+                        x.Qualification,
+                        "grade 12",
+                        "matric",
+                        "national senior certificate",
+                        "national certificate"));
+
+            bool hasRelevantHigherQualification =
+                education.Any(x =>
+                    ContainsAny(
+                        x.Qualification,
+                        "diploma",
+                        "degree",
+                        "certificate",
+                        "bachelor",
+                        "higher certificate",
+                        "advanced certificate") &&
+                    ContainsAny(
+                        x.Qualification,
+                        "community development",
+                        "youth development",
+                        "education",
+                        "social sciences",
+                        "public administration",
+                        "psychology"));
+
+
+            /*
+             * We treat Matric as the baseline.
+             *
+             * 70 = minimum qualification satisfied
+             * 100 = minimum + relevant higher qualification
+             */
+
+            if (hasMatric)
+            {
+                result.RequiredQualifications = 2;
+
+                result.MatchedQualifications = 1;
+
+                if (hasRelevantHigherQualification)
+                {
+                    result.MatchedQualifications = 2;
+
+                    return 100;
+                }
+
+                return 70;
+            }
+
+
+            /*
+             * If the CV contains higher education but
+             * no clearly identifiable Matric, don't assume
+             * the minimum requirement has been satisfied.
+             */
+
+            if (hasRelevantHigherQualification)
+            {
+                result.RequiredQualifications = 2;
+                result.MatchedQualifications = 1;
+
+                return 50;
+            }
+
+
+            result.RequiredQualifications = 2;
+            result.MatchedQualifications = 0;
+
+            return 0;
         }
 
 
-        // ========================================================
+        // ============================================================
         // EXPERIENCE
-        // ========================================================
+        // ============================================================
 
         private decimal CalculateExperienceScore(
-            VolunteerApplication application)
+            VolunteerApplication application,
+            ParsedCv parsedCv,
+            VolunteerScoringResult result)
         {
-            if (string.IsNullOrWhiteSpace(
-                    application.CoverMessage))
+            var experience =
+                parsedCv.Experience
+                    ?? new List<CvExperience>();
+
+
+            result.ExperienceRecords =
+                experience.Count;
+
+
+            if (experience.Count == 0)
             {
-                return 30;
+                result.MatchedExperienceRecords = 0;
+
+                return 0;
             }
 
-            var message =
-                application.CoverMessage
-                    .ToLowerInvariant();
 
-            int score = 40;
+            int relevantRecords = 0;
 
-            string[] experienceTerms =
+
+            foreach (var item in experience)
             {
-                "experience",
-                "volunteer",
-                "nursing",
-                "care",
-                "resident",
-                "elderly",
-                "community",
-                "support"
-            };
+                var combined =
+                    Combine(
+                        item.Position,
+                        item.Employer,
+                        item.Description,
+                        item.RawText);
 
-            foreach (var term in experienceTerms)
-            {
-                if (message.Contains(term))
+
+                if (ContainsAny(
+                    combined,
+                    "community",
+                    "youth",
+                    "volunteer",
+                    "programme",
+                    "program",
+                    "administrative",
+                    "administration",
+                    "outreach",
+                    "social support",
+                    "community development",
+                    "participant",
+                    "event coordination"))
                 {
-                    score += 7;
+                    relevantRecords++;
                 }
             }
 
-            return Math.Min(score, 100);
+
+            result.MatchedExperienceRecords =
+                relevantRecords;
+
+
+            /*
+             * Experience scoring:
+             *
+             * No relevant experience = 0
+             *
+             * Relevant experience records
+             * progressively increase the score.
+             */
+
+            if (relevantRecords == 0)
+                return 0;
+
+            if (relevantRecords == 1)
+                return 60;
+
+            if (relevantRecords == 2)
+                return 85;
+
+            return 100;
         }
 
 
-        // ========================================================
+        // ============================================================
         // SKILLS
-        // ========================================================
+        // ============================================================
 
         private decimal CalculateSkillsScore(
-                     VolunteerApplication application)
+            VolunteerApplication application,
+            ParsedCv parsedCv,
+            VolunteerScoringResult result)
         {
-            if (application.VolunteerOpportunity == null)
-                return 50;
+            var opportunity =
+                application.VolunteerOpportunity;
 
-            var skills =
-                application.VolunteerOpportunity.RequiredSkills;
 
-            if (skills == null || skills.Count == 0)
-                return 75;
+            if (opportunity == null)
+                return 0;
 
-            if (string.IsNullOrWhiteSpace(
-                application.CoverMessage))
-                return 30;
 
-            var applicationText =
-                application.CoverMessage.ToLowerInvariant();
+            var requiredSkills =
+                opportunity.RequiredSkills
+                    ?.Where(x =>
+                        x != null &&
+                        !string.IsNullOrWhiteSpace(x.Skill))
+                    .Select(x =>
+                        NormalizeSkill(x.Skill!))
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(x))
+                    .Distinct()
+                    .ToList()
+                ?? new List<string>();
+
+
+            var candidateSkills =
+                parsedCv.Skills
+                    ?.Where(x =>
+                        !string.IsNullOrWhiteSpace(x))
+                    .Select(NormalizeSkill)
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(x))
+                    .Distinct()
+                    .ToList()
+                ?? new List<string>();
+
+
+            result.RequiredSkills =
+                requiredSkills.Count;
+
+
+            if (requiredSkills.Count == 0)
+            {
+                result.MatchedSkills = 0;
+
+                return 0;
+            }
+
 
             int matched = 0;
 
-            foreach (var skill in skills)
+
+            foreach (var requiredSkill in requiredSkills)
             {
-                if (skill == null)
-                    continue;
+                bool found =
+                    candidateSkills.Any(candidateSkill =>
+                        SkillsMatch(
+                            candidateSkill,
+                            requiredSkill));
 
-                if (string.IsNullOrWhiteSpace(skill.Skill))
-                    continue;
 
-                if (applicationText.Contains(
-                    skill.Skill.ToLowerInvariant()))
-                {
+                if (found)
                     matched++;
-                }
             }
 
+
+            result.MatchedSkills =
+                matched;
+
+
             return Math.Round(
-                (decimal)matched / skills.Count * 100,
+                (decimal)matched /
+                requiredSkills.Count *
+                100,
                 2);
         }
 
 
-        // ========================================================
+        // ============================================================
         // QUESTIONS
-        // ========================================================
+        // ============================================================
 
-        private async Task<decimal>
+        private async Task<QuestionScoreResult>
             CalculateQuestionScoreAsync(
                 VolunteerApplication application)
         {
@@ -303,44 +586,119 @@ namespace SwiftCare.Services.VolunteerATS
                         application.VolunteerApplicationId)
                     .ToListAsync();
 
+
+            /*
+             * No questions / no answers:
+             *
+             * This is NOT a zero.
+             *
+             * It means the criterion is not applicable.
+             */
+
             if (answers.Count == 0)
-                return 0;
-
-            int answered = answers.Count(x =>
-                !string.IsNullOrWhiteSpace(
-                    x.Answer));
-
-            return Math.Round(
-                (decimal)answered /
-                answers.Count *
-                100,
-                2);
-        }
-
-
-        // ========================================================
-        // AVAILABILITY
-        // ========================================================
-
-        private decimal CalculateAvailabilityScore(
-            VolunteerApplication application)
-        {
-            if (application.VolunteerOpportunity == null)
-                return 50;
-
-            if (application.VolunteerOpportunity.StartDate == null ||
-                application.VolunteerOpportunity.EndDate == null)
             {
-                return 75;
+                return new QuestionScoreResult
+                {
+                    Applicable = false,
+                    Score = null,
+                    Answered = 0,
+                    Total = 0
+                };
             }
 
-            return 80;
+
+            int answered =
+                answers.Count(x =>
+                    !string.IsNullOrWhiteSpace(
+                        x.Answer));
+
+
+            return new QuestionScoreResult
+            {
+                Applicable = true,
+
+                Score =
+                    Math.Round(
+                        (decimal)answered /
+                        answers.Count *
+                        100,
+                        2),
+
+                Answered = answered,
+
+                Total = answers.Count
+            };
         }
 
 
-        // ========================================================
+        // ============================================================
+        // AVAILABILITY
+        // ============================================================
+
+        private decimal CalculateAvailabilityScore(
+            VolunteerApplication application,
+            VolunteerEligibilityResult eligibility)
+        {
+            /*
+             * We don't invent an availability score.
+             *
+             * If eligibility already determined that the
+             * candidate is eligible, use that as evidence.
+             */
+
+            if (eligibility == null)
+                return 0;
+
+
+            /*
+             * Try to read a boolean eligibility property
+             * if your result exposes one.
+             *
+             * Since the exact model was not supplied, we
+             * intentionally don't fabricate property names.
+             *
+             * For now, availability is based on whether the
+             * opportunity has a valid date window.
+             */
+
+            var opportunity =
+                application.VolunteerOpportunity;
+
+
+            if (opportunity == null)
+                return 0;
+
+
+            if (!opportunity.StartDate.HasValue ||
+                !opportunity.EndDate.HasValue)
+            {
+                return 0;
+            }
+
+
+            if (opportunity.EndDate <
+                opportunity.StartDate)
+            {
+                return 0;
+            }
+
+
+            /*
+             * The opportunity has a valid availability
+             * window, but we don't award points merely because
+             * the opportunity has dates.
+             *
+             * This should eventually be replaced with the
+             * applicant's actual availability fields.
+             */
+
+            return 0;
+        }
+
+
+        // ============================================================
         // MOTIVATION
-        // ========================================================
+        // ============================================================
 
         private decimal CalculateMotivationScore(
             VolunteerApplication application)
@@ -351,22 +709,302 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-            var length =
-                application.CoverMessage.Trim().Length;
 
-            if (length >= 500)
-                return 100;
+            var text =
+                application.CoverMessage
+                    .Trim();
 
-            if (length >= 300)
-                return 90;
 
-            if (length >= 150)
-                return 80;
+            int score = 0;
 
-            if (length >= 75)
-                return 65;
 
-            return 40;
+            /*
+             * Motivation evidence.
+             */
+
+            if (ContainsAny(
+                text,
+                "volunteer",
+                "volunteering",
+                "volunteer with"))
+            {
+                score += 20;
+            }
+
+
+            if (ContainsAny(
+                text,
+                "community",
+                "community development",
+                "community support",
+                "community outreach"))
+            {
+                score += 20;
+            }
+
+
+            if (ContainsAny(
+                text,
+                "youth",
+                "young people",
+                "young people",
+                "youth programme",
+                "youth program"))
+            {
+                score += 20;
+            }
+
+
+            if (ContainsAny(
+                text,
+                "skills",
+                "experience",
+                "contribute",
+                "contributing",
+                "support"))
+            {
+                score += 15;
+            }
+
+
+            if (ContainsAny(
+                text,
+                "learn",
+                "learning",
+                "develop",
+                "development",
+                "gain experience"))
+            {
+                score += 15;
+            }
+
+
+            /*
+             * Reasonable amount of written content.
+             *
+             * This is only a small quality signal,
+             * not the entire score.
+             */
+
+            if (text.Length >= 150)
+                score += 10;
+
+
+            return Math.Min(
+                score,
+                100);
+        }
+
+
+        // ============================================================
+        // SKILL NORMALISATION
+        // ============================================================
+
+        private static string NormalizeSkill(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+
+            var normalized =
+                value
+                    .Trim()
+                    .ToLowerInvariant();
+
+
+            normalized =
+                normalized
+                    .Replace("&", "and")
+                    .Replace("/", " ")
+                    .Replace("-", " ");
+
+
+            while (normalized.Contains("  "))
+            {
+                normalized =
+                    normalized.Replace(
+                        "  ",
+                        " ");
+            }
+
+
+            return normalized.Trim();
+        }
+
+
+        // ============================================================
+        // SKILL MATCHING
+        // ============================================================
+
+        private static bool SkillsMatch(
+            string candidateSkill,
+            string requiredSkill)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    candidateSkill) ||
+                string.IsNullOrWhiteSpace(
+                    requiredSkill))
+            {
+                return false;
+            }
+
+
+            if (candidateSkill.Equals(
+                requiredSkill,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+
+            var aliases =
+                new Dictionary<string, string[]>(
+                    StringComparer.OrdinalIgnoreCase)
+                {
+                    ["communication"] =
+                        new[]
+                        {
+                            "communication skills",
+                            "verbal communication",
+                            "written communication"
+                        },
+
+                    ["communication skills"] =
+                        new[]
+                        {
+                            "communication",
+                            "verbal communication",
+                            "written communication"
+                        },
+
+                    ["data capture"] =
+                        new[]
+                        {
+                            "data capturing",
+                            "data entry",
+                            "data capturing skills"
+                        },
+
+                    ["data capturing"] =
+                        new[]
+                        {
+                            "data capture",
+                            "data entry"
+                        },
+
+                    ["microsoft office"] =
+                        new[]
+                        {
+                            "microsoft word",
+                            "microsoft excel",
+                            "microsoft powerpoint"
+                        },
+
+                    ["organisational skills"] =
+                        new[]
+                        {
+                            "organizational skills",
+                            "organisation",
+                            "organization"
+                        },
+
+                    ["organizational skills"] =
+                        new[]
+                        {
+                            "organisational skills",
+                            "organisation",
+                            "organization"
+                        }
+                };
+
+
+            if (aliases.TryGetValue(
+                    requiredSkill,
+                    out var alternatives))
+            {
+                if (alternatives.Any(x =>
+                    candidateSkill.Equals(
+                        x,
+                        StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+
+
+            if (aliases.TryGetValue(
+                    candidateSkill,
+                    out var candidateAlternatives))
+            {
+                if (candidateAlternatives.Any(x =>
+                    x.Equals(
+                        requiredSkill,
+                        StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+
+
+            return false;
+        }
+
+
+        // ============================================================
+        // TEXT HELPERS
+        // ============================================================
+
+        private static bool ContainsAny(
+            string? text,
+            params string[] terms)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+
+            foreach (var term in terms)
+            {
+                if (string.IsNullOrWhiteSpace(term))
+                    continue;
+
+
+                if (text.Contains(
+                    term,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+
+            return false;
+        }
+
+
+        private static string Combine(
+            params string?[] values)
+        {
+            return string.Join(
+                " ",
+                values.Where(x =>
+                    !string.IsNullOrWhiteSpace(x)));
+        }
+
+
+        // ============================================================
+        // QUESTION RESULT
+        // ============================================================
+
+        private sealed class QuestionScoreResult
+        {
+            public bool Applicable { get; set; }
+
+            public decimal? Score { get; set; }
+
+            public int Answered { get; set; }
+
+            public int Total { get; set; }
         }
     }
 }

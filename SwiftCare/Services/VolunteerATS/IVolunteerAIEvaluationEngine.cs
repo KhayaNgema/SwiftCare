@@ -1,4 +1,5 @@
 ﻿using SwiftCare.Models;
+using SwiftCare.Models.VolunteerCV;
 
 namespace SwiftCare.Services.VolunteerATS
 {
@@ -6,9 +7,9 @@ namespace SwiftCare.Services.VolunteerATS
     {
         Task<VolunteerAIResult> EvaluateAsync(
             VolunteerApplication application,
-            VolunteerApplicationEvaluation evaluation);
+            VolunteerApplicationEvaluation evaluation,
+            ParsedCv? parsedCv);
     }
-
 
     public class VolunteerAIResult
     {

@@ -18,6 +18,7 @@ using SwiftCare.Models;
 using SwiftCare.Models;
 using SwiftCare.Services;
 using SwiftCare.Services.VolunteerATS;
+using SwiftCare.Services.VolunteerATS.CV;
 using System;
 using System.Globalization;
 using System.Security.Claims;
@@ -117,10 +118,17 @@ public class Startup
 
         services.AddScoped<VolunteerATSAuditService>();
 
-        services.AddScoped<IVolunteerAIEvaluationEngine,
-            VolunteerAIEvaluationEngine>();
+        services.AddScoped<IVolunteerAIEvaluationEngine,VolunteerAIEvaluationEngine>();
 
         services.AddScoped<VolunteerShortlistingPipeline>();
+
+        services.AddScoped<IVolunteerCVDocumentEngine,VolunteerCVDocumentEngine>();
+
+        services.AddScoped<IVolunteerCVExtractionEngine,VolunteerCVExtractionEngine>();
+
+        services.AddScoped<IVolunteerCVParsingEngine,VolunteerCVParsingEngine>();
+
+        services.AddScoped<IVolunteerCVProcessingEngine, VolunteerCVProcessingEngine>();
         services.AddLogging(logging =>
         {
             logging.AddConsole();

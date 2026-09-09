@@ -40,7 +40,6 @@ namespace SwiftCare.Services.VolunteerATS
         public int TotalQuestions { get; set; }
     }
 
-
     public class VolunteerScoringEngine
     {
         private readonly SwiftCareDbContext _context;
@@ -52,7 +51,6 @@ namespace SwiftCare.Services.VolunteerATS
                 ?? throw new ArgumentNullException(
                     nameof(context));
         }
-
 
         // ============================================================
         // MAIN CALCULATION
@@ -72,10 +70,8 @@ namespace SwiftCare.Services.VolunteerATS
                 throw new ArgumentNullException(
                     nameof(parsedCv));
 
-
             var result =
                 new VolunteerScoringResult();
-
 
             // ========================================================
             // QUALIFICATION
@@ -87,7 +83,6 @@ namespace SwiftCare.Services.VolunteerATS
                     parsedCv,
                     result);
 
-
             // ========================================================
             // EXPERIENCE
             // ========================================================
@@ -98,7 +93,6 @@ namespace SwiftCare.Services.VolunteerATS
                     parsedCv,
                     result);
 
-
             // ========================================================
             // SKILLS
             // ========================================================
@@ -108,7 +102,6 @@ namespace SwiftCare.Services.VolunteerATS
                     application,
                     parsedCv,
                     result);
-
 
             // ========================================================
             // QUESTIONS
@@ -130,7 +123,6 @@ namespace SwiftCare.Services.VolunteerATS
             result.TotalQuestions =
                 questionResult.Total;
 
-
             // ========================================================
             // AVAILABILITY
             // ========================================================
@@ -140,7 +132,6 @@ namespace SwiftCare.Services.VolunteerATS
                     application,
                     eligibility);
 
-
             // ========================================================
             // MOTIVATION
             // ========================================================
@@ -148,7 +139,6 @@ namespace SwiftCare.Services.VolunteerATS
             result.MotivationScore =
                 CalculateMotivationScore(
                     application);
-
 
             // ========================================================
             // LOAD SCORING CONFIGURATION
@@ -160,7 +150,6 @@ namespace SwiftCare.Services.VolunteerATS
                     .FirstOrDefaultAsync(x =>
                         x.VolunteerOpportunityId ==
                         application.VolunteerOpportunityId);
-
 
             if (configuration == null)
             {
@@ -194,7 +183,6 @@ namespace SwiftCare.Services.VolunteerATS
                 await _context.SaveChangesAsync();
             }
 
-
             // ========================================================
             // FINAL SCORE
             // ========================================================
@@ -202,7 +190,6 @@ namespace SwiftCare.Services.VolunteerATS
             decimal weightedTotal = 0;
 
             decimal activeWeight = 0;
-
 
             // Qualification
             weightedTotal +=
@@ -212,7 +199,6 @@ namespace SwiftCare.Services.VolunteerATS
             activeWeight +=
                 configuration.QualificationWeight;
 
-
             // Experience
             weightedTotal +=
                 result.ExperienceScore *
@@ -221,7 +207,6 @@ namespace SwiftCare.Services.VolunteerATS
             activeWeight +=
                 configuration.ExperienceWeight;
 
-
             // Skills
             weightedTotal +=
                 result.SkillsScore *
@@ -229,7 +214,6 @@ namespace SwiftCare.Services.VolunteerATS
 
             activeWeight +=
                 configuration.SkillsWeight;
-
 
             // Questions
             if (result.QuestionsApplicable &&
@@ -243,7 +227,6 @@ namespace SwiftCare.Services.VolunteerATS
                     configuration.QuestionWeight;
             }
 
-
             // Availability
             weightedTotal +=
                 result.AvailabilityScore *
@@ -252,7 +235,6 @@ namespace SwiftCare.Services.VolunteerATS
             activeWeight +=
                 configuration.AvailabilityWeight;
 
-
             // Motivation
             weightedTotal +=
                 result.MotivationScore *
@@ -260,7 +242,6 @@ namespace SwiftCare.Services.VolunteerATS
 
             activeWeight +=
                 configuration.MotivationWeight;
-
 
             if (activeWeight > 0)
             {
@@ -275,10 +256,8 @@ namespace SwiftCare.Services.VolunteerATS
                 result.OverallScore = 0;
             }
 
-
             return result;
         }
-
 
         // ============================================================
         // QUALIFICATION
@@ -295,13 +274,11 @@ namespace SwiftCare.Services.VolunteerATS
             if (opportunity == null)
                 return 0;
 
-
             var education =
-                parsedCv.Education
-                    ?? new List<CvEducation>();
+                parsedCv.Education;
 
-
-            if (education.Count == 0)
+            if (education == null ||
+                education.Count == 0)
             {
                 result.RequiredQualifications = 1;
                 result.MatchedQualifications = 0;
@@ -309,22 +286,18 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-
-            /*
-             * Minimum qualification:
-             *
-             * Grade 12 / Matric
-             *
-             * Advantageous:
-             *
-             * Community Development
-             * Youth Development
-             * Education
-             * Social Sciences
-             * Public Administration
-             * Psychology
-             */
-
+            // --------------------------------------------------------
+            // Minimum qualification:
+            // Grade 12 / Matric
+            //
+            // Advantageous:
+            // Community Development
+            // Youth Development
+            // Education
+            // Social Sciences
+            // Public Administration
+            // Psychology
+            // --------------------------------------------------------
 
             bool hasMatric =
                 education.Any(x =>
@@ -354,13 +327,12 @@ namespace SwiftCare.Services.VolunteerATS
                         "public administration",
                         "psychology"));
 
-
-            /*
-             * We treat Matric as the baseline.
-             *
-             * 70 = minimum qualification satisfied
-             * 100 = minimum + relevant higher qualification
-             */
+            // --------------------------------------------------------
+            // Matric = baseline.
+            //
+            // 70 = minimum qualification satisfied
+            // 100 = minimum + relevant higher qualification
+            // --------------------------------------------------------
 
             if (hasMatric)
             {
@@ -378,28 +350,25 @@ namespace SwiftCare.Services.VolunteerATS
                 return 70;
             }
 
-
-            /*
-             * If the CV contains higher education but
-             * no clearly identifiable Matric, don't assume
-             * the minimum requirement has been satisfied.
-             */
+            // --------------------------------------------------------
+            // Higher qualification without identifiable Matric
+            // --------------------------------------------------------
 
             if (hasRelevantHigherQualification)
             {
                 result.RequiredQualifications = 2;
+
                 result.MatchedQualifications = 1;
 
                 return 50;
             }
 
-
             result.RequiredQualifications = 2;
+
             result.MatchedQualifications = 0;
 
             return 0;
         }
-
 
         // ============================================================
         // EXPERIENCE
@@ -411,13 +380,18 @@ namespace SwiftCare.Services.VolunteerATS
             VolunteerScoringResult result)
         {
             var experience =
-                parsedCv.Experience
-                    ?? new List<CvExperience>();
+                parsedCv.Experience;
 
+            if (experience == null)
+            {
+                result.ExperienceRecords = 0;
+                result.MatchedExperienceRecords = 0;
+
+                return 0;
+            }
 
             result.ExperienceRecords =
                 experience.Count;
-
 
             if (experience.Count == 0)
             {
@@ -426,9 +400,7 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-
             int relevantRecords = 0;
-
 
             foreach (var item in experience)
             {
@@ -438,7 +410,6 @@ namespace SwiftCare.Services.VolunteerATS
                         item.Employer,
                         item.Description,
                         item.RawText);
-
 
                 if (ContainsAny(
                     combined,
@@ -459,19 +430,12 @@ namespace SwiftCare.Services.VolunteerATS
                 }
             }
 
-
             result.MatchedExperienceRecords =
                 relevantRecords;
 
-
-            /*
-             * Experience scoring:
-             *
-             * No relevant experience = 0
-             *
-             * Relevant experience records
-             * progressively increase the score.
-             */
+            // --------------------------------------------------------
+            // Experience scoring
+            // --------------------------------------------------------
 
             if (relevantRecords == 0)
                 return 0;
@@ -485,7 +449,6 @@ namespace SwiftCare.Services.VolunteerATS
             return 100;
         }
 
-
         // ============================================================
         // SKILLS
         // ============================================================
@@ -498,40 +461,53 @@ namespace SwiftCare.Services.VolunteerATS
             var opportunity =
                 application.VolunteerOpportunity;
 
-
             if (opportunity == null)
                 return 0;
 
+            // --------------------------------------------------------
+            // REQUIRED SKILLS
+            // --------------------------------------------------------
 
             var requiredSkills =
                 opportunity.RequiredSkills
                     ?.Where(x =>
                         x != null &&
-                        !string.IsNullOrWhiteSpace(x.Skill))
+                        !string.IsNullOrWhiteSpace(
+                            x.Skill))
                     .Select(x =>
-                        NormalizeSkill(x.Skill!))
+                        NormalizeSkill(
+                            x.Skill!))
                     .Where(x =>
                         !string.IsNullOrWhiteSpace(x))
                     .Distinct()
                     .ToList()
                 ?? new List<string>();
 
+            // --------------------------------------------------------
+            // CANDIDATE SKILLS
+            //
+            // IMPORTANT:
+            // ParsedCv.Skills is ICollection<CvSkill>
+            // so we must use x.Skill.
+            // --------------------------------------------------------
 
             var candidateSkills =
                 parsedCv.Skills
                     ?.Where(x =>
-                        !string.IsNullOrWhiteSpace(x))
-                    .Select(NormalizeSkill)
+                        x != null &&
+                        !string.IsNullOrWhiteSpace(
+                            x.Skill))
+                    .Select(x =>
+                        NormalizeSkill(
+                            x.Skill!))
                     .Where(x =>
                         !string.IsNullOrWhiteSpace(x))
                     .Distinct()
                     .ToList()
                 ?? new List<string>();
 
-
             result.RequiredSkills =
                 requiredSkills.Count;
-
 
             if (requiredSkills.Count == 0)
             {
@@ -540,27 +516,23 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-
             int matched = 0;
-
 
             foreach (var requiredSkill in requiredSkills)
             {
                 bool found =
-                    candidateSkills.Any(candidateSkill =>
-                        SkillsMatch(
-                            candidateSkill,
-                            requiredSkill));
-
+                    candidateSkills.Any(
+                        candidateSkill =>
+                            SkillsMatch(
+                                candidateSkill,
+                                requiredSkill));
 
                 if (found)
                     matched++;
             }
 
-
             result.MatchedSkills =
                 matched;
-
 
             return Math.Round(
                 (decimal)matched /
@@ -568,7 +540,6 @@ namespace SwiftCare.Services.VolunteerATS
                 100,
                 2);
         }
-
 
         // ============================================================
         // QUESTIONS
@@ -586,32 +557,29 @@ namespace SwiftCare.Services.VolunteerATS
                         application.VolunteerApplicationId)
                     .ToListAsync();
 
-
-            /*
-             * No questions / no answers:
-             *
-             * This is NOT a zero.
-             *
-             * It means the criterion is not applicable.
-             */
+            // --------------------------------------------------------
+            // No questions / no answers:
+            // criterion is not applicable.
+            // --------------------------------------------------------
 
             if (answers.Count == 0)
             {
                 return new QuestionScoreResult
                 {
                     Applicable = false,
+
                     Score = null,
+
                     Answered = 0,
+
                     Total = 0
                 };
             }
-
 
             int answered =
                 answers.Count(x =>
                     !string.IsNullOrWhiteSpace(
                         x.Answer));
-
 
             return new QuestionScoreResult
             {
@@ -630,7 +598,6 @@ namespace SwiftCare.Services.VolunteerATS
             };
         }
 
-
         // ============================================================
         // AVAILABILITY
         // ============================================================
@@ -639,35 +606,14 @@ namespace SwiftCare.Services.VolunteerATS
             VolunteerApplication application,
             VolunteerEligibilityResult eligibility)
         {
-            /*
-             * We don't invent an availability score.
-             *
-             * If eligibility already determined that the
-             * candidate is eligible, use that as evidence.
-             */
-
             if (eligibility == null)
                 return 0;
-
-
-            /*
-             * Try to read a boolean eligibility property
-             * if your result exposes one.
-             *
-             * Since the exact model was not supplied, we
-             * intentionally don't fabricate property names.
-             *
-             * For now, availability is based on whether the
-             * opportunity has a valid date window.
-             */
 
             var opportunity =
                 application.VolunteerOpportunity;
 
-
             if (opportunity == null)
                 return 0;
-
 
             if (!opportunity.StartDate.HasValue ||
                 !opportunity.EndDate.HasValue)
@@ -675,26 +621,22 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-
             if (opportunity.EndDate <
                 opportunity.StartDate)
             {
                 return 0;
             }
 
-
             /*
-             * The opportunity has a valid availability
-             * window, but we don't award points merely because
-             * the opportunity has dates.
+             * At this stage we don't award availability points
+             * simply because an opportunity has a valid date range.
              *
-             * This should eventually be replaced with the
-             * applicant's actual availability fields.
+             * This should eventually be connected to the
+             * applicant's actual availability.
              */
 
             return 0;
         }
-
 
         // ============================================================
         // MOTIVATION
@@ -709,19 +651,12 @@ namespace SwiftCare.Services.VolunteerATS
                 return 0;
             }
 
-
             var text =
-                application.CoverMessage
-                    .Trim();
-
+                application.CoverMessage.Trim();
 
             int score = 0;
 
-
-            /*
-             * Motivation evidence.
-             */
-
+            // Volunteer motivation
             if (ContainsAny(
                 text,
                 "volunteer",
@@ -731,7 +666,7 @@ namespace SwiftCare.Services.VolunteerATS
                 score += 20;
             }
 
-
+            // Community
             if (ContainsAny(
                 text,
                 "community",
@@ -742,11 +677,10 @@ namespace SwiftCare.Services.VolunteerATS
                 score += 20;
             }
 
-
+            // Youth
             if (ContainsAny(
                 text,
                 "youth",
-                "young people",
                 "young people",
                 "youth programme",
                 "youth program"))
@@ -754,7 +688,7 @@ namespace SwiftCare.Services.VolunteerATS
                 score += 20;
             }
 
-
+            // Contribution / skills
             if (ContainsAny(
                 text,
                 "skills",
@@ -766,7 +700,7 @@ namespace SwiftCare.Services.VolunteerATS
                 score += 15;
             }
 
-
+            // Learning / development
             if (ContainsAny(
                 text,
                 "learn",
@@ -778,23 +712,14 @@ namespace SwiftCare.Services.VolunteerATS
                 score += 15;
             }
 
-
-            /*
-             * Reasonable amount of written content.
-             *
-             * This is only a small quality signal,
-             * not the entire score.
-             */
-
+            // Reasonable written response
             if (text.Length >= 150)
                 score += 10;
-
 
             return Math.Min(
                 score,
                 100);
         }
-
 
         // ============================================================
         // SKILL NORMALISATION
@@ -806,19 +731,16 @@ namespace SwiftCare.Services.VolunteerATS
             if (string.IsNullOrWhiteSpace(value))
                 return string.Empty;
 
-
             var normalized =
                 value
                     .Trim()
                     .ToLowerInvariant();
-
 
             normalized =
                 normalized
                     .Replace("&", "and")
                     .Replace("/", " ")
                     .Replace("-", " ");
-
 
             while (normalized.Contains("  "))
             {
@@ -828,10 +750,8 @@ namespace SwiftCare.Services.VolunteerATS
                         " ");
             }
 
-
             return normalized.Trim();
         }
-
 
         // ============================================================
         // SKILL MATCHING
@@ -849,14 +769,12 @@ namespace SwiftCare.Services.VolunteerATS
                 return false;
             }
 
-
             if (candidateSkill.Equals(
                 requiredSkill,
                 StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-
 
             var aliases =
                 new Dictionary<string, string[]>(
@@ -918,7 +836,6 @@ namespace SwiftCare.Services.VolunteerATS
                         }
                 };
 
-
             if (aliases.TryGetValue(
                     requiredSkill,
                     out var alternatives))
@@ -931,7 +848,6 @@ namespace SwiftCare.Services.VolunteerATS
                     return true;
                 }
             }
-
 
             if (aliases.TryGetValue(
                     candidateSkill,
@@ -946,10 +862,8 @@ namespace SwiftCare.Services.VolunteerATS
                 }
             }
 
-
             return false;
         }
-
 
         // ============================================================
         // TEXT HELPERS
@@ -962,12 +876,10 @@ namespace SwiftCare.Services.VolunteerATS
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-
             foreach (var term in terms)
             {
                 if (string.IsNullOrWhiteSpace(term))
                     continue;
-
 
                 if (text.Contains(
                     term,
@@ -977,10 +889,8 @@ namespace SwiftCare.Services.VolunteerATS
                 }
             }
 
-
             return false;
         }
-
 
         private static string Combine(
             params string?[] values)
@@ -990,7 +900,6 @@ namespace SwiftCare.Services.VolunteerATS
                 values.Where(x =>
                     !string.IsNullOrWhiteSpace(x)));
         }
-
 
         // ============================================================
         // QUESTION RESULT

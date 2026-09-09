@@ -7,7 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using SwiftCare.Data;
 using SwiftCare.Models;
+using SwiftCare.Models.VolunteerCV;
 using SwiftCare.Services;
+using SwiftCare.Services.VolunteerATS.CV;
 using SwiftCare.ViewModels;
 using System.Globalization;
 using System.Net;
@@ -31,6 +33,8 @@ namespace SwiftCare.Controllers
         private readonly IConfiguration _configuration;
         private readonly EmailService _emailService;
         private readonly RandomPasswordGeneratorService _randomPasswordGeneratorService;
+        private readonly IAzureDocumentIntelligenceCvService _azureDocumentIntelligenceCvService;
+        private readonly IVolunteerCVParsingEngine _cvParsingEngine;
 
         public VolunteerOpportunitiesController(ILogger<VolunteerOpportunitiesController> logger,
                         SwiftCareDbContext context,
@@ -39,7 +43,9 @@ namespace SwiftCare.Controllers
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
             EmailService emailService,
-            RandomPasswordGeneratorService randomPasswordGeneratorService)
+            RandomPasswordGeneratorService randomPasswordGeneratorService,
+            IAzureDocumentIntelligenceCvService azureDocumentIntelligenceCvService,
+             IVolunteerCVParsingEngine cvParsingEngine)
         {
             _logger = logger;
             _context = context;
@@ -49,6 +55,15 @@ namespace SwiftCare.Controllers
             _configuration = configuration;
             _emailService = emailService;
             _randomPasswordGeneratorService = randomPasswordGeneratorService;
+            _azureDocumentIntelligenceCvService =
+                   azureDocumentIntelligenceCvService
+                   ?? throw new ArgumentNullException(
+                       nameof(azureDocumentIntelligenceCvService));
+
+            _cvParsingEngine =
+                cvParsingEngine
+                ?? throw new ArgumentNullException(
+                    nameof(cvParsingEngine));
         }
         [HttpGet]
         public async Task<IActionResult> ApplicationSubmitted(int applicationId)
@@ -83,7 +98,7 @@ namespace SwiftCare.Controllers
             return View(opportunities);
         }
 
-       
+
         [HttpGet]
         public async Task<IActionResult> Opportunities()
         {
@@ -584,27 +599,38 @@ namespace SwiftCare.Controllers
         }
 
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Apply(
             VolunteerApplicationViewModel viewModel)
         {
-            var opportunity = await _context.VolunteerOpportunities
-                .Include(x => x.ApplicationQuestions)
-                    .ThenInclude(x => x.VolunteerQuestion)
-                .FirstOrDefaultAsync(x =>
-                    x.VolunteerOpportunityId ==
-                    viewModel.VolunteerOpportunityId);
+            // ============================================================
+            // LOAD OPPORTUNITY
+            // ============================================================
+
+            var opportunity =
+                await _context.VolunteerOpportunities
+                    .Include(x => x.ApplicationQuestions)
+                        .ThenInclude(x => x.VolunteerQuestion)
+                    .FirstOrDefaultAsync(x =>
+                        x.VolunteerOpportunityId ==
+                        viewModel.VolunteerOpportunityId);
 
             if (opportunity == null)
                 return NotFound();
 
-            viewModel.OpportunityTitle = opportunity.Title;
+            viewModel.OpportunityTitle =
+                opportunity.Title;
+
+
+            // ============================================================
+            // LOAD QUESTIONS
+            // ============================================================
 
             var assignedQuestions =
                 opportunity.ApplicationQuestions
-                    .Where(x => x.VolunteerQuestion != null)
+                    .Where(x =>
+                        x.VolunteerQuestion != null)
                     .OrderBy(x => x.DisplayOrder)
                     .ToList();
 
@@ -614,8 +640,9 @@ namespace SwiftCare.Controllers
                     new Dictionary<int, string>();
             }
 
+
             // ============================================================
-            // VALIDATE REQUIRED APPLICATION QUESTIONS
+            // VALIDATE REQUIRED QUESTIONS
             // ============================================================
 
             foreach (var assignedQuestion in assignedQuestions)
@@ -640,6 +667,7 @@ namespace SwiftCare.Controllers
                 }
             }
 
+
             // ============================================================
             // VALIDATE CV
             // ============================================================
@@ -655,22 +683,31 @@ namespace SwiftCare.Controllers
             }
             else
             {
-                var allowedExtensions = new[]
-                {
-            ".pdf",
-            ".doc",
-            ".docx"
-        };
+                /*
+                 * Azure Document Intelligence Layout supports
+                 * PDF and DOCX for this CV workflow.
+                 *
+                 * We intentionally remove .doc because Azure's
+                 * current Layout model does not accept legacy .doc.
+                 */
+
+                var allowedExtensions =
+                    new[]
+                    {
+                ".pdf",
+                ".docx"
+                    };
 
                 var extension =
-                    Path.GetExtension(viewModel.CV.FileName)
+                    Path.GetExtension(
+                        viewModel.CV.FileName)
                         .ToLowerInvariant();
 
                 if (!allowedExtensions.Contains(extension))
                 {
                     ModelState.AddModelError(
                         "CV",
-                        "Please upload a PDF, DOC, or DOCX file.");
+                        "Please upload a PDF or DOCX file.");
                 }
 
                 const long maxFileSize =
@@ -683,6 +720,7 @@ namespace SwiftCare.Controllers
                         "Your CV must be smaller than 5 MB.");
                 }
             }
+
 
             // ============================================================
             // RETURN FORM IF VALIDATION FAILED
@@ -720,25 +758,31 @@ namespace SwiftCare.Controllers
 
                 viewModel.SelectedQuestionIds =
                     assignedQuestions
-                        .Select(x => x.VolunteerQuestionId)
+                        .Select(x =>
+                            x.VolunteerQuestionId)
                         .ToList();
 
                 return View(viewModel);
             }
+
 
             // ============================================================
             // NORMALISE EMAIL
             // ============================================================
 
             var email =
-                viewModel.Email.Trim().ToLowerInvariant();
+                viewModel.Email
+                    .Trim()
+                    .ToLowerInvariant();
+
 
             // ============================================================
-            // CHECK IF APPLICANT ACCOUNT ALREADY EXISTS
+            // FIND EXISTING ACCOUNT
             // ============================================================
 
             var existingUser =
-                await _userManager.FindByEmailAsync(email);
+                await _userManager
+                    .FindByEmailAsync(email);
 
             string applicantId;
 
@@ -748,45 +792,115 @@ namespace SwiftCare.Controllers
 
             string? confirmationUrl = null;
 
+
             // ============================================================
-            // CREATE NEW APPLICANT ACCOUNT
+            // CREATE APPLICANT ACCOUNT
             // ============================================================
 
             if (existingUser == null)
             {
-                var applicant = new Applicant
-                {
-                    UserName = email,
+                var applicant =
+                    new Applicant
+                    {
+                        UserName = email,
 
-                    Email = email,
+                        Email = email,
 
-                    FirstName =
-                        viewModel.FirstName.Trim(),
+                        FirstName =
+                            viewModel.FirstName.Trim(),
 
-                    LastName =
-                        viewModel.LastName.Trim(),
+                        LastName =
+                            viewModel.LastName.Trim(),
 
-                    PhoneNumber =
-                        viewModel.PhoneNumber.Trim(),
+                        PhoneNumber =
+                            viewModel.PhoneNumber.Trim(),
 
-                    DateOfBirth =
-                        viewModel.DateOfBirth!.Value,
+                        DateOfBirth =
+                            viewModel.DateOfBirth!.Value,
 
-                    ProfilePicture =
-                        "Images/default_profile_image.jpg",
+                        ProfilePicture =
+                            "Images/default_profile_image.jpg",
 
-                    CreatedDateTime =
-                        DateTime.UtcNow,
+                        CreatedDateTime =
+                            DateTime.UtcNow,
 
-                    ModifiedDateTime =
-                        DateTime.UtcNow,
+                        ModifiedDateTime =
+                            DateTime.UtcNow,
 
-                    CreatedBy =
-                        "Anonymous Application",
+                        CreatedBy =
+                            "Anonymous Application",
 
-                    ModifiedBy =
-                        "Anonymous Application"
-                };
+                        ModifiedBy =
+                            "Anonymous Application",
+
+                        // ------------------------------------------------
+                        // PROFILE FIELDS
+                        // ------------------------------------------------
+
+                        ProfessionalTitle =
+                            viewModel.ProfessionalTitle?
+                                .Trim(),
+
+                        ProfessionalSummary =
+                            viewModel.ProfessionalSummary?
+                                .Trim(),
+
+                        CareerObjective =
+                            viewModel.CareerObjective?
+                                .Trim(),
+
+                        Address =
+                            viewModel.Address?
+                                .Trim(),
+
+                        City =
+                            viewModel.City?
+                                .Trim(),
+
+                        Province =
+                            viewModel.Province?
+                                .Trim(),
+
+                        Country =
+                            viewModel.Country?
+                                .Trim(),
+
+                        PostalCode =
+                            viewModel.PostalCode?
+                                .Trim(),
+
+                        PreferredWorkType =
+                            viewModel.PreferredWorkType?
+                                .Trim(),
+
+                        PreferredLocation =
+                            viewModel.PreferredLocation?
+                                .Trim(),
+
+                        WillingToRelocate =
+                            viewModel.WillingToRelocate,
+
+                        AvailableForVolunteerWork =
+                            viewModel.AvailableForVolunteerWork,
+
+                        LinkedInUrl =
+                            viewModel.LinkedInUrl?
+                                .Trim(),
+
+                        PortfolioUrl =
+                            viewModel.PortfolioUrl?
+                                .Trim(),
+
+                        GitHubUrl =
+                            viewModel.GitHubUrl?
+                                .Trim(),
+
+                        IsProfileComplete = false,
+
+                        ProfileLastUpdated =
+                            DateTime.UtcNow
+                    };
+
 
                 // ========================================================
                 // GENERATE TEMPORARY PASSWORD
@@ -795,6 +909,7 @@ namespace SwiftCare.Controllers
                 generatedPassword =
                     _randomPasswordGeneratorService
                         .GenerateRandomPassword(12);
+
 
                 // ========================================================
                 // CREATE IDENTITY ACCOUNT
@@ -844,11 +959,13 @@ namespace SwiftCare.Controllers
 
                     viewModel.SelectedQuestionIds =
                         assignedQuestions
-                            .Select(x => x.VolunteerQuestionId)
+                            .Select(x =>
+                                x.VolunteerQuestionId)
                             .ToList();
 
                     return View(viewModel);
                 }
+
 
                 // ========================================================
                 // ADD APPLICANT ROLE
@@ -871,18 +988,20 @@ namespace SwiftCare.Controllers
                     return View(viewModel);
                 }
 
-                // ========================================================
-                // DEFAULT ASP.NET CORE IDENTITY EMAIL CONFIRMATION
-                // ========================================================
 
+                // ========================================================
+                // EMAIL CONFIRMATION
+                // ========================================================
 
                 var confirmationToken =
-                    await _userManager.GenerateEmailConfirmationTokenAsync(
-                        applicant);
+                    await _userManager
+                        .GenerateEmailConfirmationTokenAsync(
+                            applicant);
 
                 var encodedConfirmationToken =
                     WebEncoders.Base64UrlEncode(
-                        Encoding.UTF8.GetBytes(confirmationToken));
+                        Encoding.UTF8.GetBytes(
+                            confirmationToken));
 
                 confirmationUrl =
                     Url.Page(
@@ -892,7 +1011,8 @@ namespace SwiftCare.Controllers
                         {
                             area = "Identity",
                             userId = applicant.Id,
-                            code = encodedConfirmationToken
+                            code =
+                                encodedConfirmationToken
                         },
                         protocol: Request.Scheme);
 
@@ -905,12 +1025,33 @@ namespace SwiftCare.Controllers
             else
             {
                 // ========================================================
-                // EXISTING ACCOUNT
+                // EXISTING APPLICANT
                 // ========================================================
 
                 applicantId =
                     existingUser.Id;
             }
+
+
+            // ============================================================
+            // GET ACTUAL APPLICANT
+            // ============================================================
+
+            var applicantProfile =
+                await _userManager.Users
+                    .OfType<Applicant>()
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == applicantId);
+
+            if (applicantProfile == null)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Applicant profile could not be loaded.");
+
+                return View(viewModel);
+            }
+
 
             // ============================================================
             // UPLOAD CV
@@ -920,9 +1061,294 @@ namespace SwiftCare.Controllers
                 viewModel.CV.Length > 0)
             {
                 cvFilePath =
-                    await _fileUploadService.UploadFileAsync(
-                        viewModel.CV);
+                    await _fileUploadService
+                        .UploadFileAsync(
+                            viewModel.CV);
             }
+
+
+            // ============================================================
+            // AZURE DOCUMENT INTELLIGENCE
+            // ============================================================
+
+            ParsedCv? parsedCv = null;
+
+            try
+            {
+                if (viewModel.CV != null &&
+                    viewModel.CV.Length > 0)
+                {
+                    var azureResult =
+                        await _azureDocumentIntelligenceCvService
+                            .AnalyzeAsync(
+                                viewModel.CV);
+                }
+            }
+            catch (Exception ex)
+            {
+                /*
+                 * Do not destroy the application simply because
+                 * CV extraction failed.
+                 *
+                 * The application can still be submitted and
+                 * the CV can be processed again later.
+                 */
+
+                parsedCv =
+                    new ParsedCv
+                    {
+                        ExtractionSuccessful = false,
+                        ExtractionMessage =
+                            "CV extraction failed: " +
+                            ex.Message,
+                        RawText = null
+                    };
+            }
+
+
+            // ============================================================
+            // POPULATE APPLICANT PROFILE FROM CV
+            // ============================================================
+
+            if (parsedCv != null &&
+                parsedCv.ExtractionSuccessful)
+            {
+                /*
+                 * --------------------------------------------------------
+                 * PERSONAL INFORMATION
+                 * --------------------------------------------------------
+                 *
+                 * We only replace these when Azure actually found
+                 * a value.
+                 */
+
+                if (!string.IsNullOrWhiteSpace(
+                        parsedCv.FullName))
+                {
+                    var nameParts =
+                        parsedCv.FullName
+                            .Trim()
+                            .Split(
+                                ' ',
+                                StringSplitOptions.RemoveEmptyEntries);
+
+                    if (nameParts.Length > 0 &&
+                        string.IsNullOrWhiteSpace(
+                            applicantProfile.FirstName))
+                    {
+                        applicantProfile.FirstName =
+                            nameParts[0];
+                    }
+
+                    if (nameParts.Length > 1 &&
+                        string.IsNullOrWhiteSpace(
+                            applicantProfile.LastName))
+                    {
+                        applicantProfile.LastName =
+                            string.Join(
+                                " ",
+                                nameParts.Skip(1));
+                    }
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(
+                        parsedCv.Email))
+                {
+                    applicantProfile.Email =
+                        parsedCv.Email.Trim();
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(
+                        parsedCv.PhoneNumber))
+                {
+                    applicantProfile.PhoneNumber =
+                        parsedCv.PhoneNumber.Trim();
+                }
+
+
+                // --------------------------------------------------------
+                // PROFILE INFORMATION
+                // --------------------------------------------------------
+
+                /*
+                 * These values depend on the semantic CV parser
+                 * that converts Azure's extracted document text
+                 * into ParsedCv.
+                 */
+
+                if (string.IsNullOrWhiteSpace(
+                        applicantProfile.ProfessionalSummary))
+                {
+                    applicantProfile.ProfessionalSummary =
+                        ExtractProfessionalSummary(parsedCv);
+                }
+
+
+                if (string.IsNullOrWhiteSpace(
+                        applicantProfile.ProfessionalTitle))
+                {
+                    applicantProfile.ProfessionalTitle =
+                        ExtractProfessionalTitle(parsedCv);
+                }
+
+
+                // --------------------------------------------------------
+                // LOCATION
+                // --------------------------------------------------------
+
+                var location =
+                    ExtractLocation(parsedCv);
+
+                if (string.IsNullOrWhiteSpace(
+                        applicantProfile.City))
+                {
+                    applicantProfile.City =
+                        location.City;
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        applicantProfile.Province))
+                {
+                    applicantProfile.Province =
+                        location.Province;
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        applicantProfile.Country))
+                {
+                    applicantProfile.Country =
+                        location.Country;
+                }
+
+
+                // --------------------------------------------------------
+                // CV METADATA
+                // --------------------------------------------------------
+
+                applicantProfile.CurrentCvFileName =
+                    Path.GetFileName(
+                        viewModel.CV!.FileName);
+
+                applicantProfile.CurrentCvFilePath =
+                    cvFilePath;
+
+                applicantProfile.CurrentCvFileType =
+                    Path.GetExtension(
+                        viewModel.CV.FileName)
+                        .ToLowerInvariant();
+
+                applicantProfile.CvUploadedDate =
+                    DateTime.UtcNow;
+
+                applicantProfile.CvLastParsedDate =
+                    DateTime.UtcNow;
+
+                applicantProfile.CvParsingSuccessful =
+                    true;
+
+                applicantProfile.CvParsingMessage =
+                    "CV successfully analysed.";
+
+                applicantProfile.ProfileLastUpdated =
+                    DateTime.UtcNow;
+            }
+            else
+            {
+                applicantProfile.CurrentCvFileName =
+                    Path.GetFileName(
+                        viewModel.CV!.FileName);
+
+                applicantProfile.CurrentCvFilePath =
+                    cvFilePath;
+
+                applicantProfile.CurrentCvFileType =
+                    Path.GetExtension(
+                        viewModel.CV.FileName)
+                        .ToLowerInvariant();
+
+                applicantProfile.CvUploadedDate =
+                    DateTime.UtcNow;
+
+                applicantProfile.CvLastParsedDate =
+                    DateTime.UtcNow;
+
+                applicantProfile.CvParsingSuccessful =
+                    false;
+
+                applicantProfile.CvParsingMessage =
+                    parsedCv?.ExtractionMessage ??
+                    "CV could not be analysed.";
+
+                applicantProfile.ProfileLastUpdated =
+                    DateTime.UtcNow;
+            }
+
+
+            // ============================================================
+            // PROFILE COMPLETION
+            // ============================================================
+
+            applicantProfile.IsProfileComplete =
+                !string.IsNullOrWhiteSpace(
+                    applicantProfile.FirstName)
+                &&
+                !string.IsNullOrWhiteSpace(
+                    applicantProfile.LastName)
+                &&
+                !string.IsNullOrWhiteSpace(
+                    applicantProfile.Email)
+                &&
+                !string.IsNullOrWhiteSpace(
+                    applicantProfile.PhoneNumber)
+                &&
+                !string.IsNullOrWhiteSpace(
+                    applicantProfile.CurrentCvFilePath);
+
+
+            // ============================================================
+            // SAVE APPLICANT PROFILE
+            // ============================================================
+
+            applicantProfile.ModifiedDateTime =
+                DateTime.UtcNow;
+
+            applicantProfile.ModifiedBy =
+                "CV Profile Extraction";
+
+            _context.Update(
+                applicantProfile);
+
+            await _context.SaveChangesAsync();
+
+
+            // ============================================================
+            // SAVE PARSED CV
+            // ============================================================
+
+            if (parsedCv != null)
+            {
+                parsedCv.VolunteerApplicationId = 0;
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * If ParsedCv has been updated to use ApplicantId,
+                 * set it here instead:
+                 *
+                 * parsedCv.ApplicantId =
+                 *     applicantProfile.Id;
+                 *
+                 * The parsed CV should remain the structured
+                 * representation of what Azure found in the CV.
+                 */
+
+                _context.Add(parsedCv);
+
+                await _context.SaveChangesAsync();
+            }
+
 
             // ============================================================
             // GENERATE APPLICATION REFERENCE
@@ -930,6 +1356,7 @@ namespace SwiftCare.Controllers
 
             var applicationReference =
                 GenerateApplicationReference();
+
 
             // ============================================================
             // CREATE VOLUNTEER APPLICATION
@@ -967,16 +1394,19 @@ namespace SwiftCare.Controllers
                         DateTime.Now
                 };
 
+
             _context.VolunteerApplications.Add(
                 application);
 
             await _context.SaveChangesAsync();
 
+
             // ============================================================
             // SAVE APPLICATION QUESTION ANSWERS
             // ============================================================
 
-            foreach (var assignedQuestion in assignedQuestions)
+            foreach (var assignedQuestion
+                in assignedQuestions)
             {
                 var question =
                     assignedQuestion.VolunteerQuestion!;
@@ -1008,7 +1438,9 @@ namespace SwiftCare.Controllers
                     });
             }
 
+
             await _context.SaveChangesAsync();
+
 
             // ============================================================
             // TRACK APPLICATION URL
@@ -1025,23 +1457,35 @@ namespace SwiftCare.Controllers
                     },
                     Request.Scheme);
 
+
             // ============================================================
-            // SEND EMAIL FOR NEW ACCOUNT
+            // SEND ACCOUNT EMAIL
             // ============================================================
 
             if (accountCreated &&
-                !string.IsNullOrWhiteSpace(generatedPassword))
+                !string.IsNullOrWhiteSpace(
+                    generatedPassword))
             {
                 var emailBody =
                     BuildApplicantAccountEmail(
-                        viewModel.FirstName.Trim(),
-                        viewModel.LastName.Trim(),
+                        applicantProfile.FirstName?.Trim()
+                            ?? viewModel.FirstName.Trim(),
+
+                        applicantProfile.LastName?.Trim()
+                            ?? viewModel.LastName.Trim(),
+
                         email,
+
                         generatedPassword,
+
                         opportunity.Title,
+
                         application.Reference,
+
                         statusUrl,
+
                         confirmationUrl);
+
 
                 await _emailService.SendEmailAsync(
                     email,
@@ -1049,23 +1493,25 @@ namespace SwiftCare.Controllers
                     emailBody,
                     "SwiftCare");
 
+
                 TempData["SuccessMessage"] =
                     "Your application was submitted successfully. " +
-                    "We created your SwiftCare applicant account " +
-                    "and sent your login details to your email.";
+                    "Your CV was analysed and your SwiftCare applicant " +
+                    "profile was created.";
             }
             else
             {
-                // ========================================================
-                // SEND EMAIL FOR EXISTING ACCOUNT
-                // ========================================================
-
                 var emailBody =
                     BuildExistingApplicantEmail(
-                        viewModel.FirstName.Trim(),
+                        applicantProfile.FirstName?.Trim()
+                            ?? viewModel.FirstName.Trim(),
+
                         opportunity.Title,
-                        applicationReference,
+
+                        application.Reference,
+
                         statusUrl);
+
 
                 await _emailService.SendEmailAsync(
                     email,
@@ -1073,13 +1519,16 @@ namespace SwiftCare.Controllers
                     emailBody,
                     "SwiftCare");
 
+
                 TempData["SuccessMessage"] =
                     "Your SwiftCare account already exists. " +
-                    "Your volunteer application was submitted successfully.";
+                    "Your volunteer application was submitted successfully " +
+                    "and your CV profile was updated.";
             }
 
+
             // ============================================================
-            // REDIRECT TO APPLICATION SUBMITTED PAGE
+            // REDIRECT
             // ============================================================
 
             return RedirectToAction(
@@ -1717,11 +2166,11 @@ Your community. Your care. Your impact.
             }
         }
 
-private string BuildExistingApplicantEmail(
-    string firstName,
-    string opportunityTitle,
-    string applicationReference,
-    string? statusUrl)
+        private string BuildExistingApplicantEmail(
+            string firstName,
+            string opportunityTitle,
+            string applicationReference,
+            string? statusUrl)
         {
             var safeName =
                 WebUtility.HtmlEncode(firstName);
@@ -1978,5 +2427,292 @@ Your community. Your care. Your impact.
 </body>
 </html>";
         }
-    } 
+
+
+
+        private string? ExtractProfessionalSummary(
+        ParsedCv parsedCv)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.RawText))
+            {
+                return null;
+            }
+
+            /*
+             * We do not blindly copy the entire CV.
+             *
+             * The semantic CV parser should eventually expose
+             * a Summary property. Until then, this method can
+             * look for the summary/profile section.
+             */
+
+            var lines =
+                parsedCv.RawText
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToList();
+
+            var summaryHeaders =
+                new[]
+                {
+            "professional summary",
+            "profile",
+            "professional profile",
+            "personal profile",
+            "summary",
+            "about me"
+                };
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                if (!summaryHeaders.Any(header =>
+                        lines[i].Equals(
+                            header,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var summaryLines =
+                    new List<string>();
+
+                for (var j = i + 1;
+                     j < lines.Count;
+                     j++)
+                {
+                    var current =
+                        lines[j];
+
+                    if (IsCvSectionHeading(current))
+                        break;
+
+                    summaryLines.Add(current);
+
+                    if (summaryLines.Count >= 8)
+                        break;
+                }
+
+                if (summaryLines.Count > 0)
+                {
+                    return string.Join(
+                        " ",
+                        summaryLines);
+                }
+            }
+
+            return null;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AnalyzeCv(
+    IFormFile CV,
+    CancellationToken cancellationToken)
+        {
+            if (CV == null || CV.Length == 0)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Please select a CV."
+                });
+            }
+
+            try
+            {
+                // =========================================================
+                // AZURE DOCUMENT INTELLIGENCE
+                // =========================================================
+
+                var azureResult =
+                    await _azureDocumentIntelligenceCvService
+                        .AnalyzeAsync(
+                            CV,
+                            cancellationToken);
+
+                if (!azureResult.Success)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message =
+                            azureResult.ErrorMessage
+                            ?? "Azure could not analyse the CV."
+                    });
+                }
+
+
+                // =========================================================
+                // PARSE AZURE RESULT
+                // =========================================================
+
+                var parsedCv =
+                    await _cvParsingEngine.ParseAsync(
+                        azureResult,
+                        0);
+
+
+                // =========================================================
+                // RETURN STRUCTURED DATA TO JAVASCRIPT
+                // =========================================================
+
+                return Json(new
+                {
+                    success = true,
+
+                    fullName = parsedCv.FullName,
+
+                    email = parsedCv.Email,
+
+                    phoneNumber = parsedCv.PhoneNumber,
+
+                    professionalTitle =
+                        parsedCv.ProfessionalTitle,
+
+                    professionalSummary =
+                        parsedCv.ProfessionalSummary,
+
+                    careerObjective =
+                        parsedCv.CareerObjective,
+
+                    address =
+                        parsedCv.Address,
+
+                    city =
+                        parsedCv.City,
+
+                    province =
+                        parsedCv.Province,
+
+                    country =
+                        parsedCv.Country,
+
+                    linkedInUrl =
+                        parsedCv.LinkedInUrl,
+
+                    portfolioUrl =
+                        parsedCv.PortfolioUrl,
+
+                    gitHubUrl =
+                        parsedCv.GitHubUrl
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        success = false,
+                        message =
+                            "An error occurred while analysing your CV: "
+                            + ex.Message
+                    });
+            }
+        }
+        private string? ExtractProfessionalTitle(
+            ParsedCv parsedCv)
+        {
+            if (parsedCv.Experience == null ||
+                parsedCv.Experience.Count == 0)
+            {
+                return null;
+            }
+
+            var latestExperience =
+                parsedCv.Experience
+                    .FirstOrDefault();
+
+            return latestExperience?
+                .Position?
+                .Trim();
+        }
+
+
+        private (string? City,
+                 string? Province,
+                 string? Country)
+            ExtractLocation(
+                ParsedCv parsedCv)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.RawText))
+            {
+                return (null, null, null);
+            }
+
+            var text =
+                parsedCv.RawText;
+
+            string? city = null;
+            string? province = null;
+            string? country = null;
+
+            if (text.Contains(
+                    "Durban",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                city = "Durban";
+            }
+
+            if (text.Contains(
+                    "KwaZulu-Natal",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                province = "KwaZulu-Natal";
+            }
+
+            if (text.Contains(
+                    "South Africa",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                country = "South Africa";
+            }
+
+            return (
+                city,
+                province,
+                country
+            );
+        }
+
+
+        private bool IsCvSectionHeading(
+            string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
+
+            var headings =
+                new[]
+                {
+            "skills",
+            "education",
+            "experience",
+            "work experience",
+            "employment history",
+            "professional experience",
+            "certifications",
+            "certificates",
+            "languages",
+            "projects",
+            "references",
+            "awards",
+            "achievements",
+            "qualifications"
+                };
+
+            return headings.Any(x =>
+                line.Equals(
+                    x,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+    }
 }

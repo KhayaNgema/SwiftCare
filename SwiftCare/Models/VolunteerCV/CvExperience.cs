@@ -2,6 +2,12 @@
 {
     public class CvExperience
     {
+        public int CvExperienceId { get; set; }
+
+        public int ParsedCvId { get; set; }
+
+        public ParsedCv ParsedCv { get; set; } = null!;
+
         public string? Employer { get; set; }
 
         public string? Position { get; set; }

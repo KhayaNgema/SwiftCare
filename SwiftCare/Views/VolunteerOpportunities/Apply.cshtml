@@ -5,7 +5,6 @@
 
 @{
     ViewData["Title"] = "Apply for Volunteer Opportunity";
-
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 
     var applicationQuestions = Model.ApplicationQuestions?
@@ -16,11 +15,21 @@
 
 <div class="sc-application-page">
 
+    <!-- =========================================================
+         BACKGROUND
+         ========================================================= -->
+
     <div class="sc-application-background">
         <div class="sc-application-hero-glow sc-application-hero-glow-one"></div>
         <div class="sc-application-hero-glow sc-application-hero-glow-two"></div>
         <div class="sc-application-hero-pattern"></div>
     </div>
+
+
+    <!-- =========================================================
+         BACK BUTTON
+         ========================================================= -->
+
     <div class="sc-application-back-wrapper">
 
         <a asp-controller="VolunteerOpportunities"
@@ -38,22 +47,20 @@
 
 
     <!-- =========================================================
-         APPLICATION CARD
+         MAIN CARD
          ========================================================= -->
 
     <div class="sc-application-card">
 
 
         <!-- =====================================================
-             APPLICATION HEADER
+             HEADER
              ===================================================== -->
 
         <div class="sc-application-header">
 
             <div class="sc-application-header-icon">
-
                 <i class="bi bi-heart-pulse-fill"></i>
-
             </div>
 
             <div>
@@ -77,7 +84,7 @@
 
 
         <!-- =====================================================
-             PROGRESS INDICATOR
+             PROGRESS
              ===================================================== -->
 
         <div class="sc-application-progress">
@@ -118,7 +125,7 @@
 
 
         <!-- =====================================================
-             APPLICATION FORM
+             FORM
              ===================================================== -->
 
         <form asp-controller="VolunteerOpportunities"
@@ -148,9 +155,7 @@
                 <div class="sc-application-opportunity">
 
                     <div class="sc-application-opportunity-icon">
-
                         <i class="bi bi-briefcase-fill"></i>
-
                     </div>
 
                     <div class="sc-application-opportunity-content">
@@ -177,9 +182,7 @@
                     <div class="sc-application-section-heading">
 
                         <div class="sc-application-section-icon">
-
                             <i class="bi bi-file-earmark-person-fill"></i>
-
                         </div>
 
                         <div>
@@ -193,8 +196,9 @@
                             </h2>
 
                             <p>
-                                Upload your latest CV so the SwiftCare
-                                team can review your experience and skills.
+                                Upload your latest CV and SwiftCare will
+                                automatically extract your professional
+                                information.
                             </p>
 
                         </div>
@@ -208,7 +212,7 @@
                                type="file"
                                id="cvFile"
                                class="sc-cv-file-input"
-                               accept=".pdf,.doc,.docx"
+                               accept=".pdf,.docx"
                                required />
 
 
@@ -235,7 +239,7 @@
                                 </span>
 
                                 <small>
-                                    PDF, DOC or DOCX
+                                    PDF or DOCX
                                     <span>•</span>
                                     Maximum 5 MB
                                 </small>
@@ -258,9 +262,7 @@
                              id="cvFilePreview">
 
                             <div class="sc-cv-file-preview-icon">
-
                                 <i class="bi bi-file-earmark-text-fill"></i>
-
                             </div>
 
                             <div class="sc-cv-file-details">
@@ -277,8 +279,7 @@
 
                             <button type="button"
                                     class="sc-cv-remove-button"
-                                    id="removeCvButton"
-                                    aria-label="Remove CV">
+                                    id="removeCvButton">
 
                                 <i class="bi bi-trash3-fill"></i>
 
@@ -290,6 +291,88 @@
                         <span asp-validation-for="CV"
                               class="sc-application-validation">
                         </span>
+
+
+                        <!-- =================================================
+                             AZURE EXTRACTION STATUS
+                             ================================================= -->
+
+                        <div id="cvExtractionStatus"
+                             class="sc-cv-extraction-status"
+                             style="display:none;">
+
+                            <div id="cvExtractionLoading"
+                                 class="sc-extraction-message"
+                                 style="display:none;">
+
+                                <div class="sc-extraction-spinner">
+                                    <i class="bi bi-stars"></i>
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        Analysing your CV...
+                                    </strong>
+
+                                    <span>
+                                        SwiftCare is extracting your
+                                        professional information.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div id="cvExtractionSuccess"
+                                 class="sc-extraction-message"
+                                 style="display:none;">
+
+                                <div class="sc-extraction-success-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        CV analysed successfully
+                                    </strong>
+
+                                    <span>
+                                        Your profile fields have been
+                                        populated. Please review them
+                                        before continuing.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div id="cvExtractionError"
+                                 class="sc-extraction-message"
+                                 style="display:none;">
+
+                                <div class="sc-extraction-error-icon">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        CV analysis failed
+                                    </strong>
+
+                                    <span id="cvExtractionErrorMessage">
+                                        We could not analyse your CV.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
@@ -305,9 +388,7 @@
                     <div class="sc-application-section-heading">
 
                         <div class="sc-application-section-icon">
-
                             <i class="bi bi-person-vcard-fill"></i>
-
                         </div>
 
                         <div>
@@ -321,8 +402,8 @@
                             </h2>
 
                             <p>
-                                Tell us a little about yourself so we can
-                                process your volunteer application.
+                                Review the information extracted from your
+                                CV and correct anything that is inaccurate.
                             </p>
 
                         </div>
@@ -330,34 +411,37 @@
                     </div>
 
 
-                    <div class="sc-personal-details-card">
+                    <div class="sc-profile-fields-card">
 
 
                         <!-- FIRST NAME -->
 
-                        <div class="sc-application-field">
+                        <div class="sc-profile-field">
 
                             <label asp-for="FirstName"
-                                   class="sc-application-label">
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-person"></i>
 
                                 First Name
 
                             </label>
 
-                            <div class="sc-application-input-wrapper">
+                            <div class="sc-profile-input-wrapper">
 
                                 <i class="bi bi-person"></i>
 
                                 <input asp-for="FirstName"
-                                       class="sc-application-input"
-                                       placeholder="Enter your first name"
+                                       id="FirstName"
+                                       class="sc-profile-input"
+                                       placeholder="First name"
                                        autocomplete="given-name"
                                        required />
 
                             </div>
 
                             <span asp-validation-for="FirstName"
-                                  class="sc-application-validation">
+                                  class="sc-profile-validation">
                             </span>
 
                         </div>
@@ -365,29 +449,32 @@
 
                         <!-- LAST NAME -->
 
-                        <div class="sc-application-field">
+                        <div class="sc-profile-field">
 
                             <label asp-for="LastName"
-                                   class="sc-application-label">
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-person"></i>
 
                                 Last Name
 
                             </label>
 
-                            <div class="sc-application-input-wrapper">
+                            <div class="sc-profile-input-wrapper">
 
                                 <i class="bi bi-person"></i>
 
                                 <input asp-for="LastName"
-                                       class="sc-application-input"
-                                       placeholder="Enter your last name"
+                                       id="LastName"
+                                       class="sc-profile-input"
+                                       placeholder="Last name"
                                        autocomplete="family-name"
                                        required />
 
                             </div>
 
                             <span asp-validation-for="LastName"
-                                  class="sc-application-validation">
+                                  class="sc-profile-validation">
                             </span>
 
                         </div>
@@ -395,22 +482,25 @@
 
                         <!-- EMAIL -->
 
-                        <div class="sc-application-field">
+                        <div class="sc-profile-field">
 
                             <label asp-for="Email"
-                                   class="sc-application-label">
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-envelope"></i>
 
                                 Email Address
 
                             </label>
 
-                            <div class="sc-application-input-wrapper">
+                            <div class="sc-profile-input-wrapper">
 
                                 <i class="bi bi-envelope"></i>
 
                                 <input asp-for="Email"
+                                       id="Email"
                                        type="email"
-                                       class="sc-application-input"
+                                       class="sc-profile-input"
                                        placeholder="you@example.com"
                                        autocomplete="email"
                                        required />
@@ -418,7 +508,7 @@
                             </div>
 
                             <span asp-validation-for="Email"
-                                  class="sc-application-validation">
+                                  class="sc-profile-validation">
                             </span>
 
                         </div>
@@ -426,30 +516,33 @@
 
                         <!-- PHONE -->
 
-                        <div class="sc-application-field">
+                        <div class="sc-profile-field">
 
                             <label asp-for="PhoneNumber"
-                                   class="sc-application-label">
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-telephone"></i>
 
                                 Phone Number
 
                             </label>
 
-                            <div class="sc-application-input-wrapper">
+                            <div class="sc-profile-input-wrapper">
 
                                 <i class="bi bi-telephone"></i>
 
                                 <input asp-for="PhoneNumber"
+                                       id="PhoneNumber"
                                        type="tel"
-                                       class="sc-application-input"
-                                       placeholder="e.g. 071 234 5678"
+                                       class="sc-profile-input"
+                                       placeholder="071 234 5678"
                                        autocomplete="tel"
                                        required />
 
                             </div>
 
                             <span asp-validation-for="PhoneNumber"
-                                  class="sc-application-validation">
+                                  class="sc-profile-validation">
                             </span>
 
                         </div>
@@ -457,30 +550,533 @@
 
                         <!-- DATE OF BIRTH -->
 
-                        <div class="sc-application-field sc-personal-date-field">
+                        <div class="sc-profile-field">
 
                             <label asp-for="DateOfBirth"
-                                   class="sc-application-label">
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-calendar3"></i>
 
                                 Date of Birth
 
                             </label>
 
-                            <div class="sc-application-input-wrapper">
+                            <div class="sc-profile-input-wrapper">
 
                                 <i class="bi bi-calendar3"></i>
 
                                 <input asp-for="DateOfBirth"
+                                       id="DateOfBirth"
                                        type="date"
-                                       class="sc-application-input"
+                                       class="sc-profile-input"
                                        autocomplete="bday"
                                        required />
 
                             </div>
 
                             <span asp-validation-for="DateOfBirth"
-                                  class="sc-application-validation">
+                                  class="sc-profile-validation">
                             </span>
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================================
+                     PROFESSIONAL PROFILE
+                     ================================================= -->
+
+                <section class="sc-application-section">
+
+                    <div class="sc-application-section-heading">
+
+                        <div class="sc-application-section-icon">
+                            <i class="bi bi-stars"></i>
+                        </div>
+
+                        <div>
+
+                            <span class="sc-application-section-number">
+                                03
+                            </span>
+
+                            <h2>
+                                Professional Profile
+                            </h2>
+
+                            <p>
+                                These fields are populated from your CV.
+                                Everything remains editable.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sc-profile-fields-card">
+
+
+                        <!-- PROFESSIONAL TITLE -->
+
+                        <div class="sc-profile-field sc-profile-field-full">
+
+                            <label asp-for="ProfessionalTitle"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-person-badge"></i>
+
+                                Professional Title
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-person-badge"></i>
+
+                                <input asp-for="ProfessionalTitle"
+                                       id="ProfessionalTitle"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. Community Development Graduate" />
+
+                            </div>
+
+                            <span asp-validation-for="ProfessionalTitle"
+                                  class="sc-profile-validation">
+                            </span>
+
+                        </div>
+
+
+                        <!-- PROFESSIONAL SUMMARY -->
+
+                        <div class="sc-profile-field sc-profile-field-full">
+
+                            <label asp-for="ProfessionalSummary"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-file-person"></i>
+
+                                Professional Summary
+
+                            </label>
+
+                            <div class="sc-profile-textarea-wrapper">
+
+                                <i class="bi bi-file-person"></i>
+
+                                <textarea asp-for="ProfessionalSummary"
+                                          id="ProfessionalSummary"
+                                          class="sc-profile-textarea"
+                                          rows="6"
+                                          maxlength="3000"
+                                          placeholder="Your professional summary..."></textarea>
+
+                            </div>
+
+                            <span asp-validation-for="ProfessionalSummary"
+                                  class="sc-profile-validation">
+                            </span>
+
+                        </div>
+
+
+                        <!-- CAREER OBJECTIVE -->
+
+                        <div class="sc-profile-field sc-profile-field-full">
+
+                            <label asp-for="CareerObjective"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-bullseye"></i>
+
+                                Career Objective
+
+                            </label>
+
+                            <div class="sc-profile-textarea-wrapper">
+
+                                <i class="bi bi-bullseye"></i>
+
+                                <textarea asp-for="CareerObjective"
+                                          id="CareerObjective"
+                                          class="sc-profile-textarea"
+                                          rows="5"
+                                          maxlength="3000"
+                                          placeholder="Your career objective..."></textarea>
+
+                            </div>
+
+                            <span asp-validation-for="CareerObjective"
+                                  class="sc-profile-validation">
+                            </span>
+
+                        </div>
+
+
+                        <!-- ADDRESS -->
+
+                        <div class="sc-profile-field sc-profile-field-full">
+
+                            <label asp-for="Address"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-house"></i>
+
+                                Address
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-house"></i>
+
+                                <input asp-for="Address"
+                                       id="Address"
+                                       class="sc-profile-input"
+                                       placeholder="Street address" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CITY -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="City"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-geo-alt"></i>
+
+                                City
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-geo-alt"></i>
+
+                                <input asp-for="City"
+                                       id="City"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. Durban" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PROVINCE -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="Province"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-map"></i>
+
+                                Province
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-map"></i>
+
+                                <input asp-for="Province"
+                                       id="Province"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. KwaZulu-Natal" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- COUNTRY -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="Country"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-globe2"></i>
+
+                                Country
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-globe2"></i>
+
+                                <input asp-for="Country"
+                                       id="Country"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. South Africa" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- POSTAL CODE -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="PostalCode"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-mailbox"></i>
+
+                                Postal Code
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-mailbox"></i>
+
+                                <input asp-for="PostalCode"
+                                       id="PostalCode"
+                                       class="sc-profile-input"
+                                       placeholder="Postal code" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PREFERRED WORK TYPE -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="PreferredWorkType"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-briefcase"></i>
+
+                                Preferred Work Type
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-briefcase"></i>
+
+                                <input asp-for="PreferredWorkType"
+                                       id="PreferredWorkType"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. Volunteer / Part-time" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PREFERRED LOCATION -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="PreferredLocation"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-pin-map"></i>
+
+                                Preferred Location
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-pin-map"></i>
+
+                                <input asp-for="PreferredLocation"
+                                       id="PreferredLocation"
+                                       class="sc-profile-input"
+                                       placeholder="e.g. Durban" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- LINKEDIN -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="LinkedInUrl"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-linkedin"></i>
+
+                                LinkedIn
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-linkedin"></i>
+
+                                <input asp-for="LinkedInUrl"
+                                       id="LinkedInUrl"
+                                       type="url"
+                                       class="sc-profile-input"
+                                       placeholder="https://linkedin.com/in/..." />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PORTFOLIO -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="PortfolioUrl"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-globe"></i>
+
+                                Portfolio
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-globe"></i>
+
+                                <input asp-for="PortfolioUrl"
+                                       id="PortfolioUrl"
+                                       type="url"
+                                       class="sc-profile-input"
+                                       placeholder="https://..." />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- GITHUB -->
+
+                        <div class="sc-profile-field">
+
+                            <label asp-for="GitHubUrl"
+                                   class="sc-profile-label">
+
+                                <i class="bi bi-github"></i>
+
+                                GitHub
+
+                            </label>
+
+                            <div class="sc-profile-input-wrapper">
+
+                                <i class="bi bi-github"></i>
+
+                                <input asp-for="GitHubUrl"
+                                       id="GitHubUrl"
+                                       type="url"
+                                       class="sc-profile-input"
+                                       placeholder="https://github.com/..." />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             TOGGLES
+                             ================================================= -->
+
+                        <div class="sc-profile-toggle-card">
+
+                            <div class="sc-profile-toggle-icon">
+                                <i class="bi bi-arrows-move"></i>
+                            </div>
+
+                            <div class="sc-profile-toggle-content">
+
+                                <strong>
+                                    Willing to Relocate
+                                </strong>
+
+                                <span>
+                                    Allow SwiftCare to consider you for
+                                    opportunities in other locations.
+                                </span>
+
+                            </div>
+
+                            <label class="sc-profile-switch">
+
+                                <input asp-for="WillingToRelocate" />
+
+                                <span class="sc-profile-slider"></span>
+
+                            </label>
+
+                        </div>
+
+
+                        <div class="sc-profile-toggle-card">
+
+                            <div class="sc-profile-toggle-icon">
+                                <i class="bi bi-heart-pulse"></i>
+                            </div>
+
+                            <div class="sc-profile-toggle-content">
+
+                                <strong>
+                                    Available for Volunteer Work
+                                </strong>
+
+                                <span>
+                                    Let SwiftCare know that you are
+                                    interested in volunteer opportunities.
+                                </span>
+
+                            </div>
+
+                            <label class="sc-profile-switch">
+
+                                <input asp-for="AvailableForVolunteerWork" />
+
+                                <span class="sc-profile-slider"></span>
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- AI NOTICE -->
+
+                    <div class="sc-profile-ai-notice">
+
+                        <div class="sc-profile-ai-notice-icon">
+                            <i class="bi bi-stars"></i>
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                CV Profile Extraction
+                            </strong>
+
+                            <p>
+                                SwiftCare uses your uploaded CV to
+                                automatically populate these fields.
+                                You can edit any information before
+                                submitting your application.
+                            </p>
 
                         </div>
 
@@ -498,15 +1094,13 @@
                     <div class="sc-application-section-heading">
 
                         <div class="sc-application-section-icon">
-
                             <i class="bi bi-chat-heart-fill"></i>
-
                         </div>
 
                         <div>
 
                             <span class="sc-application-section-number">
-                                03
+                                04
                             </span>
 
                             <h2>
@@ -538,6 +1132,7 @@
                             <i class="bi bi-pencil-square"></i>
 
                             <textarea asp-for="CoverMessage"
+                                      id="CoverMessage"
                                       class="sc-application-textarea"
                                       rows="8"
                                       maxlength="2000"
@@ -571,15 +1166,13 @@
 
 
                 <!-- =================================================
-                     SECURITY NOTICE
+                     SECURITY
                      ================================================= -->
 
                 <div class="sc-application-notice">
 
                     <div class="sc-application-notice-icon">
-
                         <i class="bi bi-shield-check"></i>
-
                     </div>
 
                     <div>
@@ -600,7 +1193,7 @@
 
 
                 <!-- =================================================
-                     STEP 1 ACTIONS
+                     STEP 1 FOOTER
                      ================================================= -->
 
                 <div class="sc-application-footer">
@@ -632,24 +1225,20 @@
             </div>
 
 
-            <!-- =================================================
-                 STEP 2 - APPLICATION QUESTIONS
-                 ================================================= -->
+            <!-- =====================================================
+                 STEP 2
+                 ===================================================== -->
 
             <div id="applicationStep2"
                  class="sc-application-step sc-application-step-hidden">
 
 
-                <!-- =================================================
-                     STEP 2 HEADER
-                     ================================================= -->
+                <!-- HEADER -->
 
                 <div class="sc-questions-intro-card">
 
                     <div class="sc-questions-intro-icon">
-
                         <i class="bi bi-chat-square-heart-fill"></i>
-
                     </div>
 
                     <div>
@@ -673,9 +1262,7 @@
                 </div>
 
 
-                <!-- =================================================
-                     QUESTIONS
-                     ================================================= -->
+                <!-- QUESTIONS -->
                 @if (applicationQuestions.Any())
                 {
 
@@ -687,6 +1274,7 @@
 
                         @foreach (var question in applicationQuestions)
                         {
+
                             <div class="sc-application-question-card">
 
                                 <div class="sc-application-question-number">
@@ -698,6 +1286,7 @@
                                     <div class="sc-application-question-header">
 
                                         <div>
+
                                             <span class="sc-application-question-label">
                                                 QUESTION @questionNumber
                                             </span>
@@ -705,6 +1294,7 @@
                                             <h3>
                                                 @question.Question
                                             </h3>
+
                                         </div>
 
                                         <div class="sc-application-question-badges">
@@ -749,6 +1339,7 @@
 
                                     @if (question.QuestionType == VolunteerQuestionType.ShortAnswer)
                                     {
+
                                         <div class="sc-question-answer-wrapper">
 
                                             <i class="bi bi-pencil"></i>
@@ -765,9 +1356,11 @@
                                         <span class="sc-application-validation"
                                               data-question-validation="@question.VolunteerQuestionId">
                                         </span>
+
                                     }
                                     else if (question.QuestionType == VolunteerQuestionType.LongAnswer)
                                     {
+
                                         <div class="sc-question-answer-wrapper sc-question-answer-textarea-wrapper">
 
                                             <i class="bi bi-pencil-square"></i>
@@ -780,11 +1373,15 @@
                                             @(question.IsRequired ? "required" : "")></textarea>
 
                                             <div class="sc-question-answer-footer">
-                                                <span>Your response</span>
+
+                                                <span>
+                                                    Your response
+                                                </span>
 
                                                 <span class="sc-question-character-counter">
                                                     0 / 3000
                                                 </span>
+
                                             </div>
 
                                         </div>
@@ -792,9 +1389,11 @@
                                         <span class="sc-application-validation"
                                               data-question-validation="@question.VolunteerQuestionId">
                                         </span>
+
                                     }
                                     else if (question.QuestionType == VolunteerQuestionType.YesNo)
                                     {
+
                                         <div class="sc-question-yes-no">
 
                                             <label class="sc-question-choice">
@@ -810,7 +1409,9 @@
                                                         <i class="bi bi-check-circle-fill"></i>
                                                     </span>
 
-                                                    <span>Yes</span>
+                                                    <span>
+                                                        Yes
+                                                    </span>
 
                                                 </span>
 
@@ -830,7 +1431,9 @@
                                                         <i class="bi bi-x-circle-fill"></i>
                                                     </span>
 
-                                                    <span>No</span>
+                                                    <span>
+                                                        No
+                                                    </span>
 
                                                 </span>
 
@@ -841,6 +1444,7 @@
                                         <span class="sc-application-validation"
                                               data-question-validation="@question.VolunteerQuestionId">
                                         </span>
+
                                     }
 
                                 </div>
@@ -856,14 +1460,10 @@
                 else
                 {
 
-                    <!-- NO QUESTIONS -->
-
                     <div class="sc-no-application-questions">
 
                         <div class="sc-no-questions-icon">
-
                             <i class="bi bi-chat-square-text-fill"></i>
-
                         </div>
 
                         <div>
@@ -884,16 +1484,12 @@
                 }
 
 
-                <!-- =================================================
-                     FINAL NOTICE
-                     ================================================= -->
+                <!-- FINAL NOTICE -->
 
                 <div class="sc-final-application-notice">
 
                     <div class="sc-final-application-notice-icon">
-
                         <i class="bi bi-check-circle-fill"></i>
-
                     </div>
 
                     <div>
@@ -904,8 +1500,7 @@
 
                         <p>
                             Review your answers before submitting your
-                            volunteer application. Once submitted, the
-                            SwiftCare team will review your application.
+                            volunteer application.
                         </p>
 
                     </div>
@@ -913,14 +1508,9 @@
                 </div>
 
 
-                <!-- =================================================
-                     STEP 2 ACTIONS
-                     ================================================= -->
+                <!-- FOOTER -->
 
                 <div class="sc-application-footer sc-step-two-footer">
-
-
-                    <!-- BACK TO STEP 1 -->
 
                     <button type="button"
                             id="previousApplicationStep"
@@ -932,8 +1522,6 @@
 
                     </button>
 
-
-                    <!-- FINAL SUBMIT -->
 
                     <button type="submit"
                             class="sc-application-submit-button">
@@ -963,283 +1551,775 @@
 
     <script>
 
-        document.addEventListener("DOMContentLoaded", function () {
-
-            /* =====================================================
-               ELEMENTS
-               ===================================================== */
-
-            const form =
-                document.querySelector(".sc-application-form");
-
-            const fileInput =
-                document.getElementById("cvFile");
-
-            const uploadArea =
-                document.getElementById("cvUploadArea");
-
-            const uploadIcon =
-                document.getElementById("cvUploadIcon");
-
-            const uploadTitle =
-                document.getElementById("cvUploadTitle");
-
-            const uploadSubtitle =
-                document.getElementById("cvUploadSubtitle");
-
-            const filePreview =
-                document.getElementById("cvFilePreview");
-
-            const fileName =
-                document.getElementById("cvFileName");
-
-            const fileSize =
-                document.getElementById("cvFileSize");
-
-            const removeButton =
-                document.getElementById("removeCvButton");
-
-            const coverMessage =
-                document.getElementById("CoverMessage");
-
-            const coverCounter =
-                document.getElementById("coverMessageCounter");
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
 
 
-            /* =====================================================
-               STEP ELEMENTS
-               ===================================================== */
+                /* =====================================================
+                   ELEMENTS
+                   ===================================================== */
 
-            const step1 =
-                document.getElementById("applicationStep1");
-
-            const step2 =
-                document.getElementById("applicationStep2");
-
-            const progressStep1 =
-                document.getElementById("applicationProgressStep1");
-
-            const progressStep2 =
-                document.getElementById("applicationProgressStep2");
-
-            const nextButton =
-                document.getElementById("nextApplicationStep");
-
-            const previousButton =
-                document.getElementById("previousApplicationStep");
-
-
-            /* =====================================================
-               FILE SIZE
-               ===================================================== */
-
-            function formatFileSize(bytes) {
-
-                if (bytes === 0)
-                    return "0 KB";
-
-                const units = [
-                    "Bytes",
-                    "KB",
-                    "MB"
-                ];
-
-                const i =
-                    Math.floor(
-                        Math.log(bytes) /
-                        Math.log(1024)
+                const form =
+                    document.querySelector(
+                        ".sc-application-form"
                     );
 
-                return (
-                    parseFloat(
-                        (
-                            bytes /
-                            Math.pow(1024, i)
-                        ).toFixed(2)
-                    )
-                    + " "
-                    + units[i]
-                );
 
-            }
+                const fileInput =
+                    document.getElementById(
+                        "cvFile"
+                    );
 
 
-            /* =====================================================
-               DISPLAY FILE
-               ===================================================== */
-
-            function displayFile(file) {
-
-                if (!file)
-                    return;
+                const uploadArea =
+                    document.getElementById(
+                        "cvUploadArea"
+                    );
 
 
-                const extension =
-                    file.name
-                        .substring(
-                            file.name.lastIndexOf(".")
+                const uploadIcon =
+                    document.getElementById(
+                        "cvUploadIcon"
+                    );
+
+
+                const uploadTitle =
+                    document.getElementById(
+                        "cvUploadTitle"
+                    );
+
+
+                const uploadSubtitle =
+                    document.getElementById(
+                        "cvUploadSubtitle"
+                    );
+
+
+                const filePreview =
+                    document.getElementById(
+                        "cvFilePreview"
+                    );
+
+
+                const fileName =
+                    document.getElementById(
+                        "cvFileName"
+                    );
+
+
+                const fileSize =
+                    document.getElementById(
+                        "cvFileSize"
+                    );
+
+
+                const removeButton =
+                    document.getElementById(
+                        "removeCvButton"
+                    );
+
+
+                const extractionStatus =
+                    document.getElementById(
+                        "cvExtractionStatus"
+                    );
+
+
+                const extractionLoading =
+                    document.getElementById(
+                        "cvExtractionLoading"
+                    );
+
+
+                const extractionSuccess =
+                    document.getElementById(
+                        "cvExtractionSuccess"
+                    );
+
+
+                const extractionError =
+                    document.getElementById(
+                        "cvExtractionError"
+                    );
+
+
+                const extractionErrorMessage =
+                    document.getElementById(
+                        "cvExtractionErrorMessage"
+                    );
+
+
+                const coverMessage =
+                    document.getElementById(
+                        "CoverMessage"
+                    );
+
+
+                const coverCounter =
+                    document.getElementById(
+                        "coverMessageCounter"
+                    );
+
+
+                /* =====================================================
+                   STEP ELEMENTS
+                   ===================================================== */
+
+                const step1 =
+                    document.getElementById(
+                        "applicationStep1"
+                    );
+
+
+                const step2 =
+                    document.getElementById(
+                        "applicationStep2"
+                    );
+
+
+                const progressStep1 =
+                    document.getElementById(
+                        "applicationProgressStep1"
+                    );
+
+
+                const progressStep2 =
+                    document.getElementById(
+                        "applicationProgressStep2"
+                    );
+
+
+                const nextButton =
+                    document.getElementById(
+                        "nextApplicationStep"
+                    );
+
+
+                const previousButton =
+                    document.getElementById(
+                        "previousApplicationStep"
+                    );
+
+
+                /* =====================================================
+                   FILE SIZE
+                   ===================================================== */
+
+                function formatFileSize(bytes) {
+
+                    if (bytes === 0)
+                        return "0 KB";
+
+
+                    const units = [
+                        "Bytes",
+                        "KB",
+                        "MB"
+                    ];
+
+
+                    const i =
+                        Math.floor(
+                            Math.log(bytes) /
+                            Math.log(1024)
+                        );
+
+
+                    return (
+                        parseFloat(
+                            (
+                                bytes /
+                                Math.pow(1024, i)
+                            ).toFixed(2)
                         )
-                        .toLowerCase();
-
-
-                const allowedExtensions = [
-                    ".pdf",
-                    ".doc",
-                    ".docx"
-                ];
-
-
-                if (!allowedExtensions.includes(extension)) {
-
-                    alert(
-                        "Please upload a PDF, DOC or DOCX file."
+                        + " "
+                        + units[i]
                     );
-
-                    fileInput.value = "";
-
-                    return;
 
                 }
 
 
-                if (file.size > 5 * 1024 * 1024) {
+                /* =====================================================
+                   DISPLAY FILE
+                   ===================================================== */
 
-                    alert(
-                        "Your CV must be smaller than 5 MB."
+                function displayFile(file) {
+
+                    if (!file)
+                        return;
+
+
+                    const extension =
+                        file.name
+                            .substring(
+                                file.name.lastIndexOf(".")
+                            )
+                            .toLowerCase();
+
+
+                    const allowedExtensions = [
+                        ".pdf",
+                        ".docx"
+                    ];
+
+
+                    if (
+                        !allowedExtensions.includes(
+                            extension
+                        )
+                    ) {
+
+                        alert(
+                            "Please upload a PDF or DOCX file."
+                        );
+
+                        fileInput.value = "";
+
+                        return false;
+
+                    }
+
+
+                    if (
+                        file.size >
+                        5 * 1024 * 1024
+                    ) {
+
+                        alert(
+                            "Your CV must be smaller than 5 MB."
+                        );
+
+                        fileInput.value = "";
+
+                        return false;
+
+                    }
+
+
+                    fileName.textContent =
+                        file.name;
+
+
+                    fileSize.textContent =
+                        formatFileSize(
+                            file.size
+                        );
+
+
+                    uploadArea.classList.add(
+                        "sc-cv-upload-selected"
                     );
 
-                    fileInput.value = "";
 
-                    return;
+                    uploadIcon.className =
+                        "bi bi-check-circle-fill";
+
+
+                    uploadTitle.textContent =
+                        "CV selected successfully";
+
+
+                    uploadSubtitle.textContent =
+                        "Analysing your CV now...";
+
+
+                    filePreview.classList.add(
+                        "sc-cv-file-preview-visible"
+                    );
+
+
+                    return true;
 
                 }
 
 
-                fileName.textContent =
-                    file.name;
+                /* =====================================================
+                   SET FIELD
+                   ===================================================== */
+
+                function setFieldValue(
+                    fieldId,
+                    value
+                ) {
+
+                    const field =
+                        document.getElementById(
+                            fieldId
+                        );
 
 
-                fileSize.textContent =
-                    formatFileSize(file.size);
+                    if (!field)
+                        return;
 
 
-                uploadArea.classList.add(
-                    "sc-cv-upload-selected"
-                );
+                    if (
+                        value !== null &&
+                        value !== undefined &&
+                        String(value).trim() !== ""
+                    ) {
+
+                        field.value =
+                            value;
 
 
-                uploadIcon.className =
-                    "bi bi-check-circle-fill";
+                        field.dispatchEvent(
+                            new Event(
+                                "input",
+                                {
+                                    bubbles: true
+                                }
+                            )
+                        );
 
 
-                uploadTitle.textContent =
-                    "CV selected successfully";
+                        field.dispatchEvent(
+                            new Event(
+                                "change",
+                                {
+                                    bubbles: true
+                                }
+                            )
+                        );
+
+                    }
+
+                }
 
 
-                uploadSubtitle.textContent =
-                    "Click here if you want to replace it";
+                /* =====================================================
+                   POPULATE PROFILE
+                   ===================================================== */
+
+                function populateExtractedFields(
+                    result
+                ) {
+
+                    /*
+                     * -----------------------------------------------
+                     * PERSONAL INFORMATION
+                     * -----------------------------------------------
+                     */
+
+                    setFieldValue(
+                        "Email",
+                        result.email
+                    );
 
 
-                filePreview.classList.add(
-                    "sc-cv-file-preview-visible"
-                );
+                    setFieldValue(
+                        "PhoneNumber",
+                        result.phoneNumber
+                    );
 
-            }
+
+                    /*
+                     * -----------------------------------------------
+                     * FULL NAME
+                     * -----------------------------------------------
+                     */
+
+                    if (result.fullName) {
+
+                        const fullName =
+                            String(
+                                result.fullName
+                            ).trim();
 
 
-            /* =====================================================
-               FILE SELECT
-               ===================================================== */
+                        const parts =
+                            fullName
+                                .split(/\s+/)
+                                .filter(Boolean);
 
-            if (fileInput) {
 
-                fileInput.addEventListener(
-                    "change",
-                    function () {
+                        if (parts.length > 0) {
 
-                        if (
-                            this.files &&
-                            this.files.length > 0
-                        ) {
+                            setFieldValue(
+                                "FirstName",
+                                parts[0]
+                            );
 
-                            displayFile(
-                                this.files[0]
+                        }
+
+
+                        if (parts.length > 1) {
+
+                            setFieldValue(
+                                "LastName",
+                                parts
+                                    .slice(1)
+                                    .join(" ")
                             );
 
                         }
 
                     }
-                );
-
-            }
 
 
-            /* =====================================================
-               DRAG & DROP
-               ===================================================== */
+                    /*
+                     * -----------------------------------------------
+                     * PROFESSIONAL INFORMATION
+                     * -----------------------------------------------
+                     */
 
-            if (uploadArea) {
+                    setFieldValue(
+                        "ProfessionalTitle",
+                        result.professionalTitle
+                    );
 
-                uploadArea.addEventListener(
-                    "dragover",
-                    function (event) {
 
-                        event.preventDefault();
+                    setFieldValue(
+                        "ProfessionalSummary",
+                        result.professionalSummary
+                    );
 
-                        uploadArea.classList.add(
-                            "sc-cv-upload-dragover"
+
+                    setFieldValue(
+                        "CareerObjective",
+                        result.careerObjective
+                    );
+
+
+                    /*
+                     * -----------------------------------------------
+                     * LOCATION
+                     * -----------------------------------------------
+                     */
+
+                    setFieldValue(
+                        "Address",
+                        result.address
+                    );
+
+
+                    setFieldValue(
+                        "City",
+                        result.city
+                    );
+
+
+                    setFieldValue(
+                        "Province",
+                        result.province
+                    );
+
+
+                    setFieldValue(
+                        "Country",
+                        result.country
+                    );
+
+
+                    /*
+                     * -----------------------------------------------
+                     * SOCIAL / PROFESSIONAL LINKS
+                     * -----------------------------------------------
+                     */
+
+                    setFieldValue(
+                        "LinkedInUrl",
+                        result.linkedInUrl
+                    );
+
+
+                    setFieldValue(
+                        "PortfolioUrl",
+                        result.portfolioUrl
+                    );
+
+
+                    setFieldValue(
+                        "GitHubUrl",
+                        result.gitHubUrl
+                    );
+
+                }
+
+
+                /* =====================================================
+                   ANALYSE CV
+                   ===================================================== */
+
+                async function analyzeCv(file) {
+
+                    if (!file)
+                        return;
+
+
+                    if (extractionStatus)
+                        extractionStatus.style.display =
+                            "block";
+
+
+                    if (extractionLoading)
+                        extractionLoading.style.display =
+                            "flex";
+
+
+                    if (extractionSuccess)
+                        extractionSuccess.style.display =
+                            "none";
+
+
+                    if (extractionError)
+                        extractionError.style.display =
+                            "none";
+
+
+                    const formData =
+                        new FormData();
+
+
+                    formData.append(
+                        "CV",
+                        file
+                    );
+
+
+                    const antiForgeryToken =
+                        form.querySelector(
+                            'input[name="__RequestVerificationToken"]'
+                        );
+
+
+                    if (antiForgeryToken) {
+
+                        formData.append(
+                            "__RequestVerificationToken",
+                            antiForgeryToken.value
                         );
 
                     }
-                );
 
 
-                uploadArea.addEventListener(
-                    "dragleave",
-                    function () {
+                    try {
 
-                        uploadArea.classList.remove(
-                            "sc-cv-upload-dragover"
-                        );
-
-                    }
-                );
-
-
-                uploadArea.addEventListener(
-                    "drop",
-                    function (event) {
-
-                        event.preventDefault();
-
-                        uploadArea.classList.remove(
-                            "sc-cv-upload-dragover"
-                        );
+                        const response =
+                            await fetch(
+                                '@Url.Action("AnalyzeCv", "VolunteerOpportunities")',
+                                {
+                                    method: "POST",
+                                    body: formData
+                                }
+                            );
 
 
-                        const files =
-                            event.dataTransfer.files;
+                        let result;
+
+
+                        try {
+
+                            result =
+                                await response.json();
+
+                        }
+                        catch {
+
+                            throw new Error(
+                                "The server returned an invalid response."
+                            );
+
+                        }
 
 
                         if (
-                            files &&
-                            files.length > 0
+                            !response.ok ||
+                            !result.success
                         ) {
+
+                            throw new Error(
+                                result.message ||
+                                "The CV could not be analysed."
+                            );
+
+                        }
+
+
+                        /*
+                         * Populate all extracted fields.
+                         */
+
+                        populateExtractedFields(
+                            result
+                        );
+
+
+                        /*
+                         * Success UI.
+                         */
+
+                        if (extractionLoading)
+                            extractionLoading.style.display =
+                                "none";
+
+
+                        if (extractionSuccess)
+                            extractionSuccess.style.display =
+                                "flex";
+
+
+                        if (uploadSubtitle)
+                            uploadSubtitle.textContent =
+                                "CV analysed successfully. Click to replace it.";
+
+
+                    }
+                    catch (error) {
+
+                        console.error(
+                            "CV extraction failed:",
+                            error
+                        );
+
+
+                        if (extractionLoading)
+                            extractionLoading.style.display =
+                                "none";
+
+
+                        if (extractionError)
+                            extractionError.style.display =
+                                "flex";
+
+
+                        if (extractionErrorMessage) {
+
+                            extractionErrorMessage.textContent =
+                                error.message ||
+                                "Unable to analyse your CV.";
+
+                        }
+
+
+                        if (uploadSubtitle)
+                            uploadSubtitle.textContent =
+                                "CV selected. Analysis failed.";
+
+                    }
+
+                }
+
+
+                /* =====================================================
+                   FILE SELECT
+                   ===================================================== */
+
+                if (fileInput) {
+
+                    fileInput.addEventListener(
+                        "change",
+                        async function () {
+
+                            if (
+                                this.files &&
+                                this.files.length > 0
+                            ) {
+
+                                const file =
+                                    this.files[0];
+
+
+                                const valid =
+                                    displayFile(
+                                        file
+                                    );
+
+
+                                if (!valid)
+                                    return;
+
+
+                                await analyzeCv(
+                                    file
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                /* =====================================================
+                   DRAG AND DROP
+                   ===================================================== */
+
+                if (uploadArea) {
+
+                    uploadArea.addEventListener(
+                        "dragover",
+                        function (event) {
+
+                            event.preventDefault();
+
+                            uploadArea.classList.add(
+                                "sc-cv-upload-dragover"
+                            );
+
+                        }
+                    );
+
+
+                    uploadArea.addEventListener(
+                        "dragleave",
+                        function () {
+
+                            uploadArea.classList.remove(
+                                "sc-cv-upload-dragover"
+                            );
+
+                        }
+                    );
+
+
+                    uploadArea.addEventListener(
+                        "drop",
+                        async function (event) {
+
+                            event.preventDefault();
+
+
+                            uploadArea.classList.remove(
+                                "sc-cv-upload-dragover"
+                            );
+
+
+                            const files =
+                                event.dataTransfer.files;
+
+
+                            if (
+                                !files ||
+                                files.length === 0
+                            )
+                                return;
+
 
                             const file =
                                 files[0];
 
 
-                            if (
-                                !file.name
-                                    .toLowerCase()
-                                    .match(
-                                        /\.(pdf|doc|docx)$/
+                            const extension =
+                                file.name
+                                    .substring(
+                                        file.name.lastIndexOf(".")
                                     )
+                                    .toLowerCase();
+
+
+                            if (
+                                ![
+                                    ".pdf",
+                                    ".docx"
+                                ].includes(
+                                    extension
+                                )
                             ) {
 
                                 alert(
-                                    "Please upload a PDF, DOC or DOCX file."
+                                    "Please upload a PDF or DOCX file."
                                 );
 
                                 return;
@@ -1266,7 +2346,11 @@
                                 const dataTransfer =
                                     new DataTransfer();
 
-                                dataTransfer.items.add(file);
+
+                                dataTransfer.items.add(
+                                    file
+                                );
+
 
                                 fileInput.files =
                                     dataTransfer.files;
@@ -1282,186 +2366,242 @@
                             }
 
 
-                            displayFile(file);
+                            const valid =
+                                displayFile(
+                                    file
+                                );
+
+
+                            if (valid) {
+
+                                await analyzeCv(
+                                    file
+                                );
+
+                            }
 
                         }
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               REMOVE CV
-               ===================================================== */
-
-            if (removeButton) {
-
-                removeButton.addEventListener(
-                    "click",
-                    function () {
-
-                        if (fileInput) {
-                            fileInput.value = "";
-                        }
-
-
-                        if (filePreview) {
-
-                            filePreview.classList.remove(
-                                "sc-cv-file-preview-visible"
-                            );
-
-                        }
-
-
-                        if (uploadArea) {
-
-                            uploadArea.classList.remove(
-                                "sc-cv-upload-selected"
-                            );
-
-                        }
-
-
-                        if (uploadIcon) {
-
-                            uploadIcon.className =
-                                "bi bi-cloud-arrow-up-fill";
-
-                        }
-
-
-                        if (uploadTitle) {
-
-                            uploadTitle.textContent =
-                                "Drop your CV here";
-
-                        }
-
-
-                        if (uploadSubtitle) {
-
-                            uploadSubtitle.textContent =
-                                "or click to browse your files";
-
-                        }
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               COVER MESSAGE COUNTER
-               ===================================================== */
-
-            if (coverMessage && coverCounter) {
-
-                function updateCoverCounter() {
-
-                    coverCounter.textContent =
-                        coverMessage.value.length +
-                        " / 2000";
+                    );
 
                 }
 
 
-                coverMessage.addEventListener(
-                    "input",
-                    updateCoverCounter
-                );
+                /* =====================================================
+                   REMOVE CV
+                   ===================================================== */
+
+                if (removeButton) {
+
+                    removeButton.addEventListener(
+                        "click",
+                        function () {
+
+                            if (fileInput)
+                                fileInput.value = "";
 
 
-                updateCoverCounter();
+                            if (filePreview) {
 
-            }
+                                filePreview.classList.remove(
+                                    "sc-cv-file-preview-visible"
+                                );
 
-
-            /* =====================================================
-               VALIDATE STEP 1
-               ===================================================== */
-
-            function validateStepOne() {
-
-                if (!step1)
-                    return false;
+                            }
 
 
-                /*
-                 * Clear old custom validation messages.
-                 */
+                            if (uploadArea) {
 
-                if (coverMessage) {
-                    coverMessage.setCustomValidity("");
+                                uploadArea.classList.remove(
+                                    "sc-cv-upload-selected"
+                                );
+
+                            }
+
+
+                            if (uploadIcon) {
+
+                                uploadIcon.className =
+                                    "bi bi-cloud-arrow-up-fill";
+
+                            }
+
+
+                            if (uploadTitle) {
+
+                                uploadTitle.textContent =
+                                    "Drop your CV here";
+
+                            }
+
+
+                            if (uploadSubtitle) {
+
+                                uploadSubtitle.textContent =
+                                    "or click to browse your files";
+
+                            }
+
+
+                            if (extractionStatus) {
+
+                                extractionStatus.style.display =
+                                    "none";
+
+                            }
+
+
+                            /*
+                             * Clear extracted fields.
+                             */
+
+                            [
+                                "ProfessionalTitle",
+                                "ProfessionalSummary",
+                                "CareerObjective",
+                                "Address",
+                                "City",
+                                "Province",
+                                "Country",
+                                "PostalCode",
+                                "PreferredWorkType",
+                                "PreferredLocation",
+                                "LinkedInUrl",
+                                "PortfolioUrl",
+                                "GitHubUrl"
+                            ]
+                            .forEach(
+                                function (id) {
+
+                                    const field =
+                                        document.getElementById(
+                                            id
+                                        );
+
+                                    if (field)
+                                        field.value = "";
+
+                                }
+                            );
+
+                        }
+                    );
+
                 }
 
 
-                /*
-                 * Validate CV separately.
-                 */
+                /* =====================================================
+                   COVER COUNTER
+                   ===================================================== */
 
                 if (
-                    fileInput &&
-                    (
-                        !fileInput.files ||
-                        fileInput.files.length === 0
-                    )
+                    coverMessage &&
+                    coverCounter
                 ) {
 
-                    fileInput.setCustomValidity(
-                        "Please upload your CV before continuing."
+                    function updateCoverCounter() {
+
+                        coverCounter.textContent =
+                            coverMessage.value.length +
+                            " / 2000";
+
+                    }
+
+
+                    coverMessage.addEventListener(
+                        "input",
+                        updateCoverCounter
                     );
 
-                    fileInput.reportValidity();
 
-                    return false;
+                    updateCoverCounter();
 
                 }
 
 
-                if (fileInput) {
+                /* =====================================================
+                   STEP 1 VALIDATION
+                   ===================================================== */
 
-                    fileInput.setCustomValidity("");
+                function validateStepOne() {
 
-                }
-
-
-                /*
-                 * Validate normal Step 1 fields.
-                 */
-
-                const requiredFields =
-                    step1.querySelectorAll(
-                        "input[required], textarea[required], select[required]"
-                    );
+                    if (!step1)
+                        return false;
 
 
-                for (const field of requiredFields) {
+                    if (coverMessage) {
 
-                    /*
-                     * CV was already checked above.
-                     */
+                        coverMessage.setCustomValidity(
+                            ""
+                        );
 
-                    if (
-                        field === fileInput
-                    ) {
-                        continue;
                     }
 
 
                     /*
-                     * Trim text values before checking them.
+                     * CV
                      */
 
                     if (
-                        field.type === "text" ||
-                        field.type === "email" ||
-                        field.type === "tel" ||
-                        field.tagName.toLowerCase() === "textarea"
+                        fileInput &&
+                        (
+                            !fileInput.files ||
+                            fileInput.files.length === 0
+                        )
                     ) {
+
+                        fileInput.setCustomValidity(
+                            "Please upload your CV before continuing."
+                        );
+
+
+                        fileInput.reportValidity();
+
+                        return false;
+
+                    }
+
+
+                    if (fileInput) {
+
+                        fileInput.setCustomValidity(
+                            ""
+                        );
+
+                    }
+
+
+                    /*
+                     * Required fields.
+                     */
+
+                    const requiredFields =
+                        step1.querySelectorAll(
+                            "input[required], textarea[required], select[required]"
+                        );
+
+
+                    for (
+                        const field of requiredFields
+                    ) {
+
+                        if (
+                            field === fileInput
+                        ) {
+
+                            continue;
+
+                        }
+
+
+                        if (
+                            field.type === "checkbox" ||
+                            field.type === "radio"
+                        ) {
+
+                            continue;
+
+                        }
+
 
                         if (
                             field.value.trim() === ""
@@ -1470,6 +2610,20 @@
                             field.setCustomValidity(
                                 "This field is required."
                             );
+
+
+                            field.reportValidity();
+
+                            field.focus();
+
+                            return false;
+
+                        }
+
+
+                        if (
+                            !field.checkValidity()
+                        ) {
 
                             field.reportValidity();
 
@@ -1482,364 +2636,347 @@
                     }
 
 
-                    if (!field.checkValidity()) {
-
-                        field.reportValidity();
-
-                        field.focus();
-
-                        return false;
-
-                    }
-
-                }
-
-
-                /*
-                 * Cover message must contain at least
-                 * 20 actual characters.
-                 */
-
-                if (coverMessage) {
-
-                    const message =
-                        coverMessage.value.trim();
-
-
-                    if (message.length < 20) {
-
-                        coverMessage.setCustomValidity(
-                            "Your cover message must contain at least 20 characters."
-                        );
-
-                        coverMessage.reportValidity();
-
-                        coverMessage.focus();
-
-                        return false;
-
-                    }
-
-
-                    coverMessage.setCustomValidity("");
-
-                }
-
-
-                return true;
-
-            }
-
-
-            /* =====================================================
-               SHOW STEP 2
-               ===================================================== */
-
-            function showStepTwo() {
-
-                /*
-                 * Do NOT change page/card if Step 1 is invalid.
-                 */
-
-                if (!validateStepOne()) {
-
-                    return;
-
-                }
-
-
-                if (!step1 || !step2)
-                    return;
-
-
-                step1.classList.remove(
-                    "sc-application-step-active"
-                );
-
-                step1.classList.add(
-                    "sc-application-step-hidden"
-                );
-
-
-                step2.classList.remove(
-                    "sc-application-step-hidden"
-                );
-
-                step2.classList.add(
-                    "sc-application-step-active"
-                );
-
-
-                if (progressStep1) {
-
-                    progressStep1.classList.remove(
-                        "active"
-                    );
-
-                    progressStep1.classList.add(
-                        "completed"
-                    );
-
-                }
-
-
-                if (progressStep2) {
-
-                    progressStep2.classList.add(
-                        "active"
-                    );
-
-                }
-
-
-                const applicationCard =
-                    document.querySelector(
-                        ".sc-application-card"
-                    );
-
-
-                if (applicationCard) {
-
-                    applicationCard.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
-
-                }
-
-            }
-
-
-            /* =====================================================
-               SHOW STEP 1
-               ===================================================== */
-
-            function showStepOne() {
-
-                if (!step1 || !step2)
-                    return;
-
-
-                step2.classList.remove(
-                    "sc-application-step-active"
-                );
-
-                step2.classList.add(
-                    "sc-application-step-hidden"
-                );
-
-
-                step1.classList.remove(
-                    "sc-application-step-hidden"
-                );
-
-                step1.classList.add(
-                    "sc-application-step-active"
-                );
-
-
-                if (progressStep2) {
-
-                    progressStep2.classList.remove(
-                        "active"
-                    );
-
-                }
-
-
-                if (progressStep1) {
-
-                    progressStep1.classList.remove(
-                        "completed"
-                    );
-
-                    progressStep1.classList.add(
-                        "active"
-                    );
-
-                }
-
-
-                const applicationCard =
-                    document.querySelector(
-                        ".sc-application-card"
-                    );
-
-
-                if (applicationCard) {
-
-                    applicationCard.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
-
-                }
-
-            }
-
-
-            /* =====================================================
-               NEXT BUTTON
-               ===================================================== */
-
-            if (nextButton) {
-
-                nextButton.addEventListener(
-                    "click",
-                    function (event) {
-
-                        event.preventDefault();
-
-                        /*
-                         * The user stays on Step 1 if anything
-                         * required is missing or invalid.
-                         */
-
-                        if (!validateStepOne()) {
-
-                            return;
-
-                        }
-
-
-                        showStepTwo();
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               PREVIOUS BUTTON
-               ===================================================== */
-
-            if (previousButton) {
-
-                previousButton.addEventListener(
-                    "click",
-                    function (event) {
-
-                        event.preventDefault();
-
-                        showStepOne();
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               QUESTION TEXTAREA COUNTERS
-               ===================================================== */
-
-            document
-                .querySelectorAll(
-                    ".sc-question-answer-textarea"
-                )
-                .forEach(
-                    function (textarea) {
-
-                        const wrapper =
-                            textarea.closest(
-                                ".sc-question-answer-textarea-wrapper"
-                            );
-
-
-                        if (!wrapper)
-                            return;
-
-
-                        const counter =
-                            wrapper.querySelector(
-                                ".sc-question-character-counter"
-                            );
-
-
-                        if (!counter)
-                            return;
-
-
-                        function updateQuestionCounter() {
-
-                            counter.textContent =
-                                textarea.value.length +
-                                " / 3000";
-
-                        }
-
-
-                        textarea.addEventListener(
-                            "input",
-                            updateQuestionCounter
-                        );
-
-
-                        updateQuestionCounter();
-
-                    }
-                );
-
-
-            /* =====================================================
-               QUESTION VALIDATION
-               ===================================================== */
-
-            function validateApplicationQuestions() {
-
-                if (!step2)
-                    return true;
-
-
-                /*
-                 * Clear custom question messages.
-                 */
-
-                step2
-                    .querySelectorAll(
-                        ".sc-question-validation"
-                    )
-                    .forEach(
-                        function (validation) {
-
-                            validation.textContent = "";
-
-                        }
-                    );
-
-
-                const requiredFields =
-                    step2.querySelectorAll(
-                        "input[required], textarea[required]"
-                    );
-
-
-                for (const field of requiredFields) {
-
                     /*
-                     * Radio buttons are validated as a group.
+                     * Cover message.
                      */
 
-                    if (
-                        field.type === "radio"
+                    if (coverMessage) {
+
+                        const message =
+                            coverMessage.value.trim();
+
+
+                        if (
+                            message.length < 20
+                        ) {
+
+                            coverMessage.setCustomValidity(
+                                "Your cover message must contain at least 20 characters."
+                            );
+
+
+                            coverMessage.reportValidity();
+
+                            coverMessage.focus();
+
+                            return false;
+
+                        }
+
+
+                        coverMessage.setCustomValidity(
+                            ""
+                        );
+
+                    }
+
+
+                    return true;
+
+                }
+
+
+                /* =====================================================
+                   STEP 2
+                   ===================================================== */
+
+                function showStepTwo() {
+
+                    if (!validateStepOne())
+                        return;
+
+
+                    if (!step1 || !step2)
+                        return;
+
+
+                    step1.classList.remove(
+                        "sc-application-step-active"
+                    );
+
+
+                    step1.classList.add(
+                        "sc-application-step-hidden"
+                    );
+
+
+                    step2.classList.remove(
+                        "sc-application-step-hidden"
+                    );
+
+
+                    step2.classList.add(
+                        "sc-application-step-active"
+                    );
+
+
+                    if (progressStep1) {
+
+                        progressStep1.classList.remove(
+                            "active"
+                        );
+
+
+                        progressStep1.classList.add(
+                            "completed"
+                        );
+
+                    }
+
+
+                    if (progressStep2) {
+
+                        progressStep2.classList.add(
+                            "active"
+                        );
+
+                    }
+
+
+                    document
+                        .querySelector(
+                            ".sc-application-card"
+                        )
+                        ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                }
+
+
+                /* =====================================================
+                   STEP 1
+                   ===================================================== */
+
+                function showStepOne() {
+
+                    if (!step1 || !step2)
+                        return;
+
+
+                    step2.classList.remove(
+                        "sc-application-step-active"
+                    );
+
+
+                    step2.classList.add(
+                        "sc-application-step-hidden"
+                    );
+
+
+                    step1.classList.remove(
+                        "sc-application-step-hidden"
+                    );
+
+
+                    step1.classList.add(
+                        "sc-application-step-active"
+                    );
+
+
+                    if (progressStep2) {
+
+                        progressStep2.classList.remove(
+                            "active"
+                        );
+
+                    }
+
+
+                    if (progressStep1) {
+
+                        progressStep1.classList.remove(
+                            "completed"
+                        );
+
+
+                        progressStep1.classList.add(
+                            "active"
+                        );
+
+                    }
+
+
+                    document
+                        .querySelector(
+                            ".sc-application-card"
+                        )
+                        ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                }
+
+
+                /* =====================================================
+                   NEXT
+                   ===================================================== */
+
+                if (nextButton) {
+
+                    nextButton.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.preventDefault();
+
+                            showStepTwo();
+
+                        }
+                    );
+
+                }
+
+
+                /* =====================================================
+                   PREVIOUS
+                   ===================================================== */
+
+                if (previousButton) {
+
+                    previousButton.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.preventDefault();
+
+                            showStepOne();
+
+                        }
+                    );
+
+                }
+
+
+                /* =====================================================
+                   QUESTION COUNTERS
+                   ===================================================== */
+
+                document
+                    .querySelectorAll(
+                        ".sc-question-answer-textarea"
+                    )
+                    .forEach(
+                        function (textarea) {
+
+                            const wrapper =
+                                textarea.closest(
+                                    ".sc-question-answer-textarea-wrapper"
+                                );
+
+
+                            if (!wrapper)
+                                return;
+
+
+                            const counter =
+                                wrapper.querySelector(
+                                    ".sc-question-character-counter"
+                                );
+
+
+                            if (!counter)
+                                return;
+
+
+                            function updateCounter() {
+
+                                counter.textContent =
+                                    textarea.value.length +
+                                    " / 3000";
+
+                            }
+
+
+                            textarea.addEventListener(
+                                "input",
+                                updateCounter
+                            );
+
+
+                            updateCounter();
+
+                        }
+                    );
+
+
+                /* =====================================================
+                   QUESTION VALIDATION
+                   ===================================================== */
+
+                function validateApplicationQuestions() {
+
+                    if (!step2)
+                        return true;
+
+
+                    const requiredFields =
+                        step2.querySelectorAll(
+                            "input[required], textarea[required]"
+                        );
+
+
+                    for (
+                        const field of requiredFields
                     ) {
 
-                        const group =
-                            step2.querySelectorAll(
-                                `input[type="radio"][name="${CSS.escape(field.name)}"]`
-                            );
+                        if (
+                            field.type === "radio"
+                        ) {
+
+                            const group =
+                                step2.querySelectorAll(
+                                    `input[type="radio"][name="${CSS.escape(field.name)}"]`
+                                );
 
 
-                        const checked =
-                            Array.from(group).some(
-                                function (radio) {
-                                    return radio.checked;
+                            const checked =
+                                Array.from(group)
+                                    .some(
+                                        radio =>
+                                            radio.checked
+                                    );
+
+
+                            if (!checked) {
+
+                                const questionId =
+                                    field.name.match(
+                                        /\[(\d+)\]/
+                                    )?.[1];
+
+
+                                const validation =
+                                    step2.querySelector(
+                                        `[data-question-validation="${questionId}"]`
+                                    );
+
+
+                                if (validation) {
+
+                                    validation.textContent =
+                                        "Please select Yes or No.";
+
                                 }
-                            );
 
 
-                        if (!checked) {
+                                field.focus();
+
+                                return false;
+
+                            }
+
+
+                            continue;
+
+                        }
+
+
+                        if (
+                            field.value.trim() === ""
+                        ) {
 
                             const questionId =
                                 field.name.match(
@@ -1856,10 +2993,17 @@
                             if (validation) {
 
                                 validation.textContent =
-                                    "Please select Yes or No.";
+                                    "This question is required.";
 
                             }
 
+
+                            field.setCustomValidity(
+                                "This question is required."
+                            );
+
+
+                            field.reportValidity();
 
                             field.focus();
 
@@ -1868,170 +3012,75 @@
                         }
 
 
-                        continue;
+                        field.setCustomValidity("");
 
                     }
 
 
-                    /*
-                     * Text answer validation.
-                     */
-
-                    if (
-                        field.value.trim() === ""
-                    ) {
-
-                        const questionId =
-                            field.name.match(
-                                /\[(\d+)\]/
-                            )?.[1];
-
-
-                        const validation =
-                            step2.querySelector(
-                                `[data-question-validation="${questionId}"]`
-                            );
-
-
-                        if (validation) {
-
-                            validation.textContent =
-                                "This question is required.";
-
-                        }
-
-
-                        field.setCustomValidity(
-                            "This question is required."
-                        );
-
-                        field.reportValidity();
-
-                        field.focus();
-
-                        return false;
-
-                    }
-
-
-                    field.setCustomValidity("");
+                    return true;
 
                 }
 
 
-                return true;
+                /* =====================================================
+                   FORM SUBMIT
+                   ===================================================== */
 
-            }
+                if (form) {
 
+                    form.addEventListener(
+                        "submit",
+                        function (event) {
 
-            /* =====================================================
-               FINAL SUBMISSION VALIDATION
-               ===================================================== */
+                            if (!validateStepOne()) {
 
-            if (form) {
+                                event.preventDefault();
 
-                form.addEventListener(
-                    "submit",
-                    function (event) {
+                                showStepOne();
 
-                        /*
-                         * Never allow submission if Step 1
-                         * is incomplete.
-                         */
-
-                        if (!validateStepOne()) {
-
-                            event.preventDefault();
-
-                            showStepOne();
-
-                            return;
-
-                        }
-
-
-                        /*
-                         * Validate required application questions.
-                         */
-
-                        if (!validateApplicationQuestions()) {
-
-                            event.preventDefault();
-
-                            return;
-
-                        }
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               PREVENT ENTER ON SHORT ANSWER
-               ===================================================== */
-
-            document
-                .querySelectorAll(
-                    ".sc-question-answer-input"
-                )
-                .forEach(
-                    function (input) {
-
-                        input.addEventListener(
-                            "keydown",
-                            function (event) {
-
-                                if (
-                                    event.key === "Enter"
-                                ) {
-
-                                    event.preventDefault();
-
-                                }
+                                return;
 
                             }
-                        );
-
-                    }
-                );
 
 
-            /* =====================================================
-               CLEAR VALIDATION WHILE USER FIXES INPUT
-               ===================================================== */
+                            if (
+                                !validateApplicationQuestions()
+                            ) {
 
-            if (form) {
+                                event.preventDefault();
 
-                form
+                                return;
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                /* =====================================================
+                   PREVENT ENTER
+                   ===================================================== */
+
+                document
                     .querySelectorAll(
-                        "input, textarea, select"
+                        ".sc-question-answer-input"
                     )
                     .forEach(
-                        function (field) {
+                        function (input) {
 
-                            field.addEventListener(
-                                "input",
-                                function () {
+                            input.addEventListener(
+                                "keydown",
+                                function (event) {
 
                                     if (
-                                        this.value.trim() !== ""
+                                        event.key === "Enter"
                                     ) {
 
-                                        this.setCustomValidity("");
+                                        event.preventDefault();
 
                                     }
-
-                                }
-                            );
-
-
-                            field.addEventListener(
-                                "change",
-                                function () {
-
-                                    this.setCustomValidity("");
 
                                 }
                             );
@@ -2039,61 +3088,109 @@
                         }
                     );
 
+
+                /* =====================================================
+                   CLEAR VALIDATION
+                   ===================================================== */
+
+                if (form) {
+
+                    form
+                        .querySelectorAll(
+                            "input, textarea, select"
+                        )
+                        .forEach(
+                            function (field) {
+
+                                field.addEventListener(
+                                    "input",
+                                    function () {
+
+                                        if (
+                                            this.value.trim() !== ""
+                                        ) {
+
+                                            this.setCustomValidity(
+                                                ""
+                                            );
+
+                                        }
+
+                                    }
+                                );
+
+
+                                field.addEventListener(
+                                    "change",
+                                    function () {
+
+                                        this.setCustomValidity(
+                                            ""
+                                        );
+
+                                    }
+                                );
+
+                            }
+                        );
+
+                }
+
+
+                /* =====================================================
+                   INITIAL STATE
+                   ===================================================== */
+
+                if (step1) {
+
+                    step1.classList.add(
+                        "sc-application-step-active"
+                    );
+
+                    step1.classList.remove(
+                        "sc-application-step-hidden"
+                    );
+
+                }
+
+
+                if (step2) {
+
+                    step2.classList.add(
+                        "sc-application-step-hidden"
+                    );
+
+                    step2.classList.remove(
+                        "sc-application-step-active"
+                    );
+
+                }
+
+
+                if (progressStep1) {
+
+                    progressStep1.classList.add(
+                        "active"
+                    );
+
+                    progressStep1.classList.remove(
+                        "completed"
+                    );
+
+                }
+
+
+                if (progressStep2) {
+
+                    progressStep2.classList.remove(
+                        "active"
+                    );
+
+                }
+
             }
 
-
-            /* =====================================================
-               INITIAL STATE
-               ===================================================== */
-
-            if (step1) {
-
-                step1.classList.add(
-                    "sc-application-step-active"
-                );
-
-                step1.classList.remove(
-                    "sc-application-step-hidden"
-                );
-
-            }
-
-
-            if (step2) {
-
-                step2.classList.add(
-                    "sc-application-step-hidden"
-                );
-
-                step2.classList.remove(
-                    "sc-application-step-active"
-                );
-
-            }
-
-
-            if (progressStep1) {
-
-                progressStep1.classList.add(
-                    "active"
-                );
-
-                progressStep1.classList.remove(
-                    "completed"
-                );
-
-            }
-
-
-            if (progressStep2) {
-
-                progressStep2.classList.remove(
-                    "active"
-                );
-
-            }
-
-        });
+        );
 
     </script>
 

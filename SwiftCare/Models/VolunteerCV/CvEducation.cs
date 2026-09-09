@@ -2,6 +2,12 @@
 {
     public class CvEducation
     {
+        public int CvEducationId { get; set; }
+
+        public int ParsedCvId { get; set; }
+
+        public ParsedCv ParsedCv { get; set; } = null!;
+
         public string? Institution { get; set; }
 
         public string? Qualification { get; set; }

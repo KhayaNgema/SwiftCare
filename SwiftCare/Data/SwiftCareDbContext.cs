@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SwiftCare.Models;
+using SwiftCare.Models.VolunteerCV;
 using System.Reflection.Emit;
 
 namespace SwiftCare.Data
@@ -102,6 +103,53 @@ namespace SwiftCare.Data
                 .HasForeignKey<VolunteerApplicationEvaluation>(
                     x => x.VolunteerApplicationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ============================================================
+            // PARSED CV -> CERTIFICATIONS
+            // ============================================================
+
+            modelBuilder.Entity<ParsedCv>()
+                .HasMany(x => x.Certifications)
+                .WithOne(x => x.ParsedCv)
+                .HasForeignKey(x => x.ParsedCvId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ============================================================
+            // PARSED CV -> EDUCATION
+            // ============================================================
+
+            modelBuilder.Entity<ParsedCv>()
+                .HasMany(x => x.Education)
+                .WithOne(x => x.ParsedCv)
+                .HasForeignKey(x => x.ParsedCvId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ============================================================
+            // PARSED CV -> EXPERIENCE
+            // ============================================================
+
+            modelBuilder.Entity<ParsedCv>()
+                .HasMany(x => x.Experience)
+                .WithOne(x => x.ParsedCv)
+                .HasForeignKey(x => x.ParsedCvId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ============================================================
+            // PRIMARY KEYS
+            // ============================================================
+
+            modelBuilder.Entity<CvCertification>()
+                .HasKey(x => x.CvCertificationId);
+
+            modelBuilder.Entity<CvEducation>()
+                .HasKey(x => x.CvEducationId);
+
+            modelBuilder.Entity<CvExperience>()
+                .HasKey(x => x.CvExperienceId);
+
 
         }
 

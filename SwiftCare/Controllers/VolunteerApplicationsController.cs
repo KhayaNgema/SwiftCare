@@ -166,6 +166,7 @@ namespace SwiftCare.Controllers
                     opportunity.ShortlistingPipelineRunBy
             });
         }
+
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
@@ -188,22 +189,22 @@ namespace SwiftCare.Controllers
                 }
 
 
-                // ============================================================
-                // SERVER-SIDE PIPELINE CHECK
-                // ============================================================
+                //// ============================================================
+                //// SERVER-SIDE PIPELINE CHECK
+                //// ============================================================
 
-                if (opportunity.ShortlistingPipelineRun)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        alreadyRun = true,
-                        message =
-                            "The shortlisting pipeline has already been run for this opportunity.",
-                        pipelineRunDate =
-                            opportunity.ShortlistingPipelineRunDate
-                    });
-                }
+                //if (opportunity.ShortlistingPipelineRun)
+                //{
+                //    return Json(new
+                //    {
+                //        success = false,
+                //        alreadyRun = true,
+                //        message =
+                //            "The shortlisting pipeline has already been run for this opportunity.",
+                //        pipelineRunDate =
+                //            opportunity.ShortlistingPipelineRunDate
+                //    });
+                //}
 
 
                 // ============================================================

@@ -1115,6 +1115,233 @@ namespace SwiftCare.Data.Migrations
                     b.ToTable("VolunteerAvailabilities");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvCertification", b =>
+                {
+                    b.Property<int>("CvCertificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CvCertificationId"));
+
+                    b.Property<string>("Date")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IssuingOrganisation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ParsedCvId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CvCertificationId");
+
+                    b.HasIndex("ParsedCvId");
+
+                    b.ToTable("CvCertification");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvEducation", b =>
+                {
+                    b.Property<int>("CvEducationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CvEducationId"));
+
+                    b.Property<string>("EndDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldOfStudy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Institution")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ParsedCvId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Qualification")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StartDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CvEducationId");
+
+                    b.HasIndex("ParsedCvId");
+
+                    b.ToTable("CvEducation");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvExperience", b =>
+                {
+                    b.Property<int>("CvExperienceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CvExperienceId"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Employer")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EndDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ParsedCvId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Position")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StartDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CvExperienceId");
+
+                    b.HasIndex("ParsedCvId");
+
+                    b.ToTable("CvExperience");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvLanguage", b =>
+                {
+                    b.Property<int>("CvLanguageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CvLanguageId"));
+
+                    b.Property<string>("Language")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ParsedCvId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CvLanguageId");
+
+                    b.HasIndex("ParsedCvId");
+
+                    b.ToTable("CvLanguage");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvSkill", b =>
+                {
+                    b.Property<int>("CvSkillId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CvSkillId"));
+
+                    b.Property<int>("ParsedCvId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Skill")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CvSkillId");
+
+                    b.HasIndex("ParsedCvId");
+
+                    b.ToTable("CvSkill");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.ParsedCv", b =>
+                {
+                    b.Property<int>("ParsedCvId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParsedCvId"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApplicantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApplicantId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CareerObjective")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractionMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ExtractionSuccessful")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GitHubUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ParsedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PortfolioUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfessionalSummary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfessionalTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Province")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RawText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ParsedCvId");
+
+                    b.HasIndex("ApplicantId1");
+
+                    b.HasIndex("VolunteerApplicationId");
+
+                    b.ToTable("ParsedCv");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerDocument", b =>
                 {
                     b.Property<int>("VolunteerDocumentId")
@@ -1655,6 +1882,106 @@ namespace SwiftCare.Data.Migrations
                 {
                     b.HasBaseType("SwiftCare.Models.UserBaseModel");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("AvailableForVolunteerWork")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CareerObjective")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CurrentCvFileName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CurrentCvFilePath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("CurrentCvFileType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("CvLastParsedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CvParsingMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("CvParsingSuccessful")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("CvUploadedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FieldOfStudy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("GitHubUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("HighestQualification")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsProfileComplete")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PortfolioUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PreferredLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PreferredWorkType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ProfessionalSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ProfessionalTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ProfileLastUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Province")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("WillingToRelocate")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("YearsOfExperience")
+                        .HasColumnType("int");
+
                     b.HasDiscriminator().HasValue("Applicant");
                 });
 
@@ -2096,6 +2423,76 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Volunteer");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvCertification", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerCV.ParsedCv", "ParsedCv")
+                        .WithMany("Certifications")
+                        .HasForeignKey("ParsedCvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParsedCv");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvEducation", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerCV.ParsedCv", "ParsedCv")
+                        .WithMany("Education")
+                        .HasForeignKey("ParsedCvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParsedCv");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvExperience", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerCV.ParsedCv", "ParsedCv")
+                        .WithMany("Experience")
+                        .HasForeignKey("ParsedCvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParsedCv");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvLanguage", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerCV.ParsedCv", "ParsedCv")
+                        .WithMany("Languages")
+                        .HasForeignKey("ParsedCvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParsedCv");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.CvSkill", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerCV.ParsedCv", "ParsedCv")
+                        .WithMany("Skills")
+                        .HasForeignKey("ParsedCvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParsedCv");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.ParsedCv", b =>
+                {
+                    b.HasOne("SwiftCare.Models.Applicant", "Applicant")
+                        .WithMany("ParsedCvs")
+                        .HasForeignKey("ApplicantId1");
+
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithMany()
+                        .HasForeignKey("VolunteerApplicationId");
+
+                    b.Navigation("Applicant");
+
+                    b.Navigation("VolunteerApplication");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerDocument", b =>
                 {
                     b.HasOne("SwiftCare.Models.Applicant", "Applicant")
@@ -2299,6 +2696,19 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Evaluation");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerCV.ParsedCv", b =>
+                {
+                    b.Navigation("Certifications");
+
+                    b.Navigation("Education");
+
+                    b.Navigation("Experience");
+
+                    b.Navigation("Languages");
+
+                    b.Navigation("Skills");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>
                 {
                     b.Navigation("ApplicationQuestions");
@@ -2308,6 +2718,11 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Requirements");
 
                     b.Navigation("Responsibilities");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.Applicant", b =>
+                {
+                    b.Navigation("ParsedCvs");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.Volunteer", b =>

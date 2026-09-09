@@ -47301,3 +47301,741 @@ body.sc-shortlisting-modal-open {
         gap: 4px;
     }
 }
+
+/* ============================================================
+   NEW APPLICANT PROFILE FIELDS
+   ============================================================ */
+
+.sc-profile-extraction-section {
+    position: relative;
+}
+
+.sc-profile-fields-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 28px;
+}
+
+.sc-profile-field {
+    min-width: 0;
+}
+
+.sc-profile-field-full {
+    grid-column: 1 / -1;
+}
+
+.sc-profile-label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.sc-profile-input-wrapper,
+.sc-profile-textarea-wrapper {
+    position: relative;
+}
+
+    .sc-profile-input-wrapper > i,
+    .sc-profile-textarea-wrapper > i {
+        position: absolute;
+        left: 17px;
+        top: 17px;
+        z-index: 2;
+        font-size: 17px;
+        pointer-events: none;
+    }
+
+    .sc-profile-textarea-wrapper > i {
+        top: 18px;
+    }
+
+.sc-profile-input,
+.sc-profile-textarea {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 14px;
+    background: rgba(255,255,255,.045);
+    padding: 15px 18px 15px 48px;
+    outline: none;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    box-sizing: border-box;
+}
+
+.sc-profile-textarea {
+    min-height: 125px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+    .sc-profile-input:focus,
+    .sc-profile-textarea:focus {
+        border-color: rgba(255,255,255,.32);
+        background: rgba(255,255,255,.075);
+        box-shadow: 0 0 0 3px rgba(255,255,255,.045);
+    }
+
+    .sc-profile-input::placeholder,
+    .sc-profile-textarea::placeholder {
+        opacity: .55;
+    }
+
+.sc-profile-validation {
+    display: block;
+    margin-top: 7px;
+    font-size: 12px;
+}
+
+.sc-profile-toggle-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 86px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 16px;
+    background: rgba(255,255,255,.035);
+    box-sizing: border-box;
+}
+
+.sc-profile-toggle-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,.07);
+    font-size: 18px;
+}
+
+.sc-profile-toggle-content {
+    flex: 1;
+    min-width: 0;
+}
+
+    .sc-profile-toggle-content strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .sc-profile-toggle-content span {
+        display: block;
+        font-size: 12px;
+        line-height: 1.5;
+        opacity: .68;
+    }
+
+.sc-profile-switch {
+    position: relative;
+    width: 48px;
+    height: 27px;
+    flex: 0 0 48px;
+    cursor: pointer;
+}
+
+    .sc-profile-switch input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.sc-profile-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    transition: .2s ease;
+}
+
+    .sc-profile-slider::before {
+        content: "";
+        position: absolute;
+        width: 21px;
+        height: 21px;
+        left: 3px;
+        top: 3px;
+        border-radius: 50%;
+        background: #fff;
+        transition: .2s ease;
+    }
+
+.sc-profile-switch input:checked + .sc-profile-slider::before {
+    transform: translateX(21px);
+}
+
+.sc-profile-ai-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: 20px;
+    padding: 17px 19px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 15px;
+    background: rgba(255,255,255,.035);
+}
+
+.sc-profile-ai-notice-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: rgba(255,255,255,.07);
+}
+
+.sc-profile-ai-notice strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.sc-profile-ai-notice p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: .7;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+    .sc-profile-fields-card {
+        grid-template-columns: 1fr;
+    }
+
+    .sc-profile-field-full {
+        grid-column: auto;
+    }
+
+    .sc-profile-toggle-card {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .sc-profile-toggle-card {
+        align-items: flex-start;
+    }
+
+    .sc-profile-switch {
+        margin-left: auto;
+    }
+}
+/* ============================================================
+       PROFILE CARD
+       ============================================================ */
+
+.sc-profile-fields-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    padding: 28px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+
+.sc-profile-field {
+    min-width: 0;
+}
+
+
+.sc-profile-field-full {
+    grid-column: 1 / -1;
+}
+
+
+/* ============================================================
+       LABELS
+       ============================================================ */
+
+.sc-profile-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 9px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #334155;
+    letter-spacing: 0.02em;
+}
+
+
+    .sc-profile-label i {
+        font-size: 15px;
+        color: #14532d;
+    }
+
+
+/* ============================================================
+       INPUT WRAPPER
+       ============================================================ */
+
+.sc-profile-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+
+    .sc-profile-input-wrapper > i {
+        position: absolute;
+        left: 16px;
+        z-index: 2;
+        color: #64748b;
+        font-size: 17px;
+        pointer-events: none;
+    }
+
+
+.sc-profile-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 13px 16px 13px 46px;
+    border-radius: 14px;
+    border: 1px solid #dbe3ea;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+
+    .sc-profile-input:hover {
+        border-color: #cbd5e1;
+        background: #ffffff;
+    }
+
+
+    .sc-profile-input:focus {
+        border-color: #166534;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(22, 101, 52, 0.09);
+    }
+
+
+    .sc-profile-input::placeholder {
+        color: #94a3b8;
+    }
+
+
+/* ============================================================
+       TEXTAREAS
+       ============================================================ */
+
+.sc-profile-textarea-wrapper {
+    position: relative;
+}
+
+
+    .sc-profile-textarea-wrapper > i {
+        position: absolute;
+        top: 17px;
+        left: 16px;
+        z-index: 2;
+        color: #64748b;
+        font-size: 17px;
+        pointer-events: none;
+    }
+
+
+.sc-profile-textarea {
+    width: 100%;
+    min-height: 130px;
+    padding: 15px 16px 15px 46px;
+    border-radius: 14px;
+    border: 1px solid #dbe3ea;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.65;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+
+    .sc-profile-textarea:focus {
+        border-color: #166534;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(22, 101, 52, 0.09);
+    }
+
+
+/* ============================================================
+       EXTRACTION STATUS
+       ============================================================ */
+
+.sc-cv-extraction-status {
+    margin-top: 18px;
+}
+
+
+.sc-extraction-message {
+    align-items: center;
+    gap: 15px;
+    padding: 17px 20px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+
+    .sc-extraction-message strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+
+    .sc-extraction-message span {
+        display: block;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+
+.sc-extraction-spinner,
+.sc-extraction-success-icon,
+.sc-extraction-error-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.sc-extraction-spinner {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+
+    .sc-extraction-spinner i {
+        animation: scSpinStars 1.5s linear infinite;
+    }
+
+
+.sc-extraction-success-icon {
+    background: #dcfce7;
+    color: #166534;
+}
+
+
+.sc-extraction-error-icon {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+
+@keyframes scSpinStars {
+
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: rotate(180deg) scale(1.15);
+    }
+
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+
+/* ============================================================
+       AI NOTICE
+       ============================================================ */
+
+.sc-profile-ai-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-top: 18px;
+    padding: 18px 20px;
+    border-radius: 17px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+
+.sc-profile-ai-notice-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #dcfce7;
+    color: #166534;
+}
+
+
+.sc-profile-ai-notice strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #14532d;
+    font-weight: 800;
+}
+
+
+.sc-profile-ai-notice p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* ============================================================
+       CV UPLOAD
+       ============================================================ */
+
+.sc-cv-upload-wrapper {
+    position: relative;
+}
+
+
+.sc-cv-upload-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-height: 150px;
+    padding: 28px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 22px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+
+    .sc-cv-upload-area:hover,
+    .sc-cv-upload-dragover {
+        border-color: #166534;
+        background: #f0fdf4;
+        transform: translateY(-1px);
+    }
+
+
+.sc-cv-upload-selected {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+
+.sc-cv-upload-icon {
+    width: 62px;
+    height: 62px;
+    min-width: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 27px;
+}
+
+
+.sc-cv-upload-content {
+    flex: 1;
+}
+
+
+    .sc-cv-upload-content strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+
+    .sc-cv-upload-content span {
+        display: block;
+        margin-bottom: 8px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+
+    .sc-cv-upload-content small {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+
+        .sc-cv-upload-content small span {
+            display: inline;
+            margin: 0 5px;
+        }
+
+
+.sc-cv-upload-arrow {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #166534;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.08);
+}
+
+
+.sc-cv-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* ============================================================
+       FILE PREVIEW
+       ============================================================ */
+
+.sc-cv-file-preview {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: 15px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+
+.sc-cv-file-preview-visible {
+    display: flex;
+}
+
+
+.sc-cv-file-preview-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+
+.sc-cv-file-details {
+    flex: 1;
+    min-width: 0;
+}
+
+
+    .sc-cv-file-details strong {
+        display: block;
+        overflow: hidden;
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+    .sc-cv-file-details span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+
+.sc-cv-remove-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #dc2626;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+
+    .sc-cv-remove-button:hover {
+        background: #fee2e2;
+        transform: translateY(-1px);
+    }
+
+
+/* ============================================================
+       RESPONSIVE
+       ============================================================ */
+
+@media (max-width: 800px) {
+
+    .sc-profile-fields-card {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+
+
+    .sc-profile-field-full {
+        grid-column: auto;
+    }
+
+
+    .sc-cv-upload-area {
+        padding: 20px;
+    }
+
+
+    .sc-cv-upload-arrow {
+        display: none;
+    }
+}
+
+
+@media (max-width: 520px) {
+
+    .sc-cv-upload-area {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+
+    .sc-cv-upload-icon {
+        width: 54px;
+        height: 54px;
+        min-width: 54px;
+    }
+}

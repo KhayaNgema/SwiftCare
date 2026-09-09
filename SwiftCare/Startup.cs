@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using Azure;
+using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -23,6 +24,7 @@ using System;
 using System.Globalization;
 using System.Security.Claims;
 using System.Threading;
+using Azure.AI.DocumentIntelligence;
 
 public class Startup
 {
@@ -146,6 +148,7 @@ public class Startup
             options.Cookie.Name = ".SwiftCare.Session";
         });
 
+        services.AddScoped<IAzureDocumentIntelligenceCvService,AzureDocumentIntelligenceCvService>();
 
         services.AddSignalR(options =>
         {
@@ -153,6 +156,34 @@ public class Startup
         });
 
         services.AddHttpClient();
+        services.AddSingleton<DocumentIntelligenceClient>(sp =>
+        {
+            var configuration =
+                sp.GetRequiredService<IConfiguration>();
+
+            var endpoint =
+                configuration["AzureDocumentIntelligence:Endpoint"];
+
+            var apiKey =
+                configuration["AzureDocumentIntelligence:ApiKey"];
+
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                throw new InvalidOperationException(
+                    "AzureDocumentIntelligence:Endpoint is not configured.");
+            }
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException(
+                    "AzureDocumentIntelligence:ApiKey is not configured.");
+            }
+
+            return new DocumentIntelligenceClient(
+                new Uri(endpoint),
+                new AzureKeyCredential(apiKey));
+        });
+
 
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)

@@ -1,338 +1,1094 @@
 ﻿using SwiftCare.Models.VolunteerCV;
-using SwiftCare.Services.VolunteerATS.CV;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace SwiftCare.Services.VolunteerATS
+namespace SwiftCare.Services.VolunteerATS.CV
 {
     public class VolunteerCVParsingEngine
         : IVolunteerCVParsingEngine
     {
-        // =============================================================
+        // ============================================================
         // SECTION DEFINITIONS
-        // =============================================================
+        // ============================================================
 
         private static readonly Dictionary<string, string[]>
             SectionAliases =
                 new(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["summary"] = new[]
-                    {
-                        "professional summary",
+                    ["Summary"] =
+                    [
                         "summary",
+                        "professional summary",
                         "profile",
                         "professional profile",
-                        "career profile",
-                        "career summary",
-                        "objective",
-                        "career objective"
-                    },
+                        "about me",
+                        "career profile"
+                    ],
 
-                    ["skills"] = new[]
-                    {
+                    ["Skills"] =
+                    [
                         "skills",
+                        "technical skills",
                         "core skills",
                         "key skills",
-                        "technical skills",
-                        "professional skills",
                         "competencies",
                         "core competencies",
-                        "key competencies",
-                        "areas of expertise",
-                        "expertise",
-                        "skills and competencies"
-                    },
+                        "areas of expertise"
+                    ],
 
-                    ["experience"] = new[]
-                    {
+                    ["Experience"] =
+                    [
                         "experience",
                         "work experience",
-                        "professional experience",
                         "employment history",
-                        "employment experience",
-                        "relevant experience",
-                        "career experience",
-                        "work history",
-                        "volunteer experience",
-                        "volunteering experience",
-                        "administrative experience",
-                        "internship",
-                        "internships",
-                        "relevant work experience"
-                    },
+                        "professional experience",
+                        "career history",
+                        "work history"
+                    ],
 
-                    ["education"] = new[]
-                    {
+                    ["Education"] =
+                    [
                         "education",
-                        "educational background",
                         "academic background",
-                        "academic history",
                         "qualifications",
-                        "academic qualifications",
-                        "education and qualifications",
-                        "education qualifications"
-                    },
+                        "academic qualifications"
+                    ],
 
-                    ["certifications"] = new[]
-                    {
+                    ["Certifications"] =
+                    [
                         "certifications",
                         "certificates",
-                        "professional certifications",
-                        "professional certificates",
                         "licenses",
-                        "licences",
-                        "training",
-                        "courses",
-                        "certification and training"
-                    },
+                        "licences"
+                    ],
 
-                    ["languages"] = new[]
-                    {
+                    ["Languages"] =
+                    [
                         "languages",
-                        "language skills",
-                        "languages spoken"
-                    },
+                        "language skills"
+                    ],
 
-                    ["references"] = new[]
-                    {
+                    ["References"] =
+                    [
                         "references",
                         "referees"
-                    },
+                    ],
 
-                    ["projects"] = new[]
-                    {
+                    ["Projects"] =
+                    [
                         "projects",
-                        "academic projects",
+                        "key projects",
                         "personal projects"
-                    },
+                    ],
 
-                    ["awards"] = new[]
-                    {
+                    ["Awards"] =
+                    [
                         "awards",
                         "achievements",
-                        "honours",
-                        "honors"
-                    }
+                        "honors",
+                        "honours"
+                    ]
                 };
 
-        // =============================================================
-        // PUBLIC PARSER
-        // =============================================================
+        // ============================================================
+        // AZURE DOCUMENT INTELLIGENCE PARSING
+        // ============================================================
 
-        public Task<ParsedCv> ParseAsync(
+        public async Task<ParsedCv> ParseAsync(
+            AzureCvExtractionResult azureResult,
+            int volunteerApplicationId = 0)
+        {
+            if (azureResult == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(azureResult));
+            }
+
+            var parsedCv =
+                new ParsedCv
+                {
+                    VolunteerApplicationId =
+                        volunteerApplicationId > 0
+                            ? volunteerApplicationId
+                            : null,
+
+                    RawText =
+                        azureResult.RawText,
+
+                    ParsedDate =
+                        DateTime.UtcNow
+                };
+
+            if (!azureResult.Success)
+            {
+                parsedCv.ExtractionSuccessful = false;
+
+                parsedCv.ExtractionMessage =
+                    azureResult.ErrorMessage
+                    ?? "Azure CV extraction failed.";
+
+                return parsedCv;
+            }
+
+            var rawText =
+                NormalizeLines(
+                    azureResult.RawText ?? string.Empty);
+
+            // ========================================================
+            // SCALAR FIELDS FROM AZURE
+            // ========================================================
+
+            parsedCv.FullName =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "FullName"));
+
+            parsedCv.Email =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "Email"));
+
+            parsedCv.PhoneNumber =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "PhoneNumber"));
+
+            parsedCv.ProfessionalTitle =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "ProfessionalTitle"));
+
+            parsedCv.ProfessionalSummary =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "ProfessionalSummary"));
+
+            parsedCv.CareerObjective =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "CareerObjective"));
+
+            parsedCv.Address =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "Address"));
+
+            parsedCv.City =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "City"));
+
+            parsedCv.Province =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "Province"));
+
+            parsedCv.Country =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "Country"));
+
+            parsedCv.LinkedInUrl =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "LinkedInUrl"));
+
+            parsedCv.PortfolioUrl =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "PortfolioUrl"));
+
+            parsedCv.GitHubUrl =
+                CleanValue(
+                    GetFieldText(
+                        azureResult,
+                        "GitHubUrl"));
+
+            // ========================================================
+            // NORMALIZE / SECTION PARSING
+            // ========================================================
+
+            var sections =
+                ParseSections(rawText);
+
+            // ========================================================
+            // FALLBACK: FULL NAME
+            // ========================================================
+
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.FullName))
+            {
+                parsedCv.FullName =
+                    ExtractFullName(rawText);
+            }
+
+            // ========================================================
+            // FALLBACK: EMAIL
+            // ========================================================
+
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.Email))
+            {
+                parsedCv.Email =
+                    ExtractEmail(rawText);
+            }
+
+            // ========================================================
+            // FALLBACK: PHONE
+            // ========================================================
+
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.PhoneNumber))
+            {
+                parsedCv.PhoneNumber =
+                    ExtractPhoneNumber(rawText);
+            }
+
+            // ========================================================
+            // FALLBACK: PROFESSIONAL SUMMARY
+            // ========================================================
+
+            if (string.IsNullOrWhiteSpace(
+                    parsedCv.ProfessionalSummary))
+            {
+                parsedCv.ProfessionalSummary =
+                    ExtractSectionText(
+                        sections,
+                        "Summary");
+            }
+
+            // ========================================================
+            // SKILLS
+            // ========================================================
+
+            ParseStructuredSkills(
+                azureResult,
+                parsedCv);
+
+            if (parsedCv.Skills.Count == 0)
+            {
+                var skills =
+                    ExtractSkills(
+                        sections,
+                        rawText);
+
+                foreach (var skill in skills)
+                {
+                    AddSkill(
+                        parsedCv,
+                        skill);
+                }
+            }
+
+            // ========================================================
+            // LANGUAGES
+            // ========================================================
+
+            ParseStructuredLanguages(
+                azureResult,
+                parsedCv);
+
+            if (parsedCv.Languages.Count == 0)
+            {
+                var languages =
+                    ExtractLanguages(
+                        sections,
+                        rawText);
+
+                foreach (var language in languages)
+                {
+                    AddLanguage(
+                        parsedCv,
+                        language);
+                }
+            }
+
+            // ========================================================
+            // EXPERIENCE
+            // ========================================================
+
+            ParseStructuredExperience(
+                azureResult,
+                parsedCv);
+
+            if (parsedCv.Experience.Count == 0)
+            {
+                var experience =
+                    ExtractExperience(
+                        sections);
+
+                foreach (var item in experience)
+                {
+                    parsedCv.Experience.Add(item);
+                }
+            }
+
+            // ========================================================
+            // EDUCATION
+            // ========================================================
+
+            ParseStructuredEducation(
+                azureResult,
+                parsedCv);
+
+            if (parsedCv.Education.Count == 0)
+            {
+                var education =
+                    ExtractEducation(
+                        sections);
+
+                foreach (var item in education)
+                {
+                    parsedCv.Education.Add(item);
+                }
+            }
+
+            // ========================================================
+            // CERTIFICATIONS
+            // ========================================================
+
+            ParseStructuredCertifications(
+                azureResult,
+                parsedCv);
+
+            if (parsedCv.Certifications.Count == 0)
+            {
+                var certifications =
+                    ExtractCertifications(
+                        sections);
+
+                foreach (var item in certifications)
+                {
+                    parsedCv.Certifications.Add(item);
+                }
+            }
+
+            // ========================================================
+            // EXTRACTION RESULT
+            // ========================================================
+
+            parsedCv.ExtractionSuccessful =
+                HasUsefulData(parsedCv);
+
+            parsedCv.ExtractionMessage =
+                BuildExtractionMessage(
+                    parsedCv,
+                    azureResult);
+
+            await Task.CompletedTask;
+
+            return parsedCv;
+        }
+
+        // ============================================================
+        // RAW TEXT PARSING
+        // ============================================================
+
+        public async Task<ParsedCv> ParseAsync(
             string rawText,
             int volunteerApplicationId = 0)
         {
-            var result = new ParsedCv
-            {
-                VolunteerApplicationId =
-                    volunteerApplicationId,
+            rawText =
+                NormalizeLines(
+                    rawText ?? string.Empty);
 
-                RawText =
-                    rawText ?? string.Empty,
+            var parsedCv =
+                new ParsedCv
+                {
+                    VolunteerApplicationId =
+                        volunteerApplicationId > 0
+                            ? volunteerApplicationId
+                            : null,
 
-                ExtractionSuccessful =
-                    !string.IsNullOrWhiteSpace(rawText),
+                    RawText =
+                        rawText,
 
-                ExtractionMessage =
-                    string.IsNullOrWhiteSpace(rawText)
-                        ? "No CV text was available for parsing."
-                        : "CV text successfully extracted and parsed."
-            };
+                    ParsedDate =
+                        DateTime.UtcNow
+                };
 
             if (string.IsNullOrWhiteSpace(rawText))
             {
-                return Task.FromResult(result);
+                parsedCv.ExtractionSuccessful = false;
+
+                parsedCv.ExtractionMessage =
+                    "No CV text was supplied.";
+
+                return parsedCv;
             }
 
-            // ---------------------------------------------------------
-            // NORMALIZE
-            // ---------------------------------------------------------
-
-            var lines =
-                NormalizeLines(rawText);
-
-            // ---------------------------------------------------------
-            // PARSE SECTIONS
-            // ---------------------------------------------------------
-
             var sections =
-                ParseSections(lines);
+                ParseSections(rawText);
 
-            // ---------------------------------------------------------
+            // ========================================================
             // BASIC INFORMATION
-            // ---------------------------------------------------------
+            // ========================================================
 
-            result.FullName =
-                ExtractFullName(lines);
+            parsedCv.FullName =
+                ExtractFullName(rawText);
 
-            result.Email =
+            parsedCv.Email =
                 ExtractEmail(rawText);
 
-            result.PhoneNumber =
+            parsedCv.PhoneNumber =
                 ExtractPhoneNumber(rawText);
 
-            // ---------------------------------------------------------
-            // SKILLS
-            // ---------------------------------------------------------
+            // ========================================================
+            // SUMMARY
+            // ========================================================
 
-            result.Skills =
+            parsedCv.ProfessionalSummary =
+                ExtractSectionText(
+                    sections,
+                    "Summary");
+
+            // ========================================================
+            // SKILLS
+            // ========================================================
+
+            var skills =
                 ExtractSkills(
                     sections,
                     rawText);
 
-            // ---------------------------------------------------------
-            // LANGUAGES
-            // ---------------------------------------------------------
+            foreach (var skill in skills)
+            {
+                AddSkill(
+                    parsedCv,
+                    skill);
+            }
 
-            result.Languages =
+            // ========================================================
+            // LANGUAGES
+            // ========================================================
+
+            var languages =
                 ExtractLanguages(
                     sections,
                     rawText);
 
-            // ---------------------------------------------------------
-            // CERTIFICATIONS
-            // ---------------------------------------------------------
+            foreach (var language in languages)
+            {
+                AddLanguage(
+                    parsedCv,
+                    language);
+            }
 
-            result.Certifications =
-                ExtractCertifications(
-                    sections);
-
-            // ---------------------------------------------------------
-            // EDUCATION
-            // ---------------------------------------------------------
-
-            result.Education =
-                ExtractEducation(
-                    sections);
-
-            // ---------------------------------------------------------
+            // ========================================================
             // EXPERIENCE
-            // ---------------------------------------------------------
+            // ========================================================
 
-            result.Experience =
+            var experience =
                 ExtractExperience(
                     sections);
 
-            // ---------------------------------------------------------
-            // FINAL PARSE STATUS
-            // ---------------------------------------------------------
-
-            result.ExtractionSuccessful =
-                !string.IsNullOrWhiteSpace(rawText);
-
-            result.ExtractionMessage =
-                BuildExtractionMessage(result);
-
-            return Task.FromResult(result);
-        }
-
-        // =============================================================
-        // EXTRACTION MESSAGE
-        // =============================================================
-
-        private static string BuildExtractionMessage(
-            ParsedCv result)
-        {
-            var parts = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(result.FullName))
-                parts.Add("name");
-
-            if (!string.IsNullOrWhiteSpace(result.Email))
-                parts.Add("email");
-
-            if (!string.IsNullOrWhiteSpace(result.PhoneNumber))
-                parts.Add("phone");
-
-            if (result.Skills.Any())
-                parts.Add($"{result.Skills.Count} skills");
-
-            if (result.Education.Any())
-                parts.Add($"{result.Education.Count} education record(s)");
-
-            if (result.Experience.Any())
-                parts.Add($"{result.Experience.Count} experience record(s)");
-
-            if (result.Certifications.Any())
-                parts.Add($"{result.Certifications.Count} certification(s)");
-
-            if (result.Languages.Any())
-                parts.Add($"{result.Languages.Count} language(s)");
-
-            if (parts.Count == 0)
+            foreach (var item in experience)
             {
-                return "CV text was extracted, but no structured candidate information could be identified.";
+                parsedCv.Experience.Add(item);
             }
 
-            return
-                "CV successfully parsed. Identified: " +
-                string.Join(", ", parts) +
-                ".";
+            // ========================================================
+            // EDUCATION
+            // ========================================================
+
+            var education =
+                ExtractEducation(
+                    sections);
+
+            foreach (var item in education)
+            {
+                parsedCv.Education.Add(item);
+            }
+
+            // ========================================================
+            // CERTIFICATIONS
+            // ========================================================
+
+            var certifications =
+                ExtractCertifications(
+                    sections);
+
+            foreach (var item in certifications)
+            {
+                parsedCv.Certifications.Add(item);
+            }
+
+            // ========================================================
+            // RESULT
+            // ========================================================
+
+            parsedCv.ExtractionSuccessful =
+                HasUsefulData(parsedCv);
+
+            parsedCv.ExtractionMessage =
+                BuildExtractionMessage(
+                    parsedCv,
+                    null);
+
+            await Task.CompletedTask;
+
+            return parsedCv;
         }
 
-        // =============================================================
-        // NORMALIZE LINES
-        // =============================================================
+        // ============================================================
+        // AZURE FIELD HELPERS
+        // ============================================================
 
-        private static List<string> NormalizeLines(
-            string rawText)
+        private static string? GetFieldText(
+            AzureCvExtractionResult result,
+            string fieldName)
         {
-            rawText = rawText
-                .Replace("\r\n", "\n")
-                .Replace("\r", "\n")
-                .Replace("\u00A0", " ");
+            if (result.Fields == null)
+                return null;
 
-            var result =
-                new List<string>();
-
-            foreach (var rawLine in rawText.Split('\n'))
+            if (!result.Fields.TryGetValue(
+                    fieldName,
+                    out var field))
             {
-                if (string.IsNullOrWhiteSpace(rawLine))
-                    continue;
+                return null;
+            }
 
-                var line =
-                    rawLine.Trim();
+            if (field == null)
+                return null;
 
-                line =
-                    Regex.Replace(
-                        line,
-                        @"\s+",
-                        " ");
+            return field.Content;
+        }
 
-                line = line
-                    .Replace("–", "-")
-                    .Replace("—", "-")
-                    .Replace("▪", "•")
-                    .Replace("●", "•")
-                    .Replace("◦", "•");
+        private static string? GetNestedText(
+            AzureCvField? parent,
+            string fieldName)
+        {
+            if (parent == null)
+                return null;
 
-                if (!string.IsNullOrWhiteSpace(line))
+            if (parent.ObjectValues == null)
+                return null;
+
+            if (!parent.ObjectValues.TryGetValue(
+                    fieldName,
+                    out var child))
+            {
+                return null;
+            }
+
+            if (child == null)
+                return null;
+
+            return child.Content;
+        }
+
+        // ============================================================
+        // STRUCTURED SKILLS
+        // ============================================================
+
+        private static void ParseStructuredSkills(
+            AzureCvExtractionResult result,
+            ParsedCv parsedCv)
+        {
+            if (!result.Fields.TryGetValue(
+                    "Skills",
+                    out var field))
+            {
+                return;
+            }
+
+            if (field == null)
+                return;
+
+            // --------------------------------------------------------
+            // Array of objects
+            // --------------------------------------------------------
+
+            if (field.ArrayValues != null &&
+                field.ArrayValues.Count > 0)
+            {
+                foreach (var item in field.ArrayValues)
                 {
-                    result.Add(
-                        line.Trim());
+                    if (item == null)
+                        continue;
+
+                    var skill =
+                        GetNestedText(
+                            item,
+                            "Skill");
+
+                    if (string.IsNullOrWhiteSpace(skill))
+                    {
+                        skill =
+                            item.Content;
+                    }
+
+                    AddSkill(
+                        parsedCv,
+                        skill);
                 }
             }
 
-            return result;
+            // --------------------------------------------------------
+            // Object dictionary
+            // --------------------------------------------------------
+
+            if (field.ObjectValues != null &&
+                field.ObjectValues.Count > 0)
+            {
+                foreach (var item in field.ObjectValues)
+                {
+                    var skill =
+                        item.Value?.Content;
+
+                    AddSkill(
+                        parsedCv,
+                        skill);
+                }
+            }
+
+            // --------------------------------------------------------
+            // Direct value
+            // --------------------------------------------------------
+
+            if (parsedCv.Skills.Count == 0 &&
+                !string.IsNullOrWhiteSpace(
+                    field.Content))
+            {
+                var values =
+                    SplitValues(
+                        field.Content);
+
+                foreach (var value in values)
+                {
+                    AddSkill(
+                        parsedCv,
+                        value);
+                }
+            }
         }
 
-        // =============================================================
-        // PARSE ALL SECTIONS
-        // =============================================================
+        // ============================================================
+        // STRUCTURED LANGUAGES
+        // ============================================================
 
-        private static Dictionary<string, List<string>>
-            ParseSections(
-                List<string> lines)
+        private static void ParseStructuredLanguages(
+            AzureCvExtractionResult result,
+            ParsedCv parsedCv)
+        {
+            if (!result.Fields.TryGetValue(
+                    "Languages",
+                    out var field))
+            {
+                return;
+            }
+
+            if (field == null)
+                return;
+
+            // --------------------------------------------------------
+            // Array
+            // --------------------------------------------------------
+
+            if (field.ArrayValues != null &&
+                field.ArrayValues.Count > 0)
+            {
+                foreach (var item in field.ArrayValues)
+                {
+                    if (item == null)
+                        continue;
+
+                    var language =
+                        GetNestedText(
+                            item,
+                            "Language");
+
+                    if (string.IsNullOrWhiteSpace(language))
+                    {
+                        language =
+                            item.Content;
+                    }
+
+                    AddLanguage(
+                        parsedCv,
+                        language);
+                }
+            }
+
+            // --------------------------------------------------------
+            // Dictionary
+            // --------------------------------------------------------
+
+            if (field.ObjectValues != null &&
+                field.ObjectValues.Count > 0)
+            {
+                foreach (var item in field.ObjectValues)
+                {
+                    var language =
+                        item.Value?.Content;
+
+                    AddLanguage(
+                        parsedCv,
+                        language);
+                }
+            }
+
+            // --------------------------------------------------------
+            // Direct value
+            // --------------------------------------------------------
+
+            if (parsedCv.Languages.Count == 0 &&
+                !string.IsNullOrWhiteSpace(
+                    field.Content))
+            {
+                var values =
+                    SplitValues(
+                        field.Content);
+
+                foreach (var value in values)
+                {
+                    AddLanguage(
+                        parsedCv,
+                        value);
+                }
+            }
+        }
+
+        // ============================================================
+        // STRUCTURED EXPERIENCE
+        // ============================================================
+
+        private static void ParseStructuredExperience(
+            AzureCvExtractionResult result,
+            ParsedCv parsedCv)
+        {
+            if (!result.Fields.TryGetValue(
+                    "Experience",
+                    out var field))
+            {
+                return;
+            }
+
+            if (field == null)
+                return;
+
+            if (field.ArrayValues == null)
+                return;
+
+            foreach (var item in field.ArrayValues)
+            {
+                if (item == null)
+                    continue;
+
+                var experience =
+                    new CvExperience
+                    {
+                        Employer =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Employer")),
+
+                        Position =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Position")),
+
+                        StartDate =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "StartDate")),
+
+                        EndDate =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "EndDate")),
+
+                        Description =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Description")),
+
+                        RawText =
+                            CleanValue(
+                                item.Content)
+                    };
+
+                if (HasExperienceData(
+                        experience))
+                {
+                    parsedCv.Experience.Add(
+                        experience);
+                }
+            }
+        }
+
+        // ============================================================
+        // STRUCTURED EDUCATION
+        // ============================================================
+
+        private static void ParseStructuredEducation(
+            AzureCvExtractionResult result,
+            ParsedCv parsedCv)
+        {
+            if (!result.Fields.TryGetValue(
+                    "Education",
+                    out var field))
+            {
+                return;
+            }
+
+            if (field == null)
+                return;
+
+            if (field.ArrayValues == null)
+                return;
+
+            foreach (var item in field.ArrayValues)
+            {
+                if (item == null)
+                    continue;
+
+                var education =
+                    new CvEducation
+                    {
+                        Institution =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Institution")),
+
+                        Qualification =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Qualification")),
+
+                        FieldOfStudy =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "FieldOfStudy")),
+
+                        StartDate =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "StartDate")),
+
+                        EndDate =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "EndDate")),
+
+                        RawText =
+                            CleanValue(
+                                item.Content)
+                    };
+
+                if (HasEducationData(
+                        education))
+                {
+                    parsedCv.Education.Add(
+                        education);
+                }
+            }
+        }
+
+        // ============================================================
+        // STRUCTURED CERTIFICATIONS
+        // ============================================================
+
+        private static void ParseStructuredCertifications(
+            AzureCvExtractionResult result,
+            ParsedCv parsedCv)
+        {
+            if (!result.Fields.TryGetValue(
+                    "Certifications",
+                    out var field))
+            {
+                return;
+            }
+
+            if (field == null)
+                return;
+
+            if (field.ArrayValues == null)
+                return;
+
+            foreach (var item in field.ArrayValues)
+            {
+                if (item == null)
+                    continue;
+
+                var certification =
+                    new CvCertification
+                    {
+                        Name =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Name")),
+
+                        IssuingOrganisation =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "IssuingOrganisation")),
+
+                        Date =
+                            CleanValue(
+                                GetNestedText(
+                                    item,
+                                    "Date")),
+
+                        RawText =
+                            CleanValue(
+                                item.Content)
+                    };
+
+                if (HasCertificationData(
+                        certification))
+                {
+                    parsedCv.Certifications.Add(
+                        certification);
+                }
+            }
+        }
+
+        // ============================================================
+        // COLLECTION HELPERS
+        // ============================================================
+
+        private static void AddSkill(
+            ParsedCv parsedCv,
+            string? skill)
+        {
+            if (parsedCv == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(skill))
+                return;
+
+            var cleaned =
+                CleanValue(skill);
+
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return;
+
+            var existing =
+                parsedCv.Skills.Any(
+                    x =>
+                        string.Equals(
+                            x.Skill,
+                            cleaned,
+                            StringComparison.OrdinalIgnoreCase));
+
+            if (existing)
+                return;
+
+            parsedCv.Skills.Add(
+                new CvSkill
+                {
+                    Skill = cleaned,
+                    RawText = cleaned
+                });
+        }
+
+        private static void AddLanguage(
+            ParsedCv parsedCv,
+            string? language)
+        {
+            if (parsedCv == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(language))
+                return;
+
+            var cleaned =
+                CleanValue(language);
+
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return;
+
+            var existing =
+                parsedCv.Languages.Any(
+                    x =>
+                        string.Equals(
+                            x.Language,
+                            cleaned,
+                            StringComparison.OrdinalIgnoreCase));
+
+            if (existing)
+                return;
+
+            parsedCv.Languages.Add(
+                new CvLanguage
+                {
+                    Language = cleaned,
+                    RawText = cleaned
+                });
+        }
+
+        // ============================================================
+        // RAW TEXT SECTIONS
+        // ============================================================
+
+        private static Dictionary<string, string>
+            ParseSections(string rawText)
         {
             var sections =
-                new Dictionary<string, List<string>>(
+                new Dictionary<string, string>(
                     StringComparer.OrdinalIgnoreCase);
 
+            if (string.IsNullOrWhiteSpace(rawText))
+                return sections;
+
+            var lines =
+                rawText
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToList();
+
             string? currentSection = null;
+
+            var buffer =
+                new List<string>();
+
+            void SaveCurrentSection()
+            {
+                if (string.IsNullOrWhiteSpace(
+                        currentSection))
+                {
+                    return;
+                }
+
+                var text =
+                    string.Join(
+                        Environment.NewLine,
+                        buffer).Trim();
+
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    sections[currentSection] =
+                        text;
+                }
+
+                buffer.Clear();
+            }
 
             foreach (var line in lines)
             {
@@ -341,32 +1097,24 @@ namespace SwiftCare.Services.VolunteerATS
 
                 if (sectionType != null)
                 {
+                    SaveCurrentSection();
+
                     currentSection =
                         sectionType;
-
-                    if (!sections.ContainsKey(
-                        currentSection))
-                    {
-                        sections[currentSection] =
-                            new List<string>();
-                    }
 
                     continue;
                 }
 
                 if (currentSection != null)
                 {
-                    sections[currentSection]
-                        .Add(line);
+                    buffer.Add(line);
                 }
             }
 
+            SaveCurrentSection();
+
             return sections;
         }
-
-        // =============================================================
-        // SECTION TYPE
-        // =============================================================
 
         private static string? GetSectionType(
             string line)
@@ -381,37 +1129,10 @@ namespace SwiftCare.Services.VolunteerATS
             {
                 foreach (var alias in section.Value)
                 {
-                    if (normalized ==
-                        NormalizeHeading(alias))
-                    {
-                        return section.Key;
-                    }
-                }
-            }
-
-            var withoutSymbols =
-                normalized
-                    .Replace("&", " and ")
-                    .Replace("/", " ")
-                    .Replace("|", " ");
-
-            withoutSymbols =
-                Regex.Replace(
-                    withoutSymbols,
-                    @"\s+",
-                    " ")
-                .Trim();
-
-            foreach (var section in SectionAliases)
-            {
-                foreach (var alias in section.Value)
-                {
-                    var normalizedAlias =
-                        NormalizeHeading(alias)
-                            .Replace("&", " and ");
-
-                    if (withoutSymbols ==
-                        normalizedAlias)
+                    if (string.Equals(
+                            normalized,
+                            NormalizeHeading(alias),
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         return section.Key;
                     }
@@ -421,10 +1142,6 @@ namespace SwiftCare.Services.VolunteerATS
             return null;
         }
 
-        // =============================================================
-        // HEADING NORMALIZATION
-        // =============================================================
-
         private static string NormalizeHeading(
             string value)
         {
@@ -432,19 +1149,15 @@ namespace SwiftCare.Services.VolunteerATS
                 return string.Empty;
 
             value =
-                value.Trim();
-
-            value =
-                Regex.Replace(
-                    value,
-                    @"[:\-–—]+$",
-                    "");
-
-            value =
-                Regex.Replace(
-                    value,
-                    @"[^\p{L}\p{N}&/ ]",
-                    " ");
+                value
+                    .Trim()
+                    .Trim(
+                        ':',
+                        '-',
+                        '=',
+                        '*',
+                        '#',
+                        ' ');
 
             value =
                 Regex.Replace(
@@ -452,41 +1165,561 @@ namespace SwiftCare.Services.VolunteerATS
                     @"\s+",
                     " ");
 
-            return value
-                .Trim()
-                .ToLowerInvariant();
+            return value.ToLowerInvariant();
         }
 
-        // =============================================================
-        // FULL NAME
-        // =============================================================
-
-        private static string? ExtractFullName(
-            List<string> lines)
+        private static string? ExtractSectionText(
+            Dictionary<string, string> sections,
+            string sectionName)
         {
-            foreach (var line in lines.Take(12))
+            if (sections.TryGetValue(
+                    sectionName,
+                    out var value))
             {
-                if (string.IsNullOrWhiteSpace(line))
+                return CleanValue(value);
+            }
+
+            return null;
+        }
+
+        // ============================================================
+        // SKILL EXTRACTION
+        // ============================================================
+
+        private static List<string> ExtractSkills(
+            Dictionary<string, string> sections,
+            string rawText)
+        {
+            var skills =
+                new List<string>();
+
+            if (sections.TryGetValue(
+                    "Skills",
+                    out var section))
+            {
+                AddSkillValues(
+                    skills,
+                    section);
+            }
+
+            return skills;
+        }
+
+        private static void AddSkillValues(
+            List<string> skills,
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            var values =
+                SplitValues(value);
+
+            foreach (var item in values)
+            {
+                var cleaned =
+                    CleanBullet(item);
+
+                if (string.IsNullOrWhiteSpace(cleaned))
                     continue;
 
+                if (cleaned.Length > 150)
+                    continue;
+
+                if (!skills.Any(
+                        x =>
+                            string.Equals(
+                                x,
+                                cleaned,
+                                StringComparison.OrdinalIgnoreCase)))
+                {
+                    skills.Add(cleaned);
+                }
+            }
+        }
+
+        // ============================================================
+        // LANGUAGE EXTRACTION
+        // ============================================================
+
+        private static List<string> ExtractLanguages(
+            Dictionary<string, string> sections,
+            string rawText)
+        {
+            var languages =
+                new List<string>();
+
+            if (sections.TryGetValue(
+                    "Languages",
+                    out var section))
+            {
+                AddDelimitedValues(
+                    languages,
+                    section);
+            }
+
+            return languages;
+        }
+
+        private static void AddDelimitedValues(
+            List<string> values,
+            string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            foreach (var value in
+                     SplitValues(text))
+            {
+                var cleaned =
+                    CleanBullet(value);
+
+                if (string.IsNullOrWhiteSpace(cleaned))
+                    continue;
+
+                if (!values.Any(
+                        x =>
+                            string.Equals(
+                                x,
+                                cleaned,
+                                StringComparison.OrdinalIgnoreCase)))
+                {
+                    values.Add(cleaned);
+                }
+            }
+        }
+
+        private static List<string> SplitValues(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return new List<string>();
+
+            var result =
+                new List<string>();
+
+            var lines =
+                value.Split(
+                    '\n',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
+            {
+                var parts =
+                    line.Split(
+                        new[]
+                        {
+                            ',',
+                            ';',
+                            '|',
+                            '•'
+                        },
+                        StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var part in parts)
+                {
+                    var cleaned =
+                        CleanBullet(part);
+
+                    if (!string.IsNullOrWhiteSpace(
+                            cleaned))
+                    {
+                        result.Add(cleaned);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // ============================================================
+        // CERTIFICATIONS
+        // ============================================================
+
+        private static List<CvCertification>
+            ExtractCertifications(
+                Dictionary<string, string> sections)
+        {
+            var certifications =
+                new List<CvCertification>();
+
+            if (!sections.TryGetValue(
+                    "Certifications",
+                    out var section))
+            {
+                return certifications;
+            }
+
+            var lines =
+                section
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(
+                        CleanBullet)
+                    .Where(
+                        x =>
+                            !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+            foreach (var line in lines)
+            {
+                var certification =
+                    new CvCertification
+                    {
+                        Name = line,
+                        RawText = line
+                    };
+
+                if (line.Contains(
+                        "|",
+                        StringComparison.Ordinal))
+                {
+                    var parts =
+                        line.Split(
+                            '|',
+                            StringSplitOptions.RemoveEmptyEntries);
+
+                    certification.Name =
+                        CleanValue(
+                            parts.ElementAtOrDefault(0));
+
+                    certification.IssuingOrganisation =
+                        CleanValue(
+                            parts.ElementAtOrDefault(1));
+
+                    certification.Date =
+                        CleanValue(
+                            parts.ElementAtOrDefault(2));
+                }
+
+                certifications.Add(
+                    certification);
+            }
+
+            return certifications;
+        }
+
+        // ============================================================
+        // EDUCATION
+        // ============================================================
+
+        private static List<CvEducation>
+            ExtractEducation(
+                Dictionary<string, string> sections)
+        {
+            var education =
+                new List<CvEducation>();
+
+            if (!sections.TryGetValue(
+                    "Education",
+                    out var section))
+            {
+                return education;
+            }
+
+            var lines =
+                section
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(
+                        CleanBullet)
+                    .Where(
+                        x =>
+                            !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+            CvEducation? current = null;
+
+            foreach (var line in lines)
+            {
+                if (LooksLikeDateRange(line))
+                {
+                    if (current != null)
+                    {
+                        SetEducationDates(
+                            current,
+                            line);
+                    }
+
+                    continue;
+                }
+
+                if (current == null)
+                {
+                    current =
+                        new CvEducation
+                        {
+                            RawText = line,
+                            Institution = line
+                        };
+
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        current.Qualification))
+                {
+                    current.Qualification =
+                        line;
+                }
+                else if (string.IsNullOrWhiteSpace(
+                             current.FieldOfStudy))
+                {
+                    current.FieldOfStudy =
+                        line;
+                }
+                else
+                {
+                    education.Add(current);
+
+                    current =
+                        new CvEducation
+                        {
+                            Institution = line,
+                            RawText = line
+                        };
+                }
+            }
+
+            if (current != null)
+            {
+                education.Add(current);
+            }
+
+            return education;
+        }
+
+        private static void SetEducationDates(
+            CvEducation education,
+            string value)
+        {
+            var match =
+                Regex.Match(
+                    value,
+                    @"(?<start>\d{4}(?:-\d{2})?)\s*[-–—]\s*(?<end>\d{4}(?:-\d{2})?|Present|Current)",
+                    RegexOptions.IgnoreCase);
+
+            if (!match.Success)
+                return;
+
+            education.StartDate =
+                match.Groups["start"].Value;
+
+            education.EndDate =
+                match.Groups["end"].Value;
+        }
+
+        // ============================================================
+        // EXPERIENCE
+        // ============================================================
+
+        private static List<CvExperience>
+            ExtractExperience(
+                Dictionary<string, string> sections)
+        {
+            var experience =
+                new List<CvExperience>();
+
+            if (!sections.TryGetValue(
+                    "Experience",
+                    out var section))
+            {
+                return experience;
+            }
+
+            var lines =
+                section
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(
+                        CleanBullet)
+                    .Where(
+                        x =>
+                            !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+            CvExperience? current = null;
+
+            foreach (var line in lines)
+            {
+                if (LooksLikeDateRange(line))
+                {
+                    if (current != null)
+                    {
+                        SetExperienceDates(
+                            current,
+                            line);
+                    }
+
+                    continue;
+                }
+
+                if (current == null)
+                {
+                    current =
+                        new CvExperience
+                        {
+                            Position = line,
+                            RawText = line
+                        };
+
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        current.Employer))
+                {
+                    current.Employer =
+                        line;
+                }
+                else if (string.IsNullOrWhiteSpace(
+                             current.Description))
+                {
+                    current.Description =
+                        line;
+                }
+                else
+                {
+                    current.Description +=
+                        Environment.NewLine +
+                        line;
+                }
+            }
+
+            if (current != null)
+            {
+                experience.Add(current);
+            }
+
+            return experience;
+        }
+
+        private static void SetExperienceDates(
+            CvExperience experience,
+            string value)
+        {
+            var match =
+                Regex.Match(
+                    value,
+                    @"(?<start>\d{4}(?:-\d{2})?)\s*[-–—]\s*(?<end>\d{4}(?:-\d{2})?|Present|Current)",
+                    RegexOptions.IgnoreCase);
+
+            if (!match.Success)
+                return;
+
+            experience.StartDate =
+                match.Groups["start"].Value;
+
+            experience.EndDate =
+                match.Groups["end"].Value;
+        }
+
+        private static bool LooksLikeDateRange(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return Regex.IsMatch(
+                value,
+                @"\d{4}.*(?:[-–—]|to).*(?:\d{4}|present|current)",
+                RegexOptions.IgnoreCase);
+        }
+
+        // ============================================================
+        // BASIC FIELD EXTRACTION
+        // ============================================================
+
+        private static string? ExtractEmail(
+            string rawText)
+        {
+            var match =
+                Regex.Match(
+                    rawText,
+                    @"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}",
+                    RegexOptions.IgnoreCase);
+
+            return match.Success
+                ? match.Value.Trim()
+                : null;
+        }
+
+        private static string? ExtractPhoneNumber(
+            string rawText)
+        {
+            var matches =
+                Regex.Matches(
+                    rawText,
+                    @"(?<!\d)(?:\+?\d[\d\s().-]{7,}\d)(?!\d)");
+
+            foreach (Match match in matches)
+            {
+                var cleaned =
+                    CleanPhoneNumber(
+                        match.Value);
+
+                if (cleaned.Length >= 8)
+                    return cleaned;
+            }
+
+            return null;
+        }
+
+        private static string CleanPhoneNumber(
+            string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return string.Empty;
+
+            return Regex.Replace(
+                phone.Trim(),
+                @"\s+",
+                " ");
+        }
+
+        private static string? ExtractFullName(
+            string rawText)
+        {
+            var lines =
+                rawText
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(
+                        x => x.Trim())
+                    .Where(
+                        x =>
+                            !string.IsNullOrWhiteSpace(x))
+                    .Take(15)
+                    .ToList();
+
+            foreach (var line in lines)
+            {
                 if (line.Contains("@"))
                     continue;
 
                 if (Regex.IsMatch(
-                    line,
-                    @"\d"))
+                        line,
+                        @"\+?\d[\d\s().-]{7,}"))
+                {
+                    continue;
+                }
+
+                if (GetSectionType(line) != null)
                     continue;
 
-                if (IsSectionHeading(line))
+                if (line.Length < 3 ||
+                    line.Length > 100)
+                {
                     continue;
+                }
 
-                var normalized =
-                    NormalizeHeading(line);
-
-                if (normalized.Contains(
-                        "curriculum vitae") ||
-                    normalized == "resume" ||
-                    normalized == "cv")
+                if (line.Contains(
+                        ":",
+                        StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -496,935 +1729,50 @@ namespace SwiftCare.Services.VolunteerATS
                         ' ',
                         StringSplitOptions.RemoveEmptyEntries);
 
-                if (words.Length < 2 ||
-                    words.Length > 5)
+                if (words.Length >= 2 &&
+                    words.Length <= 6)
                 {
-                    continue;
+                    return line;
                 }
-
-                if (line.Length < 3 ||
-                    line.Length > 80)
-                {
-                    continue;
-                }
-
-                return line;
             }
 
             return null;
         }
 
-        // =============================================================
-        // EMAIL
-        // =============================================================
+        // ============================================================
+        // CLEANING
+        // ============================================================
 
-        private static string? ExtractEmail(
-            string rawText)
+        private static string NormalizeLines(
+            string text)
         {
-            var match =
-                Regex.Match(
-                    rawText,
-                    @"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}",
-                    RegexOptions.IgnoreCase);
-
-            return match.Success
-                ? match.Value.Trim()
-                : null;
-        }
-
-        // =============================================================
-        // PHONE
-        // =============================================================
-
-        private static string? ExtractPhoneNumber(
-            string rawText)
-        {
-            var patterns =
-                new[]
-                {
-                    @"(?:\+27|0027)\s?\d{2}\s?\d{3}\s?\d{4}",
-                    @"0\d{2}[\s\-]?\d{3}[\s\-]?\d{4}",
-                    @"\(\d{3}\)[\s\-]?\d{3}[\s\-]?\d{4}"
-                };
-
-            foreach (var pattern in patterns)
-            {
-                var match =
-                    Regex.Match(
-                        rawText,
-                        pattern);
-
-                if (match.Success)
-                    return match.Value.Trim();
-            }
-
-            return null;
-        }
-
-        // =============================================================
-        // SKILLS
-        // =============================================================
-
-        private static List<string> ExtractSkills(
-            Dictionary<string, List<string>> sections,
-            string rawText)
-        {
-            var skills =
-                new List<string>();
-
-            if (sections.TryGetValue(
-                "skills",
-                out var skillLines))
-            {
-                foreach (var line in skillLines)
-                {
-                    AddSkillValues(
-                        skills,
-                        line);
-                }
-            }
-
-            if (skills.Count == 0)
-            {
-                var knownSkills =
-                    new[]
-                    {
-                        "communication",
-                        "communication skills",
-                        "interpersonal skills",
-                        "teamwork",
-                        "leadership",
-                        "problem solving",
-                        "attention to detail",
-                        "administrative support",
-                        "data capturing",
-                        "data capture",
-                        "record keeping",
-                        "community outreach",
-                        "community engagement",
-                        "youth engagement",
-                        "youth programme support",
-                        "event coordination",
-                        "programme administration",
-                        "microsoft word",
-                        "microsoft excel",
-                        "microsoft powerpoint",
-                        "microsoft office",
-                        "customer service",
-                        "project management",
-                        "time management",
-                        "confidentiality",
-                        "participant registration",
-                        "programme materials",
-                        "activity reporting"
-                    };
-
-                foreach (var skill in knownSkills)
-                {
-                    if (rawText.Contains(
-                        skill,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        skills.Add(skill);
-                    }
-                }
-            }
-
-            return skills
-                .Distinct(
-                    StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        // =============================================================
-        // ADD SKILL VALUES
-        // =============================================================
-
-        private static void AddSkillValues(
-            List<string> skills,
-            string line)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-                return;
-
-            line =
-                CleanBullet(line);
-
-            var values =
-                Regex.Split(
-                    line,
-                    @"[,;|]")
-                .Select(x => x.Trim())
-                .Where(x =>
-                    !string.IsNullOrWhiteSpace(x));
-
-            foreach (var value in values)
-            {
-                var clean =
-                    CleanBullet(value);
-
-                if (clean.Length >= 2 &&
-                    clean.Length <= 120)
-                {
-                    skills.Add(clean);
-                }
-            }
-        }
-
-        // =============================================================
-        // LANGUAGES
-        // =============================================================
-
-        private static List<string> ExtractLanguages(
-            Dictionary<string, List<string>> sections,
-            string rawText)
-        {
-            var languages =
-                new List<string>();
-
-            if (sections.TryGetValue(
-                "languages",
-                out var languageLines))
-            {
-                foreach (var line in languageLines)
-                {
-                    var values =
-                        Regex.Split(
-                            CleanBullet(line),
-                            @"[,;|]")
-                        .Select(x => x.Trim())
-                        .Where(x =>
-                            !string.IsNullOrWhiteSpace(x));
-
-                    languages.AddRange(values);
-                }
-            }
-
-            var knownLanguages =
-                new[]
-                {
-                    "English",
-                    "isiZulu",
-                    "Zulu",
-                    "isiXhosa",
-                    "Xhosa",
-                    "Afrikaans",
-                    "Sesotho",
-                    "Setswana",
-                    "Sepedi",
-                    "siSwati",
-                    "Tshivenda",
-                    "itsonga",
-                    "Ndebele"
-                };
-
-            foreach (var language in knownLanguages)
-            {
-                if (rawText.Contains(
-                    language,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    languages.Add(language);
-                }
-            }
-
-            return languages
-                .Distinct(
-                    StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        // =============================================================
-        // CERTIFICATIONS
-        // =============================================================
-
-        private static List<CvCertification>
-            ExtractCertifications(
-                Dictionary<string, List<string>> sections)
-        {
-            var certifications =
-                new List<CvCertification>();
-
-            if (!sections.TryGetValue(
-                "certifications",
-                out var lines))
-            {
-                return certifications;
-            }
-
-            foreach (var line in lines)
-            {
-                var clean =
-                    CleanBullet(line);
-
-                if (string.IsNullOrWhiteSpace(clean))
-                    continue;
-
-                var date =
-                    ExtractYearOrDate(clean);
-
-                certifications.Add(
-                    new CvCertification
-                    {
-                        Name = clean,
-                        IssuingOrganisation = null,
-                        Date = date,
-                        RawText = clean
-                    });
-            }
-
-            return certifications;
-        }
-
-        // =============================================================
-        // EDUCATION
-        // =============================================================
-
-        private static List<CvEducation>
-            ExtractEducation(
-                Dictionary<string, List<string>> sections)
-        {
-            var education =
-                new List<CvEducation>();
-
-            if (!sections.TryGetValue(
-                "education",
-                out var lines))
-            {
-                return education;
-            }
-
-            var cleaned =
-                lines
-                    .Select(CleanBullet)
-                    .Where(x =>
-                        !string.IsNullOrWhiteSpace(x))
-                    .ToList();
-
-            if (cleaned.Count == 0)
-                return education;
-
-            var records =
-                GroupEducationRecords(cleaned);
-
-            foreach (var record in records)
-            {
-                var parsed =
-                    BuildEducationRecord(record);
-
-                if (parsed != null)
-                    education.Add(parsed);
-            }
-
-            return education;
-        }
-
-        // =============================================================
-        // GROUP EDUCATION RECORDS
-        // =============================================================
-
-        private static List<List<string>>
-            GroupEducationRecords(
-                List<string> lines)
-        {
-            var records =
-                new List<List<string>>();
-
-            var current =
-                new List<string>();
-
-            foreach (var line in lines)
-            {
-                if (current.Count > 0 &&
-                    LooksLikeNewEducationRecord(line))
-                {
-                    records.Add(current);
-                    current = new List<string>();
-                }
-
-                current.Add(line);
-            }
-
-            if (current.Count > 0)
-                records.Add(current);
-
-            return records;
-        }
-
-        // =============================================================
-        // BUILD EDUCATION RECORD
-        // =============================================================
-
-        private static CvEducation?
-            BuildEducationRecord(
-                List<string> lines)
-        {
-            if (lines == null ||
-                lines.Count == 0)
-            {
-                return null;
-            }
-
-            var raw =
-                string.Join(
-                    " | ",
-                    lines);
-
-            var qualification =
-                lines.FirstOrDefault(
-                    LooksLikeQualification);
-
-            if (string.IsNullOrWhiteSpace(
-                qualification))
-            {
-                qualification =
-                    lines.FirstOrDefault();
-            }
-
-            var dateMatches =
-                Regex.Matches(
-                    raw,
-                    @"\b(19|20)\d{2}\b");
-
-            string? startDate = null;
-            string? endDate = null;
-
-            if (dateMatches.Count >= 2)
-            {
-                startDate =
-                    dateMatches[0].Value;
-
-                endDate =
-                    dateMatches[1].Value;
-            }
-            else if (dateMatches.Count == 1)
-            {
-                endDate =
-                    dateMatches[0].Value;
-            }
-
-            var institution =
-                FindEducationInstitution(
-                    lines,
-                    qualification);
-
-            var field =
-                ExtractFieldOfStudy(
-                    qualification);
-
-            return new CvEducation
-            {
-                Qualification =
-                    CleanValue(qualification),
-
-                Institution =
-                    CleanValue(institution),
-
-                FieldOfStudy =
-                    CleanValue(field),
-
-                StartDate =
-                    startDate,
-
-                EndDate =
-                    endDate,
-
-                RawText =
-                    raw
-            };
-        }
-
-        // =============================================================
-        // EDUCATION INSTITUTION
-        // =============================================================
-
-        private static string? FindEducationInstitution(
-            List<string> lines,
-            string? qualification)
-        {
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                if (line == qualification)
-                    continue;
-
-                if (Regex.IsMatch(
-                    line,
-                    @"\b(19|20)\d{2}\b"))
-                {
-                    continue;
-                }
-
-                if (LooksLikeQualification(line))
-                    continue;
-
-                return line;
-            }
-
-            return null;
-        }
-
-        // =============================================================
-        // FIELD OF STUDY
-        // =============================================================
-
-        private static string? ExtractFieldOfStudy(
-            string? qualification)
-        {
-            if (string.IsNullOrWhiteSpace(
-                qualification))
-            {
-                return null;
-            }
-
-            var match =
-                Regex.Match(
-                    qualification,
-                    @"\b(?:in|of)\s+(.+)$",
-                    RegexOptions.IgnoreCase);
-
-            if (!match.Success)
-                return null;
-
-            return match.Groups[1]
-                .Value
-                .Trim();
-        }
-
-        // =============================================================
-        // NEW EDUCATION RECORD
-        // =============================================================
-
-        private static bool LooksLikeNewEducationRecord(
-            string line)
-        {
-            if (LooksLikeQualification(line))
-                return true;
-
-            return Regex.IsMatch(
-                line,
-                @"\b(19|20)\d{2}\b\s*[-]\s*\b(19|20)\d{2}\b");
-        }
-
-        // =============================================================
-        // QUALIFICATION DETECTION
-        // =============================================================
-
-        private static bool LooksLikeQualification(
-            string line)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-                return false;
-
-            var patterns =
-                new[]
-                {
-                    @"\bdiploma\b",
-                    @"\bdegree\b",
-                    @"\bbachelor\b",
-                    @"\bmaster\b",
-                    @"\bdoctorate\b",
-                    @"\bphd\b",
-                    @"\bbsc\b",
-                    @"\bba\b",
-                    @"\bbcom\b",
-                    @"\bbtech\b",
-                    @"\bhonours\b",
-                    @"\bhonors\b",
-                    @"\bcertificate\b",
-                    @"\bcertification\b",
-                    @"\bnational senior certificate\b",
-                    @"\bmatric\b",
-                    @"\bgrade\s*12\b"
-                };
-
-            return patterns.Any(
-                pattern =>
-                    Regex.IsMatch(
-                        line,
-                        pattern,
-                        RegexOptions.IgnoreCase));
-        }
-
-        // =============================================================
-        // EXPERIENCE
-        // =============================================================
-
-        private static List<CvExperience>
-            ExtractExperience(
-                Dictionary<string, List<string>> sections)
-        {
-            var experience =
-                new List<CvExperience>();
-
-            if (!sections.TryGetValue(
-                "experience",
-                out var lines))
-            {
-                return experience;
-            }
-
-            var cleaned =
-                lines
-                    .Select(CleanBullet)
-                    .Where(x =>
-                        !string.IsNullOrWhiteSpace(x))
-                    .ToList();
-
-            if (cleaned.Count == 0)
-                return experience;
-
-            var records =
-                GroupExperienceRecords(cleaned);
-
-            foreach (var record in records)
-            {
-                var parsed =
-                    BuildExperienceRecord(record);
-
-                if (parsed != null)
-                    experience.Add(parsed);
-            }
-
-            return experience;
-        }
-
-        // =============================================================
-        // GROUP EXPERIENCE RECORDS
-        // =============================================================
-
-        private static List<List<string>>
-            GroupExperienceRecords(
-                List<string> lines)
-        {
-            var records =
-                new List<List<string>>();
-
-            var current =
-                new List<string>();
-
-            foreach (var line in lines)
-            {
-                if (current.Count > 0 &&
-                    LooksLikeNewExperienceRecord(line))
-                {
-                    records.Add(current);
-
-                    current =
-                        new List<string>();
-                }
-
-                current.Add(line);
-            }
-
-            if (current.Count > 0)
-                records.Add(current);
-
-            return records;
-        }
-
-        // =============================================================
-        // EXPERIENCE RECORD DETECTION
-        // =============================================================
-
-        private static bool LooksLikeNewExperienceRecord(
-            string line)
-        {
-            // Example:
-            // Community Outreach Volunteer - Durban Community
-            // Development Centre (2024-2025)
-
-            if (ContainsDateRange(line))
-                return true;
-
-            // Also recognize common position headings.
-            if (Regex.IsMatch(
-                line,
-                @"\b(volunteer|assistant|officer|coordinator|manager|administrator|intern|facilitator|worker|support)\b",
-                RegexOptions.IgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        // =============================================================
-        // BUILD EXPERIENCE RECORD
-        // =============================================================
-
-        private static CvExperience?
-            BuildExperienceRecord(
-                List<string> lines)
-        {
-            if (lines == null ||
-                lines.Count == 0)
-            {
-                return null;
-            }
-
-            var raw =
-                string.Join(
-                    " | ",
-                    lines);
-
-            var header =
-                lines.FirstOrDefault(
-                    ContainsDateRange)
-                ?? lines.FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(header))
-                return null;
-
-            var dates =
-                ExtractDateRange(header);
-
-            var position =
-                ExtractPosition(
-                    header);
-
-            var employer =
-                ExtractEmployer(
-                    header,
-                    position);
-
-            var descriptionLines =
-                lines
-                    .Where(x =>
-                        !string.Equals(
-                            x,
-                            header,
-                            StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-            var description =
-                string.Join(
-                    " ",
-                    descriptionLines);
-
-            if (string.IsNullOrWhiteSpace(
-                description))
-            {
-                description =
-                    header;
-            }
-
-            return new CvExperience
-            {
-                Position =
-                    CleanValue(position),
-
-                Employer =
-                    CleanValue(employer),
-
-                StartDate =
-                    dates.StartDate,
-
-                EndDate =
-                    dates.EndDate,
-
-                Description =
-                    CleanValue(description),
-
-                RawText =
-                    raw
-            };
-        }
-
-        // =============================================================
-        // DATE RANGE
-        // =============================================================
-
-        private static bool ContainsDateRange(
-            string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
-            return Regex.IsMatch(
-                       value,
-                       @"\b(19|20)\d{2}\b\s*[-]\s*\b(19|20)\d{2}\b")
-                   ||
-                   Regex.IsMatch(
-                       value,
-                       @"\b(19|20)\d{2}\b\s*[-]\s*(present|current)\b",
-                       RegexOptions.IgnoreCase);
-        }
-
-        // =============================================================
-        // EXTRACT DATE RANGE
-        // =============================================================
-
-        private static (
-            string? StartDate,
-            string? EndDate)
-            ExtractDateRange(
-                string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return (null, null);
-
-            var range =
-                Regex.Match(
-                    value,
-                    @"\b((?:19|20)\d{2})\b\s*[-]\s*((?:19|20)\d{2}|present|current)\b",
-                    RegexOptions.IgnoreCase);
-
-            if (range.Success)
-            {
-                return
-                (
-                    range.Groups[1].Value,
-                    range.Groups[2].Value
-                );
-            }
-
-            return (null, null);
-        }
-
-        // =============================================================
-        // EXTRACT POSITION
-        // =============================================================
-
-        private static string? ExtractPosition(
-            string header)
-        {
-            if (string.IsNullOrWhiteSpace(header))
-                return null;
-
-            var withoutDate =
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            text =
+                text.Replace(
+                    "\r\n",
+                    "\n");
+
+            text =
+                text.Replace(
+                    "\r",
+                    "\n");
+
+            text =
                 Regex.Replace(
-                    header,
-                    @"\(?\b(19|20)\d{2}\b\s*[-]\s*((19|20)\d{2}|present|current)\b\)?",
-                    "",
-                    RegexOptions.IgnoreCase);
+                    text,
+                    @"[ \t]+",
+                    " ");
 
-            withoutDate =
-                withoutDate.Trim(
-                    ' ',
-                    '-',
-                    '|',
-                    ':',
-                    '(',
-                    ')');
-
-            // ---------------------------------------------------------
-            // Common format:
-            //
-            // Position - Employer
-            // ---------------------------------------------------------
-
-            var parts =
-                Regex.Split(
-                    withoutDate,
-                    @"\s+[|]\s+|\s+-\s+");
-
-            if (parts.Length >= 2)
-            {
-                return parts[0].Trim();
-            }
-
-            // ---------------------------------------------------------
-            // Fallback based on common job-title terms.
-            // ---------------------------------------------------------
-
-            var match =
-                Regex.Match(
-                    withoutDate,
-                    @"^(.+?\b(?:volunteer|assistant|officer|coordinator|manager|administrator|intern|facilitator|worker|support)\b)",
-                    RegexOptions.IgnoreCase);
-
-            if (match.Success)
-                return match.Groups[1].Value.Trim();
-
-            return withoutDate;
-        }
-
-        // =============================================================
-        // EXTRACT EMPLOYER
-        // =============================================================
-
-        private static string? ExtractEmployer(
-            string header,
-            string? position)
-        {
-            if (string.IsNullOrWhiteSpace(header))
-                return null;
-
-            var withoutDate =
+            text =
                 Regex.Replace(
-                    header,
-                    @"\(?\b(19|20)\d{2}\b\s*[-]\s*((19|20)\d{2}|present|current)\b\)?",
-                    "",
-                    RegexOptions.IgnoreCase);
+                    text,
+                    @"\n{3,}",
+                    "\n\n");
 
-            withoutDate =
-                withoutDate.Trim(
-                    ' ',
-                    '-',
-                    '|',
-                    ':',
-                    '(',
-                    ')');
-
-            if (!string.IsNullOrWhiteSpace(position))
-            {
-                var separators =
-                    new[]
-                    {
-                        " - ",
-                        " | ",
-                        " at "
-                    };
-
-                foreach (var separator in separators)
-                {
-                    var index =
-                        withoutDate.IndexOf(
-                            separator,
-                            StringComparison.OrdinalIgnoreCase);
-
-                    if (index >= 0)
-                    {
-                        var employer =
-                            withoutDate[
-                                (index + separator.Length)..]
-                            .Trim();
-
-                        if (!string.IsNullOrWhiteSpace(
-                            employer))
-                        {
-                            return employer;
-                        }
-                    }
-                }
-            }
-
-            return null;
+            return text.Trim();
         }
-
-        // =============================================================
-        // DATE / YEAR EXTRACTION
-        // =============================================================
-
-        private static string? ExtractYearOrDate(
-            string value)
-        {
-            var match =
-                Regex.Match(
-                    value,
-                    @"\b(19|20)\d{2}\b");
-
-            return match.Success
-                ? match.Value
-                : null;
-        }
-
-        // =============================================================
-        // BULLET CLEANING
-        // =============================================================
 
         private static string CleanBullet(
             string value)
@@ -1432,30 +1780,17 @@ namespace SwiftCare.Services.VolunteerATS
             if (string.IsNullOrWhiteSpace(value))
                 return string.Empty;
 
-            var clean =
-                value.Trim();
-
-            clean =
-                Regex.Replace(
-                    clean,
-                    @"^[•▪●◦*]+\s*",
-                    "");
-
-            clean =
-                Regex.Replace(
-                    clean,
-                    @"^\-\s*",
-                    "");
-
-            clean =
-                clean.Trim();
-
-            return clean;
+            return value
+                .Trim()
+                .TrimStart(
+                    '-',
+                    '*',
+                    '•',
+                    '▪',
+                    '◦',
+                    '→',
+                    '>');
         }
-
-        // =============================================================
-        // CLEAN VALUE
-        // =============================================================
 
         private static string? CleanValue(
             string? value)
@@ -1463,28 +1798,179 @@ namespace SwiftCare.Services.VolunteerATS
             if (string.IsNullOrWhiteSpace(value))
                 return null;
 
-            var clean =
+            var cleaned =
                 value.Trim();
 
-            clean =
+            cleaned =
                 Regex.Replace(
-                    clean,
+                    cleaned,
                     @"\s+",
                     " ");
 
-            return string.IsNullOrWhiteSpace(clean)
+            return string.IsNullOrWhiteSpace(cleaned)
                 ? null
-                : clean;
+                : cleaned;
         }
 
-        // =============================================================
-        // SECTION CHECK
-        // =============================================================
+        // ============================================================
+        // VALIDATION
+        // ============================================================
 
-        private static bool IsSectionHeading(
-            string line)
+        private static bool HasUsefulData(
+            ParsedCv parsedCv)
         {
-            return GetSectionType(line) != null;
+            return
+                !string.IsNullOrWhiteSpace(
+                    parsedCv.FullName)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    parsedCv.Email)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    parsedCv.PhoneNumber)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    parsedCv.ProfessionalTitle)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    parsedCv.ProfessionalSummary)
+                ||
+                parsedCv.Skills.Count > 0
+                ||
+                parsedCv.Languages.Count > 0
+                ||
+                parsedCv.Experience.Count > 0
+                ||
+                parsedCv.Education.Count > 0
+                ||
+                parsedCv.Certifications.Count > 0;
+        }
+
+        private static bool HasExperienceData(
+            CvExperience experience)
+        {
+            return
+                !string.IsNullOrWhiteSpace(
+                    experience.Employer)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    experience.Position)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    experience.Description)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    experience.StartDate)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    experience.EndDate);
+        }
+
+        private static bool HasEducationData(
+            CvEducation education)
+        {
+            return
+                !string.IsNullOrWhiteSpace(
+                    education.Institution)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    education.Qualification)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    education.FieldOfStudy)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    education.StartDate)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    education.EndDate);
+        }
+
+        private static bool HasCertificationData(
+            CvCertification certification)
+        {
+            return
+                !string.IsNullOrWhiteSpace(
+                    certification.Name)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    certification.IssuingOrganisation)
+                ||
+                !string.IsNullOrWhiteSpace(
+                    certification.Date);
+        }
+
+        // ============================================================
+        // EXTRACTION MESSAGE
+        // ============================================================
+
+        private static string BuildExtractionMessage(
+            ParsedCv parsedCv,
+            AzureCvExtractionResult? azureResult)
+        {
+            if (!parsedCv.ExtractionSuccessful)
+            {
+                return
+                    "The CV was processed, but no useful " +
+                    "candidate information could be extracted.";
+            }
+
+            var parts =
+                new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(
+                    parsedCv.FullName))
+            {
+                parts.Add("personal details");
+            }
+
+            if (parsedCv.Skills.Count > 0)
+            {
+                parts.Add(
+                    $"{parsedCv.Skills.Count} skill(s)");
+            }
+
+            if (parsedCv.Languages.Count > 0)
+            {
+                parts.Add(
+                    $"{parsedCv.Languages.Count} language(s)");
+            }
+
+            if (parsedCv.Experience.Count > 0)
+            {
+                parts.Add(
+                    $"{parsedCv.Experience.Count} experience record(s)");
+            }
+
+            if (parsedCv.Education.Count > 0)
+            {
+                parts.Add(
+                    $"{parsedCv.Education.Count} education record(s)");
+            }
+
+            if (parsedCv.Certifications.Count > 0)
+            {
+                parts.Add(
+                    $"{parsedCv.Certifications.Count} certification(s)");
+            }
+
+            var message =
+                parts.Count == 0
+                    ? "CV processing completed successfully."
+                    : "CV processed successfully. Extracted "
+                      + string.Join(", ", parts)
+                      + ".";
+
+            if (azureResult?.Warnings != null &&
+                azureResult.Warnings.Count > 0)
+            {
+                message +=
+                    " Azure reported " +
+                    azureResult.Warnings.Count +
+                    " warning(s).";
+            }
+
+            return message;
         }
     }
 }

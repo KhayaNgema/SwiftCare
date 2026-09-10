@@ -14,9 +14,6 @@
      * ============================================================
      * ENUM DISPLAY HELPER
      * ============================================================
-     *
-     * Uses the GetDisplayName() extension method supplied for
-     * enums decorated with [Display(Name = "...")].
      */
 
     string DisplayEnum(Enum value)
@@ -133,11 +130,6 @@
      * ============================================================
      * AUDIT HISTORY
      * ============================================================
-     *
-     * Remove duplicate audit entries that contain exactly the
-     * same action, description and performer.
-     *
-     * The latest occurrence is kept.
      */
 
     var auditHistory = Model.AuditHistory
@@ -230,6 +222,9 @@
 
     </div>
 
+
+
+   
 
 
     <!-- ========================================================= -->
@@ -1125,47 +1120,6 @@
 
 
 
-                <!-- QUESTIONS -->
-
-                <div class="sc-score-row">
-
-                    <div class="sc-score-label">
-
-                        <div class="sc-score-icon">
-
-                            <i class="bi bi-question-circle-fill"></i>
-
-                        </div>
-
-
-                        <span>
-                            Application Questions
-                        </span>
-
-                    </div>
-
-
-                    <div class="sc-score-progress">
-
-                        <div class="sc-score-track">
-
-                            <div class="sc-score-fill"
-                                 style="width:@evaluation.QuestionScore.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;">
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <strong>
-                        @evaluation.QuestionScore.ToString("0.0")
-                    </strong>
-
-                </div>
-
-
-
                 <!-- AVAILABILITY -->
 
                 <div class="sc-score-row">
@@ -1370,7 +1324,8 @@
                             {
 
                                 <span>
-                                    Uploaded @application.CVUploadedDate.Value.ToString("dd MMM yyyy")
+                                    Uploaded
+                                    @application.CVUploadedDate.Value.ToString("dd MMM yyyy")
                                 </span>
 
                             }
@@ -1465,157 +1420,183 @@
     </section>
 
 
+    <!-- ============================================================
+     FINAL ADMINISTRATIVE REVIEW
+     ============================================================ -->
 
-    <!-- ========================================================= -->
-    <!-- ADMIN DECISION -->
-    <!-- ========================================================= -->
+    <div class="final-admin-review">
 
-    <section class="sc-application-section">
+        <!-- ADMIN NOTES -->
+        <div class="admin-review-section">
 
-        <div class="sc-application-section-heading">
+            <div class="admin-review-header">
+                <div>
+                    <h3>
+                        <i class="bi bi-journal-text"></i>
+                        Administrative Review
+                    </h3>
 
-            <div class="sc-application-section-heading-icon">
+                    <p>
+                        Review the applicant information before making the
+                        final recruitment decision.
+                    </p>
+                </div>
+            </div>
 
-                <i class="bi bi-person-check-fill"></i>
+            <div class="admin-notes-card">
+
+                <div class="admin-notes-title">
+                    <label for="adminNotes">
+                        Admin Notes
+                    </label>
+
+                    <span>
+                        Add internal notes about this applicant.
+                        These notes are for administrative review.
+                    </span>
+                </div>
+
+                <form asp-action="UpdateAdminNotes"
+                      asp-controller="VolunteerApplications"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="applicationId"
+                           value="@Model.Application.VolunteerApplicationId" />
+
+                    <textarea id="adminNotes"
+                              name="adminNotes"
+                              class="admin-notes-textarea"
+                              maxlength="2000"
+                              placeholder="Enter internal administrative notes...">@Model.Application.AdminNotes</textarea>
+
+                    <div class="admin-notes-footer">
+
+                        <span id="adminNotesCounter"
+                              class="admin-notes-counter">
+                            0 / 2000
+                        </span>
+
+                        <button type="submit"
+                                class="admin-notes-save">
+                            <i class="bi bi-save"></i>
+                            Save Admin Notes
+                        </button>
+
+                    </div>
+
+                </form>
 
             </div>
 
-
-            <div>
-
-                <span>
-                    ADMINISTRATIVE REVIEW
-                </span>
+        </div>
 
 
-                <h2>
-                    Recruitment Decision
-                </h2>
+        <!-- MANUAL DECISION -->
+        <div class="manual-decision-section">
 
+            <div class="manual-decision-header">
+
+                <h3>
+                    <i class="bi bi-person-check"></i>
+                    Final Administrative Decision
+                </h3>
 
                 <p>
-                    Current administrative decision for this candidate.
+                    The final recruitment decision must be made manually
+                    by an administrator.
                 </p>
 
             </div>
 
-        </div>
 
+            <!-- CURRENT STATUS -->
 
+            <div class="current-status-row">
 
-        <div class="sc-admin-decision-card">
-
-
-            <!-- DECISION -->
-
-            <div class="sc-admin-decision-item">
-
-                <span>
-                    Current Decision
+                <span class="current-status-label">
+                    Current Status
                 </span>
 
-
-                <strong>
-                    @DisplayEnum(application.AdminDecision)
-                </strong>
+                <span class="current-status-badge">
+                    @Model.Application.Status
+                </span>
 
             </div>
 
 
+            <!-- DECISION BUTTONS -->
 
-            <!-- STATUS -->
+            <div class="manual-decision-actions">
 
-            <div class="sc-admin-decision-item">
+                <form asp-action="ShortlistCandidate"
+                      asp-controller="VolunteerApplications"
+                      asp-route-applicationId="@Model.Application.VolunteerApplicationId"
+                      method="post"
+                      onsubmit="return confirmShortlist();">
 
-                <span>
-                    Application Status
-                </span>
+                    @Html.AntiForgeryToken()
 
+                    <button type="submit"
+                            class="manual-decision-btn shortlist">
 
-                <strong>
-                    @DisplayEnum(application.Status)
-                </strong>
+                        <i class="bi bi-check-circle"></i>
 
-            </div>
+                        Shortlist Candidate
 
+                    </button>
 
-
-            <!-- STAGE -->
-
-            <div class="sc-admin-decision-item">
-
-                <span>
-                    Current Stage
-                </span>
+                </form>
 
 
-                <strong>
-                    @DisplayEnum(application.Stage)
-                </strong>
+                <form asp-action="RejectCandidate"
+                      asp-controller="VolunteerApplications"
+                      method="post"
+                      onsubmit="return confirmReject();">
 
-            </div>
+                    @Html.AntiForgeryToken()
 
+                    <input type="hidden"
+                           name="applicationId"
+                           value="@Model.Application.VolunteerApplicationId" />
 
+                    <button type="submit"
+                            class="manual-decision-btn reject">
 
-            <!-- LAST EVALUATED -->
+                        <i class="bi bi-x-circle"></i>
 
-            <div class="sc-admin-decision-item">
+                        Reject Candidate
 
-                <span>
-                    Last Evaluated
-                </span>
+                    </button>
 
-
-                <strong>
-
-                    @if (application.LastEvaluatedDate.HasValue)
-                    {
-                        @application.LastEvaluatedDate.Value.ToString("dd MMM yyyy HH:mm")
-                    }
-                    else
-                    {
-                        <text>Not evaluated</text>
-                    }
-
-                </strong>
+                </form>
 
             </div>
 
-        </div>
 
+            <!-- IMPORTANT NOTICE -->
 
+            <div class="manual-decision-note">
 
-        @if (!string.IsNullOrWhiteSpace(application.AdminNotes))
-        {
-
-            <div class="sc-admin-notes">
-
-                <div class="sc-admin-notes-icon">
-
-                    <i class="bi bi-sticky-fill"></i>
-
-                </div>
-
+                <i class="bi bi-info-circle"></i>
 
                 <div>
 
-                    <span>
-                        ADMIN NOTES
-                    </span>
+                    <strong>Administrative Decision:</strong>
 
-
-                    <p>
-                        @application.AdminNotes
-                    </p>
+                    The ATS score and recommendation are provided as
+                    supporting information and do not automatically make
+                    the final recruitment decision.
 
                 </div>
 
             </div>
 
-        }
+        </div>
 
-    </section>
-
+    </div>
 
 
     <!-- ========================================================= -->
@@ -1750,3 +1731,82 @@
     </section>
 
 </div>
+
+
+<script>
+
+    /*
+     * ============================================================
+     * SHORTLIST CONFIRMATION
+     * ============================================================
+     */
+
+    function confirmShortlist() {
+
+        return confirm(
+            "Are you sure you want to shortlist this candidate?\n\n" +
+            "This will change the application status to Shortlisted."
+        );
+
+    }
+
+
+    /*
+     * ============================================================
+     * REJECT CONFIRMATION
+     * ============================================================
+     */
+
+    function confirmReject() {
+
+        return confirm(
+            "Are you sure you want to reject this candidate?\n\n" +
+            "This will change the application status to Rejected."
+        );
+
+    }
+
+
+    /*
+     * ============================================================
+     * ADMIN NOTES CHARACTER COUNTER
+     * ============================================================
+     */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            const notes =
+                document.getElementById("adminNotes");
+
+            const counter =
+                document.getElementById("adminNotesCounter");
+
+
+            if (!notes || !counter)
+                return;
+
+
+            function updateCounter() {
+
+                const length =
+                    notes.value.length;
+
+                counter.textContent =
+                    length + " / 2000";
+
+            }
+
+
+            updateCounter();
+
+            notes.addEventListener(
+                "input",
+                updateCounter
+            );
+
+        }
+    );
+
+</script>

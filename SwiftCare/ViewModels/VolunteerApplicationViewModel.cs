@@ -185,23 +185,5 @@ namespace SwiftCare.ViewModels
                 "Please upload your CV.")]
         [Display(Name = "CV")]
         public IFormFile? CV { get; set; }
-
-
-        // ============================================================
-        // QUESTIONS
-        // ============================================================
-
-        public List<int> SelectedQuestionIds { get; set; }
-            = new List<int>();
-
-
-        public List<VolunteerQuestionSelectionViewModel>
-            ApplicationQuestions
-        { get; set; }
-            = new List<VolunteerQuestionSelectionViewModel>();
-
-
-        public Dictionary<int, string> QuestionAnswers { get; set; }
-            = new Dictionary<int, string>();
     }
 }

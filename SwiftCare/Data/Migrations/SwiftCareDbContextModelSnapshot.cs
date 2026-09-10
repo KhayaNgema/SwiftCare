@@ -1276,10 +1276,8 @@ namespace SwiftCare.Data.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ApplicantId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ApplicantId1")
+                    b.Property<string>("ApplicantId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CareerObjective")
@@ -1335,7 +1333,7 @@ namespace SwiftCare.Data.Migrations
 
                     b.HasKey("ParsedCvId");
 
-                    b.HasIndex("ApplicantId1");
+                    b.HasIndex("ApplicantId");
 
                     b.HasIndex("VolunteerApplicationId");
 
@@ -1869,6 +1867,56 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("VolunteerOpportunityId");
 
                     b.ToTable("VolunteerTasks");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerVoiceInterviewSession", b =>
+                {
+                    b.Property<int>("VolunteerVoiceInterviewSessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerVoiceInterviewSessionId"));
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentQuestionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStarted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("StartedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerVoiceInterviewSessionId");
+
+                    b.HasIndex("SessionToken")
+                        .IsUnique();
+
+                    b.HasIndex("VolunteerApplicationId")
+                        .IsUnique();
+
+                    b.ToTable("VolunteerVoiceInterviewSessions");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.Administrator", b =>
@@ -2482,7 +2530,9 @@ namespace SwiftCare.Data.Migrations
                 {
                     b.HasOne("SwiftCare.Models.Applicant", "Applicant")
                         .WithMany("ParsedCvs")
-                        .HasForeignKey("ApplicantId1");
+                        .HasForeignKey("ApplicantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
                         .WithMany()
@@ -2650,6 +2700,17 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Volunteer");
 
                     b.Navigation("VolunteerOpportunity");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerVoiceInterviewSession", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithOne()
+                        .HasForeignKey("SwiftCare.Models.VolunteerVoiceInterviewSession", "VolunteerApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerApplication");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.Volunteer", b =>

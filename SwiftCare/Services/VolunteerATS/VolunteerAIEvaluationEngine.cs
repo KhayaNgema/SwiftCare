@@ -11,8 +11,7 @@ namespace SwiftCare.Services.VolunteerATS
             VolunteerApplicationEvaluation evaluation,
             ParsedCv? parsedCv)
         {
-            var result =
-                new VolunteerAIResult();
+            var result = new VolunteerAIResult();
 
             // ====================================================
             // CV EVIDENCE
@@ -48,6 +47,21 @@ namespace SwiftCare.Services.VolunteerATS
 
             bool hasSkills =
                 cvSkillCount > 0;
+
+            // ====================================================
+            // COVER MESSAGE
+            // ====================================================
+
+            string coverMessage =
+                application.CoverMessage?.Trim() ?? string.Empty;
+
+            bool hasCoverMessage =
+                !string.IsNullOrWhiteSpace(coverMessage);
+
+            // A meaningful cover message should contain more than
+            // just a few characters.
+            bool hasMeaningfulCoverMessage =
+                coverMessage.Length >= 20;
 
             // ====================================================
             // CV EVIDENCE SCORE
@@ -108,16 +122,54 @@ namespace SwiftCare.Services.VolunteerATS
                     100);
 
             // ====================================================
-            // COMBINED ATS + CV ASSESSMENT
+            // COVER MESSAGE EVIDENCE
+            // ====================================================
+
+            int coverMessageScore = 0;
+
+            if (hasCoverMessage)
+            {
+                // Basic evidence that a cover message was supplied.
+                coverMessageScore += 40;
+
+                // A meaningful message gets additional evidence.
+                if (hasMeaningfulCoverMessage)
+                {
+                    coverMessageScore += 30;
+                }
+
+                // Longer messages can demonstrate more motivation,
+                // provided they remain within reasonable limits.
+                if (coverMessage.Length >= 50)
+                {
+                    coverMessageScore += 15;
+                }
+
+                if (coverMessage.Length >= 100)
+                {
+                    coverMessageScore += 15;
+                }
+            }
+
+            coverMessageScore =
+                Math.Min(
+                    coverMessageScore,
+                    100);
+
+            // ====================================================
+            // COMBINED ATS + CV + COVER MESSAGE ASSESSMENT
             // ====================================================
 
             /*
-             * IMPORTANT:
+             * evaluation.OverallScore is the primary ATS score.
              *
-             * evaluation.OverallScore is decimal.
+             * Existing weighting:
              *
-             * Therefore all calculations here use decimal.
-             * The 'm' suffix ensures decimal arithmetic.
+             * ATS              = 70%
+             * CV Evidence      = 20%
+             * Cover Message    = 10%
+             *
+             * Questions are intentionally NOT used.
              */
 
             decimal overallScore =
@@ -125,19 +177,12 @@ namespace SwiftCare.Services.VolunteerATS
 
             decimal combinedScore;
 
-            if (cvAvailable)
+            if (cvAvailable || hasCoverMessage)
             {
-                /*
-                 * Existing ATS score remains the primary
-                 * application score.
-                 *
-                 * ATS = 75%
-                 * CV  = 25%
-                 */
-
                 combinedScore =
-                    (overallScore * 0.75m) +
-                    (cvEvidenceScore * 0.25m);
+                    (overallScore * 0.70m) +
+                    (cvEvidenceScore * 0.20m) +
+                    (coverMessageScore * 0.10m);
             }
             else
             {
@@ -154,7 +199,7 @@ namespace SwiftCare.Services.VolunteerATS
                     100m);
 
             // ====================================================
-            // BUILD CV STRENGTHS
+            // BUILD STRENGTHS
             // ====================================================
 
             var strengths =
@@ -163,17 +208,32 @@ namespace SwiftCare.Services.VolunteerATS
             if (evaluation.OverallScore >= 80m)
             {
                 strengths.Add(
-                    "Strong overall application score.");
+                    "Strong overall ATS application score.");
             }
             else if (evaluation.OverallScore >= 60m)
             {
                 strengths.Add(
-                    "Candidate achieved a reasonable overall application score.");
+                    "Candidate achieved a reasonable overall ATS application score.");
             }
             else
             {
                 strengths.Add(
                     "Application was successfully evaluated.");
+            }
+
+            // ====================================================
+            // COVER MESSAGE STRENGTH
+            // ====================================================
+
+            if (hasMeaningfulCoverMessage)
+            {
+                strengths.Add(
+                    "Candidate provided a meaningful cover message explaining their interest in the opportunity.");
+            }
+            else if (hasCoverMessage)
+            {
+                strengths.Add(
+                    "Candidate provided a cover message.");
             }
 
             // ====================================================
@@ -212,13 +272,15 @@ namespace SwiftCare.Services.VolunteerATS
                         $"CV identifies {cvLanguageCount} language(s).");
                 }
 
-                if (!string.IsNullOrWhiteSpace(parsedCv?.FullName))
+                if (!string.IsNullOrWhiteSpace(
+                    parsedCv?.FullName))
                 {
                     strengths.Add(
                         "Applicant identity information was identified from the CV.");
                 }
 
-                if (!string.IsNullOrWhiteSpace(parsedCv?.Email))
+                if (!string.IsNullOrWhiteSpace(
+                    parsedCv?.Email))
                 {
                     strengths.Add(
                         "Applicant contact information was identified from the CV.");
@@ -226,11 +288,22 @@ namespace SwiftCare.Services.VolunteerATS
             }
 
             // ====================================================
-            // BUILD CV CONCERNS
+            // BUILD CONCERNS
             // ====================================================
 
             var concerns =
                 new List<string>();
+
+            if (!hasCoverMessage)
+            {
+                concerns.Add(
+                    "No cover message was provided.");
+            }
+            else if (!hasMeaningfulCoverMessage)
+            {
+                concerns.Add(
+                    "The cover message is very brief and provides limited evidence of motivation.");
+            }
 
             if (!cvAvailable)
             {
@@ -284,12 +357,6 @@ namespace SwiftCare.Services.VolunteerATS
                     VolunteerAIRecommendation
                         .StrongShortlist;
 
-                /*
-                 * Confidence is calculated as an integer because
-                 * VolunteerAIResult.Confidence is expected to be
-                 * an integer/double-style confidence value.
-                 */
-
                 int confidence;
 
                 if (cvAvailable)
@@ -298,7 +365,12 @@ namespace SwiftCare.Services.VolunteerATS
                         80 +
                         (int)(
                             cvEvidenceScore *
-                            0.17m);
+                            0.12m);
+
+                    if (hasMeaningfulCoverMessage)
+                    {
+                        confidence += 3;
+                    }
 
                     confidence =
                         Math.Min(
@@ -307,7 +379,10 @@ namespace SwiftCare.Services.VolunteerATS
                 }
                 else
                 {
-                    confidence = 90;
+                    confidence =
+                        hasMeaningfulCoverMessage
+                            ? 93
+                            : 90;
                 }
 
                 result.Confidence =
@@ -325,15 +400,14 @@ namespace SwiftCare.Services.VolunteerATS
 
                 result.Explanation =
                     cvAvailable
-                        ? "The candidate achieved a strong combined ATS assessment supported by information extracted from the applicant's CV."
-                        : "The candidate achieved a strong overall score across the configured ATS evaluation criteria.";
+                        ? "The candidate achieved a strong combined ATS assessment supported by CV evidence and the submitted cover message."
+                        : "The candidate achieved a strong overall ATS assessment supported by the submitted cover message.";
 
                 result.RequirementMatches =
-                    cvAvailable
-                        ? BuildRequirementMatchSummary(
-                            parsedCv,
-                            combinedScore)
-                        : "Core application requirements matched.";
+                    BuildRequirementMatchSummary(
+                        parsedCv,
+                        combinedScore,
+                        hasCoverMessage);
             }
             else if (combinedScore >= 60m)
             {
@@ -355,6 +429,11 @@ namespace SwiftCare.Services.VolunteerATS
                             cvEvidenceScore *
                             0.10m);
 
+                    if (hasMeaningfulCoverMessage)
+                    {
+                        confidence += 3;
+                    }
+
                     confidence =
                         Math.Min(
                             confidence,
@@ -362,7 +441,10 @@ namespace SwiftCare.Services.VolunteerATS
                 }
                 else
                 {
-                    confidence = 72;
+                    confidence =
+                        hasMeaningfulCoverMessage
+                            ? 75
+                            : 72;
                 }
 
                 result.Confidence =
@@ -380,15 +462,14 @@ namespace SwiftCare.Services.VolunteerATS
 
                 result.Explanation =
                     cvAvailable
-                        ? "The candidate demonstrates potential based on the ATS application assessment and available CV evidence, but administrator review is recommended."
-                        : "The candidate has potential but the available application evidence does not support an immediate strong-shortlist recommendation.";
+                        ? "The candidate demonstrates potential based on the ATS application assessment, CV evidence and available cover message, but administrator review is recommended."
+                        : "The candidate has potential based on the available application information, but administrator review is recommended.";
 
                 result.RequirementMatches =
-                    cvAvailable
-                        ? BuildRequirementMatchSummary(
-                            parsedCv,
-                            combinedScore)
-                        : "Partial requirement match.";
+                    BuildRequirementMatchSummary(
+                        parsedCv,
+                        combinedScore,
+                        hasCoverMessage);
             }
             else
             {
@@ -417,7 +498,10 @@ namespace SwiftCare.Services.VolunteerATS
                 }
                 else
                 {
-                    confidence = 78;
+                    confidence =
+                        hasMeaningfulCoverMessage
+                            ? 80
+                            : 78;
                 }
 
                 result.Confidence =
@@ -439,11 +523,10 @@ namespace SwiftCare.Services.VolunteerATS
                         : "The available application information does not currently demonstrate a sufficiently strong match.";
 
                 result.RequirementMatches =
-                    cvAvailable
-                        ? BuildRequirementMatchSummary(
-                            parsedCv,
-                            combinedScore)
-                        : "Limited requirement match.";
+                    BuildRequirementMatchSummary(
+                        parsedCv,
+                        combinedScore,
+                        hasCoverMessage);
             }
 
             // ====================================================
@@ -459,65 +542,78 @@ namespace SwiftCare.Services.VolunteerATS
 
         private string BuildRequirementMatchSummary(
             ParsedCv? parsedCv,
-            decimal combinedScore)
+            decimal combinedScore,
+            bool hasCoverMessage)
         {
-            if (parsedCv == null ||
-                !parsedCv.ExtractionSuccessful)
-            {
-                return "CV requirement evidence unavailable.";
-            }
-
             var matches =
                 new List<string>();
 
             // ====================================================
-            // SKILLS
+            // COVER MESSAGE
             // ====================================================
 
-            if (parsedCv.Skills.Any())
+            if (hasCoverMessage)
             {
                 matches.Add(
-                    $"{parsedCv.Skills.Count} skill(s) identified");
+                    "cover message provided");
             }
 
             // ====================================================
-            // EXPERIENCE
+            // CV
             // ====================================================
 
-            if (parsedCv.Experience.Any())
+            if (parsedCv != null &&
+                parsedCv.ExtractionSuccessful)
             {
-                matches.Add(
-                    $"{parsedCv.Experience.Count} experience record(s) identified");
-            }
+                // =================================================
+                // SKILLS
+                // =================================================
 
-            // ====================================================
-            // EDUCATION
-            // ====================================================
+                if (parsedCv.Skills.Any())
+                {
+                    matches.Add(
+                        $"{parsedCv.Skills.Count} skill(s) identified");
+                }
 
-            if (parsedCv.Education.Any())
-            {
-                matches.Add(
-                    $"{parsedCv.Education.Count} education record(s) identified");
-            }
+                // =================================================
+                // EXPERIENCE
+                // =================================================
 
-            // ====================================================
-            // CERTIFICATIONS
-            // ====================================================
+                if (parsedCv.Experience.Any())
+                {
+                    matches.Add(
+                        $"{parsedCv.Experience.Count} experience record(s) identified");
+                }
 
-            if (parsedCv.Certifications.Any())
-            {
-                matches.Add(
-                    $"{parsedCv.Certifications.Count} certification(s) identified");
-            }
+                // =================================================
+                // EDUCATION
+                // =================================================
 
-            // ====================================================
-            // LANGUAGES
-            // ====================================================
+                if (parsedCv.Education.Any())
+                {
+                    matches.Add(
+                        $"{parsedCv.Education.Count} education record(s) identified");
+                }
 
-            if (parsedCv.Languages.Any())
-            {
-                matches.Add(
-                    $"{parsedCv.Languages.Count} language(s) identified");
+                // =================================================
+                // CERTIFICATIONS
+                // =================================================
+
+                if (parsedCv.Certifications.Any())
+                {
+                    matches.Add(
+                        $"{parsedCv.Certifications.Count} certification(s) identified");
+                }
+
+                // =================================================
+                // LANGUAGES
+                // =================================================
+
+                if (parsedCv.Languages.Any())
+                {
+                    matches.Add(
+                        $"{parsedCv.Languages.Count} language(s) identified");
+                }
             }
 
             // ====================================================
@@ -527,7 +623,7 @@ namespace SwiftCare.Services.VolunteerATS
             if (!matches.Any())
             {
                 return
-                    "CV was processed, but limited structured requirement evidence was identified.";
+                    "Limited structured application evidence was identified.";
             }
 
             // ====================================================
@@ -535,7 +631,7 @@ namespace SwiftCare.Services.VolunteerATS
             // ====================================================
 
             return
-                "CV evidence: " +
+                "Application evidence: " +
                 string.Join(
                     ", ",
                     matches) +

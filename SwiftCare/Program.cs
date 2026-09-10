@@ -11,17 +11,57 @@ public class Program
         GenerateAndDisplayAesKeys();
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Warning()
-            .WriteTo.File("Logs/myapp-.txt", rollingInterval: RollingInterval.Day)
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File(
+                "Logs/myapp-.txt",
+                rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
         try
         {
-            CreateHostBuilder(args).Build().Run();
+            Console.WriteLine("============================================================");
+            Console.WriteLine("[SWIFTCARE PROGRAM] Building host...");
+            Console.WriteLine("============================================================");
+
+            var host = CreateHostBuilder(args).Build();
+
+            Console.WriteLine("============================================================");
+            Console.WriteLine("[SWIFTCARE PROGRAM] Host built successfully.");
+            Console.WriteLine("[SWIFTCARE PROGRAM] Starting host...");
+            Console.WriteLine("============================================================");
+
+            host.Run();
+
+            Console.WriteLine("============================================================");
+            Console.WriteLine("[SWIFTCARE PROGRAM] Host stopped.");
+            Console.WriteLine("============================================================");
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Host terminated unexpectedly");
+            Console.WriteLine("============================================================");
+            Console.WriteLine("[SWIFTCARE PROGRAM] HOST STARTUP FAILED");
+            Console.WriteLine("============================================================");
+
+            Console.WriteLine(
+                $"Exception Type: {ex.GetType().FullName}");
+
+            Console.WriteLine(
+                $"Exception Message: {ex.Message}");
+
+            Console.WriteLine(
+                "------------------------------------------------------------");
+
+            Console.WriteLine(
+                $"FULL EXCEPTION:");
+
+            Console.WriteLine(ex.ToString());
+
+            Console.WriteLine("============================================================");
+
+            Log.Fatal(
+                ex,
+                "Host terminated unexpectedly");
         }
         finally
         {

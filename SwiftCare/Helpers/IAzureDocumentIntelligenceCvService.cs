@@ -1,7 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SwiftCare.Services.VolunteerATS.CV
 {
+    // ============================================================
+    // AZURE DOCUMENT INTELLIGENCE SERVICE
+    // ============================================================
+
     public interface IAzureDocumentIntelligenceCvService
     {
         Task<AzureCvExtractionResult> AnalyzeAsync(
@@ -15,7 +23,19 @@ namespace SwiftCare.Services.VolunteerATS.CV
 
     public class AzureCvExtractionResult
     {
+        // --------------------------------------------------------
+        // EXTRACTION STATUS
+        // --------------------------------------------------------
+
         public bool Success { get; set; }
+
+        public string? ExtractionMessage { get; set; }
+
+        public string? ErrorMessage { get; set; }
+
+        // --------------------------------------------------------
+        // RAW AZURE CONTENT
+        // --------------------------------------------------------
 
         public string RawText { get; set; }
             = string.Empty;
@@ -26,9 +46,37 @@ namespace SwiftCare.Services.VolunteerATS.CV
         // --------------------------------------------------------
         // CUSTOM MODEL FIELDS
         // --------------------------------------------------------
+        //
+        // Examples:
+        //
+        // FullName
+        // Email
+        // PhoneNumber
+        // ProfessionalTitle
+        // ProfessionalSummary
+        // CareerObjective
+        // Address
+        // City
+        // Province
+        // Country
+        // LinkedInUrl
+        // PortfolioUrl
+        // GitHubUrl
+        //
+        // Repeating:
+        //
+        // Skills
+        // Experience
+        // Education
+        // Certifications
+        // Languages
+        //
+        // Azure Document Intelligence returns named fields
+        // from the custom model.
+        // --------------------------------------------------------
 
         public Dictionary<string, AzureCvField> Fields { get; set; }
-            = new();
+            = new(StringComparer.OrdinalIgnoreCase);
 
         // --------------------------------------------------------
         // LAYOUT INFORMATION
@@ -44,13 +92,11 @@ namespace SwiftCare.Services.VolunteerATS.CV
             = new();
 
         // --------------------------------------------------------
-        // WARNINGS / ERRORS
+        // WARNINGS
         // --------------------------------------------------------
 
         public List<string> Warnings { get; set; }
             = new();
-
-        public string? ErrorMessage { get; set; }
     }
 
     // ============================================================
@@ -61,16 +107,18 @@ namespace SwiftCare.Services.VolunteerATS.CV
     {
         /// <summary>
         /// Human-readable content returned by Azure.
-        /// Example:
-        /// "John Doe"
-        /// "john@example.com"
-        /// "C#"
+        ///
+        /// Examples:
+        /// "Thando Mkhize"
+        /// "thando.mkhize@example.com"
+        /// "Elderly Resident Support & Activities Volunteer"
         /// </summary>
         public string Content { get; set; }
             = string.Empty;
 
         /// <summary>
         /// Azure field type.
+        ///
         /// Examples:
         /// string
         /// array
@@ -86,32 +134,43 @@ namespace SwiftCare.Services.VolunteerATS.CV
         /// </summary>
         public float? Confidence { get; set; }
 
-        /// <summary>
-        /// Nested object fields.
-        ///
-        /// Example:
-        ///
-        /// Experience
-        ///   Employer
-        ///   Position
-        ///   StartDate
-        ///   EndDate
-        ///   Description
-        /// </summary>
-        public Dictionary<string, AzureCvField> ObjectValues { get; set; }
-            = new();
+        // --------------------------------------------------------
+        // NESTED OBJECT VALUES
+        // --------------------------------------------------------
+        //
+        // Example:
+        //
+        // Experience
+        //   Employer
+        //   Position
+        //   StartDate
+        //   EndDate
+        //   Description
+        //
+        // Education
+        //   Institution
+        //   Qualification
+        //   FieldOfStudy
+        //   StartDate
+        //   EndDate
+        // --------------------------------------------------------
 
-        /// <summary>
-        /// Array/repeating fields.
-        ///
-        /// Example:
-        ///
-        /// Skills
-        /// Experience
-        /// Education
-        /// Certifications
-        /// Languages
-        /// </summary>
+        public Dictionary<string, AzureCvField> ObjectValues { get; set; }
+            = new(StringComparer.OrdinalIgnoreCase);
+
+        // --------------------------------------------------------
+        // ARRAY / REPEATING VALUES
+        // --------------------------------------------------------
+        //
+        // Examples:
+        //
+        // Skills
+        // Experience
+        // Education
+        // Certifications
+        // Languages
+        // --------------------------------------------------------
+
         public List<AzureCvField> ArrayValues { get; set; }
             = new();
     }

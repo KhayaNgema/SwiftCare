@@ -1,6 +1,11 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SwiftCare.Services.VolunteerATS.CV
 {
@@ -10,141 +15,134 @@ namespace SwiftCare.Services.VolunteerATS.CV
         private readonly DocumentIntelligenceClient _client;
         private readonly IConfiguration _configuration;
 
-        private static readonly HashSet<string>
-            SupportedExtensions =
-                new(StringComparer.OrdinalIgnoreCase)
-                {
-                    ".pdf",
-                    ".docx"
-                };
-
         public AzureDocumentIntelligenceCvService(
             DocumentIntelligenceClient client,
             IConfiguration configuration)
         {
             _client = client
-                ?? throw new ArgumentNullException(
-                    nameof(client));
+                ?? throw new ArgumentNullException(nameof(client));
 
             _configuration = configuration
-                ?? throw new ArgumentNullException(
-                    nameof(configuration));
+                ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         // ============================================================
-        // ANALYZE CV
+        // MAIN CV ANALYSIS METHOD
         // ============================================================
 
         public async Task<AzureCvExtractionResult> AnalyzeAsync(
             IFormFile file,
             CancellationToken cancellationToken = default)
         {
-            if (file == null)
-            {
-                throw new ArgumentNullException(
-                    nameof(file));
-            }
-
-            // --------------------------------------------------------
-            // VALIDATE FILE
-            // --------------------------------------------------------
-
-            if (file.Length <= 0)
-            {
-                return new AzureCvExtractionResult
-                {
-                    Success = false,
-                    ErrorMessage =
-                        "The uploaded CV is empty."
-                };
-            }
-
-            // --------------------------------------------------------
-            // VALIDATE EXTENSION
-            // --------------------------------------------------------
-
-            var extension =
-                Path.GetExtension(
-                    file.FileName)
-                .ToLowerInvariant();
-
-            if (!SupportedExtensions.Contains(
-                    extension))
-            {
-                return new AzureCvExtractionResult
-                {
-                    Success = false,
-                    ErrorMessage =
-                        $"Unsupported CV format '{extension}'. " +
-                        "Only PDF and DOCX files are supported."
-                };
-            }
-
-            // --------------------------------------------------------
-            // GET CUSTOM MODEL ID
-            // --------------------------------------------------------
-
-            var modelId =
-                _configuration[
-                    "AzureDocumentIntelligence:ModelId"];
-
-            if (string.IsNullOrWhiteSpace(modelId))
-            {
-                return new AzureCvExtractionResult
-                {
-                    Success = false,
-                    ErrorMessage =
-                        "Azure Document Intelligence custom " +
-                        "ModelId is not configured."
-                };
-            }
+            var result = new AzureCvExtractionResult();
 
             try
             {
-                // ====================================================
-                // READ FILE
-                // ====================================================
+                // ----------------------------------------------------
+                // VALIDATE FILE
+                // ----------------------------------------------------
 
-                await using var inputStream =
-                    file.OpenReadStream();
+                if (file == null)
+                    throw new ArgumentNullException(nameof(file));
 
-                using var memoryStream =
-                    new MemoryStream();
+                if (file.Length <= 0)
+                    throw new InvalidOperationException(
+                        "The uploaded CV file is empty.");
 
-                await inputStream.CopyToAsync(
-                    memoryStream,
-                    cancellationToken);
+                if (string.IsNullOrWhiteSpace(file.FileName))
+                    throw new InvalidOperationException(
+                        "The CV file name is missing.");
 
-                var documentBytes =
-                    memoryStream.ToArray();
+                var extension =
+                    Path.GetExtension(file.FileName)
+                        .ToLowerInvariant();
+
+                if (extension != ".pdf" &&
+                    extension != ".docx")
+                {
+                    throw new InvalidOperationException(
+                        $"Unsupported CV file type '{extension}'. " +
+                        "Only PDF and DOCX files are supported.");
+                }
+
+                // ----------------------------------------------------
+                // GET MODEL ID
+                // ----------------------------------------------------
+
+                var modelId =
+                    _configuration[
+                        "AzureDocumentIntelligence:ModelId"];
+
+                if (string.IsNullOrWhiteSpace(modelId))
+                {
+                    throw new InvalidOperationException(
+                        "AzureDocumentIntelligence:ModelId is not configured.");
+                }
+
+                // ----------------------------------------------------
+                // COPY FILE TO MEMORY
+                // ----------------------------------------------------
+
+                byte[] documentBytes;
+
+                await using (var inputStream = file.OpenReadStream())
+                await using (var memoryStream = new MemoryStream())
+                {
+                    await inputStream.CopyToAsync(
+                        memoryStream,
+                        cancellationToken);
+
+                    documentBytes =
+                        memoryStream.ToArray();
+                }
 
                 if (documentBytes.Length == 0)
                 {
-                    return new AzureCvExtractionResult
-                    {
-                        Success = false,
-                        ErrorMessage =
-                            "The uploaded CV contains no readable data."
-                    };
+                    throw new InvalidOperationException(
+                        "The CV file contains no readable data.");
                 }
 
-                // ====================================================
-                // CREATE ANALYSIS OPTIONS
-                // ====================================================
+                // ----------------------------------------------------
+                // LOG START
+                // ----------------------------------------------------
+
+                Console.WriteLine(
+                    "============================================================");
+
+                Console.WriteLine(
+                    "[SWIFTCARE CV] STARTING AZURE CV EXTRACTION");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] File: {file.FileName}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Extension: {extension}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Bytes: {documentBytes.Length}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Model ID: {modelId}");
+
+                // ----------------------------------------------------
+                // CREATE AZURE ANALYSIS OPTIONS
+                // ----------------------------------------------------
 
                 var options =
                     new AnalyzeDocumentOptions(
                         modelId,
-                        BinaryData.FromBytes(
-                            documentBytes))
+                        BinaryData.FromBytes(documentBytes))
                     {
                         OutputContentFormat =
                             DocumentContentFormat.Markdown
                     };
 
-                // ====================================================
-                // SEND TO AZURE
-                // ====================================================
+                Console.WriteLine(
+                    "[SWIFTCARE CV] Sending CV to Azure...");
+
+                // ----------------------------------------------------
+                // SEND TO AZURE DOCUMENT INTELLIGENCE
+                // ----------------------------------------------------
 
                 var operation =
                     await _client.AnalyzeDocumentAsync(
@@ -152,154 +150,92 @@ namespace SwiftCare.Services.VolunteerATS.CV
                         options,
                         cancellationToken);
 
-                var result =
+                var analyzeResult =
                     operation.Value;
 
-                // ====================================================
-                // CREATE RESULT
-                // ====================================================
+                Console.WriteLine(
+                    "[SWIFTCARE CV] Azure analysis completed.");
 
-                var extractionResult =
-                    new AzureCvExtractionResult
-                    {
-                        Success = true,
+                // ----------------------------------------------------
+                // BASIC RESULT INFORMATION
+                // ----------------------------------------------------
 
-                        RawText =
-                            result.Content
-                            ?? string.Empty,
+                result.Success = true;
 
-                        ContentFormat =
-                            result.ContentFormat?
-                                .ToString()
-                            ?? string.Empty
-                    };
+                result.ContentFormat =
+                    analyzeResult.ContentFormat?.ToString()
+                    ?? string.Empty;
+
+                result.RawText =
+                    analyzeResult.Content
+                    ?? string.Empty;
+
+                result.ExtractionMessage =
+                    "CV processing completed successfully.";
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Azure Model: {analyzeResult.ModelId}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Documents: {analyzeResult.Documents.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Paragraphs: {analyzeResult.Paragraphs.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Sections: {analyzeResult.Sections.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Tables: {analyzeResult.Tables.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Raw Text Length: {result.RawText.Length}");
 
                 // ====================================================
                 // CUSTOM MODEL FIELDS
                 // ====================================================
 
-                if (result.Documents != null &&
-                    result.Documents.Count > 0)
+                foreach (var document in analyzeResult.Documents)
                 {
-                    foreach (var document in result.Documents)
+                    Console.WriteLine(
+                        "------------------------------------------------------------");
+
+                    Console.WriteLine(
+                        $"[SWIFTCARE CV] DOCUMENT TYPE: {document.DocumentType}");
+
+                    Console.WriteLine(
+                        $"[SWIFTCARE CV] FIELD COUNT: {document.Fields.Count}");
+
+                    foreach (var fieldPair in document.Fields)
                     {
-                        if (document.Fields == null ||
-                            document.Fields.Count == 0)
-                        {
-                            continue;
-                        }
+                        var fieldName =
+                            fieldPair.Key;
 
-                        foreach (var field in document.Fields)
-                        {
-                            var fieldName =
-                                field.Key;
+                        var field =
+                            fieldPair.Value;
 
-                            var documentField =
-                                field.Value;
+                        Console.WriteLine(
+                            $"[SWIFTCARE CV] FIELD: {fieldName}");
 
-                            if (string.IsNullOrWhiteSpace(
-                                    fieldName))
-                            {
-                                continue;
-                            }
+                        Console.WriteLine(
+                            $"[SWIFTCARE CV]   Type: {field.FieldType}");
 
-                            if (documentField == null)
-                            {
-                                continue;
-                            }
+                        Console.WriteLine(
+                            $"[SWIFTCARE CV]   Confidence: {field.Confidence}");
 
-                            extractionResult.Fields[
-                                fieldName] =
-                                ConvertField(
-                                    documentField);
-                        }
-                    }
-                }
+                        Console.WriteLine(
+                            $"[SWIFTCARE CV]   Content: {field.Content}");
 
-                // ====================================================
-                // PARAGRAPHS
-                // ====================================================
+                        var converted =
+                            ConvertField(field);
 
-                if (result.Paragraphs != null)
-                {
-                    foreach (var paragraph in result.Paragraphs)
-                    {
-                        if (string.IsNullOrWhiteSpace(
-                                paragraph.Content))
-                        {
-                            continue;
-                        }
+                        result.Fields[fieldName] =
+                            converted;
 
-                        extractionResult.Paragraphs.Add(
-                            new AzureCvParagraph
-                            {
-                                Content =
-                                    paragraph.Content.Trim(),
-
-                                Role =
-                                    paragraph.Role?
-                                        .ToString()
-                            });
-                    }
-                }
-
-                // ====================================================
-                // SECTIONS
-                // ====================================================
-
-                if (result.Sections != null)
-                {
-                    foreach (var section in result.Sections)
-                    {
-                        extractionResult.Sections.Add(
-                            new AzureCvSection
-                            {
-                                Role = "section"
-                            });
-                    }
-                }
-
-                // ====================================================
-                // TABLES
-                // ====================================================
-
-                if (result.Tables != null)
-                {
-                    foreach (var table in result.Tables)
-                    {
-                        var extractedTable =
-                            new AzureCvTable
-                            {
-                                RowCount =
-                                    table.RowCount,
-
-                                ColumnCount =
-                                    table.ColumnCount
-                            };
-
-                        if (table.Cells != null)
-                        {
-                            foreach (var cell in table.Cells)
-                            {
-                                extractedTable.Cells.Add(
-                                    new AzureCvTableCell
-                                    {
-                                        RowIndex =
-                                            cell.RowIndex,
-
-                                        ColumnIndex =
-                                            cell.ColumnIndex,
-
-                                        Content =
-                                            cell.Content?
-                                                .Trim()
-                                            ?? string.Empty
-                                    });
-                            }
-                        }
-
-                        extractionResult.Tables.Add(
-                            extractedTable);
+                        LogNestedField(
+                            fieldName,
+                            converted,
+                            1);
                     }
                 }
 
@@ -307,78 +243,138 @@ namespace SwiftCare.Services.VolunteerATS.CV
                 // WARNINGS
                 // ====================================================
 
-                if (result.Warnings != null)
+                foreach (var warning in analyzeResult.Warnings)
                 {
-                    foreach (var warning in result.Warnings)
+                    if (!string.IsNullOrWhiteSpace(
+                        warning.Message))
                     {
-                        if (!string.IsNullOrWhiteSpace(
-                                warning.Message))
-                        {
-                            extractionResult.Warnings.Add(
-                                warning.Message);
-                        }
+                        result.Warnings.Add(
+                            warning.Message);
+
+                        Console.WriteLine(
+                            $"[SWIFTCARE CV] WARNING: {warning.Message}");
                     }
                 }
 
                 // ====================================================
-                // VALIDATION
+                // FINAL SUMMARY
                 // ====================================================
 
-                var hasRawText =
-                    !string.IsNullOrWhiteSpace(
-                        extractionResult.RawText);
+                Console.WriteLine(
+                    "============================================================");
 
-                var hasFields =
-                    extractionResult.Fields.Count > 0;
+                Console.WriteLine(
+                    "[SWIFTCARE CV] FINAL AZURE EXTRACTION SUMMARY");
 
-                var hasParagraphs =
-                    extractionResult.Paragraphs.Count > 0;
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Success: {result.Success}");
 
-                var hasTables =
-                    extractionResult.Tables.Count > 0;
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Fields: {result.Fields.Count}");
 
-                if (!hasRawText &&
-                    !hasFields &&
-                    !hasParagraphs &&
-                    !hasTables)
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Paragraphs: {result.Paragraphs.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Sections: {result.Sections.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Tables: {result.Tables.Count}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Raw text: {result.RawText.Length}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Message: {result.ExtractionMessage}");
+
+                Console.WriteLine(
+                    "[SWIFTCARE CV] FIELD NAMES RETURNED BY AZURE:");
+
+                foreach (var fieldName in result.Fields.Keys)
                 {
-                    extractionResult.Success = false;
-
-                    extractionResult.ErrorMessage =
-                        "Azure Document Intelligence completed " +
-                        "successfully, but no readable CV data " +
-                        "was extracted.";
+                    Console.WriteLine(
+                        $"[SWIFTCARE CV]   -> {fieldName}");
                 }
 
-                return extractionResult;
-            }
-            catch (RequestFailedException ex)
-            {
-                return new AzureCvExtractionResult
-                {
-                    Success = false,
+                Console.WriteLine(
+                    "============================================================");
 
-                    ErrorMessage =
-                        "Azure Document Intelligence failed. " +
-                        $"Status: {ex.Status}. " +
-                        $"Message: {ex.Message}"
-                };
+                return result;
             }
             catch (OperationCanceledException)
             {
-                throw;
+                Console.WriteLine(
+                    "[SWIFTCARE CV] CV extraction was cancelled.");
+
+                result.Success = false;
+
+                result.ExtractionMessage =
+                    "CV processing was cancelled.";
+
+                result.ErrorMessage =
+                    "The CV extraction operation was cancelled.";
+
+                return result;
+            }
+            catch (RequestFailedException ex)
+            {
+                Console.WriteLine(
+                    "============================================================");
+
+                Console.WriteLine(
+                    "[SWIFTCARE CV] AZURE REQUEST FAILED");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Status: {ex.Status}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Error Code: {ex.ErrorCode}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Message: {ex.Message}");
+
+                Console.WriteLine(
+                    "============================================================");
+
+                result.Success = false;
+
+                result.ExtractionMessage =
+                    $"Azure Document Intelligence error: {ex.Message}";
+
+                result.ErrorMessage =
+                    ex.ToString();
+
+                return result;
             }
             catch (Exception ex)
             {
-                return new AzureCvExtractionResult
-                {
-                    Success = false,
+                Console.WriteLine(
+                    "============================================================");
 
-                    ErrorMessage =
-                        "An unexpected error occurred while " +
-                        "processing the CV with Azure Document " +
-                        $"Intelligence: {ex.Message}"
-                };
+                Console.WriteLine(
+                    "[SWIFTCARE CV] CV EXTRACTION FAILED");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Exception: {ex.GetType().FullName}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Message: {ex.Message}");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] Stack: {ex.StackTrace}");
+
+                Console.WriteLine(
+                    "============================================================");
+
+                result.Success = false;
+
+                result.ExtractionMessage =
+                    $"CV processing failed: {ex.Message}";
+
+                result.ErrorMessage =
+                    ex.ToString();
+
+                return result;
             }
         }
 
@@ -386,75 +382,117 @@ namespace SwiftCare.Services.VolunteerATS.CV
         // CONVERT AZURE FIELD
         // ============================================================
 
-        private static AzureCvField ConvertField(
+        private AzureCvField ConvertField(
             DocumentField field)
         {
-            if (field == null)
-            {
-                return new AzureCvField();
-            }
-
             var converted =
                 new AzureCvField
                 {
                     Content =
-                        field.Content?.Trim()
+                        field.Content
                         ?? string.Empty,
 
-                    FieldType =
-                        field.FieldType.ToString(),
-
                     Confidence =
-                        field.Confidence
+                        field.Confidence,
+
+                    FieldType =
+                        field.FieldType.ToString()
                 };
 
-            // ========================================================
-            // OBJECT / NESTED FIELDS
-            // ========================================================
+            // --------------------------------------------------------
+            // OBJECT
+            // --------------------------------------------------------
 
-            if (field.ValueDictionary != null &&
-                field.ValueDictionary.Count > 0)
+            if (field.ValueDictionary != null)
             {
                 foreach (var item in field.ValueDictionary)
                 {
-                    if (string.IsNullOrWhiteSpace(
-                            item.Key))
-                    {
-                        continue;
-                    }
-
-                    if (item.Value == null)
-                    {
-                        continue;
-                    }
-
-                    converted.ObjectValues[
-                        item.Key] =
-                        ConvertField(
-                            item.Value);
+                    converted.ObjectValues[item.Key] =
+                        ConvertField(item.Value);
                 }
             }
 
-            // ========================================================
-            // ARRAY / LIST FIELDS
-            // ========================================================
+            // --------------------------------------------------------
+            // ARRAY
+            // --------------------------------------------------------
 
-            if (field.ValueList != null &&
-                field.ValueList.Count > 0)
+            if (field.ValueList != null)
             {
                 foreach (var item in field.ValueList)
                 {
-                    if (item == null)
-                    {
-                        continue;
-                    }
-
                     converted.ArrayValues.Add(
                         ConvertField(item));
                 }
             }
 
             return converted;
+        }
+
+        // ============================================================
+        // LOG NESTED FIELD
+        // ============================================================
+
+        private void LogNestedField(
+            string fieldName,
+            AzureCvField field,
+            int level)
+        {
+            var indentation =
+                new string(' ', level * 2);
+
+            // --------------------------------------------------------
+            // CONTENT
+            // --------------------------------------------------------
+
+            if (!string.IsNullOrWhiteSpace(
+                field.Content))
+            {
+                Console.WriteLine(
+                    $"[SWIFTCARE CV] " +
+                    $"{indentation}{fieldName} = {field.Content}");
+            }
+
+            // --------------------------------------------------------
+            // OBJECT VALUES
+            // --------------------------------------------------------
+
+            if (field.ObjectValues != null &&
+                field.ObjectValues.Count > 0)
+            {
+                foreach (var item in field.ObjectValues)
+                {
+                    Console.WriteLine(
+                        $"[SWIFTCARE CV] " +
+                        $"{indentation}{fieldName}.{item.Key}");
+
+                    LogNestedField(
+                        item.Key,
+                        item.Value,
+                        level + 1);
+                }
+            }
+
+            // --------------------------------------------------------
+            // ARRAY VALUES
+            // --------------------------------------------------------
+
+            if (field.ArrayValues != null &&
+                field.ArrayValues.Count > 0)
+            {
+                for (var i = 0;
+                     i < field.ArrayValues.Count;
+                     i++)
+                {
+                    Console.WriteLine(
+                        $"[SWIFTCARE CV] " +
+                        $"{indentation}{fieldName}[{i}]");
+
+                    LogNestedField(
+                        $"{fieldName}[{i}]",
+                        field.ArrayValues[i],
+                        level + 1);
+                }
+            }
         }
     }
 }

@@ -39,8 +39,35 @@ namespace SwiftCare.Services.VolunteerATS
             var result =
                 new VolunteerEligibilityResult();
 
+            // ====================================================
+            // LOAD OPPORTUNITY AND APPLICANT
+            // ====================================================
+
             var opportunity =
                 application.VolunteerOpportunity;
+
+            var applicant =
+                application.Applicant;
+
+            if (opportunity == null || applicant == null)
+            {
+                var loadedApplication =
+                    await _context.VolunteerApplications
+                        .Include(x => x.VolunteerOpportunity)
+                        .Include(x => x.Applicant)
+                        .FirstOrDefaultAsync(x =>
+                            x.VolunteerApplicationId ==
+                            application.VolunteerApplicationId);
+
+                if (loadedApplication != null)
+                {
+                    opportunity =
+                        loadedApplication.VolunteerOpportunity;
+
+                    applicant =
+                        loadedApplication.Applicant;
+                }
+            }
 
             if (opportunity == null)
             {
@@ -50,6 +77,22 @@ namespace SwiftCare.Services.VolunteerATS
                             x.VolunteerOpportunityId ==
                             application.VolunteerOpportunityId);
             }
+
+            if (applicant == null &&
+                !string.IsNullOrWhiteSpace(
+                    application.ApplicantId))
+            {
+                applicant =
+                    await _context.Users
+                        .OfType<Applicant>()
+                        .FirstOrDefaultAsync(x =>
+                            x.Id ==
+                            application.ApplicantId);
+            }
+
+            // ====================================================
+            // OPPORTUNITY CHECK
+            // ====================================================
 
             if (opportunity == null)
             {
@@ -94,7 +137,7 @@ namespace SwiftCare.Services.VolunteerATS
 
             totalChecks++;
 
-            if (application.Applicant != null)
+            if (applicant != null)
             {
                 passedChecks++;
 
@@ -114,12 +157,13 @@ namespace SwiftCare.Services.VolunteerATS
 
             totalChecks++;
 
-            if (application.Applicant != null)
+            if (applicant != null)
             {
-                var today = DateTime.Today;
+                var today =
+                    DateTime.Today;
 
                 var dob =
-                    application.Applicant.DateOfBirth;
+                    applicant.DateOfBirth;
 
                 var age =
                     today.Year - dob.Year;
@@ -130,17 +174,20 @@ namespace SwiftCare.Services.VolunteerATS
                     age--;
                 }
 
-                if (age >= 18)
+                int? minimumAge =
+                    opportunity.MinimumAge;
+
+                if (age >= minimumAge)
                 {
                     passedChecks++;
 
                     result.PassedChecks.Add(
-                        $"Applicant meets minimum age requirement ({age}).");
+                        $"Applicant meets minimum age requirement ({age}, minimum {minimumAge}).");
                 }
                 else
                 {
                     result.FailedChecks.Add(
-                        $"Applicant is below the minimum volunteer age ({age}).");
+                        $"Applicant is below the minimum volunteer age ({age}, minimum {minimumAge}).");
                 }
             }
             else
@@ -172,29 +219,20 @@ namespace SwiftCare.Services.VolunteerATS
 
 
             // ====================================================
-            // APPLICATION ANSWERS
+            // NO APPLICATION QUESTIONS
             // ====================================================
-
-            totalChecks++;
-
-            var answerCount =
-                await _context.VolunteerApplicationAnswers
-                    .CountAsync(x =>
-                        x.VolunteerApplicationId ==
-                        application.VolunteerApplicationId);
-
-            if (answerCount > 0)
-            {
-                passedChecks++;
-
-                result.PassedChecks.Add(
-                    $"{answerCount} application answer(s) found.");
-            }
-            else
-            {
-                result.ReviewItems.Add(
-                    "No application answers were found.");
-            }
+            //
+            // Application questions are intentionally not checked.
+            //
+            // The current volunteer application flow uses:
+            //
+            // 1. CV
+            // 2. Applicant profile
+            // 3. Minimum age
+            // 4. Cover message
+            //
+            // There is no VolunteerApplicationAnswers check here.
+            // ====================================================
 
 
             // ====================================================
@@ -231,6 +269,11 @@ namespace SwiftCare.Services.VolunteerATS
                 result.Status =
                     VolunteerEligibilityStatus.Eligible;
             }
+
+
+            // ====================================================
+            // RETURN RESULT
+            // ====================================================
 
             return result;
         }

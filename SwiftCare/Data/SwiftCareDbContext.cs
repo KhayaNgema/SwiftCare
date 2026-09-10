@@ -150,12 +150,24 @@ namespace SwiftCare.Data
             modelBuilder.Entity<CvExperience>()
                 .HasKey(x => x.CvExperienceId);
 
+            modelBuilder.Entity<VolunteerVoiceInterviewSession>()
+                .HasOne(x => x.VolunteerApplication)
+                .WithOne()
+                .HasForeignKey<VolunteerVoiceInterviewSession>(
+                    x => x.VolunteerApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VolunteerVoiceInterviewSession>()
+                .HasIndex(x => x.SessionToken)
+                .IsUnique();
 
         }
 
         public DbSet<VolunteerApplicationEvaluation>VolunteerApplicationEvaluations{ get; set; }
 
         public DbSet<VolunteerApplicationAudit>VolunteerApplicationAudits { get; set; }
+
+        public DbSet<VolunteerVoiceInterviewSession> VolunteerVoiceInterviewSessions { get; set; }
 
         public DbSet<VolunteerOpportunityScoringConfiguration>VolunteerOpportunityScoringConfigurations{ get; set; }
         public DbSet<SwiftCare.Models.Applicant> Applicants { get; set; }

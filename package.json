@@ -1,0 +1,25 @@
+{
+  "name": "swiftcare",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KhayaNgema/SwiftCare.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KhayaNgema/SwiftCare/issues"
+  },
+  "homepage": "https://github.com/KhayaNgema/SwiftCare#readme",
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.11",
+    "microsoft-cognitiveservices-speech-sdk": "^1.51.0"
+  }
+}

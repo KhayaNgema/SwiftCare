@@ -1,0 +1,69 @@
+﻿@model SwiftCare.ViewModels.VolunteerInterviewCompletedViewModel
+
+@{
+    ViewData["Title"] = "Interview Completed";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+
+<div class="voice-interview-completed-page">
+
+    <div class="voice-interview-completed-card">
+
+        <div class="voice-interview-completed-icon">
+            ✓
+        </div>
+
+
+        <h1>
+            Interview Completed
+        </h1>
+
+
+        <p>
+
+            Thank you,
+            <strong>
+                @Model.ApplicantName
+            </strong>.
+
+            <br />
+
+            Your voice interview for
+            <strong>
+                @Model.OpportunityTitle
+            </strong>
+            has been successfully completed.
+
+        </p>
+
+
+        <div class="voice-interview-completed-opportunity">
+
+            ✓ Interview Successfully Submitted
+
+        </div>
+
+
+        <div class="voice-interview-completed-message">
+
+            Your responses have been securely recorded
+            and will form part of the SwiftCare volunteer
+            selection process.
+
+            <br />
+            <br />
+
+            The SwiftCare team will review your application
+            and contact you regarding the next stage.
+
+        </div>
+
+
+        <div class="voice-interview-completed-brand">
+            SwiftCare
+        </div>
+
+    </div>
+
+</div>

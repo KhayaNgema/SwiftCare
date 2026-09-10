@@ -105,7 +105,6 @@ namespace SwiftCare.Controllers
             return View();
         }
 
-
         [HttpGet]
         public async Task<IActionResult> OpportunityDetails(int opportunityId)
         {
@@ -113,8 +112,6 @@ namespace SwiftCare.Controllers
                 .Include(x => x.Requirements)
                 .Include(x => x.Responsibilities)
                 .Include(x => x.RequiredSkills)
-                .Include(o => o.ApplicationQuestions)
-                    .ThenInclude(q => q.VolunteerQuestion)
                 .FirstOrDefaultAsync(
                     x => x.VolunteerOpportunityId == opportunityId
                 );
@@ -126,7 +123,6 @@ namespace SwiftCare.Controllers
 
             return View(opportunity);
         }
-
 
 
         [HttpGet]
@@ -153,26 +149,14 @@ namespace SwiftCare.Controllers
         // NEW OPPORTUNITY - GET
         // =========================================================
 
+        // =========================================================
+        // NEW OPPORTUNITY - GET
+        // =========================================================
+
         [HttpGet]
-        public async Task<IActionResult> NewOpportunity()
+        public IActionResult NewOpportunity()
         {
             var viewModel = new NewOpportunityViewModel();
-
-            viewModel.AvailableQuestions =
-                await _context.VolunteerQuestions
-                    .Where(q => q.IsActive)
-                    .OrderBy(q => q.DisplayOrder)
-                    .ThenBy(q => q.VolunteerQuestionId)
-                    .Select(q => new VolunteerQuestionSelectionViewModel
-                    {
-                        VolunteerQuestionId = q.VolunteerQuestionId,
-                        Question = q.Question,
-                        QuestionType = q.QuestionType,
-                        IsRequired = q.IsRequired,
-                        Category = q.Category,
-                        Area = q.Area
-                    })
-                    .ToListAsync();
 
             return View(viewModel);
         }
@@ -193,7 +177,6 @@ namespace SwiftCare.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadAvailableQuestions(viewModel);
                 return View(viewModel);
             }
 
@@ -256,7 +239,6 @@ namespace SwiftCare.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadAvailableQuestions(viewModel);
                 return View(viewModel);
             }
 
@@ -404,46 +386,6 @@ namespace SwiftCare.Controllers
 
 
             // =====================================================
-            // ADD SELECTED APPLICATION QUESTIONS
-            // =====================================================
-
-            if (viewModel.SelectedQuestionIds != null &&
-                viewModel.SelectedQuestionIds.Any())
-            {
-                var selectedQuestions =
-                    await _context.VolunteerQuestions
-                        .Where(q =>
-                            q.IsActive &&
-                            viewModel.SelectedQuestionIds
-                                .Contains(q.VolunteerQuestionId))
-                        .OrderBy(q => q.DisplayOrder)
-                        .ThenBy(q => q.VolunteerQuestionId)
-                        .ToListAsync();
-
-                var displayOrder = 1;
-
-                foreach (var question in selectedQuestions)
-                {
-                    _context.VolunteerOpportunityQuestions.Add(
-                        new VolunteerOpportunityQuestion
-                        {
-                            VolunteerOpportunityId =
-                                opportunity.VolunteerOpportunityId,
-
-                            VolunteerQuestionId =
-                                question.VolunteerQuestionId,
-
-                            DisplayOrder =
-                                displayOrder++
-                        }
-                    );
-                }
-
-                await _context.SaveChangesAsync();
-            }
-
-
-            // =====================================================
             // SUCCESS MESSAGE
             // =====================================================
 
@@ -459,29 +401,6 @@ namespace SwiftCare.Controllers
         }
 
 
-        // =========================================================
-        // LOAD AVAILABLE QUESTIONS
-        // =========================================================
-
-        private async Task LoadAvailableQuestions(
-            NewOpportunityViewModel viewModel)
-        {
-            viewModel.AvailableQuestions =
-                await _context.VolunteerQuestions
-                    .Where(q => q.IsActive)
-                    .OrderBy(q => q.DisplayOrder)
-                    .ThenBy(q => q.VolunteerQuestionId)
-                    .Select(q => new VolunteerQuestionSelectionViewModel
-                    {
-                        VolunteerQuestionId = q.VolunteerQuestionId,
-                        Question = q.Question,
-                        QuestionType = q.QuestionType,
-                        IsRequired = q.IsRequired,
-                        Category = q.Category,
-                        Area = q.Area
-                    })
-                    .ToListAsync();
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -549,55 +468,52 @@ namespace SwiftCare.Controllers
             );
         }
 
+        // ============================================================
+        // APPLY - GET
+        // ============================================================
+
         [HttpGet]
         public async Task<IActionResult> Apply(int opportunityId)
         {
-            var opportunity = await _context.VolunteerOpportunities
-                .Include(o => o.ApplicationQuestions)
-                    .ThenInclude(q => q.VolunteerQuestion)
-                .FirstOrDefaultAsync(o =>
-                    o.VolunteerOpportunityId == opportunityId);
+            // ========================================================
+            // LOAD OPPORTUNITY
+            // ========================================================
+
+            var opportunity =
+                await _context.VolunteerOpportunities
+                    .FirstOrDefaultAsync(o =>
+                        o.VolunteerOpportunityId == opportunityId);
 
             if (opportunity == null)
                 return NotFound();
 
-            var viewModel = new VolunteerApplicationViewModel
-            {
-                VolunteerOpportunityId = opportunity.VolunteerOpportunityId,
-                OpportunityTitle = opportunity.Title,
 
-                ApplicationQuestions = opportunity.ApplicationQuestions
-                    .Where(q => q.VolunteerQuestion != null)
-                    .OrderBy(q => q.DisplayOrder)
-                    .Select(q => new VolunteerQuestionSelectionViewModel
-                    {
-                        VolunteerQuestionId =
-                            q.VolunteerQuestionId,
+            // ========================================================
+            // CREATE VIEW MODEL
+            // ========================================================
 
-                        Question =
-                            q.VolunteerQuestion!.Question,
+            var viewModel =
+                new VolunteerApplicationViewModel
+                {
+                    VolunteerOpportunityId =
+                        opportunity.VolunteerOpportunityId,
 
-                        QuestionType =
-                            q.VolunteerQuestion.QuestionType,
+                    OpportunityTitle =
+                        opportunity.Title
+                };
 
-                        IsRequired =
-                            q.VolunteerQuestion.IsRequired,
 
-                        Category =
-                            q.VolunteerQuestion.Category,
-
-                        Area =
-                            q.VolunteerQuestion.Area,
-
-                        DisplayOrder =
-                            q.DisplayOrder
-                    })
-                    .ToList()
-            };
+            // ========================================================
+            // RETURN VIEW
+            // ========================================================
 
             return View(viewModel);
         }
 
+
+        // ============================================================
+        // APPLY - POST
+        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -610,8 +526,6 @@ namespace SwiftCare.Controllers
 
             var opportunity =
                 await _context.VolunteerOpportunities
-                    .Include(x => x.ApplicationQuestions)
-                        .ThenInclude(x => x.VolunteerQuestion)
                     .FirstOrDefaultAsync(x =>
                         x.VolunteerOpportunityId ==
                         viewModel.VolunteerOpportunityId);
@@ -619,53 +533,13 @@ namespace SwiftCare.Controllers
             if (opportunity == null)
                 return NotFound();
 
+
+            // ============================================================
+            // SET OPPORTUNITY TITLE
+            // ============================================================
+
             viewModel.OpportunityTitle =
                 opportunity.Title;
-
-
-            // ============================================================
-            // LOAD QUESTIONS
-            // ============================================================
-
-            var assignedQuestions =
-                opportunity.ApplicationQuestions
-                    .Where(x =>
-                        x.VolunteerQuestion != null)
-                    .OrderBy(x => x.DisplayOrder)
-                    .ToList();
-
-            if (viewModel.QuestionAnswers == null)
-            {
-                viewModel.QuestionAnswers =
-                    new Dictionary<int, string>();
-            }
-
-
-            // ============================================================
-            // VALIDATE REQUIRED QUESTIONS
-            // ============================================================
-
-            foreach (var assignedQuestion in assignedQuestions)
-            {
-                var question =
-                    assignedQuestion.VolunteerQuestion!;
-
-                if (!question.IsRequired)
-                    continue;
-
-                var hasAnswer =
-                    viewModel.QuestionAnswers.TryGetValue(
-                        question.VolunteerQuestionId,
-                        out var answer);
-
-                if (!hasAnswer ||
-                    string.IsNullOrWhiteSpace(answer))
-                {
-                    ModelState.AddModelError(
-                        $"QuestionAnswers[{question.VolunteerQuestionId}]",
-                        "This question requires an answer.");
-                }
-            }
 
 
             // ============================================================
@@ -728,40 +602,6 @@ namespace SwiftCare.Controllers
 
             if (!ModelState.IsValid)
             {
-                viewModel.ApplicationQuestions =
-                    assignedQuestions
-                        .Select(x =>
-                            new VolunteerQuestionSelectionViewModel
-                            {
-                                VolunteerQuestionId =
-                                    x.VolunteerQuestionId,
-
-                                Question =
-                                    x.VolunteerQuestion!.Question,
-
-                                QuestionType =
-                                    x.VolunteerQuestion.QuestionType,
-
-                                IsRequired =
-                                    x.VolunteerQuestion.IsRequired,
-
-                                Category =
-                                    x.VolunteerQuestion.Category,
-
-                                Area =
-                                    x.VolunteerQuestion.Area,
-
-                                DisplayOrder =
-                                    x.DisplayOrder
-                            })
-                        .ToList();
-
-                viewModel.SelectedQuestionIds =
-                    assignedQuestions
-                        .Select(x =>
-                            x.VolunteerQuestionId)
-                        .ToList();
-
                 return View(viewModel);
             }
 
@@ -802,9 +642,11 @@ namespace SwiftCare.Controllers
                 var applicant =
                     new Applicant
                     {
-                        UserName = email,
+                        UserName =
+                            email,
 
-                        Email = email,
+                        Email =
+                            email,
 
                         FirstName =
                             viewModel.FirstName.Trim(),
@@ -832,6 +674,7 @@ namespace SwiftCare.Controllers
 
                         ModifiedBy =
                             "Anonymous Application",
+
 
                         // ------------------------------------------------
                         // PROFILE FIELDS
@@ -895,7 +738,8 @@ namespace SwiftCare.Controllers
                             viewModel.GitHubUrl?
                                 .Trim(),
 
-                        IsProfileComplete = false,
+                        IsProfileComplete =
+                            false,
 
                         ProfileLastUpdated =
                             DateTime.UtcNow
@@ -928,40 +772,6 @@ namespace SwiftCare.Controllers
                             "",
                             error.Description);
                     }
-
-                    viewModel.ApplicationQuestions =
-                        assignedQuestions
-                            .Select(x =>
-                                new VolunteerQuestionSelectionViewModel
-                                {
-                                    VolunteerQuestionId =
-                                        x.VolunteerQuestionId,
-
-                                    Question =
-                                        x.VolunteerQuestion!.Question,
-
-                                    QuestionType =
-                                        x.VolunteerQuestion.QuestionType,
-
-                                    IsRequired =
-                                        x.VolunteerQuestion.IsRequired,
-
-                                    Category =
-                                        x.VolunteerQuestion.Category,
-
-                                    Area =
-                                        x.VolunteerQuestion.Area,
-
-                                    DisplayOrder =
-                                        x.DisplayOrder
-                                })
-                            .ToList();
-
-                    viewModel.SelectedQuestionIds =
-                        assignedQuestions
-                            .Select(x =>
-                                x.VolunteerQuestionId)
-                            .ToList();
 
                     return View(viewModel);
                 }
@@ -1020,7 +830,8 @@ namespace SwiftCare.Controllers
                 applicantId =
                     applicant.Id;
 
-                accountCreated = true;
+                accountCreated =
+                    true;
             }
             else
             {
@@ -1097,11 +908,15 @@ namespace SwiftCare.Controllers
                 parsedCv =
                     new ParsedCv
                     {
-                        ExtractionSuccessful = false,
+                        ExtractionSuccessful =
+                            false,
+
                         ExtractionMessage =
                             "CV extraction failed: " +
                             ex.Message,
-                        RawText = null
+
+                        RawText =
+                            null
                     };
             }
 
@@ -1113,11 +928,11 @@ namespace SwiftCare.Controllers
             if (parsedCv != null &&
                 parsedCv.ExtractionSuccessful)
             {
+                // --------------------------------------------------------
+                // PERSONAL INFORMATION
+                // --------------------------------------------------------
+
                 /*
-                 * --------------------------------------------------------
-                 * PERSONAL INFORMATION
-                 * --------------------------------------------------------
-                 *
                  * We only replace these when Azure actually found
                  * a value.
                  */
@@ -1329,13 +1144,14 @@ namespace SwiftCare.Controllers
 
             if (parsedCv != null)
             {
-                parsedCv.VolunteerApplicationId = 0;
+                parsedCv.VolunteerApplicationId =
+                    0;
 
                 /*
                  * IMPORTANT:
                  *
-                 * If ParsedCv has been updated to use ApplicantId,
-                 * set it here instead:
+                 * If ParsedCv uses ApplicantId,
+                 * set it here:
                  *
                  * parsedCv.ApplicantId =
                  *     applicantProfile.Id;
@@ -1397,47 +1213,6 @@ namespace SwiftCare.Controllers
 
             _context.VolunteerApplications.Add(
                 application);
-
-            await _context.SaveChangesAsync();
-
-
-            // ============================================================
-            // SAVE APPLICATION QUESTION ANSWERS
-            // ============================================================
-
-            foreach (var assignedQuestion
-                in assignedQuestions)
-            {
-                var question =
-                    assignedQuestion.VolunteerQuestion!;
-
-                if (!viewModel.QuestionAnswers.TryGetValue(
-                        question.VolunteerQuestionId,
-                        out var submittedAnswer))
-                {
-                    continue;
-                }
-
-                var answer =
-                    submittedAnswer?.Trim();
-
-                if (string.IsNullOrWhiteSpace(answer))
-                    continue;
-
-                _context.VolunteerApplicationAnswers.Add(
-                    new VolunteerApplicationAnswer
-                    {
-                        VolunteerApplicationId =
-                            application.VolunteerApplicationId,
-
-                        VolunteerQuestionId =
-                            question.VolunteerQuestionId,
-
-                        Answer =
-                            answer
-                    });
-            }
-
 
             await _context.SaveChangesAsync();
 

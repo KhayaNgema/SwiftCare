@@ -1,0 +1,2381 @@
+﻿@model SwiftCare.ViewModels.VolunteerInterviewViewModel
+
+@{
+    ViewData["Title"] = "Volunteer Interview";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<div class="interview-page">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <div class="interview-shell">
+
+        <div class="interview-header">
+
+            <div class="header-left">
+
+                <div class="bot-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+
+                <div>
+
+                    <div class="interview-title">
+                        Volunteer Interview
+                    </div>
+
+                    <div class="connection-status" id="connectionStatus">
+                        <span class="status-dot"></span>
+                        Connecting...
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="header-right">
+
+                <div class="opportunity-name"
+                     id="opportunityName">
+                    @Model.OpportunityTitle
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             PROGRESS
+             ======================================================== -->
+
+        <div class="interview-progress">
+
+            <div class="progress-top">
+
+                <span>
+                    Interview progress
+                </span>
+
+                <strong id="progressText">
+                    Question @Model.QuestionNumber of @Model.TotalQuestions
+                </strong>
+
+            </div>
+
+            <div class="progress-track">
+
+                <div class="progress-fill"
+                     id="progressFill"
+                     style="width:@(
+                                         Model.TotalQuestions > 0
+                                             ? (Model.QuestionNumber * 100 / Model.TotalQuestions)
+                                             : 0
+                                                          )%;">
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             CHAT
+             ======================================================== -->
+
+        <div class="chat-container"
+             id="chatContainer">
+
+            <div class="connecting-message"
+                 id="connectingMessage">
+
+                <div class="connecting-spinner"></div>
+
+                <div>
+                    Connecting to your interview...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
+             COMPOSER
+             ======================================================== -->
+
+        <div class="composer-area"
+             id="composerArea">
+
+            <div class="composer">
+
+                <button type="button"
+                        class="icon-button microphone-button"
+                        id="microphoneButton"
+                        title="Speak your answer">
+
+                    <i class="bi bi-mic-fill"
+                       id="microphoneIcon"></i>
+
+                </button>
+
+                <textarea id="answerInput"
+                          class="answer-input"
+                          rows="1"
+                          maxlength="3000"
+                          placeholder="Type your answer..."
+                          disabled></textarea>
+
+                <button type="button"
+                        class="send-button"
+                        id="sendButton"
+                        disabled>
+
+                    <i class="bi bi-send-fill"></i>
+
+                </button>
+
+            </div>
+
+            <div class="composer-footer">
+
+                <span id="characterCount">
+                    0 / 3000
+                </span>
+
+                <span id="microphoneStatus">
+                    You can type or use your microphone.
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <!-- ============================================================
+         SIGNALR
+         ============================================================ -->
+
+    <script src="~/lib/signalr/signalr.js"></script>
+
+    <!-- ============================================================
+         AZURE SPEECH SDK
+         ============================================================ -->
+
+    <script src="~/lib/speech/speech-sdk.js"></script>
+
+
+    <script>
+
+        "use strict";
+
+
+        // ============================================================
+        // SESSION
+        // ============================================================
+
+        const interviewToken =
+            @Html.Raw(
+                    System.Text.Json.JsonSerializer.Serialize(Model.Token)
+            );
+
+        console.log(
+            "[SWIFTCARE INTERVIEW] Token loaded:",
+            interviewToken ? "YES" : "NO"
+        );
+
+
+        // ============================================================
+        // ELEMENTS
+        // ============================================================
+
+        const chatContainer =
+            document.getElementById("chatContainer");
+
+        const answerInput =
+            document.getElementById("answerInput");
+
+        const sendButton =
+            document.getElementById("sendButton");
+
+        const microphoneButton =
+            document.getElementById("microphoneButton");
+
+        const microphoneIcon =
+            document.getElementById("microphoneIcon");
+
+        const microphoneStatus =
+            document.getElementById("microphoneStatus");
+
+        const connectionStatus =
+            document.getElementById("connectionStatus");
+
+        const connectingMessage =
+            document.getElementById("connectingMessage");
+
+        const composerArea =
+            document.getElementById("composerArea");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const characterCount =
+            document.getElementById("characterCount");
+
+        const opportunityName =
+            document.getElementById("opportunityName");
+
+
+        // ============================================================
+        // STATE
+        // ============================================================
+
+        let currentQuestionNumber = 0;
+        let totalQuestions = 0;
+
+        let currentQuestionId = null;
+
+        let interviewCompleted = false;
+        let isSubmitting = false;
+
+
+        // ============================================================
+        // AZURE SPEECH STATE
+        // ============================================================
+
+        let speechRecognizer = null;
+
+        let speechConfig = null;
+
+        let audioConfig = null;
+
+        let isListening = false;
+
+        let speechFinalTranscript = "";
+
+        let speechInterimTranscript = "";
+
+        let speechStarting = false;
+
+        let speechStopping = false;
+
+
+        // ============================================================
+        // SIGNALR CONNECTION
+        // ============================================================
+
+        const connection =
+            new signalR.HubConnectionBuilder()
+
+                .withUrl("/volunteerInterviewHub")
+
+                .withAutomaticReconnect()
+
+                .configureLogging(
+                    signalR.LogLevel.Information
+                )
+
+                .build();
+
+
+        // ============================================================
+        // CONNECTION STATUS
+        // ============================================================
+
+        function setConnectionStatus(
+            text,
+            connected
+        ) {
+
+            connectionStatus.innerHTML = "";
+
+            const dot =
+                document.createElement("span");
+
+            dot.className =
+                "status-dot " +
+                (
+                    connected
+                        ? "connected"
+                        : "disconnected"
+                );
+
+            connectionStatus.appendChild(dot);
+
+            const label =
+                document.createElement("span");
+
+            label.textContent = text;
+
+            connectionStatus.appendChild(label);
+
+        }
+
+
+        // ============================================================
+        // SCROLL CHAT
+        // ============================================================
+
+        function scrollChatToBottom() {
+
+            setTimeout(() => {
+
+                chatContainer.scrollTo({
+
+                    top:
+                        chatContainer.scrollHeight,
+
+                    behavior:
+                        "smooth"
+
+                });
+
+            }, 50);
+
+        }
+
+
+        // ============================================================
+        // REMOVE CONNECTING MESSAGE
+        // ============================================================
+
+        function removeConnectingMessage() {
+
+            const existing =
+                document.getElementById(
+                    "connectingMessage"
+                );
+
+            if (existing) {
+
+                existing.remove();
+
+            }
+
+        }
+
+
+        // ============================================================
+        // BOT MESSAGE
+        // ============================================================
+
+        function addBotMessage(
+            text,
+            questionNumber,
+            speak = true
+        ) {
+
+            if (!text)
+                return;
+
+
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "message-row bot-row";
+
+
+            const avatar =
+                document.createElement("div");
+
+            avatar.className =
+                "message-avatar";
+
+            avatar.innerHTML =
+                '<i class="bi bi-robot"></i>';
+
+
+            const bubble =
+                document.createElement("div");
+
+            bubble.className =
+                "message-bubble bot-bubble";
+
+
+            const textElement =
+                document.createElement("div");
+
+            textElement.className =
+                "message-text";
+
+            textElement.textContent =
+                text;
+
+            bubble.appendChild(
+                textElement
+            );
+
+
+            // --------------------------------------------------------
+            // SPEAKER BUTTON
+            // --------------------------------------------------------
+
+            const actions =
+                document.createElement("div");
+
+            actions.className =
+                "message-actions";
+
+
+            const speakButton =
+                document.createElement("button");
+
+            speakButton.type =
+                "button";
+
+            speakButton.className =
+                "speak-button";
+
+            speakButton.title =
+                "Read question aloud";
+
+            speakButton.innerHTML =
+                '<i class="bi bi-volume-up-fill"></i>';
+
+
+            speakButton.addEventListener(
+                "click",
+                function () {
+
+                    speakText(text);
+
+                }
+            );
+
+
+            actions.appendChild(
+                speakButton
+            );
+
+            bubble.appendChild(
+                actions
+            );
+
+
+            // --------------------------------------------------------
+            // QUESTION NUMBER
+            // --------------------------------------------------------
+
+            if (questionNumber) {
+
+                const meta =
+                    document.createElement("div");
+
+                meta.className =
+                    "message-meta";
+
+                meta.textContent =
+                    "Question " +
+                    questionNumber;
+
+                bubble.appendChild(
+                    meta
+                );
+
+            }
+
+
+            wrapper.appendChild(
+                avatar
+            );
+
+            wrapper.appendChild(
+                bubble
+            );
+
+            chatContainer.appendChild(
+                wrapper
+            );
+
+
+            scrollChatToBottom();
+
+
+            if (speak) {
+
+                speakText(text);
+
+            }
+
+        }
+
+
+        // ============================================================
+        // APPLICANT MESSAGE
+        // ============================================================
+
+        function addApplicantMessage(
+            text,
+            questionNumber
+        ) {
+
+            if (!text)
+                return;
+
+
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "message-row applicant-row";
+
+
+            const bubble =
+                document.createElement("div");
+
+            bubble.className =
+                "message-bubble applicant-bubble";
+
+
+            const textElement =
+                document.createElement("div");
+
+            textElement.className =
+                "message-text";
+
+            textElement.textContent =
+                text;
+
+            bubble.appendChild(
+                textElement
+            );
+
+
+            if (questionNumber) {
+
+                const meta =
+                    document.createElement("div");
+
+                meta.className =
+                    "message-meta applicant-meta";
+
+                meta.textContent =
+                    "Question " +
+                    questionNumber;
+
+                bubble.appendChild(
+                    meta
+                );
+
+            }
+
+
+            wrapper.appendChild(
+                bubble
+            );
+
+            chatContainer.appendChild(
+                wrapper
+            );
+
+
+            scrollChatToBottom();
+
+        }
+
+
+        // ============================================================
+        // PROGRESS
+        // ============================================================
+
+        function updateProgress(
+            questionNumber,
+            total
+        ) {
+
+            currentQuestionNumber =
+                Number(
+                    questionNumber || 0
+                );
+
+            totalQuestions =
+                Number(
+                    total || 0
+                );
+
+
+            if (totalQuestions <= 0) {
+
+                totalQuestions = 1;
+
+            }
+
+
+            const percentage =
+                Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        (
+                            currentQuestionNumber /
+                            totalQuestions
+                        ) * 100
+                    )
+                );
+
+
+            progressText.textContent =
+                "Question " +
+                currentQuestionNumber +
+                " of " +
+                totalQuestions;
+
+
+            progressFill.style.width =
+                percentage + "%";
+
+        }
+
+
+        // ============================================================
+        // SPEECH SYNTHESIS
+        // ============================================================
+
+        function speakText(text) {
+
+            if (
+                !(
+                    "speechSynthesis"
+                    in window
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            if (!text)
+                return;
+
+
+            try {
+
+                window.speechSynthesis.cancel();
+
+
+                const utterance =
+                    new SpeechSynthesisUtterance(
+                        text
+                    );
+
+
+                utterance.lang =
+                    "en-ZA";
+
+                utterance.rate =
+                    0.95;
+
+                utterance.pitch =
+                    1;
+
+
+                window.speechSynthesis.speak(
+                    utterance
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "[SWIFTCARE INTERVIEW] Speech synthesis error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ============================================================
+        // INTERVIEW STATE
+        // ============================================================
+
+        connection.on(
+            "InterviewState",
+            function (state) {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] InterviewState:",
+                    state
+                );
+
+
+                removeConnectingMessage();
+
+
+                setConnectionStatus(
+                    "Connected",
+                    true
+                );
+
+
+                if (!state)
+                    return;
+
+
+                opportunityName.textContent =
+                    state.opportunityTitle ||
+                    "Volunteer Interview";
+
+
+                updateProgress(
+                    state.currentQuestionNumber,
+                    state.totalQuestions
+                );
+
+
+                // ----------------------------------------------------
+                // STOP SPEECH IF NECESSARY
+                // ----------------------------------------------------
+
+                stopAzureSpeechRecognition();
+
+
+                // ----------------------------------------------------
+                // CLEAR CHAT
+                // ----------------------------------------------------
+
+                chatContainer.innerHTML = "";
+
+
+                // ----------------------------------------------------
+                // HISTORY
+                // ----------------------------------------------------
+
+                if (
+                    Array.isArray(
+                        state.history
+                    )
+                ) {
+
+                    state.history.forEach(
+                        function (item) {
+
+                            addBotMessage(
+                                item.question,
+                                item.questionNumber,
+                                false
+                            );
+
+
+                            addApplicantMessage(
+                                item.answer,
+                                item.questionNumber
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                // ----------------------------------------------------
+                // CURRENT QUESTION
+                // ----------------------------------------------------
+
+                currentQuestionId =
+                    state.currentQuestionId;
+
+
+                if (state.currentQuestion) {
+
+                    addBotMessage(
+                        state.currentQuestion,
+                        state.currentQuestionNumber,
+                        true
+                    );
+
+                }
+
+
+                // ----------------------------------------------------
+                // EXISTING ANSWER
+                // ----------------------------------------------------
+
+                if (state.existingAnswer) {
+
+                    answerInput.value =
+                        state.existingAnswer;
+
+                }
+                else {
+
+                    answerInput.value =
+                        "";
+
+                }
+
+
+                updateCharacterCount();
+
+                autoResizeTextarea();
+
+                enableComposer();
+
+            }
+        );
+
+
+        // ============================================================
+        // BOT QUESTION
+        // ============================================================
+
+        connection.on(
+            "BotQuestion",
+            function (data) {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] BotQuestion:",
+                    data
+                );
+
+
+                removeConnectingMessage();
+
+
+                if (!data)
+                    return;
+
+
+                stopAzureSpeechRecognition();
+
+
+                currentQuestionId =
+                    data.questionId;
+
+
+                updateProgress(
+                    data.questionNumber,
+                    data.totalQuestions
+                );
+
+
+                addBotMessage(
+                    data.question,
+                    data.questionNumber,
+                    true
+                );
+
+
+                answerInput.value =
+                    data.existingAnswer || "";
+
+
+                updateCharacterCount();
+
+                autoResizeTextarea();
+
+
+                enableComposer();
+
+
+                answerInput.focus();
+
+            }
+        );
+
+
+        // ============================================================
+        // APPLICANT MESSAGE
+        // ============================================================
+
+        connection.on(
+            "ApplicantMessage",
+            function (data) {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] ApplicantMessage:",
+                    data
+                );
+
+
+                if (!data)
+                    return;
+
+
+                addApplicantMessage(
+                    data.answer,
+                    data.questionNumber
+                );
+
+
+                disableComposerWhileProcessing();
+
+            }
+        );
+
+
+        // ============================================================
+        // INTERVIEW COMPLETED
+        // ============================================================
+
+        connection.on(
+            "InterviewCompleted",
+            function (message) {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] InterviewCompleted:",
+                    message
+                );
+
+
+                interviewCompleted =
+                    true;
+
+
+                stopAzureSpeechRecognition();
+
+
+                if (
+                    "speechSynthesis"
+                    in window
+                ) {
+
+                    window.speechSynthesis.cancel();
+
+                }
+
+
+                addBotMessage(
+                    message ||
+                    "Thank you. Your interview has been completed successfully.",
+                    null,
+                    true
+                );
+
+
+                disableComposer();
+
+
+                setConnectionStatus(
+                    "Interview completed",
+                    true
+                );
+
+
+                progressFill.style.width =
+                    "100%";
+
+
+                setTimeout(
+                    function () {
+
+                        window.location.href =
+                            "/VolunteerInterview/Completed?token=" +
+                            encodeURIComponent(
+                                interviewToken
+                            );
+
+                    },
+                    2500
+                );
+
+            }
+        );
+
+
+        // ============================================================
+        // RECONNECTING
+        // ============================================================
+
+        connection.onreconnecting(
+            function (error) {
+
+                console.warn(
+                    "[SWIFTCARE INTERVIEW] SignalR reconnecting:",
+                    error
+                );
+
+
+                setConnectionStatus(
+                    "Reconnecting...",
+                    false
+                );
+
+
+                stopAzureSpeechRecognition();
+
+
+                disableComposer();
+
+            }
+        );
+
+
+        // ============================================================
+        // RECONNECTED
+        // ============================================================
+
+        connection.onreconnected(
+            async function (connectionId) {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] SignalR reconnected:",
+                    connectionId
+                );
+
+
+                setConnectionStatus(
+                    "Connected",
+                    true
+                );
+
+
+                try {
+
+                    await connection.invoke(
+                        "JoinInterview",
+                        interviewToken
+                    );
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "[SWIFTCARE INTERVIEW] Rejoin failed:",
+                        error
+                    );
+
+
+                    showError(
+                        "We reconnected, but could not restore the interview. Please refresh the page."
+                    );
+
+                }
+
+            }
+        );
+
+
+        // ============================================================
+        // CONNECTION CLOSED
+        // ============================================================
+
+        connection.onclose(
+            function (error) {
+
+                console.error(
+                    "[SWIFTCARE INTERVIEW] SignalR closed:",
+                    error
+                );
+
+
+                stopAzureSpeechRecognition();
+
+
+                setConnectionStatus(
+                    "Disconnected",
+                    false
+                );
+
+
+                disableComposer();
+
+            }
+        );
+
+
+        // ============================================================
+        // START SIGNALR
+        // ============================================================
+
+        async function startInterviewConnection() {
+
+            try {
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] Starting SignalR..."
+                );
+
+
+                setConnectionStatus(
+                    "Connecting...",
+                    false
+                );
+
+
+                await connection.start();
+
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] SignalR connected."
+                );
+
+
+                setConnectionStatus(
+                    "Connected",
+                    true
+                );
+
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] Joining interview..."
+                );
+
+
+                await connection.invoke(
+                    "JoinInterview",
+                    interviewToken
+                );
+
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] JoinInterview completed."
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "[SWIFTCARE INTERVIEW] SignalR startup error:",
+                    error
+                );
+
+
+                setConnectionStatus(
+                    "Connection failed",
+                    false
+                );
+
+
+                showError(
+                    "We could not connect to the interview. Please refresh the page."
+                );
+
+            }
+
+        }
+
+
+        // ============================================================
+        // SEND ANSWER
+        // ============================================================
+
+        async function sendAnswer() {
+
+            if (interviewCompleted)
+                return;
+
+
+            if (isSubmitting)
+                return;
+
+
+            const answer =
+                answerInput.value.trim();
+
+
+            if (!answer) {
+
+                answerInput.focus();
+
+                return;
+
+            }
+
+
+            if (
+                connection.state !==
+                signalR.HubConnectionState.Connected
+            ) {
+
+                showError(
+                    "The interview is not connected yet."
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                isSubmitting =
+                    true;
+
+
+                // ----------------------------------------------------
+                // STOP AZURE SPEECH BEFORE SUBMITTING
+                // ----------------------------------------------------
+
+                await stopAzureSpeechRecognition();
+
+
+                disableComposerWhileProcessing();
+
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] Sending answer..."
+                );
+
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * We do NOT send questionId.
+                 *
+                 * The server knows the current question.
+                 */
+
+                await connection.invoke(
+                    "SubmitAnswer",
+                    interviewToken,
+                    answer
+                );
+
+
+                console.log(
+                    "[SWIFTCARE INTERVIEW] Answer submitted."
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "[SWIFTCARE INTERVIEW] SubmitAnswer error:",
+                    error
+                );
+
+
+                showError(
+                    getSignalRErrorMessage(error)
+                );
+
+
+                enableComposer();
+
+            }
+            finally {
+
+                isSubmitting =
+                    false;
+
+            }
+
+        }
+
+
+        // ============================================================
+        // SEND BUTTON
+        // ============================================================
+
+        sendButton.addEventListener(
+            "click",
+            function () {
+
+                sendAnswer();
+
+            }
+        );
+
+
+        // ============================================================
+        // ENTER TO SEND
+        // ============================================================
+
+        answerInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    sendAnswer();
+
+                }
+
+            }
+        );
+
+
+        // ============================================================
+        // CHARACTER COUNT
+        // ============================================================
+
+        function updateCharacterCount() {
+
+            const length =
+                answerInput.value.length;
+
+
+            characterCount.textContent =
+                length +
+                " / 3000";
+
+        }
+
+
+        answerInput.addEventListener(
+            "input",
+            function () {
+
+                updateCharacterCount();
+
+                autoResizeTextarea();
+
+            }
+        );
+
+
+        // ============================================================
+        // AUTO RESIZE TEXTAREA
+        // ============================================================
+
+        function autoResizeTextarea() {
+
+            answerInput.style.height =
+                "auto";
+
+
+            answerInput.style.height =
+                Math.min(
+                    answerInput.scrollHeight,
+                    180
+                ) + "px";
+
+        }
+
+
+        // ============================================================
+        // ENABLE COMPOSER
+        // ============================================================
+
+        function enableComposer() {
+
+            if (interviewCompleted)
+                return;
+
+
+            answerInput.disabled =
+                false;
+
+
+            sendButton.disabled =
+                false;
+
+
+            microphoneButton.disabled =
+                false;
+
+
+            microphoneStatus.textContent =
+                "You can type or use your microphone.";
+
+        }
+
+
+        // ============================================================
+        // DISABLE COMPOSER
+        // ============================================================
+
+        function disableComposer() {
+
+            answerInput.disabled =
+                true;
+
+
+            sendButton.disabled =
+                true;
+
+
+            microphoneButton.disabled =
+                true;
+
+
+            if (isListening) {
+
+                stopAzureSpeechRecognition();
+
+            }
+
+        }
+
+
+        // ============================================================
+        // DISABLE WHILE PROCESSING
+        // ============================================================
+
+        function disableComposerWhileProcessing() {
+
+            answerInput.disabled =
+                true;
+
+
+            sendButton.disabled =
+                true;
+
+
+            microphoneButton.disabled =
+                true;
+
+
+            microphoneStatus.textContent =
+                "Processing your answer...";
+
+        }
+
+
+        // ============================================================
+        // ERROR
+        // ============================================================
+
+        function showError(message) {
+
+            if (!message)
+                return;
+
+
+            const wrapper =
+                document.createElement("div");
+
+
+            wrapper.className =
+                "system-message error-message";
+
+
+            wrapper.textContent =
+                message;
+
+
+            chatContainer.appendChild(
+                wrapper
+            );
+
+
+            scrollChatToBottom();
+
+        }
+
+
+        // ============================================================
+        // SIGNALR ERROR MESSAGE
+        // ============================================================
+
+        function getSignalRErrorMessage(error) {
+
+            if (!error) {
+
+                return "Something went wrong.";
+
+            }
+
+
+            let message =
+                error.message ||
+                error.toString();
+
+
+            if (
+                message.includes(
+                    "Invocation canceled"
+                )
+            ) {
+
+                return "The connection was interrupted. Please try again.";
+
+            }
+
+
+            return message;
+
+        }
+
+
+        // ============================================================
+        // AZURE SPEECH SDK CHECK
+        // ============================================================
+
+        function isAzureSpeechAvailable() {
+
+            if (
+                typeof SpeechSDK ===
+                "undefined"
+            ) {
+
+                console.error(
+                    "[SWIFTCARE SPEECH] Azure Speech SDK was not loaded."
+                );
+
+                return false;
+
+            }
+
+
+            return true;
+
+        }
+
+
+        // ============================================================
+        // GET AZURE SPEECH TOKEN
+        // ============================================================
+
+        async function getAzureSpeechToken() {
+
+            if (!interviewToken) {
+
+                throw new Error(
+                    "Interview session token is missing."
+                );
+
+            }
+
+
+            const url =
+                "/VolunteerInterview/SpeechToken?token=" +
+                encodeURIComponent(
+                    interviewToken
+                );
+
+
+            console.log(
+                "[SWIFTCARE SPEECH] Requesting Azure Speech token..."
+            );
+
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        },
+
+                        cache:
+                            "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                let serverMessage =
+                    "Unable to obtain Azure Speech token.";
+
+
+                try {
+
+                    const errorData =
+                        await response.json();
+
+
+                    if (
+                        errorData &&
+                        errorData.message
+                    ) {
+
+                        serverMessage =
+                            errorData.message;
+
+                    }
+
+                }
+                catch (_) {
+
+                    // Ignore JSON parsing failure.
+
+                }
+
+
+                throw new Error(
+                    serverMessage
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !data ||
+                !data.success ||
+                !data.token ||
+                !data.region
+            ) {
+
+                throw new Error(
+                    "Azure Speech token response was invalid."
+                );
+
+            }
+
+
+            console.log(
+                "[SWIFTCARE SPEECH] Azure Speech token received."
+            );
+
+
+            return data;
+
+        }
+
+
+        // ============================================================
+        // BUILD AZURE SPEECH RECOGNIZER
+        // ============================================================
+
+        async function createAzureSpeechRecognizer() {
+
+            if (
+                !isAzureSpeechAvailable()
+            ) {
+
+                throw new Error(
+                    "Azure Speech SDK is not available on this page."
+                );
+
+            }
+
+
+            const speechData =
+                await getAzureSpeechToken();
+
+
+            // --------------------------------------------------------
+            // CREATE SPEECH CONFIG
+            // --------------------------------------------------------
+
+            speechConfig =
+                SpeechSDK.SpeechConfig
+                    .fromAuthorizationToken(
+                        speechData.token,
+                        speechData.region
+                    );
+
+
+            // --------------------------------------------------------
+            // SOUTH AFRICAN ENGLISH
+            // --------------------------------------------------------
+
+            speechConfig.speechRecognitionLanguage =
+                "en-ZA";
+
+
+            // --------------------------------------------------------
+            // MICROPHONE
+            // --------------------------------------------------------
+
+            audioConfig =
+                SpeechSDK.AudioConfig
+                    .fromDefaultMicrophoneInput();
+
+
+            // --------------------------------------------------------
+            // RECOGNIZER
+            // --------------------------------------------------------
+
+            speechRecognizer =
+                new SpeechSDK.SpeechRecognizer(
+                    speechConfig,
+                    audioConfig
+                );
+
+
+            // --------------------------------------------------------
+            // RECOGNIZING
+            //
+            // Interim/live speech.
+            // --------------------------------------------------------
+
+            speechRecognizer.recognizing =
+                function (sender, event) {
+
+                    if (!event || !event.result)
+                        return;
+
+
+                    speechInterimTranscript =
+                        event.result.text ||
+                        "";
+
+
+                    updateSpeechTextBox();
+
+                };
+
+
+            // --------------------------------------------------------
+            // RECOGNIZED
+            //
+            // Final speech segments.
+            // --------------------------------------------------------
+
+            speechRecognizer.recognized =
+                function (sender, event) {
+
+                    if (!event || !event.result)
+                        return;
+
+
+                    if (
+                        event.result.reason ===
+                        SpeechSDK.ResultReason.RecognizedSpeech
+                    ) {
+
+                        const text =
+                            (
+                                event.result.text ||
+                                ""
+                            ).trim();
+
+
+                        if (text) {
+
+                            speechFinalTranscript =
+                                (
+                                    speechFinalTranscript +
+                                    " " +
+                                    text
+                                ).trim();
+
+                        }
+
+
+                        speechInterimTranscript =
+                            "";
+
+
+                        updateSpeechTextBox();
+
+                    }
+
+                    else if (
+                        event.result.reason ===
+                        SpeechSDK.ResultReason.NoMatch
+                    ) {
+
+                        console.log(
+                            "[SWIFTCARE SPEECH] No speech match."
+                        );
+
+                    }
+
+                };
+
+
+            // --------------------------------------------------------
+            // CANCELED
+            // --------------------------------------------------------
+
+            speechRecognizer.canceled =
+                function (sender, event) {
+
+                    console.error(
+                        "[SWIFTCARE SPEECH] Recognition canceled:",
+                        event
+                    );
+
+
+                    let message =
+                        "Voice recognition stopped. You can type your answer.";
+
+
+                    if (event) {
+
+                        if (
+                            event.errorDetails
+                        ) {
+
+                            console.error(
+                                "[SWIFTCARE SPEECH] Error details:",
+                                event.errorDetails
+                            );
+
+                        }
+
+
+                        if (
+                            event.errorCode
+                        ) {
+
+                            console.error(
+                                "[SWIFTCARE SPEECH] Error code:",
+                                event.errorCode
+                            );
+
+                        }
+
+                    }
+
+
+                    isListening =
+                        false;
+
+
+                    speechStarting =
+                        false;
+
+                    speechStopping =
+                        false;
+
+
+                    resetMicrophoneButton();
+
+
+                    microphoneStatus.textContent =
+                        message;
+
+                };
+
+
+            // --------------------------------------------------------
+            // SESSION STOPPED
+            // --------------------------------------------------------
+
+            speechRecognizer.sessionStopped =
+                function () {
+
+                    console.log(
+                        "[SWIFTCARE SPEECH] Speech session stopped."
+                    );
+
+
+                    if (!isListening) {
+
+                        resetMicrophoneButton();
+
+                    }
+
+                };
+
+
+            return speechRecognizer;
+
+        }
+
+
+        // ============================================================
+        // UPDATE TEXTBOX FROM SPEECH
+        // ============================================================
+
+        function updateSpeechTextBox() {
+
+            const finalText =
+                speechFinalTranscript.trim();
+
+
+            const interimText =
+                speechInterimTranscript.trim();
+
+
+            let combinedText =
+                finalText;
+
+
+            if (interimText) {
+
+                combinedText =
+                    (
+                        finalText +
+                        " " +
+                        interimText
+                    ).trim();
+
+            }
+
+
+            if (
+                combinedText.length >
+                3000
+            ) {
+
+                combinedText =
+                    combinedText.substring(
+                        0,
+                        3000
+                    );
+
+            }
+
+
+            answerInput.value =
+                combinedText;
+
+
+            updateCharacterCount();
+
+            autoResizeTextarea();
+
+        }
+
+
+        // ============================================================
+        // START AZURE SPEECH RECOGNITION
+        // ============================================================
+
+        async function startAzureSpeechRecognition() {
+
+            if (interviewCompleted)
+                return;
+
+
+            if (isSubmitting)
+                return;
+
+
+            if (isListening)
+                return;
+
+
+            if (speechStarting)
+                return;
+
+
+            speechStarting =
+                true;
+
+
+            try {
+
+                console.log(
+                    "[SWIFTCARE SPEECH] Starting Azure Speech recognition..."
+                );
+
+
+                // ----------------------------------------------------
+                // CHECK SDK
+                // ----------------------------------------------------
+
+                if (
+                    !isAzureSpeechAvailable()
+                ) {
+
+                    throw new Error(
+                        "Azure Speech SDK is not loaded."
+                    );
+
+                }
+
+
+                // ----------------------------------------------------
+                // PRESERVE TEXT ALREADY TYPED
+                // ----------------------------------------------------
+
+                speechFinalTranscript =
+                    answerInput.value.trim();
+
+
+                speechInterimTranscript =
+                    "";
+
+
+                // ----------------------------------------------------
+                // CREATE RECOGNIZER
+                // ----------------------------------------------------
+
+                if (speechRecognizer) {
+
+                    try {
+
+                        speechRecognizer.close();
+
+                    }
+                    catch (_) {
+
+                        // Ignore.
+
+                    }
+
+                    speechRecognizer =
+                        null;
+
+                }
+
+
+                speechRecognizer =
+                    await createAzureSpeechRecognizer();
+
+
+                // ----------------------------------------------------
+                // UPDATE UI BEFORE START
+                // ----------------------------------------------------
+
+                isListening =
+                    true;
+
+
+                microphoneButton.classList.add(
+                    "recording"
+                );
+
+
+                microphoneIcon.className =
+                    "bi bi-stop-fill";
+
+
+                microphoneStatus.textContent =
+                    "Listening... speak your answer.";
+
+
+                // ----------------------------------------------------
+                // START CONTINUOUS RECOGNITION
+                // ----------------------------------------------------
+
+                await new Promise(
+                    function (
+                        resolve,
+                        reject
+                    ) {
+
+                        speechRecognizer
+                            .startContinuousRecognitionAsync(
+                                function () {
+
+                                    console.log(
+                                        "[SWIFTCARE SPEECH] Azure Speech recognition started."
+                                    );
+
+                                    resolve();
+
+                                },
+
+                                function (error) {
+
+                                    reject(
+                                        new Error(
+                                            error ||
+                                            "Azure Speech could not start."
+                                        )
+                                    );
+
+                                }
+                            );
+
+                    }
+                );
+
+
+            }
+            catch (error) {
+
+                console.error(
+                    "[SWIFTCARE SPEECH] Start error:",
+                    error
+                );
+
+
+                isListening =
+                    false;
+
+
+                speechStarting =
+                    false;
+
+
+                resetMicrophoneButton();
+
+
+                microphoneStatus.textContent =
+                    "Voice input could not start. You can type your answer.";
+
+
+                showError(
+                    "Voice input could not start. Please check your microphone permission and try again."
+                );
+
+            }
+            finally {
+
+                speechStarting =
+                    false;
+
+            }
+
+        }
+
+
+        // ============================================================
+        // STOP AZURE SPEECH RECOGNITION
+        // ============================================================
+
+        async function stopAzureSpeechRecognition() {
+
+            if (
+                !speechRecognizer &&
+                !isListening
+            ) {
+
+                return;
+
+            }
+
+
+            if (speechStopping)
+                return;
+
+
+            speechStopping =
+                true;
+
+
+            console.log(
+                "[SWIFTCARE SPEECH] Stopping Azure Speech recognition..."
+            );
+
+
+            isListening =
+                false;
+
+
+            try {
+
+                if (speechRecognizer) {
+
+                    await new Promise(
+                        function (
+                            resolve
+                        ) {
+
+                            speechRecognizer
+                                .stopContinuousRecognitionAsync(
+                                    function () {
+
+                                        console.log(
+                                            "[SWIFTCARE SPEECH] Azure Speech recognition stopped."
+                                        );
+
+                                        resolve();
+
+                                    },
+
+                                    function (error) {
+
+                                        console.warn(
+                                            "[SWIFTCARE SPEECH] Stop error:",
+                                            error
+                                        );
+
+                                        resolve();
+
+                                    }
+                                );
+
+                        }
+                    );
+
+                }
+
+            }
+            catch (error) {
+
+                console.warn(
+                    "[SWIFTCARE SPEECH] Stop recognition exception:",
+                    error
+                );
+
+            }
+            finally {
+
+                try {
+
+                    if (speechRecognizer) {
+
+                        speechRecognizer.close();
+
+                    }
+
+                }
+                catch (error) {
+
+                    console.warn(
+                        "[SWIFTCARE SPEECH] Recognizer close error:",
+                        error
+                    );
+
+                }
+
+
+                speechRecognizer =
+                    null;
+
+
+                speechConfig =
+                    null;
+
+
+                audioConfig =
+                    null;
+
+
+                speechInterimTranscript =
+                    "";
+
+
+                speechStopping =
+                    false;
+
+
+                resetMicrophoneButton();
+
+            }
+
+        }
+
+
+        // ============================================================
+        // RESET MICROPHONE BUTTON
+        // ============================================================
+
+        function resetMicrophoneButton() {
+
+            microphoneButton.classList.remove(
+                "recording"
+            );
+
+
+            microphoneIcon.className =
+                "bi bi-mic-fill";
+
+
+            if (
+                !interviewCompleted &&
+                !isSubmitting
+            ) {
+
+                microphoneStatus.textContent =
+                    "You can type or use your microphone.";
+
+            }
+
+        }
+
+
+        // ============================================================
+        // MICROPHONE BUTTON
+        // ============================================================
+
+        microphoneButton.addEventListener(
+            "click",
+            async function () {
+
+                if (interviewCompleted)
+                    return;
+
+
+                if (isSubmitting)
+                    return;
+
+
+                if (isListening) {
+
+                    await stopAzureSpeechRecognition();
+
+                }
+                else {
+
+                    await startAzureSpeechRecognition();
+
+                }
+
+            }
+        );
+
+
+        // ============================================================
+        // CLEAN UP WHEN LEAVING PAGE
+        // ============================================================
+
+        window.addEventListener(
+            "beforeunload",
+            function () {
+
+                try {
+
+                    if (
+                        window.speechSynthesis
+                    ) {
+
+                        window.speechSynthesis.cancel();
+
+                    }
+
+                }
+                catch (_) {
+
+                    // Ignore.
+
+                }
+
+
+                try {
+
+                    if (speechRecognizer) {
+
+                        speechRecognizer.close();
+
+                    }
+
+                }
+                catch (_) {
+
+                    // Ignore.
+
+                }
+
+            }
+        );
+
+
+        // ============================================================
+        // INITIAL CHARACTER COUNT
+        // ============================================================
+
+        updateCharacterCount();
+
+
+        // ============================================================
+        // INITIAL MICROPHONE STATUS
+        // ============================================================
+
+        if (
+            typeof SpeechSDK ===
+            "undefined"
+        ) {
+
+            console.error(
+                "[SWIFTCARE SPEECH] speech-sdk.js was not loaded."
+            );
+
+
+            microphoneButton.disabled =
+                true;
+
+
+            microphoneStatus.textContent =
+                "Azure voice input is unavailable.";
+
+        }
+
+
+        // ============================================================
+        // START EVERYTHING
+        // ============================================================
+
+        startInterviewConnection();
+
+    </script>
+
+}

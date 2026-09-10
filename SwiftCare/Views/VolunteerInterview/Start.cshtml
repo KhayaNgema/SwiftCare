@@ -1,0 +1,270 @@
+﻿@model SwiftCare.ViewModels.VolunteerInterviewStartViewModel
+
+@{
+    ViewData["Title"] = "Volunteer Voice Interview";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+
+<div class="voice-interview-page">
+
+    <div class="voice-interview-shell">
+
+        <!-- =====================================================
+             HERO
+             ====================================================== -->
+
+        <section class="voice-interview-hero">
+
+            <div class="voice-interview-hero-content">
+
+                <div class="voice-interview-eyebrow">
+
+                    <span class="voice-interview-eyebrow-dot"></span>
+
+                    Voice Interview
+
+                </div>
+
+                <h1>
+                    Welcome to your
+                    SwiftCare interview.
+                </h1>
+
+                <p>
+                    Congratulations on being shortlisted.
+                    This voice interview is the next step
+                    in your volunteer selection journey.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             CONTENT
+             ====================================================== -->
+
+        <section class="voice-interview-content">
+
+            <!-- Welcome -->
+
+            <div class="voice-interview-welcome">
+
+                <div class="voice-interview-welcome-icon">
+                    👋
+                </div>
+
+                <div class="voice-interview-welcome-text">
+
+                    <strong>
+                        Hello @Model.ApplicantName
+                    </strong>
+
+                    <span>
+                        You have been shortlisted for
+                        <span class="voice-interview-welcome-opportunity">
+                            @Model.OpportunityTitle
+                        </span>.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- Instructions -->
+
+            <h2 class="voice-interview-section-title">
+                Before you begin
+            </h2>
+
+            <div class="voice-interview-instructions">
+
+                <div class="voice-interview-instruction">
+
+                    <div class="voice-interview-instruction-icon">
+                        🔊
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Questions will be read aloud
+                        </strong>
+
+                        <span>
+                            Your SwiftCare interview assistant
+                            will guide you through each question.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="voice-interview-instruction">
+
+                    <div class="voice-interview-instruction-icon">
+                        🎙
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Answer using your voice
+                        </strong>
+
+                        <span>
+                            Speak naturally and clearly into
+                            your microphone.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="voice-interview-instruction">
+
+                    <div class="voice-interview-instruction-icon">
+                        📝
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Your answers are transcribed
+                        </strong>
+
+                        <span>
+                            Your spoken answers will be converted
+                            into text and saved to your application.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="voice-interview-instruction">
+
+                    <div class="voice-interview-instruction-icon">
+                        💡
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Be yourself
+                        </strong>
+
+                        <span>
+                            Take your time and answer honestly.
+                            There are no trick questions.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Details -->
+
+            <div class="voice-interview-details">
+
+                <div class="voice-interview-detail">
+
+                    <span class="voice-interview-detail-label">
+                        Questions
+                    </span>
+
+                    <span class="voice-interview-detail-value">
+                        @Model.QuestionCount
+                    </span>
+
+                </div>
+
+
+                <div class="voice-interview-detail">
+
+                    <span class="voice-interview-detail-label">
+                        Estimated time
+                    </span>
+
+                    <span class="voice-interview-detail-value">
+                        @Model.EstimatedMinutes minutes
+                    </span>
+
+                </div>
+
+
+                <div class="voice-interview-detail">
+
+                    <span class="voice-interview-detail-label">
+                        Interview type
+                    </span>
+
+                    <span class="voice-interview-detail-value">
+                        Voice interview
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- Action -->
+
+            <div class="voice-interview-action">
+
+                <div class="voice-interview-privacy">
+
+                    <strong>
+                        🔒 Your information is protected.
+                    </strong>
+
+                    <br />
+
+                    Your interview answers will be associated
+                    with your SwiftCare volunteer application
+                    and reviewed as part of the selection process.
+
+                </div>
+
+
+                <form asp-controller="VolunteerInterview"
+                      asp-action="Begin"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="token"
+                           value="@Model.Token" />
+
+                    <button type="submit"
+                            class="voice-interview-start-button">
+
+                        @(Model.IsStarted
+                            ? "Continue Interview"
+                            : "Start Interview")
+
+                        <span class="voice-interview-start-arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>

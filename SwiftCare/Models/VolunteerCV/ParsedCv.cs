@@ -1,4 +1,5 @@
 ﻿using SwiftCare.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 using Twilio.TwiML.Voice;
 
 namespace SwiftCare.Models.VolunteerCV
@@ -16,8 +17,8 @@ namespace SwiftCare.Models.VolunteerCV
         // APPLICANT RELATIONSHIP
         // ============================================================
 
-        public int ApplicantId { get; set; }
-
+        public string ApplicantId { get; set; }
+        [ForeignKey(nameof(ApplicantId))]
         public Applicant Applicant { get; set; } = null!;
 
 

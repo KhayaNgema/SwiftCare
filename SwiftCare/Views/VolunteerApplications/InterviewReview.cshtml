@@ -1,0 +1,2206 @@
+﻿@model SwiftCare.ViewModels.VolunteerInterviewReviewViewModel
+
+@{
+    ViewData["Title"] = "Interview Review";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var applicantInitial =
+        string.IsNullOrWhiteSpace(Model.ApplicantName)
+            ? "A"
+            : Model.ApplicantName.Trim().Substring(0, 1).ToUpper();
+
+    var evaluationCompleted =
+        string.Equals(
+            Model.InterviewEvaluationStatus,
+            "Evaluated",
+            StringComparison.OrdinalIgnoreCase);
+
+    var evaluationRunning =
+        string.Equals(
+            Model.InterviewEvaluationStatus,
+            "Evaluating",
+            StringComparison.OrdinalIgnoreCase);
+
+    var interviewScoreText =
+        evaluationCompleted
+            ? Model.OverallInterviewScore.ToString("0")
+            : "—";
+
+    var interviewConfidenceText =
+        evaluationCompleted
+            ? Model.OverallInterviewConfidence.ToString("0")
+            : "—";
+
+    var requiredSkillProgress =
+        Model.RequiredSkillCount <= 0
+            ? 0
+            : Math.Min(
+                100,
+                (Model.RequiredSkillsFoundInCv +
+                 Model.RequiredSkillsFoundInInterview) * 100 /
+                Math.Max(1, Model.RequiredSkillCount * 2));
+
+    var scoreWidth =
+        evaluationCompleted
+            ? Math.Clamp(Model.OverallInterviewScore, 0, 100)
+            : 0;
+}
+
+<div class="sir-page">
+
+    <!-- ============================================================
+         ALERTS
+         ============================================================ -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="sir-alert sir-alert-success">
+            <div class="sir-alert-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+
+            <div class="sir-alert-content">
+                <strong>Success</strong>
+                <span>@TempData["Success"]</span>
+            </div>
+
+            <button type="button"
+                    class="sir-alert-close"
+                    onclick="this.parentElement.remove();">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="sir-alert sir-alert-error">
+            <div class="sir-alert-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+
+            <div class="sir-alert-content">
+                <strong>Evaluation Error</strong>
+                <span>@TempData["Error"]</span>
+            </div>
+
+            <button type="button"
+                    class="sir-alert-close"
+                    onclick="this.parentElement.remove();">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+
+    <div class="sir-header">
+
+        <div class="sir-header-main">
+
+            <div class="sir-avatar">
+
+                @if (!string.IsNullOrWhiteSpace(Model.ApplicantProfilePicture))
+                {
+                    <img src="@Url.Content(
+                                                                     Model.ApplicantProfilePicture.StartsWith("/")
+                                                                         ? Model.ApplicantProfilePicture
+                                                                         : "/" + Model.ApplicantProfilePicture)"
+                         alt="@Model.ApplicantName" />
+                }
+                else
+                {
+                    <span>
+                        @applicantInitial
+                    </span>
+                }
+
+            </div>
+
+            <div class="sir-header-information">
+
+                <div class="sir-eyebrow">
+                    CANDIDATE INTERVIEW REVIEW
+                </div>
+
+                <h1>
+                    @Model.ApplicantName
+                </h1>
+
+                <p>
+                    @Model.OpportunityTitle
+                </p>
+
+                <div class="sir-reference">
+                    <i class="bi bi-hash"></i>
+                    @Model.Reference
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="sir-header-status">
+
+            <span class="sir-status-badge
+                @(Model.InterviewCompleted
+                                      ? "sir-status-complete"
+                                      : "sir-status-pending")">
+
+                <i class="bi
+                    @(Model.InterviewCompleted
+                                           ? "bi-check-circle-fill"
+                                           : "bi-clock")">
+                </i>
+
+                @Model.InterviewStatus
+
+            </span>
+
+            <span class="sir-stage-badge">
+                <i class="bi bi-diagram-3"></i>
+                @Model.Stage
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         TOP ACTION BAR
+         ============================================================ -->
+
+    <section class="sir-action-panel">
+
+        <div class="sir-action-information">
+
+            <div class="sir-action-icon">
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <div>
+
+                <span class="sir-action-kicker">
+                    AI INTERVIEW ANALYSIS
+                </span>
+
+                @if (evaluationCompleted)
+                {
+                    <h2>
+                        Interview evaluation completed
+                    </h2>
+
+                    <p>
+                        The candidate's interview responses have been
+                        evaluated for required skills and personal
+                        competencies.
+                    </p>
+                }
+                else if (evaluationRunning)
+                {
+                    <h2>
+                        Interview evaluation in progress
+                    </h2>
+
+                    <p>
+                        The evaluation engine is processing the candidate's
+                        interview evidence.
+                    </p>
+                }
+                else if (Model.InterviewCompleted)
+                {
+                    <h2>
+                        Interview ready for AI evaluation
+                    </h2>
+
+                    <p>
+                        The interview is complete. Run the evaluation engine
+                        to analyse the candidate's responses.
+                    </p>
+                }
+                else
+                {
+                    <h2>
+                        Interview not yet complete
+                    </h2>
+
+                    <p>
+                        The AI evaluation becomes available after the candidate
+                        completes the voice interview.
+                    </p>
+                }
+
+            </div>
+
+        </div>
+
+
+        @if (Model.InterviewCompleted)
+        {
+            <form asp-controller="VolunteerApplications"
+                  asp-action="RunInterviewEvaluation"
+                  method="post"
+                  class="sir-evaluation-form"
+                  id="sirEvaluationForm">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="applicationId"
+                       value="@Model.VolunteerApplicationId" />
+
+                <button type="submit"
+                        class="sir-run-evaluation-button"
+                        id="sirRunEvaluationButton"
+                    @(evaluationRunning ? "disabled" : null)>
+
+                    <span class="sir-button-normal">
+
+                        <i class="bi bi-stars"></i>
+
+                        @(evaluationCompleted
+                            ? "Re-run AI Evaluation"
+                            : "Run AI Interview Evaluation")
+
+                    </span>
+
+                    <span class="sir-button-loading">
+
+                        <span class="sir-spinner"></span>
+
+                        Evaluating Interview...
+
+                    </span>
+
+                </button>
+
+            </form>
+        }
+
+    </section>
+
+
+    <!-- ============================================================
+         EVALUATION METADATA
+         ============================================================ -->
+    @if (evaluationCompleted || evaluationRunning)
+    {
+        <section class="sir-evaluation-meta">
+
+            <div class="sir-meta-item">
+
+                <span>
+                    <i class="bi bi-activity"></i>
+                    Evaluation Status
+                </span>
+
+                <strong class="
+                    @(evaluationCompleted
+                                                ? "sir-meta-good"
+                                                : "sir-meta-running")">
+
+                    @Model.InterviewEvaluationStatus
+
+                </strong>
+
+            </div>
+
+
+            <div class="sir-meta-item">
+
+                <span>
+                    <i class="bi bi-cpu"></i>
+                    Provider
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.InterviewEvaluationVersion)
+                        ? "Interview Evaluation Engine"
+                        : Model.InterviewEvaluationVersion)
+                </strong>
+
+            </div>
+
+
+            @if (Model.InterviewEvaluatedDate.HasValue)
+            {
+                <div class="sir-meta-item">
+
+                    <span>
+                        <i class="bi bi-calendar3"></i>
+                        Evaluated
+                    </span>
+
+                    <strong>
+                        @Model.InterviewEvaluatedDate.Value.ToString("dd MMM yyyy HH:mm")
+                    </strong>
+
+                </div>
+            }
+
+        </section>
+    }
+
+
+    <!-- ============================================================
+         SUMMARY CARDS
+         ============================================================ -->
+
+    <div class="sir-summary-grid">
+
+        <div class="sir-summary-card">
+
+            <div class="sir-summary-icon">
+                <i class="bi bi-robot"></i>
+            </div>
+
+            <div>
+                <span>ATS SCORE</span>
+
+                <strong>
+                    @Model.OverallScore.ToString("0.0")
+                </strong>
+
+                <small>
+                    Application evaluation
+                </small>
+            </div>
+
+        </div>
+
+
+        <div class="sir-summary-card">
+
+            <div class="sir-summary-icon">
+                <i class="bi bi-shield-check"></i>
+            </div>
+
+            <div>
+                <span>ELIGIBILITY</span>
+
+                <strong>
+                    @Model.EligibilityScore.ToString("0.0")
+                </strong>
+
+                <small>
+                    Eligibility screening
+                </small>
+            </div>
+
+        </div>
+
+
+        <div class="sir-summary-card">
+
+            <div class="sir-summary-icon">
+                <i class="bi bi-mic"></i>
+            </div>
+
+            <div>
+                <span>INTERVIEW ANSWERS</span>
+
+                <strong>
+                    @Model.InterviewAnsweredCount /
+                    @Model.InterviewQuestionCount
+                </strong>
+
+                <small>
+                    Questions answered
+                </small>
+            </div>
+
+        </div>
+
+
+        <div class="sir-summary-card sir-summary-ai">
+
+            <div class="sir-summary-icon">
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <div>
+                <span>INTERVIEW AI</span>
+
+                <strong class="
+                    @(evaluationCompleted
+                                                ? "sir-evaluated-value"
+                                                : "sir-not-evaluated")">
+
+                    @(evaluationCompleted
+                        ? Model.OverallInterviewScore.ToString("0") + "%"
+                        : Model.InterviewEvaluationStatus)
+
+                </strong>
+
+                <small>
+                    @if (evaluationCompleted)
+                    {
+                        @:Confidence @Model.OverallInterviewConfidence.ToString("0")%
+                    }
+                    else
+                    {
+                        @:Evaluation pending
+                    }
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         INTERVIEW SCORE OVERVIEW
+         ============================================================ -->
+
+    <section class="sir-section sir-score-section">
+
+        <div class="sir-section-header">
+
+            <div>
+
+                <div class="sir-section-kicker">
+                    AI INTERVIEW RESULT
+                </div>
+
+                <h2>
+                    Interview Evaluation Overview
+                </h2>
+
+                <p>
+                    The interview engine evaluates evidence from the
+                    candidate's completed voice interview.
+                </p>
+
+            </div>
+
+            <div class="
+                sir-evaluation-state
+                @(evaluationCompleted
+                                     ? "sir-evaluation-state-complete"
+                                     : "sir-evaluation-state-pending")">
+
+                <i class="bi
+                    @(evaluationCompleted
+                                           ? "bi-check-circle-fill"
+                                           : "bi-hourglass-split")">
+                </i>
+
+                @(evaluationCompleted
+                    ? "Evaluated"
+                    : Model.InterviewEvaluationStatus)
+
+            </div>
+
+        </div>
+
+
+        <div class="sir-score-overview">
+
+            <div class="sir-main-score">
+
+                <div class="sir-score-ring"
+                     style="--sir-score:@scoreWidth">
+
+                    <div class="sir-score-ring-inner">
+
+                        <strong>
+                            @interviewScoreText
+                        </strong>
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="sir-score-caption">
+                    Overall Interview Score
+                </div>
+
+            </div>
+
+
+            <div class="sir-score-details">
+
+                <div class="sir-score-detail-card">
+
+                    <span>
+                        Confidence
+                    </span>
+
+                    <strong>
+                        @interviewConfidenceText
+                        @if (evaluationCompleted)
+                        {
+                            @:%
+                        }
+                    </strong>
+
+                    <div class="sir-progress">
+                        <div class="sir-progress-fill"
+                             style="width:@(
+                                                         evaluationCompleted
+                                                             ? Model.OverallInterviewConfidence
+                                                             : 0
+                                                                                  )%;">
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="sir-score-detail-card">
+
+                    <span>
+                        Recommendation
+                    </span>
+
+                    <strong class="sir-recommendation-value">
+                        @(string.IsNullOrWhiteSpace(Model.InterviewRecommendation)
+                            ? "Not Evaluated"
+                            : Model.InterviewRecommendation)
+                    </strong>
+
+                </div>
+
+
+                <div class="sir-score-detail-card">
+
+                    <span>
+                        Required Skills
+                    </span>
+
+                    <strong>
+                        @Model.RequiredSkillsFoundInCv /
+                        @Model.RequiredSkillCount
+                    </strong>
+
+                    <small>
+                        Found in CV
+                    </small>
+
+                </div>
+
+
+                <div class="sir-score-detail-card">
+
+                    <span>
+                        Interview Skills
+                    </span>
+
+                    <strong>
+                        @Model.RequiredSkillsFoundInInterview /
+                        @Model.RequiredSkillCount
+                    </strong>
+
+                    <small>
+                        Demonstrated in interview
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        @if (evaluationCompleted &&
+             !string.IsNullOrWhiteSpace(Model.InterviewEvaluationStatus))
+        {
+            <div class="sir-evaluation-disclaimer">
+
+                <i class="bi bi-info-circle"></i>
+
+                <div>
+                    <strong>
+                        AI-assisted assessment
+                    </strong>
+
+                    <p>
+                        This evaluation is advisory and should be considered
+                        together with the candidate's CV, application,
+                        interview transcript and administrator judgement.
+                    </p>
+                </div>
+
+            </div>
+        }
+
+    </section>
+
+
+    <!-- ============================================================
+         ROLE REQUIRED SKILLS
+         ============================================================ -->
+
+    <section class="sir-section">
+
+        <div class="sir-section-header">
+
+            <div>
+
+                <div class="sir-section-kicker">
+                    ROLE REQUIREMENTS
+                </div>
+
+                <h2>
+                    Required Skills Assessment
+                </h2>
+
+                <p>
+                    Required skills are checked against both the candidate's
+                    CV and evidence provided during the voice interview.
+                </p>
+
+            </div>
+
+
+            <div class="sir-section-stat">
+
+                <strong>
+                    @Model.RequiredSkillCount
+                </strong>
+
+                <span>
+                    Required Skills
+                </span>
+
+            </div>
+
+        </div>
+
+
+        @if (Model.RequiredSkills.Any())
+        {
+            <div class="sir-skill-summary">
+
+                <div>
+                    <span>CV MATCHES</span>
+                    <strong>
+                        @Model.RequiredSkillsFoundInCv
+                    </strong>
+                </div>
+
+                <div>
+                    <span>INTERVIEW MATCHES</span>
+                    <strong>
+                        @Model.RequiredSkillsFoundInInterview
+                    </strong>
+                </div>
+
+                <div>
+                    <span>OVERALL SCORE</span>
+                    <strong>
+                        @(evaluationCompleted
+                            ? Model.RequiredSkillsOverallScore.ToString("0") + "%"
+                            : "—")
+                    </strong>
+                </div>
+
+                <div class="sir-skill-summary-progress">
+
+                    <span>
+                        Evidence Coverage
+                    </span>
+
+                    <div class="sir-progress">
+                        <div class="sir-progress-fill"
+                             style="width:@requiredSkillProgress%;">
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="sir-required-skills">
+
+                @foreach (var skill in Model.RequiredSkills)
+                {
+                    var skillEvaluated =
+                        !string.Equals(
+                            skill.Assessment,
+                            "Not Evaluated",
+                            StringComparison.OrdinalIgnoreCase);
+
+                    <div class="sir-required-skill-card">
+
+                        <div class="sir-required-skill-header">
+
+                            <div class="sir-required-skill-name">
+
+                                <div class="sir-skill-icon">
+                                    <i class="bi bi-check2-circle"></i>
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        @skill.Skill
+                                    </strong>
+
+                                    <span>
+                                        Required for this role
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <span class="
+                                sir-evaluation-badge
+                                @(skillEvaluated
+                                                                      ? "sir-evaluation-badge-complete"
+                                                                      : "sir-evaluation-badge-pending")">
+
+                                <i class="bi
+                                    @(skillEvaluated
+                                                                           ? "bi-check-circle-fill"
+                                                                           : "bi-hourglass-split")">
+                                </i>
+
+                                @skill.Assessment
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="sir-skill-evidence-grid">
+
+                            <!-- CV -->
+
+                            <div class="sir-evidence-card">
+
+                                <div class="sir-evidence-heading">
+
+                                    <i class="bi bi-file-earmark-person"></i>
+
+                                    <span>
+                                        CV Evidence
+                                    </span>
+
+                                </div>
+
+                                @if (skill.FoundInCv)
+                                {
+                                    <div class="sir-evidence-found">
+
+                                        <i class="bi bi-check-circle-fill"></i>
+
+                                        Skill found in CV
+
+                                    </div>
+
+                                    <p>
+                                        @(string.IsNullOrWhiteSpace(skill.CvEvidence)
+                                            ? "The required skill was identified in the candidate's CV."
+                                            : skill.CvEvidence)
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="sir-evidence-empty">
+
+                                        <i class="bi bi-search"></i>
+
+                                        <span>
+                                            No evidence of this skill was
+                                            identified in the CV.
+                                        </span>
+
+                                    </div>
+                                }
+
+                            </div>
+
+
+                            <!-- INTERVIEW -->
+
+                            <div class="sir-evidence-card">
+
+                                <div class="sir-evidence-heading">
+
+                                    <i class="bi bi-mic"></i>
+
+                                    <span>
+                                        Voice Interview Evidence
+                                    </span>
+
+                                </div>
+
+                                @if (skill.FoundInInterview)
+                                {
+                                    <div class="sir-evidence-found">
+
+                                        <i class="bi bi-check-circle-fill"></i>
+
+                                        Interview evidence found
+
+                                    </div>
+
+                                    <p>
+                                        @(string.IsNullOrWhiteSpace(skill.InterviewEvidence)
+                                            ? "Evidence supporting this skill was identified in the interview."
+                                            : skill.InterviewEvidence)
+                                    </p>
+                                }
+                                else
+                                {
+                                    <div class="sir-evidence-empty">
+
+                                        <i class="bi bi-hourglass"></i>
+
+                                        <span>
+                                            No supporting interview evidence
+                                            was identified.
+                                        </span>
+
+                                    </div>
+                                }
+
+                            </div>
+
+
+                            <!-- AI RESULT -->
+
+                            <div class="sir-evidence-card sir-ai-evidence-card">
+
+                                <div class="sir-evidence-heading">
+
+                                    <i class="bi bi-stars"></i>
+
+                                    <span>
+                                        AI Assessment
+                                    </span>
+
+                                </div>
+
+
+                                <div class="sir-ai-score-row">
+
+                                    <div>
+
+                                        <span class="sir-mini-label">
+                                            SCORE
+                                        </span>
+
+                                        <strong>
+                                            @(skillEvaluated
+                                                ? skill.InterviewScore.ToString("0") + "%"
+                                                : "—")
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span class="sir-mini-label">
+                                            CONFIDENCE
+                                        </span>
+
+                                        <strong>
+                                            @(skillEvaluated
+                                                ? skill.Confidence.ToString("0") + "%"
+                                                : "—")
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="sir-ai-progress">
+
+                                    <div class="sir-progress">
+
+                                        <div class="sir-progress-fill"
+                                             style="width:@(
+                                                                                         skillEvaluated
+                                                                                             ? Math.Clamp(skill.InterviewScore, 0, 100)
+                                                                                                                                          : 0
+                                                                                                                                  )%;">
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="sir-ai-assessment">
+
+                                    <span>
+                                        Assessment
+                                    </span>
+
+                                    <strong>
+                                        @skill.Assessment
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="sir-ai-reasoning">
+
+                                    <span>
+                                        AI Reasoning
+                                    </span>
+
+                                    <p>
+                                        @(string.IsNullOrWhiteSpace(skill.Reasoning)
+                                            ? "The evaluation engine did not provide additional reasoning."
+                                            : skill.Reasoning)
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="sir-empty-state">
+
+                <i class="bi bi-check2-square"></i>
+
+                <h3>
+                    No required skills configured
+                </h3>
+
+                <p>
+                    This opportunity does not currently have required
+                    skills configured.
+                </p>
+
+            </div>
+        }
+
+    </section>
+
+
+    <!-- ============================================================
+         PERSONAL COMPETENCIES
+         ============================================================ -->
+
+    <section class="sir-section">
+
+        <div class="sir-section-header">
+
+            <div>
+
+                <div class="sir-section-kicker">
+                    PERSONAL COMPETENCIES
+                </div>
+
+                <h2>
+                    Voice Interview Competency Evaluation
+                </h2>
+
+                <p>
+                    These competencies are assessed from the candidate's
+                    responses during the voice interview.
+                </p>
+
+            </div>
+
+
+            <div class="
+                sir-ai-pending-badge
+                @(evaluationCompleted
+                                     ? "sir-ai-complete-badge"
+                                     : "")">
+
+                <i class="bi
+                    @(evaluationCompleted
+                                           ? "bi-check-circle-fill"
+                                           : "bi-stars")">
+                </i>
+
+                @(evaluationCompleted
+                    ? "AI Evaluation Complete"
+                    : "AI Evaluation Pending")
+
+            </div>
+
+        </div>
+
+
+        <div class="sir-competency-grid">
+
+            @foreach (var competency in Model.InterviewCompetencies)
+            {
+                var competencyEvaluated =
+                    !string.Equals(
+                        competency.Assessment,
+                        "Not Evaluated",
+                        StringComparison.OrdinalIgnoreCase);
+
+                <div class="sir-competency-card">
+
+                    <div class="sir-competency-top">
+
+                        <div class="sir-competency-icon">
+
+                            @switch (competency.Name)
+                            {
+                                case "Communication":
+                                    <i class="bi bi-chat-dots"></i>
+                                    break;
+
+                                case "Empathy":
+                                    <i class="bi bi-heart"></i>
+                                    break;
+
+                                case "Active Listening":
+                                    <i class="bi bi-ear"></i>
+                                    break;
+
+                                case "Problem Solving":
+                                    <i class="bi bi-lightbulb"></i>
+                                    break;
+
+                                case "Teamwork":
+                                    <i class="bi bi-people"></i>
+                                    break;
+
+                                case "Reliability":
+                                    <i class="bi bi-shield-check"></i>
+                                    break;
+
+                                default:
+                                    <i class="bi bi-stars"></i>
+                                    break;
+                            }
+
+                        </div>
+
+
+                        <div>
+
+                            <h3>
+                                @competency.Name
+                            </h3>
+
+                            <p>
+                                @competency.Description
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sir-competency-score">
+
+                        <div>
+
+                            <span>
+                                Score
+                            </span>
+
+                            <strong>
+                                @(competencyEvaluated
+                                    ? competency.Score.ToString("0") + "%"
+                                    : "—")
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Confidence
+                            </span>
+
+                            <strong>
+                                @(competencyEvaluated
+                                    ? competency.Confidence.ToString("0") + "%"
+                                    : "—")
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sir-competency-bar">
+
+                        <div class="sir-competency-bar-track">
+
+                            <div class="sir-competency-bar-fill"
+                                 style="width:@(
+                                                                 competencyEvaluated
+                                                                     ? Math.Clamp(competency.Score, 0, 100)
+                                                                                                      : 0
+                                                                                              )%;">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="
+                        sir-competency-status
+                        @(competencyEvaluated
+                                                     ? "sir-competency-status-complete"
+                                                     : "")">
+
+                        <i class="bi
+                            @(competencyEvaluated
+                                                           ? "bi-check-circle-fill"
+                                                           : "bi-hourglass-split")">
+                        </i>
+
+                        @competency.Assessment
+
+                    </div>
+
+
+                    <div class="sir-competency-evidence">
+
+                        <span>
+                            Interview Evidence
+                        </span>
+
+                        <p>
+                            @(string.IsNullOrWhiteSpace(competency.Evidence)
+                                ? "The AI evaluator has not provided interview evidence for this competency."
+                                : competency.Evidence)
+                        </p>
+
+                    </div>
+
+
+                    @if (competencyEvaluated &&
+                         !string.IsNullOrWhiteSpace(competency.Reasoning))
+                    {
+                        <div class="sir-competency-reasoning">
+
+                            <span>
+                                AI Reasoning
+                            </span>
+
+                            <p>
+                                @competency.Reasoning
+                            </p>
+
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+
+        <!-- OVERALL INTERVIEW -->
+
+        <div class="sir-interview-overall">
+
+            <div class="sir-overall-information">
+
+                <div class="sir-section-kicker">
+                    OVERALL INTERVIEW
+                </div>
+
+                <h3>
+                    Interview Evaluation
+                </h3>
+
+                <p>
+                    The overall result combines evidence identified across
+                    the candidate's required skills and personal competencies.
+                </p>
+
+            </div>
+
+
+            <div class="sir-overall-score">
+
+                <span>
+                    Overall Score
+                </span>
+
+                <strong>
+                    @(evaluationCompleted
+                        ? Model.OverallInterviewScore.ToString("0") + "%"
+                        : "—")
+                </strong>
+
+                <small>
+                    Confidence:
+                    @(evaluationCompleted
+                        ? Model.OverallInterviewConfidence.ToString("0") + "%"
+                        : "—")
+                </small>
+
+            </div>
+
+
+            <div class="sir-recommendation">
+
+                <span>
+                    Recommendation
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.InterviewRecommendation)
+                        ? "Not Evaluated"
+                        : Model.InterviewRecommendation)
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         CV PROFILE
+         ============================================================ -->
+
+    <section class="sir-section">
+
+        <div class="sir-section-header">
+
+            <div>
+
+                <div class="sir-section-kicker">
+                    CANDIDATE PROFILE
+                </div>
+
+                <h2>
+                    CV & Professional Profile
+                </h2>
+
+                <p>
+                    Information extracted from the candidate's submitted CV.
+                </p>
+
+            </div>
+
+
+            @if (Model.HasParsedCv)
+            {
+                <span class="sir-success-badge">
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    CV Parsed
+
+                </span>
+            }
+            else
+            {
+                <span class="sir-warning-badge">
+
+                    <i class="bi bi-exclamation-circle"></i>
+
+                    No Parsed CV
+
+                </span>
+            }
+
+        </div>
+
+
+        @if (!Model.HasParsedCv &&
+             !string.IsNullOrWhiteSpace(Model.CvExtractionMessage))
+        {
+            <div class="sir-cv-warning">
+
+                <i class="bi bi-exclamation-triangle"></i>
+
+                <span>
+                    @Model.CvExtractionMessage
+                </span>
+
+            </div>
+        }
+
+
+        <div class="sir-profile-grid">
+
+            <div class="sir-profile-field">
+
+                <span>
+                    Professional Title
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.ProfessionalTitle)
+                        ? "Not provided"
+                        : Model.ProfessionalTitle)
+                </strong>
+
+            </div>
+
+
+            <div class="sir-profile-field">
+
+                <span>
+                    Full Name
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.CvFullName)
+                        ? Model.ApplicantName
+                        : Model.CvFullName)
+                </strong>
+
+            </div>
+
+
+            <div class="sir-profile-field">
+
+                <span>
+                    Email
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.CvEmail)
+                        ? Model.ApplicantEmail
+                        : Model.CvEmail)
+                </strong>
+
+            </div>
+
+
+            <div class="sir-profile-field">
+
+                <span>
+                    Phone
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.CvPhone)
+                        ? Model.ApplicantPhone
+                        : Model.CvPhone)
+                </strong>
+
+            </div>
+
+
+            <div class="sir-profile-field">
+
+                <span>
+                    Location
+                </span>
+
+                <strong>
+                    @{
+                        var locationParts = new[]
+                        {
+                            Model.CvCity,
+                            Model.CvProvince,
+                            Model.CvCountry
+                        }
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToArray();
+
+                        if (locationParts.Length > 0)
+                        {
+                            @string.Join(", ", locationParts)
+                        }
+                        else
+                        {
+                            @:Not provided
+                        }
+                    }
+                </strong>
+
+            </div>
+
+
+            <div class="sir-profile-field">
+
+                <span>
+                    CV File
+                </span>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.CvFileName)
+                        ? "Not available"
+                        : Model.CvFileName)
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        @if (!string.IsNullOrWhiteSpace(Model.ProfessionalSummary))
+        {
+            <div class="sir-profile-text">
+
+                <span>
+                    Professional Summary
+                </span>
+
+                <p>
+                    @Model.ProfessionalSummary
+                </p>
+
+            </div>
+        }
+
+
+        @if (!string.IsNullOrWhiteSpace(Model.CareerObjective))
+        {
+            <div class="sir-profile-text">
+
+                <span>
+                    Career Objective
+                </span>
+
+                <p>
+                    @Model.CareerObjective
+                </p>
+
+            </div>
+        }
+
+
+        @if (!string.IsNullOrWhiteSpace(Model.CvAddress))
+        {
+            <div class="sir-profile-text">
+
+                <span>
+                    Address
+                </span>
+
+                <p>
+                    @Model.CvAddress
+                </p>
+
+            </div>
+        }
+
+
+        @if (Model.Skills.Any())
+        {
+            <div class="sir-cv-block">
+
+                <div class="sir-subheading">
+                    CV Skills
+                </div>
+
+                <div class="sir-skill-tags">
+
+                    @foreach (var skill in Model.Skills)
+                    {
+                        <span>
+                            <i class="bi bi-check2"></i>
+                            @skill.Skill
+                        </span>
+                    }
+
+                </div>
+
+            </div>
+        }
+
+
+        @if (!string.IsNullOrWhiteSpace(Model.LinkedInUrl) ||
+             !string.IsNullOrWhiteSpace(Model.PortfolioUrl) ||
+             !string.IsNullOrWhiteSpace(Model.GitHubUrl))
+        {
+            <div class="sir-links-block">
+
+                @if (!string.IsNullOrWhiteSpace(Model.LinkedInUrl))
+                {
+                    <a href="@Model.LinkedInUrl"
+                           target="_blank"
+                           rel="noopener noreferrer">
+
+                        <i class="bi bi-linkedin"></i>
+
+                        LinkedIn
+
+                        <i class="bi bi-box-arrow-up-right"></i>
+
+                    </a>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.PortfolioUrl))
+                {
+                    <a href="@Model.PortfolioUrl"
+                           target="_blank"
+                           rel="noopener noreferrer">
+
+                        <i class="bi bi-globe2"></i>
+
+                        Portfolio
+
+                        <i class="bi bi-box-arrow-up-right"></i>
+
+                    </a>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.GitHubUrl))
+                {
+                    <a href="@Model.GitHubUrl"
+                           target="_blank"
+                           rel="noopener noreferrer">
+
+                        <i class="bi bi-github"></i>
+
+                        GitHub
+
+                        <i class="bi bi-box-arrow-up-right"></i>
+
+                    </a>
+                }
+
+            </div>
+        }
+
+    </section>
+
+
+    <!-- ============================================================
+         EXPERIENCE
+         ============================================================ -->
+    @if (Model.Experience.Any())
+    {
+        <section class="sir-section">
+
+            <div class="sir-section-header">
+
+                <div>
+
+                    <div class="sir-section-kicker">
+                        EXPERIENCE
+                    </div>
+
+                    <h2>
+                        Professional Experience
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="sir-timeline">
+
+                @foreach (var experience in Model.Experience)
+                {
+                    <div class="sir-timeline-item">
+
+                        <div class="sir-timeline-dot"></div>
+
+                        <div class="sir-timeline-content">
+
+                            <div class="sir-timeline-date">
+                                @experience.StartDate
+                                –
+                                @experience.EndDate
+                            </div>
+
+                            <h3>
+                                @experience.Position
+                            </h3>
+
+                            <strong>
+                                @experience.Employer
+                            </strong>
+
+                            @if (!string.IsNullOrWhiteSpace(experience.Description))
+                            {
+                                <p>
+                                    @experience.Description
+                                </p>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- ============================================================
+         EDUCATION
+         ============================================================ -->
+    @if (Model.Education.Any())
+    {
+        <section class="sir-section">
+
+            <div class="sir-section-header">
+
+                <div>
+
+                    <div class="sir-section-kicker">
+                        EDUCATION
+                    </div>
+
+                    <h2>
+                        Education
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="sir-education-grid">
+
+                @foreach (var education in Model.Education)
+                {
+                    <div class="sir-education-card">
+
+                        <div class="sir-education-icon">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                @education.Qualification
+                            </h3>
+
+                            @if (!string.IsNullOrWhiteSpace(education.FieldOfStudy))
+                            {
+                                <strong>
+                                    @education.FieldOfStudy
+                                </strong>
+                            }
+
+                            <span>
+                                @education.Institution
+                            </span>
+
+                            @if (!string.IsNullOrWhiteSpace(education.StartDate) ||
+                                 !string.IsNullOrWhiteSpace(education.EndDate))
+                            {
+                                <small>
+                                    @education.StartDate
+                                    –
+                                    @education.EndDate
+                                </small>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- ============================================================
+         CERTIFICATIONS
+         ============================================================ -->
+    @if (Model.Certifications.Any())
+    {
+        <section class="sir-section">
+
+            <div class="sir-section-header">
+
+                <div>
+
+                    <div class="sir-section-kicker">
+                        CERTIFICATIONS
+                    </div>
+
+                    <h2>
+                        Certifications
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="sir-certifications-grid">
+
+                @foreach (var certification in Model.Certifications)
+                {
+                    <div class="sir-certification-card">
+
+                        <div class="sir-certification-icon">
+                            <i class="bi bi-award"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                @certification.Name
+                            </h3>
+
+                            <span>
+                                @certification.IssuingOrganisation
+                            </span>
+
+                            @if (!string.IsNullOrWhiteSpace(certification.Date))
+                            {
+                                <small>
+                                    @certification.Date
+                                </small>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- ============================================================
+         LANGUAGES
+         ============================================================ -->
+    @if (Model.Languages.Any())
+    {
+        <section class="sir-section">
+
+            <div class="sir-section-header">
+
+                <div>
+
+                    <div class="sir-section-kicker">
+                        LANGUAGES
+                    </div>
+
+                    <h2>
+                        Languages
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="sir-language-list">
+
+                @foreach (var language in Model.Languages)
+                {
+                    <span>
+                        <i class="bi bi-translate"></i>
+                        @language.Language
+                    </span>
+                }
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- ============================================================
+         INTERVIEW TRANSCRIPT
+         ============================================================ -->
+
+    <section class="sir-section">
+
+        <div class="sir-section-header">
+
+            <div>
+
+                <div class="sir-section-kicker">
+                    VOICE INTERVIEW
+                </div>
+
+                <h2>
+                    Interview Transcript
+                </h2>
+
+                <p>
+                    The complete conversation between the AI interviewer
+                    and the candidate.
+                </p>
+
+            </div>
+
+
+            @if (Model.InterviewCompleted)
+            {
+                <span class="sir-success-badge">
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    Completed
+
+                </span>
+            }
+            else
+            {
+                <span class="sir-warning-badge">
+
+                    <i class="bi bi-clock"></i>
+
+                    @Model.InterviewStatus
+
+                </span>
+            }
+
+        </div>
+
+
+        @if (Model.Transcript.Any())
+        {
+            <div class="sir-transcript">
+
+                @foreach (var item in Model.Transcript)
+                {
+                    <div class="sir-transcript-item">
+
+                        <div class="sir-question-number">
+                            @item.QuestionNumber
+                        </div>
+
+
+                        <div class="sir-transcript-body">
+
+                            <div class="sir-bot-message">
+
+                                <div class="sir-message-label">
+
+                                    <i class="bi bi-robot"></i>
+
+                                    AI Interviewer
+
+                                </div>
+
+                                <p>
+                                    @item.Question
+                                </p>
+
+                            </div>
+
+
+                            <div class="sir-applicant-message">
+
+                                <div class="sir-message-label">
+
+                                    <i class="bi bi-person"></i>
+
+                                    @Model.ApplicantName
+
+                                </div>
+
+                                <p>
+                                    @item.Answer
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="sir-empty-state">
+
+                <i class="bi bi-chat-square-text"></i>
+
+                <h3>
+                    No interview responses yet
+                </h3>
+
+                <p>
+                    The candidate has not submitted any interview responses.
+                </p>
+
+            </div>
+        }
+
+    </section>
+
+
+    <!-- ============================================================
+         FINAL DECISION
+         ============================================================ -->
+    @if (Model.CanMakeDecision)
+    {
+        <section class="sir-section sir-decision-section">
+
+            <div class="sir-section-header">
+
+                <div>
+
+                    <div class="sir-section-kicker">
+                        ADMIN REVIEW
+                    </div>
+
+                    <h2>
+                        Final Candidate Decision
+                    </h2>
+
+                    <p>
+                        The AI evaluation is advisory. The final decision
+                        remains with the administrator.
+                    </p>
+
+                </div>
+
+
+                <div class="sir-decision-ready">
+
+                    <i class="bi bi-shield-check"></i>
+
+                    Ready for Decision
+
+                </div>
+
+            </div>
+
+
+            <form asp-action="SaveInterviewDecision"
+                  asp-controller="VolunteerApplications"
+                  method="post"
+                  class="sir-decision-form">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="applicationId"
+                       value="@Model.VolunteerApplicationId" />
+
+
+                <div class="sir-decision-options">
+
+                    <label class="sir-decision-option sir-decision-approve">
+
+                        <input type="radio"
+                               name="decision"
+                               value="approve" />
+
+                        <div class="sir-decision-option-content">
+
+                            <div class="sir-decision-option-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Approve
+                                </strong>
+
+                                <span>
+                                    Candidate is suitable for the role
+                                    and should proceed.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </label>
+
+
+                    <label class="sir-decision-option sir-decision-review">
+
+                        <input type="radio"
+                               name="decision"
+                               value="review" />
+
+                        <div class="sir-decision-option-content">
+
+                            <div class="sir-decision-option-icon">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Further Review
+                                </strong>
+
+                                <span>
+                                    Additional consideration or human review
+                                    is required.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </label>
+
+
+                    <label class="sir-decision-option sir-decision-reject">
+
+                        <input type="radio"
+                               name="decision"
+                               value="reject" />
+
+                        <div class="sir-decision-option-content">
+
+                            <div class="sir-decision-option-icon">
+                                <i class="bi bi-x-circle"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Reject
+                                </strong>
+
+                                <span>
+                                    Candidate should not proceed with
+                                    this opportunity.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </label>
+
+                </div>
+
+
+                <div class="sir-decision-notes">
+
+                    <label>
+                        Decision Notes
+                    </label>
+
+                    <textarea name="decisionNotes"
+                              rows="5"
+                              placeholder="Add your final assessment, reasoning or administrative notes..."></textarea>
+
+                </div>
+
+
+                <div class="sir-decision-actions">
+
+                    <button type="submit"
+                            class="sir-save-decision">
+
+                        <i class="bi bi-check2-circle"></i>
+
+                        Save Final Decision
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+    }
+    else
+    {
+        <section class="sir-decision-locked">
+
+            <div class="sir-decision-locked-icon">
+                <i class="bi bi-lock"></i>
+            </div>
+
+            <div>
+
+                <strong>
+                    Final decision is not available yet
+                </strong>
+
+                <p>
+                    The candidate must complete the voice interview and
+                    the AI interview evaluation must be completed before
+                    the administrator can make the final decision.
+                </p>
+
+            </div>
+
+        </section>
+    }
+
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const evaluationForm =
+            document.getElementById("sirEvaluationForm");
+
+        const evaluationButton =
+            document.getElementById("sirRunEvaluationButton");
+
+        if (evaluationForm && evaluationButton) {
+
+            evaluationForm.addEventListener("submit", function () {
+
+                evaluationButton.disabled = true;
+
+                evaluationButton.classList.add(
+                    "sir-evaluation-loading"
+                );
+
+            });
+
+        }
+
+
+        const decisionOptions =
+            document.querySelectorAll(
+                ".sir-decision-option input[type='radio']"
+            );
+
+        decisionOptions.forEach(function (radio) {
+
+            radio.addEventListener("change", function () {
+
+                document
+                    .querySelectorAll(".sir-decision-option")
+                    .forEach(function (option) {
+
+                        option.classList.remove(
+                            "sir-decision-selected"
+                        );
+
+                    });
+
+                if (radio.checked) {
+
+                    radio
+                        .closest(".sir-decision-option")
+                        .classList.add(
+                            "sir-decision-selected"
+                        );
+
+                }
+
+            });
+
+        });
+
+    });
+</script>

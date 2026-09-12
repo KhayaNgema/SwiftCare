@@ -554,22 +554,106 @@
                                     </td>
 
 
-                                    <!-- ACTION -->
+                                    <td class="applications-actions-cell">
 
-                                    <td>
+                                        <div class="application-actions">
 
-                                        <div class="sc-shortlist-actions">
+                                            <button type="button"
+                                                    class="application-actions-trigger"
+                                                    onclick="toggleApplicationActions(this)"
+                                                    aria-label="Application actions">
 
-                                            <a asp-controller="VolunteerApplications"
-                                                   asp-action="ApplicationDetails"
-                                                   asp-route-id="@application.VolunteerApplicationId"
-                                                   class="sc-admin-applications-view-button">
+                                                <i class="bi bi-three-dots-vertical"></i>
 
-                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
 
-                                                View Details
 
-                                            </a>
+                                            <div class="application-actions-menu">
+
+                                                <!-- ====================================================
+                 VIEW APPLICATION
+                 ==================================================== -->
+
+                                                <a asp-controller="VolunteerApplications"
+                                                       asp-action="Details"
+                                                       asp-route-id="@application.VolunteerApplicationId"
+                                                       class="application-action-item">
+
+                                                    <span class="application-action-icon">
+                                                        <i class="bi bi-eye"></i>
+                                                    </span>
+
+                                                    <span>
+                                                        View Application
+                                                    </span>
+
+                                                </a>
+
+
+                                                <!-- ====================================================
+                 REVIEW INTERVIEW
+                 ==================================================== -->
+                                                @if (application.Stage == VolunteerApplicationStage.Interview ||
+                                                                 application.Stage == VolunteerApplicationStage.Shortlisted ||
+                                                                 application.Stage == VolunteerApplicationStage.Approved ||
+                                                                 application.Stage == VolunteerApplicationStage.Rejected)
+                                                {
+                                                    <a asp-controller="VolunteerApplications"
+                                                           asp-action="InterviewReview"
+                                                           asp-route-applicationId="@application.VolunteerApplicationId"
+                                                           class="application-action-item application-action-interview">
+
+                                                        <span class="application-action-icon">
+                                                            <i class="bi bi-mic-fill"></i>
+                                                        </span>
+
+                                                        <span>
+                                                            Review Interview
+                                                        </span>
+
+                                                    </a>
+                                                }
+
+
+                                                <!-- ====================================================
+                 SHORTLIST MANAGEMENT
+                 ==================================================== -->
+                                                @if (application.Stage == VolunteerApplicationStage.Shortlisted)
+                                                {
+                                                    <a asp-controller="VolunteerApplications"
+                                                           asp-action="ShortlistManagement"
+                                                           class="application-action-item">
+
+                                                        <span class="application-action-icon">
+                                                            <i class="bi bi-people"></i>
+                                                        </span>
+
+                                                        <span>
+                                                            Manage Shortlist
+                                                        </span>
+
+                                                    </a>
+                                                }
+
+
+
+
+                                                <a asp-controller="VolunteerApplications"
+                                                       asp-action="Details"
+                                                       asp-route-id="@application.VolunteerApplicationId"
+                                                       class="application-action-item">
+
+                                                    <span class="application-action-icon">
+                                                        <i class="bi bi-file-earmark-text"></i>
+                                                    </span>
+
+                                                    <span>
+                                                        Application Details
+                                                    </span>
+
+                                                </a>
+
+                                            </div>
 
                                         </div>
 
@@ -885,5 +969,110 @@
         );
 
     })();
+
+</script>
+<script>
+
+    /* ============================================================
+       APPLICATION ACTION MENU
+       ============================================================ */
+
+    function toggleApplicationActions(button) {
+
+        const current =
+            button.closest(".application-actions");
+
+        if (!current) {
+            return;
+        }
+
+
+        const wasOpen =
+            current.classList.contains("is-open");
+
+
+        /*
+         * Close every other action menu first.
+         */
+        document
+            .querySelectorAll(".application-actions.is-open")
+            .forEach(function (menu) {
+
+                menu.classList.remove("is-open");
+
+            });
+
+
+        /*
+         * Toggle the clicked menu.
+         */
+        if (!wasOpen) {
+
+            current.classList.add("is-open");
+
+        }
+
+    }
+
+
+    /* ============================================================
+       CLOSE WHEN CLICKING OUTSIDE
+       ============================================================ */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                !event.target.closest(
+                    ".application-actions"
+                )
+            ) {
+
+                document
+                    .querySelectorAll(
+                        ".application-actions.is-open"
+                    )
+                    .forEach(function (menu) {
+
+                        menu.classList.remove(
+                            "is-open"
+                        );
+
+                    });
+
+            }
+
+        }
+    );
+
+
+    /* ============================================================
+       CLOSE WITH ESC
+       ============================================================ */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (event.key !== "Escape") {
+                return;
+            }
+
+
+            document
+                .querySelectorAll(
+                    ".application-actions.is-open"
+                )
+                .forEach(function (menu) {
+
+                    menu.classList.remove(
+                        "is-open"
+                    );
+
+                });
+
+        }
+    );
 
 </script>

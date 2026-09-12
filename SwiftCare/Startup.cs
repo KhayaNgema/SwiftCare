@@ -1,9 +1,7 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
-
 using Hangfire;
 using Hangfire.SqlServer;
-using SwiftCare.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
@@ -14,17 +12,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
 using Serilog;
-
+using SwiftCare.Configuration;
 using SwiftCare.Data;
 using SwiftCare.Helpers;
+using SwiftCare.Hubs;
 using SwiftCare.Interfaces;
 using SwiftCare.Models;
 using SwiftCare.Services;
+using SwiftCare.Services.AI;
 using SwiftCare.Services.VolunteerATS;
 using SwiftCare.Services.VolunteerATS.CV;
-
 using System;
 using System.Globalization;
 using System.Linq;
@@ -347,10 +345,11 @@ public class Startup
 
         services.AddScoped<QrCodeService>();
 
+        services.AddScoped<IVolunteerInterviewEvaluationEngine,VolunteerInterviewEvaluationEngine>();
+        services.Configure<SwiftCareLlmOptions>(
+            Configuration.GetSection(SwiftCareLlmOptions.SectionName));
 
-        // ============================================================
-        // HTTP CLIENT
-        // ============================================================
+        services.AddSingleton<ISwiftCareLlmService, SwiftCareLlmService>();
 
         services.AddHttpClient();
 

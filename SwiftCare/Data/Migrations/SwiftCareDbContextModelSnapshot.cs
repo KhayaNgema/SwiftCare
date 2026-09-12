@@ -1419,6 +1419,216 @@ namespace SwiftCare.Data.Migrations
                     b.ToTable("VolunteerExperiences");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewCompetencyEvaluation", b =>
+                {
+                    b.Property<int>("VolunteerInterviewCompetencyEvaluationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerInterviewCompetencyEvaluationId"));
+
+                    b.Property<string>("Assessment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Confidence")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("Demonstrated")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Reasoning")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Score")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("VolunteerInterviewEvaluationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerInterviewCompetencyEvaluationId");
+
+                    b.HasIndex("VolunteerInterviewEvaluationId");
+
+                    b.ToTable("VolunteerInterviewCompetencyEvaluations");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewEvaluation", b =>
+                {
+                    b.Property<int>("VolunteerInterviewEvaluationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerInterviewEvaluationId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime?>("EvaluatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EvaluationDatasetVersion")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("EvaluationModel")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("EvaluationPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EvaluationPromptVersion")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("EvaluationProvider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EvaluationStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EvaluationVersion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FoundryEvaluationId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("LastUpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("OverallInterviewConfidence")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OverallInterviewScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Recommendation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("VolunteerApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VolunteerVoiceInterviewSessionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerInterviewEvaluationId");
+
+                    b.HasIndex("VolunteerApplicationId")
+                        .IsUnique();
+
+                    b.HasIndex("VolunteerVoiceInterviewSessionId");
+
+                    b.ToTable("VolunteerInterviewEvaluations");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewSkillEvaluation", b =>
+                {
+                    b.Property<int>("VolunteerInterviewSkillEvaluationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerInterviewSkillEvaluationId"));
+
+                    b.Property<string>("Assessment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Confidence")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CvEvidence")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("FoundInCv")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("FoundInInterview")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("InterviewEvidence")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<decimal>("InterviewScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Reasoning")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("VolunteerInterviewEvaluationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VolunteerRequiredSkillId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerInterviewSkillEvaluationId");
+
+                    b.HasIndex("VolunteerInterviewEvaluationId");
+
+                    b.HasIndex("VolunteerRequiredSkillId");
+
+                    b.ToTable("VolunteerInterviewSkillEvaluations");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding", b =>
                 {
                     b.Property<int>("VolunteerOnboardingId")
@@ -2565,6 +2775,54 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Volunteer");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewCompetencyEvaluation", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerInterviewEvaluation", "VolunteerInterviewEvaluation")
+                        .WithMany("CompetencyEvaluations")
+                        .HasForeignKey("VolunteerInterviewEvaluationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerInterviewEvaluation");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewEvaluation", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerApplication", "VolunteerApplication")
+                        .WithMany()
+                        .HasForeignKey("VolunteerApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.VolunteerVoiceInterviewSession", "VolunteerVoiceInterviewSession")
+                        .WithMany()
+                        .HasForeignKey("VolunteerVoiceInterviewSessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("VolunteerApplication");
+
+                    b.Navigation("VolunteerVoiceInterviewSession");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewSkillEvaluation", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerInterviewEvaluation", "VolunteerInterviewEvaluation")
+                        .WithMany("SkillEvaluations")
+                        .HasForeignKey("VolunteerInterviewEvaluationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.VolunteerRequiredSkill", "VolunteerRequiredSkill")
+                        .WithMany()
+                        .HasForeignKey("VolunteerRequiredSkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerInterviewEvaluation");
+
+                    b.Navigation("VolunteerRequiredSkill");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding", b =>
                 {
                     b.HasOne("SwiftCare.Models.Applicant", "Applicant")
@@ -2768,6 +3026,13 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("Languages");
 
                     b.Navigation("Skills");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerInterviewEvaluation", b =>
+                {
+                    b.Navigation("CompetencyEvaluations");
+
+                    b.Navigation("SkillEvaluations");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>

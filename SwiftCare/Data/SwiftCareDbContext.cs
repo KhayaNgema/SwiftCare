@@ -161,8 +161,49 @@ namespace SwiftCare.Data
                 .HasIndex(x => x.SessionToken)
                 .IsUnique();
 
-        }
 
+            modelBuilder.Entity<VolunteerInterviewEvaluation>()
+                .HasIndex(x => x.VolunteerApplicationId)
+                .IsUnique();
+
+            modelBuilder.Entity<VolunteerInterviewEvaluation>()
+                .HasOne(x => x.VolunteerApplication)
+                .WithMany()
+                .HasForeignKey(x => x.VolunteerApplicationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VolunteerInterviewEvaluation>()
+                .HasOne(x => x.VolunteerVoiceInterviewSession)
+                .WithMany()
+                .HasForeignKey(x => x.VolunteerVoiceInterviewSessionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+
+            modelBuilder.Entity<VolunteerInterviewSkillEvaluation>()
+                .HasOne(x => x.VolunteerInterviewEvaluation)
+                .WithMany(x => x.SkillEvaluations)
+                .HasForeignKey(x => x.VolunteerInterviewEvaluationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VolunteerInterviewSkillEvaluation>()
+                .HasOne(x => x.VolunteerRequiredSkill)
+                .WithMany()
+                .HasForeignKey(x => x.VolunteerRequiredSkillId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<VolunteerInterviewCompetencyEvaluation>()
+                .HasOne(x => x.VolunteerInterviewEvaluation)
+                .WithMany(x => x.CompetencyEvaluations)
+                .HasForeignKey(x => x.VolunteerInterviewEvaluationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        }
+        public DbSet<VolunteerInterviewEvaluation>VolunteerInterviewEvaluations{ get; set; }
+
+        public DbSet<VolunteerInterviewSkillEvaluation> VolunteerInterviewSkillEvaluations{ get; set; }
+
+        public DbSet<VolunteerInterviewCompetencyEvaluation>VolunteerInterviewCompetencyEvaluations{ get; set; }
         public DbSet<VolunteerApplicationEvaluation>VolunteerApplicationEvaluations{ get; set; }
 
         public DbSet<VolunteerApplicationAudit>VolunteerApplicationAudits { get; set; }

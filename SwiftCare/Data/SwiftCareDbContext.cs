@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SwiftCare.Models;
 using SwiftCare.Models.VolunteerCV;
+using SwiftCare.Models.VolunteerOnboarding;
 using System.Reflection.Emit;
 
 namespace SwiftCare.Data
@@ -198,6 +199,405 @@ namespace SwiftCare.Data
                 .HasForeignKey(x => x.VolunteerInterviewEvaluationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+            modelBuilder.Entity<VolunteerOnboarding>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerOnboardingId);
+
+                entity.Property(x => x.Status)
+                    .IsRequired();
+
+                entity.Property(x => x.CurrentStep)
+                    .IsRequired();
+
+                entity.Property(x => x.ApplicantId)
+                    .HasMaxLength(450)
+                    .IsRequired();
+
+                entity.Property(x => x.CreatedDate)
+                    .IsRequired();
+
+                entity.Property(x => x.ModifiedDate)
+                    .IsRequired();
+
+                entity.HasOne(x => x.VolunteerApplication)
+                    .WithOne()
+                    .HasForeignKey<VolunteerOnboarding>(
+                        x => x.VolunteerApplicationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.Applicant)
+                    .WithMany()
+                    .HasForeignKey(x => x.ApplicantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+
+                entity.HasMany(x => x.Offers)
+                    .WithOne(x => x.VolunteerOnboarding)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.PolicyAcceptances)
+                    .WithOne(x => x.VolunteerOnboarding)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.Documents)
+                    .WithOne(x => x.VolunteerOnboarding)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.Requirements)
+                    .WithOne(x => x.VolunteerOnboarding)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.Volunteer)
+                    .WithOne(x => x.Onboarding)
+                    .HasForeignKey<Volunteer>(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+
+            modelBuilder.Entity<VolunteerOffer>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerOfferId);
+
+                entity.Property(x => x.OfferReference)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.PositionTitle)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(x => x.ApplicantId)
+                    .HasMaxLength(450)
+                    .IsRequired();
+
+                entity.Property(x => x.AcceptanceTokenHash)
+                    .HasMaxLength(128)
+                    .IsRequired();
+
+                entity.Property(x => x.Status)
+                    .IsRequired();
+
+                entity.HasIndex(x => x.OfferReference)
+                    .IsUnique();
+
+                entity.HasIndex(x => x.AcceptanceTokenHash)
+                    .IsUnique();
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany(x => x.Offers)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.VolunteerApplication)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerApplicationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.VolunteerOpportunity)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerOpportunityId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+
+            modelBuilder.Entity<VolunteerPolicy>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerPolicyId);
+
+                entity.Property(x => x.Title)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(x => x.Version)
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(x => x.IsRequired)
+                    .IsRequired();
+
+                entity.Property(x => x.IsActive)
+                    .IsRequired();
+
+                entity.HasIndex(x => new
+                {
+                    x.Title,
+                    x.Version
+                });
+            });
+
+
+
+            modelBuilder.Entity<VolunteerPolicyAcceptance>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerPolicyAcceptanceId);
+
+                entity.Property(x => x.ApplicantId)
+                    .HasMaxLength(450)
+                    .IsRequired();
+
+                entity.Property(x => x.PolicyVersion)
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(x => x.Accepted)
+                    .IsRequired();
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany(x => x.PolicyAcceptances)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.VolunteerPolicy)
+                    .WithMany(x => x.Acceptances)
+                    .HasForeignKey(x => x.VolunteerPolicyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(x => new
+                {
+                    x.VolunteerOnboardingId,
+                    x.VolunteerPolicyId
+                })
+                .IsUnique();
+            });
+
+
+            modelBuilder.Entity<VolunteerOnboardingDocument>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerOnboardingDocumentId);
+
+                entity.Property(x => x.ApplicantId)
+                    .HasMaxLength(450)
+                    .IsRequired();
+
+                entity.Property(x => x.DocumentName)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(x => x.FileName)
+                    .HasMaxLength(255)
+                    .IsRequired();
+
+                entity.Property(x => x.FilePath)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(x => x.ContentType)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(x => x.Status)
+                    .IsRequired();
+
+                entity.Property(x => x.DocumentType)
+                    .IsRequired();
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany(x => x.Documents)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new
+                {
+                    x.VolunteerOnboardingId,
+                    x.DocumentType
+                });
+            });
+
+
+
+            modelBuilder.Entity<VolunteerOnboardingRequirement>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerOnboardingRequirementId);
+
+                entity.Property(x => x.Title)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(x => x.RequirementType)
+                    .IsRequired();
+
+                entity.Property(x => x.IsRequired)
+                    .IsRequired();
+
+                entity.Property(x => x.IsCompleted)
+                    .IsRequired();
+
+                entity.Property(x => x.DisplayOrder)
+                    .IsRequired();
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany(x => x.Requirements)
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new
+                {
+                    x.VolunteerOnboardingId,
+                    x.DisplayOrder
+                });
+            });
+
+
+
+            modelBuilder.Entity<Volunteer>(entity =>
+            {
+                entity.Property(x => x.VolunteerOnboardingId)
+                    .IsRequired(false);
+
+                entity.HasIndex(x => x.VolunteerOnboardingId)
+                    .IsUnique()
+                    .HasFilter("[VolunteerOnboardingId] IS NOT NULL");
+
+                entity.HasOne(x => x.Onboarding)
+                    .WithOne(x => x.Volunteer)
+                    .HasForeignKey<Volunteer>(
+                        x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ============================================================
+            // VOLUNTEER CONTRACT
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerContract>(entity =>
+            {
+                entity.HasKey(x => x.VolunteerContractId);
+
+                entity.HasIndex(x => x.ContractReference)
+                    .IsUnique();
+
+                entity.HasIndex(x => x.VolunteerOnboardingId);
+
+                entity.HasIndex(x => x.VolunteerApplicationId);
+
+                entity.HasIndex(x => x.VolunteerOpportunityId);
+
+                entity.HasIndex(x => x.VolunteerOfferId);
+
+                entity.HasIndex(x => x.ApplicantId);
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.VolunteerApplication)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerApplicationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.VolunteerOpportunity)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerOpportunityId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.VolunteerOffer)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerOfferId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.Applicant)
+                    .WithMany()
+                    .HasForeignKey(x => x.ApplicantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(x => x.ContractReference)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.ContractVersion)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.PositionTitle)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(x => x.RoleDescription)
+                    .HasMaxLength(3000);
+
+                entity.Property(x => x.CityName)
+                    .HasMaxLength(150);
+
+                entity.Property(x => x.Province)
+                    .HasMaxLength(150);
+
+                entity.Property(x => x.RequirementsSnapshot)
+                    .HasMaxLength(10000);
+
+                entity.Property(x => x.ResponsibilitiesSnapshot)
+                    .HasMaxLength(10000);
+
+                entity.Property(x => x.RequiredSkillsSnapshot)
+                    .HasMaxLength(10000);
+
+                entity.Property(x => x.GeneratedFileName)
+                    .HasMaxLength(255);
+
+                entity.Property(x => x.GeneratedFilePath)
+                    .HasMaxLength(500);
+
+                entity.Property(x => x.SignedFileName)
+                    .HasMaxLength(255);
+
+                entity.Property(x => x.SignedFilePath)
+                    .HasMaxLength(500);
+
+                entity.Property(x => x.RejectionReason)
+                    .HasMaxLength(2000);
+
+                entity.Property(x => x.CreatedBy)
+                    .HasMaxLength(450);
+
+                entity.Property(x => x.ModifiedBy)
+                    .HasMaxLength(450);
+
+                entity.Property(x => x.ReviewedByAdminId)
+                    .HasMaxLength(450);
+            });
+
+        }
+
+
+        public DbSet<VolunteerOnboarding> VolunteerOnboardings
+        {
+            get;
+            set;
+        }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerOffer> VolunteerOffers
+        {
+            get;
+            set;
+        }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy> VolunteerPolicies
+        {
+            get;
+            set;
+        }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicyAcceptance> VolunteerPolicyAcceptances
+        {
+            get;
+            set;
+        }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocument> VolunteerOnboardingDocuments
+        {
+            get;
+            set;
+        }
+
+        public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingRequirement> VolunteerOnboardingRequirements
+        {
+            get;
+            set;
         }
         public DbSet<VolunteerInterviewEvaluation>VolunteerInterviewEvaluations{ get; set; }
 
@@ -245,8 +645,6 @@ namespace SwiftCare.Data
 
         public DbSet<SwiftCare.Models.VolunteerTask> VolunteerTasks { get; set; }
 
-        public DbSet<SwiftCare.Models.VolunteerOnboarding> VolunteerOnboardings { get; set; }
-
         public DbSet<SwiftCare.Models.VolunteerDocument> VolunteerDocuments { get; set; }
 
         public DbSet<VolunteerAgreement> VolunteerAgreements { get; set; }
@@ -287,5 +685,7 @@ namespace SwiftCare.Data
         public DbSet<SwiftCare.Models.NextOfKin>NextOfKins { get; set; } = default!;
 
         public DbSet<SwiftCare.Models.Resident> Residents { get; set; } = default!;
+
+        public DbSet<VolunteerContract> VolunteerContracts { get; set; }
     }
 }

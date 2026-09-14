@@ -1,0 +1,165 @@
+﻿@model IEnumerable<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding>
+
+@{
+    ViewData["Title"] = "Volunteer Onboarding";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<style>
+    .admin-onboarding-page {
+        padding: 30px 0 60px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #eaffd0, #f7ffed);
+        border-radius: 22px;
+        padding: 28px;
+        margin-bottom: 25px;
+    }
+
+        .page-header h1 {
+            color: #174d32;
+            font-weight: 800;
+        }
+
+    .onboarding-table-card {
+        background: #fff;
+        border: 1px solid #dfe9da;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 25px rgba(25, 75, 45, .06);
+    }
+
+    .table th {
+        color: #42604c;
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .table td {
+        vertical-align: middle;
+        color: #415246;
+    }
+
+    .applicant-name {
+        color: #174d32;
+        font-weight: 750;
+    }
+
+    .status-badge {
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #edf5e9;
+        color: #426344;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .btn-view {
+        background: #72b82a;
+        border: none;
+        color: #163d25;
+        font-weight: 700;
+        border-radius: 9px;
+    }
+</style>
+
+<div class="container admin-onboarding-page">
+
+    <div class="page-header">
+
+        <h1>
+            <i class="bi bi-person-vcard me-2"></i>
+            Volunteer Onboarding
+        </h1>
+
+        <p class="mb-0 text-muted">
+            Review, verify and activate approved volunteer applicants.
+        </p>
+
+    </div>
+
+    <div class="onboarding-table-card">
+
+        <div class="table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+
+                    <tr>
+                        <th>Applicant</th>
+                        <th>Opportunity</th>
+                        <th>Status</th>
+                        <th>Step</th>
+                        <th>Created</th>
+                        <th></th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var onboarding in Model)
+                    {
+                        <tr>
+
+                            <td>
+                                <div class="applicant-name">
+                                    @onboarding.Applicant?.FirstName
+                                    @onboarding.Applicant?.LastName
+                                </div>
+
+                                <small class="text-muted">
+                                    @onboarding.Applicant?.Email
+                                </small>
+                            </td>
+
+                            <td>
+                                @(onboarding.VolunteerApplication
+                                    ?.VolunteerOpportunity
+                                    ?.Title ?? "—")
+                            </td>
+
+                            <td>
+                                <span class="status-badge">
+                                    @onboarding.Status
+                                </span>
+                            </td>
+
+                            <td>
+                                Step @onboarding.CurrentStep
+                            </td>
+
+                            <td>
+                                @onboarding.CreatedDate
+                                .ToLocalTime()
+                                .ToString("dd MMM yyyy")
+                            </td>
+
+                            <td class="text-end">
+
+                                <a asp-action="Details"
+                                       asp-route-id="@onboarding.VolunteerOnboardingId"
+                                       class="btn btn-sm btn-view">
+
+                                    <i class="bi bi-eye me-1"></i>
+                                    Review
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

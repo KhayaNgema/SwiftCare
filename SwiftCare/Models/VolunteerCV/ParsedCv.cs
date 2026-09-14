@@ -133,7 +133,7 @@ namespace SwiftCare.Models.VolunteerCV
         // ============================================================
 
         public DateTime ParsedDate { get; set; }
-            = DateTime.UtcNow;
+            = DateTime.Now;
     }
 
 

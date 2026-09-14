@@ -1,0 +1,434 @@
+﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
+
+@{
+    ViewData["Title"] = "Volunteer Onboarding";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var status = Model.Status.ToString();
+
+    var statusClass = Model.Status switch
+    {
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.Completed
+            => "status-success",
+
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ReadyForActivation
+            => "status-success",
+
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.RejectedForCorrection
+            => "status-danger",
+
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.OfferDeclined
+            => "status-danger",
+
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification
+            => "status-warning",
+
+        _ => "status-info"
+    };
+
+    var progress = Model.CurrentStep switch
+    {
+        1 => 16,
+        2 => 33,
+        3 => 50,
+        4 => 66,
+        5 => 83,
+        6 => 100,
+        _ => 0
+    };
+}
+
+<style>
+    .onboarding-page {
+        padding: 30px 0 60px;
+    }
+
+    .onboarding-hero {
+        background: linear-gradient(135deg, #eaffd0, #f5ffe9);
+        border: 1px solid #cde8a7;
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 25px;
+    }
+
+    .onboarding-hero h1 {
+        color: #174d32;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .onboarding-hero p {
+        color: #426451;
+        margin-bottom: 0;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 15px;
+        border-radius: 50px;
+        font-size: .85rem;
+        font-weight: 700;
+    }
+
+    .status-info {
+        background: #dff4ff;
+        color: #155d7a;
+    }
+
+    .status-success {
+        background: #ddf7d0;
+        color: #28702d;
+    }
+
+    .status-warning {
+        background: #fff1c7;
+        color: #765800;
+    }
+
+    .status-danger {
+        background: #ffe0df;
+        color: #8a2823;
+    }
+
+    .progress-card,
+    .step-card {
+        background: #fff;
+        border: 1px solid #e0ead9;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 25px rgba(25, 75, 45, .06);
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 20px;
+        background: #edf3e8;
+    }
+
+    .progress-bar {
+        background: #72b82a;
+        border-radius: 20px;
+    }
+
+    .step-card {
+        height: 100%;
+        transition: .2s ease;
+    }
+
+    .step-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(25, 75, 45, .09);
+    }
+
+    .step-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #eaffd0;
+        color: #23633d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 15px;
+    }
+
+    .step-card h5 {
+        color: #174d32;
+        font-weight: 750;
+    }
+
+    .step-card p {
+        color: #647568;
+        font-size: .9rem;
+    }
+
+    .btn-swift {
+        background: #72b82a;
+        border-color: #72b82a;
+        color: #163d25;
+        font-weight: 750;
+        border-radius: 12px;
+        padding: 10px 18px;
+    }
+
+    .btn-swift:hover {
+        background: #5fa01e;
+        border-color: #5fa01e;
+        color: #163d25;
+    }
+
+    .application-box {
+        background: #f7faf5;
+        border-radius: 16px;
+        padding: 18px;
+    }
+
+    .application-box strong {
+        color: #174d32;
+    }
+</style>
+
+<div class="container onboarding-page">
+
+    <div class="onboarding-hero">
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center">
+
+            <div>
+                <h1>
+                    <i class="bi bi-person-check me-2"></i>
+                    Volunteer Onboarding
+                </h1>
+
+                <p>
+                    Complete the steps below to become an active SwiftCare volunteer.
+                </p>
+            </div>
+
+            <div>
+                <span class="status-pill @statusClass">
+                    <i class="bi bi-circle-fill"></i>
+                    @status
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="progress-card mb-4">
+
+        <div class="d-flex justify-content-between mb-2">
+            <strong style="color:#174d32;">
+                Onboarding Progress
+            </strong>
+
+            <span style="color:#647568;">
+                Step @Model.CurrentStep of 6
+            </span>
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar"
+                 role="progressbar"
+                 style="width:@progress%">
+            </div>
+        </div>
+
+    </div>
+
+    <div class="application-box mb-4">
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <small class="text-muted">Application</small>
+                <div>
+                    <strong>
+                        #@Model.VolunteerApplicationId
+                    </strong>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <small class="text-muted">Offer Sent</small>
+                <div>
+                    <strong>
+                        @(Model.OfferSentDate?.ToLocalTime().ToString("dd MMM yyyy") ?? "Pending")
+                    </strong>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <small class="text-muted">Last Updated</small>
+                <div>
+                    <strong>
+                        @Model.ModifiedDate.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                    </strong>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="row g-4">
+
+        <!-- OFFER -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-envelope-paper"></i>
+                </div>
+
+                <h5>1. Volunteer Offer</h5>
+
+                <p>
+                    Review your volunteer offer and accept or decline it.
+                </p>
+
+                @if (Model.Status == SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.OfferPending)
+                {
+                    <a asp-action="Offer"
+                       asp-route-id="@Model.VolunteerOnboardingId"
+                       class="btn btn-swift">
+                        Review Offer
+                    </a>
+                }
+                else
+                {
+                    <span class="text-success fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Completed
+                    </span>
+                }
+
+            </div>
+        </div>
+
+        <!-- POLICIES -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <h5>2. Policies</h5>
+
+                <p>
+                    Read and accept the required SwiftCare policies and code of conduct.
+                </p>
+
+                @if (Model.CurrentStep >= 2 &&
+                     Model.Status != SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.OfferDeclined)
+                {
+                    <a asp-action="Policies"
+                       asp-route-id="@Model.VolunteerOnboardingId"
+                       class="btn btn-swift">
+                        Review Policies
+                    </a>
+                }
+
+            </div>
+        </div>
+
+        <!-- CONTRACT -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+
+                <h5>3. Contract</h5>
+
+                <p>
+                    Download, complete, sign and submit your volunteer contract.
+                </p>
+
+                @if (Model.CurrentStep >= 3)
+                {
+                    <a asp-action="Contract"
+                       asp-route-id="@Model.VolunteerOnboardingId"
+                       class="btn btn-swift">
+                        Open Contract
+                    </a>
+                }
+
+            </div>
+        </div>
+
+        <!-- DOCUMENTS -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-folder-check"></i>
+                </div>
+
+                <h5>4. Documents</h5>
+
+                <p>
+                    Upload your identification, qualifications and required documents.
+                </p>
+
+                @if (Model.CurrentStep >= 4)
+                {
+                    <a asp-action="Documents"
+                       asp-route-id="@Model.VolunteerOnboardingId"
+                       class="btn btn-swift">
+                        Manage Documents
+                    </a>
+                }
+
+            </div>
+        </div>
+
+        <!-- VERIFICATION -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-person-vcard"></i>
+                </div>
+
+                <h5>5. Admin Verification</h5>
+
+                <p>
+                    SwiftCare administrators will verify your information and documents.
+                </p>
+
+                @if (Model.Status == SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification)
+                {
+                    <span class="status-pill status-warning">
+                        <i class="bi bi-hourglass-split"></i>
+                        Under Review
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- ACTIVATION -->
+
+        <div class="col-md-6 col-lg-4">
+            <div class="step-card">
+
+                <div class="step-icon">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
+
+                <h5>6. Volunteer Activation</h5>
+
+                <p>
+                    Once verification is complete, your volunteer profile will be activated.
+                </p>
+
+                @if (Model.Status == SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ReadyForActivation)
+                {
+                    <span class="status-pill status-success">
+                        <i class="bi bi-check-circle"></i>
+                        Ready for Activation
+                    </span>
+                }
+                else if (Model.Status == SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.Completed)
+                {
+                    <span class="status-pill status-success">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Completed
+                    </span>
+                }
+
+            </div>
+        </div>
+
+    </div>
+
+</div>

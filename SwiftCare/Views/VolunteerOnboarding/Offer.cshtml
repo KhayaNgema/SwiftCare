@@ -1,0 +1,396 @@
+﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOffer
+
+@{
+    ViewData["Title"] = "Volunteer Offer";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var token = ViewBag.Token as string ?? string.Empty;
+
+    var isPending =
+        Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOfferStatus.Pending;
+
+    var isExpired =
+        Model.ExpiryDate <= DateTime.Now ||
+        Model.TokenExpiryDate <= DateTime.Now;
+}
+
+
+<div class="container offer-page">
+
+    <div class="offer-card">
+
+        <!-- =========================================================
+             HEADER
+             ========================================================= -->
+
+        <div class="offer-header">
+
+            <div class="mb-2 text-success fw-semibold">
+
+                <i class="bi bi-stars me-1"></i>
+
+                SwiftCare Volunteer Opportunity
+
+            </div>
+
+            <h1>
+                @Model.PositionTitle
+            </h1>
+
+            <div class="offer-reference">
+
+                Offer Reference:
+
+                <strong>
+                    @Model.OfferReference
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+             OFFER INFORMATION
+             ========================================================= -->
+
+        <div class="mb-4">
+
+            <div class="info-row">
+
+                <div class="info-label">
+
+                    <i class="bi bi-calendar-check offer-meta-icon me-2"></i>
+
+                    Offer Issued
+
+                </div>
+
+                <div class="info-value">
+
+                    @(Model.IssuedDate.ToLocalTime().ToString("dd MMMM yyyy"))
+
+                </div>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <div class="info-label">
+
+                    <i class="bi bi-calendar-x offer-meta-icon me-2"></i>
+
+                    Offer Expires
+
+                </div>
+
+                <div class="info-value">
+
+                    @(Model.ExpiryDate.ToLocalTime().ToString("dd MMMM yyyy HH:mm"))
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+             INFORMATION MESSAGE
+             ========================================================= -->
+
+        <div class="alert offer-message mb-4">
+
+            <i class="bi bi-info-circle me-2"></i>
+
+            Please review this volunteer offer carefully.
+
+            Once accepted, you will continue to the
+            SwiftCare policies and onboarding process.
+
+        </div>
+
+
+        <!-- =========================================================
+             TEMP DATA ERROR
+             ========================================================= -->
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger offer-status mb-4">
+
+                <i class="bi bi-exclamation-triangle me-2"></i>
+
+                @TempData["Error"]
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+             TEMP DATA SUCCESS
+             ========================================================= -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success offer-status mb-4">
+
+                <i class="bi bi-check-circle me-2"></i>
+
+                @TempData["Success"]
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+             MISSING TOKEN
+             ========================================================= -->
+        @if (string.IsNullOrWhiteSpace(token))
+        {
+            <div class="alert alert-danger offer-status mt-4">
+
+                <i class="bi bi-shield-exclamation me-2"></i>
+
+                This offer link is missing its security token.
+                Please use the original link sent to your email.
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+             EXPIRED OFFER
+             ========================================================= -->
+        @if (isPending && isExpired)
+        {
+            <div class="alert alert-warning offer-status mt-4">
+
+                <i class="bi bi-clock-history me-2"></i>
+
+                This volunteer offer has expired and can no longer
+                be accepted or declined through this link.
+
+            </div>
+        }
+
+
+        <!-- =========================================================
+             PENDING OFFER
+             ========================================================= -->
+        @if (isPending && !isExpired && !string.IsNullOrWhiteSpace(token))
+        {
+            <div class="d-flex flex-column flex-md-row gap-3 mt-4">
+
+                <!-- =================================================
+                     ACCEPT OFFER
+                     ================================================= -->
+
+                <form asp-action="AcceptOffer"
+                      asp-controller="VolunteerOnboarding"
+                      method="post"
+                      class="flex-grow-1">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.VolunteerOfferId" />
+
+                    <!--
+                        IMPORTANT:
+                        This is the RAW acceptance token.
+
+                        Do NOT use:
+                        Model.AcceptanceTokenHash
+
+                        Do NOT hash this token here.
+
+                        The controller hashes this raw token and
+                        compares it with AcceptanceTokenHash.
+                    -->
+
+                    <input type="hidden"
+                           name="token"
+                           value="@token" />
+
+                    <button type="submit"
+                            class="btn btn-accept w-100">
+
+                        <i class="bi bi-check-circle me-2"></i>
+
+                        Accept Offer
+
+                    </button>
+
+                </form>
+
+
+                <!-- =================================================
+                     DECLINE BUTTON
+                     ================================================= -->
+
+                <button type="button"
+                        class="btn btn-decline"
+                        data-bs-toggle="modal"
+                        data-bs-target="#declineModal">
+
+                    <i class="bi bi-x-circle me-2"></i>
+
+                    Decline Offer
+
+                </button>
+
+            </div>
+        }
+        else if (!isPending)
+        {
+            <!-- =====================================================
+                 PROCESSED OFFER
+                 ===================================================== -->
+
+            <div class="alert alert-info offer-status mt-4">
+
+                <i class="bi bi-info-circle me-2"></i>
+
+                This offer has already been processed.
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+
+<!-- ================================================================
+     DECLINE MODAL
+     ================================================================ -->
+
+<div class="modal fade"
+     id="declineModal"
+     tabindex="-1"
+     aria-labelledby="declineModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <form asp-action="DeclineOffer"
+                  asp-controller="VolunteerOnboarding"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <!-- =================================================
+                     MODAL HEADER
+                     ================================================= -->
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title"
+                        id="declineModalLabel">
+
+                        <i class="bi bi-x-circle me-2"></i>
+
+                        Decline Volunteer Offer
+
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
+
+                </div>
+
+
+                <!-- =================================================
+                     MODAL BODY
+                     ================================================= -->
+
+                <div class="modal-body">
+
+                    <!-- OFFER ID -->
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.VolunteerOfferId" />
+
+
+                    <!--
+                        IMPORTANT:
+                        The SAME RAW TOKEN from the email URL
+                        must be submitted with the decline request.
+                    -->
+
+                    <input type="hidden"
+                           name="token"
+                           value="@token" />
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold"
+                               for="declineReason">
+
+                            Reason for declining
+
+                        </label>
+
+                        <textarea id="declineReason"
+                                  name="declineReason"
+                                  class="form-control decline-textarea"
+                                  rows="5"
+                                  maxlength="1000"
+                                  required
+                                  placeholder="Please tell us why you are declining this offer."></textarea>
+
+                        <div class="form-text">
+
+                            Maximum 1000 characters.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     MODAL FOOTER
+                     ================================================= -->
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        <i class="bi bi-x-circle me-2"></i>
+
+                        Decline Offer
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+

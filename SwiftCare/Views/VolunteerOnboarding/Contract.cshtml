@@ -1,0 +1,398 @@
+﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
+
+@{
+    ViewData["Title"] = "Volunteer Contract";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var contract =
+        ViewBag.Contract
+        as SwiftCare.Models.VolunteerOnboarding.VolunteerContract;
+
+    var uploadedContract =
+        Model.Documents
+            .Where(x =>
+                x.DocumentType ==
+                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentType.VolunteerContract)
+            .OrderByDescending(x => x.UploadedDate)
+            .FirstOrDefault();
+
+    var hasGeneratedContract = contract != null;
+}
+
+<div class="container contract-page">
+
+    <!-- =========================================================
+         HERO
+         ========================================================= -->
+
+    <div class="contract-hero">
+
+        <div class="contract-hero-content">
+
+            <div class="contract-hero-top">
+
+                <div>
+
+                    <div class="contract-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+
+                    <h1>
+                        Volunteer Contract
+                    </h1>
+
+                    <p class="contract-description">
+                        Your SwiftCare volunteer agreement is ready.
+                        Please review the contract carefully, sign it,
+                        and upload the completed document to continue
+                        your onboarding.
+                    </p>
+
+                </div>
+
+                @if (hasGeneratedContract)
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-check-circle-fill"></i>
+
+                        Contract Generated
+
+                    </div>
+                }
+                else
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-clock"></i>
+
+                        Awaiting Contract
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         CONTRACT CARD
+         ========================================================= -->
+
+    <div class="contract-card">
+
+        @if (!hasGeneratedContract)
+        {
+            <!-- =====================================================
+                 CONTRACT NOT GENERATED
+                 ===================================================== -->
+
+            <div class="contract-warning">
+
+                <div class="contract-warning-icon">
+
+                    <i class="bi bi-exclamation-triangle"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        Your contract is not ready yet
+                    </strong>
+
+                    <span>
+                        SwiftCare has not generated your volunteer
+                        contract yet. Please check again later.
+                    </span>
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <!-- =====================================================
+                 CONTRACT CONTENT
+                 ===================================================== -->
+
+            <div class="contract-content">
+
+                <!-- =================================================
+                     CONTRACT DETAILS
+                     ================================================= -->
+
+                <div class="section-heading">
+
+                    <div class="section-heading-icon">
+
+                        <i class="bi bi-file-earmark-check"></i>
+
+                    </div>
+
+                    <h5>
+                        Contract Details
+                    </h5>
+
+                </div>
+
+
+                <div class="contract-details">
+
+                    <!-- Contract -->
+
+                    <div class="contract-detail-row">
+
+                        <div class="contract-detail-label">
+
+                            <i class="bi bi-file-earmark me-2"></i>
+
+                            Contract
+
+                        </div>
+
+                        <div class="contract-detail-value">
+
+                            SwiftCare Volunteer Service Agreement
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Generated -->
+
+                    <div class="contract-detail-row">
+
+                        <div class="contract-detail-label">
+
+                            <i class="bi bi-calendar-check me-2"></i>
+
+                            Generated
+
+                        </div>
+
+                        <div class="contract-detail-value">
+
+                            @(contract.CreatedDate.ToLocalTime()
+                                .ToString("dd MMMM yyyy HH:mm"))
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Status -->
+
+                    <div class="contract-detail-row">
+
+                        <div class="contract-detail-label">
+
+                            <i class="bi bi-info-circle me-2"></i>
+
+                            Status
+
+                        </div>
+
+                        <div class="contract-detail-value">
+
+                            <span class="contract-status-value">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                @contract.Status
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     INSTRUCTIONS
+                     ================================================= -->
+
+                <div class="instructions">
+
+                    <div class="instructions-heading">
+
+                        <div class="instructions-heading-icon">
+
+                            <i class="bi bi-list-check"></i>
+
+                        </div>
+
+                        <h5>
+                            What you need to do
+                        </h5>
+
+                    </div>
+
+
+                    <ol class="instructions-list">
+
+                        <li>
+                            Download your generated volunteer contract.
+                        </li>
+
+                        <li>
+                            Review the contract carefully and make sure
+                            your personal and volunteer information is
+                            correct.
+                        </li>
+
+                        <li>
+                            Complete any information or sections that
+                            require your input.
+                        </li>
+
+                        <li>
+                            Sign the contract where indicated.
+                        </li>
+
+                        <li>
+                            Upload the completed and signed contract
+                            through the Documents section.
+                        </li>
+
+                    </ol>
+
+                </div>
+
+
+                <!-- =================================================
+                     ACTIONS
+                     ================================================= -->
+
+                <div class="contract-actions">
+
+                    <a href="@Url.Action(
+                                                      "DownloadContract",
+                                                      "VolunteerOnboarding",
+                                                      new
+                                                      {
+                                                          id = Model.VolunteerOnboardingId
+                                                      })"
+                           class="btn-contract btn-download">
+
+                        <i class="bi bi-download"></i>
+
+                        Download Contract
+
+                    </a>
+
+
+                    <a asp-action="Documents"
+                           asp-controller="VolunteerOnboarding"
+                           asp-route-id="@Model.VolunteerOnboardingId"
+                           class="btn-contract btn-upload">
+
+                        <i class="bi bi-upload"></i>
+
+                        Upload Signed Contract
+
+                    </a>
+
+                </div>
+
+
+                <!-- =================================================
+                     SECURITY NOTE
+                     ================================================= -->
+
+                <div class="download-note">
+
+                    <i class="bi bi-shield-check"></i>
+
+                    <span>
+                        Your contract download is protected and can only
+                        be accessed through your authorised SwiftCare
+                        volunteer onboarding account.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =====================================================
+                 SIGNED CONTRACT UPLOADED
+                 ===================================================== -->
+            @if (uploadedContract != null)
+            {
+                <div class="uploaded-contract">
+
+                    <div class="uploaded-contract-inner">
+
+                        <div class="uploaded-contract-icon">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                        </div>
+
+
+                        <div class="flex-grow-1">
+
+                            <div class="uploaded-contract-title">
+
+                                Signed Contract Uploaded
+
+                            </div>
+
+
+                            <div class="uploaded-contract-file">
+
+                                @uploadedContract.FileName
+
+                            </div>
+
+
+                            <div class="uploaded-contract-status">
+
+                                <i class="bi bi-info-circle"></i>
+
+                                <span>
+                                    Status:
+                                </span>
+
+                                <strong>
+                                    @uploadedContract.Status
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+        }
+
+
+        <!-- =========================================================
+             FOOTER
+             ========================================================= -->
+        @if (hasGeneratedContract)
+        {
+            <div class="contract-footer">
+
+                <i class="bi bi-lock-fill"></i>
+
+                <span>
+                    SwiftCare securely manages your volunteer onboarding
+                    documents and contract records.
+                </span>
+
+            </div>
+        }
+
+    </div>
+
+</div>

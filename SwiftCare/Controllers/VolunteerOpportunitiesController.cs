@@ -313,7 +313,7 @@ namespace SwiftCare.Controllers
 
                 Status = VolunteerOpportunityStatus.Draft,
 
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
 
                 CreatedById = currentUser.Id
             };
@@ -664,10 +664,10 @@ namespace SwiftCare.Controllers
                             "Images/default_profile_image.jpg",
 
                         CreatedDateTime =
-                            DateTime.UtcNow,
+                            DateTime.Now,
 
                         ModifiedDateTime =
-                            DateTime.UtcNow,
+                            DateTime.Now,
 
                         CreatedBy =
                             "Anonymous Application",
@@ -742,7 +742,7 @@ namespace SwiftCare.Controllers
                             false,
 
                         ProfileLastUpdated =
-                            DateTime.UtcNow
+                            DateTime.Now
                     };
 
 
@@ -1055,10 +1055,10 @@ namespace SwiftCare.Controllers
                         .ToLowerInvariant();
 
                 applicantProfile.CvUploadedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 applicantProfile.CvLastParsedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 applicantProfile.CvParsingSuccessful =
                     true;
@@ -1067,7 +1067,7 @@ namespace SwiftCare.Controllers
                     "CV successfully analysed.";
 
                 applicantProfile.ProfileLastUpdated =
-                    DateTime.UtcNow;
+                    DateTime.Now;
             }
             else
             {
@@ -1084,10 +1084,10 @@ namespace SwiftCare.Controllers
                         .ToLowerInvariant();
 
                 applicantProfile.CvUploadedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 applicantProfile.CvLastParsedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 applicantProfile.CvParsingSuccessful =
                     false;
@@ -1097,7 +1097,7 @@ namespace SwiftCare.Controllers
                     "CV could not be analysed.";
 
                 applicantProfile.ProfileLastUpdated =
-                    DateTime.UtcNow;
+                    DateTime.Now;
             }
 
 
@@ -1127,7 +1127,7 @@ namespace SwiftCare.Controllers
             // ============================================================
 
             applicantProfile.ModifiedDateTime =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             applicantProfile.ModifiedBy =
                 "CV Profile Extraction";

@@ -1,0 +1,680 @@
+﻿@model SwiftCare.ViewModels.VolunteerActivationViewModel
+
+@{
+    ViewData["Title"] = "Activate Volunteer";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+}
+
+<style>
+    body {
+        background: #eef8f0;
+        color: #174d2b;
+    }
+
+    .activation-wrapper {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 30px 15px 60px;
+    }
+
+    .activation-header {
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(55,125,75,.15);
+        border-radius: 24px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 12px 35px rgba(23,77,43,.08);
+    }
+
+        .activation-header h1 {
+            color: #174d2b;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .activation-header p {
+            color: #477052;
+            margin-bottom: 0;
+        }
+
+    .activation-card {
+        background: rgba(255,255,255,.94);
+        border: 1px solid rgba(55,125,75,.14);
+        border-radius: 22px;
+        padding: 25px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 28px rgba(23,77,43,.07);
+    }
+
+        .activation-card h4 {
+            color: #174d2b;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+    .info-label {
+        color: #65806c;
+        font-size: .78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        color: #174d2b;
+        font-weight: 600;
+        margin-bottom: 18px;
+    }
+
+    .form-label {
+        color: #174d2b;
+        font-weight: 700;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #b7d8bd;
+        border-radius: 12px;
+        padding: 11px 13px;
+        color: #174d2b;
+        background: #fbfffc;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #58a66b;
+            box-shadow: 0 0 0 .2rem rgba(88,166,107,.15);
+        }
+
+    .ready-banner {
+        background: #e2f6e7;
+        border: 1px solid #9bd1a7;
+        color: #185b2c;
+        border-radius: 16px;
+        padding: 16px 18px;
+        margin-bottom: 22px;
+    }
+
+    .document-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 14px 0;
+        border-bottom: 1px solid #e1eee4;
+    }
+
+        .document-row:last-child {
+            border-bottom: 0;
+        }
+
+    .document-name {
+        color: #174d2b;
+        font-weight: 700;
+    }
+
+    .document-meta {
+        color: #6d8472;
+        font-size: .85rem;
+    }
+
+    .status-approved {
+        background: #dff4e4;
+        color: #17612c;
+        border: 1px solid #a7d8b0;
+    }
+
+    .status-other {
+        background: #fff4d6;
+        color: #745500;
+        border: 1px solid #ead18a;
+    }
+
+    .activation-footer {
+        position: sticky;
+        bottom: 0;
+        background: rgba(255,255,255,.96);
+        border-top: 1px solid #cfe3d2;
+        padding: 18px;
+        margin-top: 20px;
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0 -8px 25px rgba(23,77,43,.08);
+        z-index: 20;
+    }
+
+    .btn-activate {
+        background: #6caf45;
+        border-color: #6caf45;
+        color: #123c20;
+        font-weight: 800;
+        border-radius: 12px;
+        padding: 12px 25px;
+    }
+
+        .btn-activate:hover {
+            background: #5e9f39;
+            border-color: #5e9f39;
+            color: #123c20;
+        }
+
+    .btn-back {
+        border-radius: 12px;
+        font-weight: 700;
+    }
+</style>
+
+<div class="activation-wrapper">
+
+    <div class="activation-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h1>
+                    <i class="bi bi-person-check me-2"></i>
+                    Activate Volunteer
+                </h1>
+
+                <p>
+                    Review the final volunteer information before activating
+                    the account.
+                </p>
+            </div>
+
+            <div>
+                <span class="badge rounded-pill status-approved px-3 py-2">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Ready for Activation
+                </span>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (!Model.ReadyForActivation)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            This onboarding record is not currently ready for activation.
+        </div>
+    }
+    else
+    {
+        <div class="ready-banner">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-shield-check fs-3"></i>
+
+                <div>
+                    <strong>Onboarding requirements completed</strong>
+
+                    <div class="mt-1">
+                        The required onboarding checks and document reviews
+                        have been completed. You can now create and activate
+                        the Volunteer account.
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form asp-action="Activate"
+          asp-controller="VolunteerOnboardingAdmin"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden"
+               asp-for="VolunteerOnboardingId" />
+
+        <input type="hidden"
+               asp-for="VolunteerApplicationId" />
+
+        <input type="hidden"
+               asp-for="ApplicantId" />
+
+        <!-- Applicant -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-person-circle me-2"></i>
+                Applicant Information
+            </h4>
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Full Name
+                    </div>
+
+                    <div class="info-value">
+                        @Model.ApplicantName
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Email
+                    </div>
+
+                    <div class="info-value">
+                        @Model.Email
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Phone Number
+                    </div>
+
+                    <div class="info-value">
+                        @(string.IsNullOrWhiteSpace(Model.PhoneNumber)
+                            ? "Not provided"
+                            : Model.PhoneNumber)
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Position
+                    </div>
+
+                    <div class="info-value">
+                        @Model.PositionTitle
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.OpportunityCity))
+                {
+                    <div class="col-md-6">
+                        <div class="info-label">
+                            Opportunity City
+                        </div>
+
+                        <div class="info-value">
+                            @Model.OpportunityCity
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.OpportunityProvince))
+                {
+                    <div class="col-md-6">
+                        <div class="info-label">
+                            Province
+                        </div>
+
+                        <div class="info-value">
+                            @Model.OpportunityProvince
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <!-- Volunteer details -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-person-badge me-2"></i>
+                Volunteer Profile
+            </h4>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="VolunteerNumber"
+                           class="form-label">
+                        Volunteer Number
+                    </label>
+
+                    <input asp-for="VolunteerNumber"
+                           class="form-control" />
+
+                    <span asp-validation-for="VolunteerNumber"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Department"
+                           class="form-label">
+                        Department
+                    </label>
+
+                    <select asp-for="Department"
+                            class="form-select">
+
+                        <option value="">
+                            Select department
+                        </option>
+
+                        @foreach (var department in Model.Departments)
+                        {
+                            <option value="@department">
+                                @department
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="Department"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="PreferredArea"
+                           class="form-label">
+                        Preferred Volunteer Area
+                    </label>
+
+                    <select asp-for="PreferredArea"
+                            class="form-select"
+                            asp-items="Html.GetEnumSelectList<VolunteerArea>()">
+
+                        <option value="">
+                            Select area
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="SupervisorId"
+                           class="form-label">
+                        Supervisor
+                    </label>
+
+                    <select asp-for="SupervisorId"
+                            class="form-select">
+
+                        <option value="">
+                            Select supervisor
+                        </option>
+
+                        @foreach (var supervisor in Model.Supervisors)
+                        {
+                            <option value="@supervisor.Id">
+                                @supervisor.Name
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="StartDate"
+                           class="form-label">
+                        Start Date
+                    </label>
+
+                    <input asp-for="StartDate"
+                           type="date"
+                           class="form-control" />
+
+                    <span asp-validation-for="StartDate"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EndDate"
+                           class="form-label">
+                        End Date
+                    </label>
+
+                    <input asp-for="EndDate"
+                           type="date"
+                           class="form-control" />
+
+                    <span asp-validation-for="EndDate"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label asp-for="Bio"
+                           class="form-label">
+                        Volunteer Bio
+                    </label>
+
+                    <textarea asp-for="Bio"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Volunteer biography..."></textarea>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label asp-for="Motivation"
+                           class="form-label">
+                        Motivation
+                    </label>
+
+                    <textarea asp-for="Motivation"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Volunteer motivation..."></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Emergency contact -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-telephone me-2"></i>
+                Emergency Contact
+            </h4>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="EmergencyContactName"
+                           class="form-label">
+                        Name
+                    </label>
+
+                    <input asp-for="EmergencyContactName"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="EmergencyContactPhone"
+                           class="form-label">
+                        Phone
+                    </label>
+
+                    <input asp-for="EmergencyContactPhone"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="EmergencyContactRelationship"
+                           class="form-label">
+                        Relationship
+                    </label>
+
+                    <input asp-for="EmergencyContactRelationship"
+                           class="form-control" />
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-folder-check me-2"></i>
+                Verified Documents
+            </h4>
+
+            @if (Model.Documents.Any())
+            {
+                foreach (var document in Model.Documents)
+                {
+                    <div class="document-row">
+
+                        <div>
+                            <div class="document-name">
+                                <i class="bi bi-file-earmark-check me-2"></i>
+                                @document.DocumentName
+                            </div>
+
+                            <div class="document-meta">
+                                @document.DocumentType
+                                &bull;
+                                @document.FileName
+                                &bull;
+                                Uploaded
+                                @document.UploadedDate.ToLocalTime()
+                                .ToString("dd MMM yyyy")
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="badge rounded-pill status-approved">
+                                @document.Status
+                            </span>
+                        </div>
+
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-muted">
+                    No onboarding documents were found.
+                </div>
+            }
+
+        </div>
+
+        <!-- Verification -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-shield-check me-2"></i>
+                Verification
+            </h4>
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Onboarding Status
+                    </div>
+
+                    <div class="info-value">
+                        Ready For Activation
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-label">
+                        Activation Status
+                    </div>
+
+                    <div class="info-value">
+                        Active
+                    </div>
+                </div>
+
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.VerificationNotes))
+            {
+                <div class="mt-2">
+                    <div class="info-label">
+                        Admin Verification Notes
+                    </div>
+
+                    <div class="info-value">
+                        @Model.VerificationNotes
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <!-- Final confirmation -->
+        <div class="activation-card">
+
+            <h4>
+                <i class="bi bi-exclamation-circle me-2"></i>
+                Final Confirmation
+            </h4>
+
+            <div class="alert alert-warning">
+                <strong>Important:</strong>
+
+                Activating this volunteer will create their Volunteer
+                account, assign the Volunteer role, mark onboarding as
+                completed, and make the volunteer eligible to access
+                the Volunteer system.
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="confirmActivation"
+                       required />
+
+                <label class="form-check-label"
+                       for="confirmActivation">
+
+                    I confirm that I have reviewed the volunteer's
+                    onboarding information and verified that they are
+                    ready to be activated.
+                </label>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="activation-footer">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                <a asp-controller="VolunteerOnboardingAdmin"
+                       asp-action="Details"
+                       asp-route-id="@Model.VolunteerOnboardingId"
+                       class="btn btn-outline-secondary btn-back">
+
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Back to Onboarding
+                </a>
+
+                <button type="submit"
+                        class="btn btn-activate"
+                    @(Model.ReadyForActivation ? null : "disabled")>
+
+                    <i class="bi bi-person-check me-2"></i>
+                    Activate Volunteer
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

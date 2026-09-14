@@ -21,8 +21,10 @@ using SwiftCare.Interfaces;
 using SwiftCare.Models;
 using SwiftCare.Services;
 using SwiftCare.Services.AI;
+using SwiftCare.Services.VolunteerActivation;
 using SwiftCare.Services.VolunteerATS;
 using SwiftCare.Services.VolunteerATS.CV;
+using SwiftCare.Services.VolunteerOnboarding;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -341,9 +343,38 @@ public class Startup
 
         services.AddScoped<SmsService>();
 
+        services.AddScoped<VolunteerContractReferenceGenerator>();
+
+        services.AddScoped<
+            VolunteerContractReferenceGenerator>();
+
+        services.AddScoped<
+            IVolunteerContractGenerationService,
+            VolunteerContractGenerationService>();
+
+        services.AddScoped<VolunteerContractReferenceGenerator>();
+
+        services.AddScoped<
+            IVolunteerContractGenerationService,
+            VolunteerContractGenerationService>();
+
+        services.AddScoped<
+            IVolunteerContractContentBuilder,
+            VolunteerContractContentBuilder>();
+
+        services.AddScoped<
+            IVolunteerContractPdfGenerator,
+            VolunteerContractPdfGenerator>();
+
+        services.AddScoped<IVolunteerContractService,VolunteerContractService>();
+
         services.AddScoped<BarcodeService>();
 
         services.AddScoped<QrCodeService>();
+
+        services.AddScoped<IVolunteerActivationService, VolunteerActivationService>();
+
+        services.AddScoped<IVolunteerOnboardingService, VolunteerOnboardingService>();
 
         services.AddScoped<IVolunteerInterviewEvaluationEngine,VolunteerInterviewEvaluationEngine>();
         services.Configure<SwiftCareLlmOptions>(
@@ -918,7 +949,56 @@ public class Startup
 
             throw;
         }
+        // ============================================================
+        // SEED VOLUNTEER POLICIES
+        // ============================================================
 
+        Console.WriteLine(
+            "[SWIFTCARE STARTUP] Seeding volunteer onboarding policies...");
+
+        try
+        {
+            using (var scope =
+                app.ApplicationServices.CreateScope())
+            {
+                var context =
+                    scope.ServiceProvider
+                        .GetRequiredService<SwiftCareDbContext>();
+
+                VolunteerPolicySeedData
+                    .SeedAsync(context)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+
+            Console.WriteLine(
+                "[SWIFTCARE STARTUP] Volunteer onboarding policies seeded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                "============================================================");
+
+            Console.WriteLine(
+                "[SWIFTCARE STARTUP] FAILED TO SEED VOLUNTEER POLICIES");
+
+            Console.WriteLine(
+                $"[SWIFTCARE STARTUP] Exception Type: " +
+                $"{ex.GetType().FullName}");
+
+            Console.WriteLine(
+                $"[SWIFTCARE STARTUP] Exception Message: " +
+                $"{ex.Message}");
+
+            Console.WriteLine(
+                $"[SWIFTCARE STARTUP] Full Exception: " +
+                $"{ex}");
+
+            Console.WriteLine(
+                "============================================================");
+
+            throw;
+        }
 
         // ============================================================
         // APPLICATION READY
@@ -932,6 +1012,8 @@ public class Startup
 
         Console.WriteLine(
             "============================================================");
+
+
     }
 
 

@@ -92,7 +92,7 @@ namespace SwiftCare.Models
 
 
         public DateTime CreatedAt { get; set; }
-            = DateTime.UtcNow;
+            = DateTime.Now;
 
 
         [StringLength(450)]

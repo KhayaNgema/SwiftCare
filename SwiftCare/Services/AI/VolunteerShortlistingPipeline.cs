@@ -1266,7 +1266,7 @@ namespace SwiftCare.Services.VolunteerATS
                     application.VolunteerApplicationId;
 
                 incomingParsedCv.ParsedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
 
                 foreach (var skill in incomingParsedCv.Skills)
@@ -1388,7 +1388,7 @@ namespace SwiftCare.Services.VolunteerATS
                 incomingParsedCv.ExtractionMessage;
 
             existingParsedCv.ParsedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
 
             // ========================================================

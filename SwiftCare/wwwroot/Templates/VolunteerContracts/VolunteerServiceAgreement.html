@@ -1,0 +1,762 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>SwiftCare Volunteer Service Agreement</title>
+
+    <style>
+
+        :root {
+            --forest-green: #1B5E20;
+            --forest-green-dark: #124116;
+            --forest-green-light: #2E7D32;
+            --lime-green: #8BC34A;
+            --lime-light: #DCEDC8;
+            --soft-lime-green: #F0FDF4;
+            --soft-green: #F7FBF7;
+            --border-green: #D5E7D6;
+            --black: #111111;
+            --dark-text: #263238;
+            --muted-green: #607D63;
+            --white: #FFFFFF;
+            --page-size: A4;
+            --page-margin-top: 42px;
+            --page-margin-right: 42px;
+            --page-margin-bottom: 45px;
+            --page-margin-left: 42px;
+            --title-font-size: 22px;
+            --section-title-font-size: 12px;
+            --body-font-size: 9.5px;
+            --field-label-font-size: 8px;
+            --field-value-font-size: 9px;
+            --footer-font-size: 7.5px;
+            --line-height: 1.45;
+            --section-spacing: 18px;
+            --paragraph-spacing: 8px;
+            --field-spacing: 6px;
+            --border-width: 1px;
+            --border-radius: 5px;
+        }
+
+
+        /* =========================================================
+           DOCUMENT
+           ========================================================= */
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #263238;
+            background: #FFFFFF;
+            font-size: 9.5px;
+            line-height: 1.45;
+        }
+
+
+        /* =========================================================
+           COMPANY BRANDING
+           ========================================================= */
+
+        company-brand {
+            display: block;
+        }
+
+        company-logo {
+            display: block;
+            color: #1B5E20;
+        }
+
+        company-name {
+            display: block;
+            color: #1B5E20;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        company-tagline {
+            display: block;
+            color: #607D63;
+            font-size: 7.5px;
+        }
+
+
+        /* =========================================================
+           METADATA
+           ========================================================= */
+
+        contract-metadata {
+            display: block;
+        }
+
+        contract-reference,
+        contract-version,
+        organisation {
+            display: block;
+        }
+
+
+        /* =========================================================
+           DOCUMENT HEADER
+           ========================================================= */
+
+        document-header {
+            display: block;
+        }
+
+        document-title {
+            display: block;
+            color: #1B5E20;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        document-subtitle {
+            display: block;
+            color: #607D63;
+            font-size: 9px;
+        }
+
+
+        /* =========================================================
+           SECTIONS
+           ========================================================= */
+
+        section {
+            display: block;
+            margin-bottom: 18px;
+        }
+
+        section-title {
+            display: block;
+            color: #1B5E20;
+            background: #F0FDF4;
+            font-size: 12px;
+            font-weight: bold;
+            border-bottom: 1px solid #D5E7D6;
+            padding: 7px 9px;
+            margin-bottom: 7px;
+        }
+
+
+        /* =========================================================
+           PARAGRAPHS
+           ========================================================= */
+
+        paragraph {
+            display: block;
+            color: #263238;
+            font-size: 9.5px;
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+
+            paragraph.muted {
+                color: #607D63;
+            }
+
+
+        /* =========================================================
+           FIELDS
+           ========================================================= */
+
+        field {
+            display: block;
+            border: 1px solid #D5E7D6;
+            border-radius: 5px;
+            background: #F7FBF7;
+            margin-bottom: 6px;
+            padding: 6px 9px;
+        }
+
+        field-label {
+            display: block;
+            color: #1B5E20;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        field-value {
+            display: block;
+            color: #263238;
+            font-size: 9px;
+        }
+
+
+        /* =========================================================
+           LISTS
+           ========================================================= */
+
+        list {
+            display: block;
+            background: #F7FBF7;
+            border-left: 3px solid #8BC34A;
+            margin-top: 7px;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+        }
+
+        item {
+            display: block;
+            color: #263238;
+            font-size: 9.5px;
+            line-height: 1.45;
+            margin-bottom: 5px;
+        }
+
+
+        /* =========================================================
+           SIGNATURES
+           ========================================================= */
+
+        signatures {
+            display: block;
+            margin-top: 22px;
+        }
+
+        signature {
+            display: block;
+            border-top: 1px solid #D5E7D6;
+            margin-top: 18px;
+            padding-top: 8px;
+        }
+
+        signature-name {
+            display: block;
+            color: #263238;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        signature-party {
+            display: block;
+            color: #607D63;
+            font-size: 8px;
+        }
+
+        signature-date {
+            display: block;
+            color: #263238;
+            font-size: 8px;
+        }
+
+
+        /* =========================================================
+           FOOTER
+           ========================================================= */
+
+        footer {
+            display: block;
+            color: #607D63;
+            font-size: 7.5px;
+            border-top: 1px solid #D5E7D6;
+            padding-top: 6px;
+        }
+
+
+        /* =========================================================
+           UTILITY CLASSES
+           ========================================================= */
+
+        .muted {
+            color: #607D63;
+        }
+
+        .accent {
+            color: #8BC34A;
+        }
+
+        .forest {
+            color: #1B5E20;
+        }
+
+        .dark {
+            color: #263238;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <!-- ============================================================
+         COMPANY HEADER
+         ============================================================ -->
+
+    <company-brand>
+
+        <company-logo>
+            <i class="bi bi-heart-pulse"></i>
+        </company-logo>
+
+        <company-name>
+            SwiftCare
+        </company-name>
+
+        <company-tagline>
+            Supporting people. Strengthening communities.
+        </company-tagline>
+
+    </company-brand>
+
+
+    <!-- ============================================================
+         CONTRACT METADATA
+         ============================================================ -->
+
+    <contract-metadata>
+
+        <contract-reference>
+            {{ContractReference}}
+        </contract-reference>
+
+        <contract-version>
+            {{ContractVersion}}
+        </contract-version>
+
+        <organisation>
+            {{OrganisationName}}
+        </organisation>
+
+    </contract-metadata>
+
+
+    <!-- ============================================================
+         DOCUMENT HEADER
+         ============================================================ -->
+
+    <document-header>
+
+        <document-title>
+            Volunteer Service Agreement
+        </document-title>
+
+        <document-subtitle>
+            Contract Reference: {{ContractReference}}
+        </document-subtitle>
+
+    </document-header>
+
+
+    <!-- ============================================================
+         1. PARTIES
+         ============================================================ -->
+
+    <section data-section="1">
+
+        <section-title>
+            1. PARTIES
+        </section-title>
+
+        <paragraph>
+            This Volunteer Service Agreement is entered into between
+            {{OrganisationName}} and {{VolunteerName}}.
+        </paragraph>
+
+        <field>
+            <field-label>Volunteer</field-label>
+            <field-value>{{VolunteerName}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Email</field-label>
+            <field-value>{{VolunteerEmail}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Contract Reference</field-label>
+            <field-value>{{ContractReference}}</field-value>
+        </field>
+
+    </section>
+
+
+    <!-- ============================================================
+         2. VOLUNTEER POSITION
+         ============================================================ -->
+
+    <section data-section="2">
+
+        <section-title>
+            2. VOLUNTEER POSITION
+        </section-title>
+
+        <field>
+            <field-label>Position</field-label>
+            <field-value>{{PositionTitle}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Category</field-label>
+            <field-value>{{Category}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Area</field-label>
+            <field-value>{{Area}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Location</field-label>
+            <field-value>{{CityName}}, {{Province}}</field-value>
+        </field>
+
+        <paragraph>
+            {{RoleDescription}}
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         3. TERM AND SCHEDULE
+         ============================================================ -->
+
+    <section data-section="3">
+
+        <section-title>
+            3. VOLUNTEER TERM AND SCHEDULE
+        </section-title>
+
+        <field>
+            <field-label>Start Date</field-label>
+            <field-value>{{StartDate}}</field-value>
+        </field>
+
+        <field>
+            <field-label>End Date</field-label>
+            <field-value>{{EndDate}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Start Time</field-label>
+            <field-value>{{StartTime}}</field-value>
+        </field>
+
+        <field>
+            <field-label>End Time</field-label>
+            <field-value>{{EndTime}}</field-value>
+        </field>
+
+        <field>
+            <field-label>Minimum Age</field-label>
+            <field-value>{{MinimumAge}}</field-value>
+        </field>
+
+    </section>
+
+
+    <!-- ============================================================
+         4. PURPOSE
+         ============================================================ -->
+
+    <section data-section="4">
+
+        <section-title>
+            4. PURPOSE OF THE VOLUNTEER ROLE
+        </section-title>
+
+        <paragraph>
+            The purpose of this volunteer role is to support SwiftCare's
+            services and activities while contributing positively to the
+            wellbeing, dignity and experience of residents, staff and the
+            wider SwiftCare community.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         5. RESPONSIBILITIES
+         ============================================================ -->
+
+    <section data-section="5">
+
+        <section-title>
+            5. VOLUNTEER RESPONSIBILITIES
+        </section-title>
+
+        <paragraph>
+            The volunteer agrees to perform the responsibilities associated
+            with the approved volunteer position and to follow reasonable
+            instructions issued by the designated SwiftCare supervisor.
+        </paragraph>
+
+        <list>
+            {{Responsibilities}}
+        </list>
+
+    </section>
+
+
+    <!-- ============================================================
+         6. REQUIREMENTS
+         ============================================================ -->
+
+    <section data-section="6">
+
+        <section-title>
+            6. ROLE REQUIREMENTS
+        </section-title>
+
+        <paragraph>
+            The volunteer must comply with all requirements applicable
+            to the approved volunteer opportunity.
+        </paragraph>
+
+        <list>
+            {{Requirements}}
+        </list>
+
+    </section>
+
+
+    <!-- ============================================================
+         7. REQUIRED SKILLS
+         ============================================================ -->
+
+    <section data-section="7">
+
+        <section-title>
+            7. REQUIRED SKILLS
+        </section-title>
+
+        <list>
+            {{RequiredSkills}}
+        </list>
+
+    </section>
+
+
+    <!-- ============================================================
+         8. SUPERVISION
+         ============================================================ -->
+
+    <section data-section="8">
+
+        <section-title>
+            8. SUPERVISION
+        </section-title>
+
+        <paragraph>
+            The volunteer will work under the direction and supervision
+            of the person designated by SwiftCare. The volunteer must
+            follow reasonable instructions relating to their approved
+            role and responsibilities.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         9. SAFEGUARDING
+         ============================================================ -->
+
+    <section data-section="9">
+
+        <section-title>
+            9. SAFEGUARDING AND RESIDENT PROTECTION
+        </section-title>
+
+        <paragraph>
+            SwiftCare is committed to protecting residents and vulnerable
+            persons. The volunteer must maintain appropriate boundaries
+            and must immediately report suspected abuse, neglect,
+            exploitation, unsafe conduct or other safeguarding concerns.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         10. CONFIDENTIALITY
+         ============================================================ -->
+
+    <section data-section="10">
+
+        <section-title>
+            10. CONFIDENTIALITY AND PRIVACY
+        </section-title>
+
+        <paragraph>
+            The volunteer must keep confidential all personal, medical,
+            operational, financial and other information obtained through
+            their involvement with SwiftCare. Information must only be
+            accessed, used or disclosed for authorised purposes.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         11. HEALTH AND SAFETY
+         ============================================================ -->
+
+    <section data-section="11">
+
+        <section-title>
+            11. HEALTH AND SAFETY
+        </section-title>
+
+        <paragraph>
+            The volunteer must comply with SwiftCare health and safety
+            requirements, use equipment responsibly, attend required
+            training and immediately report hazards, accidents, injuries
+            or unsafe conditions.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         12. CONDUCT
+         ============================================================ -->
+
+    <section data-section="12">
+
+        <section-title>
+            12. CONDUCT
+        </section-title>
+
+        <paragraph>
+            The volunteer must act respectfully, honestly and professionally
+            and must not engage in harassment, discrimination, intimidation,
+            violence, abuse, theft, fraud or other inappropriate conduct.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         13. ADDITIONAL CONDITIONS
+         ============================================================ -->
+
+    <section data-section="13">
+
+        <section-title>
+            13. ADDITIONAL ROLE CONDITIONS
+        </section-title>
+
+        <list>
+            {{AdditionalClauses}}
+        </list>
+
+    </section>
+
+
+    <!-- ============================================================
+         14. TERMINATION
+         ============================================================ -->
+
+    <section data-section="14">
+
+        <section-title>
+            14. TERMINATION OF VOLUNTEER ARRANGEMENT
+        </section-title>
+
+        <paragraph>
+            SwiftCare may terminate the volunteer arrangement where the
+            volunteer breaches this agreement, fails to comply with
+            applicable policies, presents a safeguarding or safety concern,
+            engages in serious misconduct, or where operational circumstances
+            require the arrangement to end.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         15. DECLARATION
+         ============================================================ -->
+
+    <section data-section="15">
+
+        <section-title>
+            15. VOLUNTEER DECLARATION
+        </section-title>
+
+        <paragraph>
+            By signing this agreement, the volunteer confirms that they
+            have read and understood the terms of this Volunteer Service
+            Agreement and agree to comply with SwiftCare policies,
+            procedures and reasonable instructions.
+        </paragraph>
+
+        <paragraph>
+            The volunteer confirms that the information supplied in
+            connection with their volunteer application is accurate to
+            the best of their knowledge.
+        </paragraph>
+
+    </section>
+
+
+    <!-- ============================================================
+         16. SIGNATURES
+         ============================================================ -->
+
+    <section data-section="16">
+
+        <section-title>
+            16. SIGNATURES
+        </section-title>
+
+        <paragraph>
+            By signing below, the parties acknowledge their understanding
+            and acceptance of this Volunteer Service Agreement.
+        </paragraph>
+
+        <signatures>
+
+            <signature>
+
+                <signature-name>
+                    {{VolunteerName}}
+                </signature-name>
+
+                <signature-party>
+                    Volunteer
+                </signature-party>
+
+                <signature-date>
+                    Date: ______________________________
+                </signature-date>
+
+            </signature>
+
+
+            <signature>
+
+                <signature-name>
+                    Authorised Representative
+                </signature-name>
+
+                <signature-party>
+                    SwiftCare Representative
+                </signature-party>
+
+                <signature-date>
+                    Date: ______________________________
+                </signature-date>
+
+            </signature>
+
+        </signatures>
+
+    </section>
+
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+
+    <footer>
+
+        SwiftCare Volunteer Contract |
+        {{ContractReference}} |
+        Version {{ContractVersion}}
+
+    </footer>
+
+
+</body>
+</html>

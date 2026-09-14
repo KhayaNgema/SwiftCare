@@ -18,7 +18,7 @@ namespace SwiftCare.Services.VolunteerATS.CV
             {
                 VolunteerApplicationId = volunteerApplicationId,
                 RawText = rawText ?? string.Empty,
-                ParsedDate = DateTime.UtcNow,
+                ParsedDate = DateTime.Now,
                 ExtractionSuccessful = !string.IsNullOrWhiteSpace(rawText),
                 ExtractionMessage = string.IsNullOrWhiteSpace(rawText)
                     ? "No CV text was available."
@@ -40,7 +40,7 @@ namespace SwiftCare.Services.VolunteerATS.CV
             {
                 VolunteerApplicationId = volunteerApplicationId,
                 RawText = azureResult?.RawText ?? string.Empty,
-                ParsedDate = DateTime.UtcNow,
+                ParsedDate = DateTime.Now,
                 ExtractionSuccessful = azureResult?.Success ?? false,
                 ExtractionMessage =
                     azureResult?.ExtractionMessage ??

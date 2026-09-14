@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models;
 using SwiftCare.Models.VolunteerCV;
-using SwiftCare.ViewModels;
+using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services;
 using SwiftCare.Services.VolunteerATS;
+using SwiftCare.Services.VolunteerOnboarding;
+using SwiftCare.ViewModels;
 using SwiftCare.ViewModels.Volunteer;
 using System.Security.Cryptography;
 
@@ -25,6 +27,7 @@ namespace SwiftCare.Controllers
         private readonly RandomPasswordGeneratorService _randomPasswordGeneratorService;
         private readonly VolunteerShortlistingPipeline _shortlistingPipeline;
         private readonly IVolunteerInterviewEvaluationEngine _volunteerInterviewEvaluationEngine;
+        private readonly IVolunteerOnboardingService _onboardingService;
 
         public VolunteerApplicationsController(ILogger<VolunteerApplicationsController> logger,
                         SwiftCareDbContext context,
@@ -35,9 +38,11 @@ namespace SwiftCare.Controllers
             EmailService emailService,
             RandomPasswordGeneratorService randomPasswordGeneratorService,
              VolunteerShortlistingPipeline shortlistingPipeline,
-             IVolunteerInterviewEvaluationEngine volunteerInterviewEvaluationEngine)
+             IVolunteerInterviewEvaluationEngine volunteerInterviewEvaluationEngine,
+             IVolunteerOnboardingService onboardingService)
         {
             _logger = logger;
+            _onboardingService = onboardingService;
             _context = context;
             _userManager = userManager;
             _fileUploadService = fileUploadService;
@@ -229,7 +234,7 @@ namespace SwiftCare.Controllers
                 //opportunity.ShortlistingPipelineRun = true;
 
                 opportunity.ShortlistingPipelineRunDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 opportunity.ShortlistingPipelineRunBy =
                     User.Identity?.Name;
@@ -958,8 +963,10 @@ namespace SwiftCare.Controllers
         {
             var application =
                 await _context.VolunteerApplications
-                    .FirstOrDefaultAsync(x =>
-                        x.VolunteerApplicationId == applicationId);
+                    .Include(x => x.Applicant)
+                    .Include(x => x.VolunteerOpportunity)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerApplicationId == applicationId);
 
             if (application == null)
             {
@@ -986,6 +993,10 @@ namespace SwiftCare.Controllers
 
             switch (decision.ToLowerInvariant())
             {
+                // =========================================================
+                // APPROVE
+                // =========================================================
+
                 case "approve":
 
                     application.Status =
@@ -994,8 +1005,391 @@ namespace SwiftCare.Controllers
                     application.Stage =
                         VolunteerApplicationStage.Approved;
 
+                    /*
+                     * Save the interview decision first.
+                     */
+                    await _context.SaveChangesAsync();
+
+                    try
+                    {
+                        var admin =
+                            await _userManager.GetUserAsync(User);
+
+                        if (admin == null)
+                        {
+                            TempData["Error"] =
+                                "The administrator could not be identified.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        if (application.Applicant == null)
+                        {
+                            TempData["Error"] =
+                                "The applicant account could not be found.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        if (string.IsNullOrWhiteSpace(
+                            application.Applicant.Email))
+                        {
+                            TempData["Error"] =
+                                "The applicant does not have a valid email address.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        // =================================================
+                        // GET OR CREATE ONBOARDING
+                        // =================================================
+
+                        var onboarding =
+                            await _onboardingService
+                                .GetOnboardingByApplicationAsync(
+                                    applicationId);
+
+                        if (onboarding == null)
+                        {
+                            onboarding =
+                                await _onboardingService
+                                    .CreateOnboardingAsync(
+                                        applicationId,
+                                        admin.Id);
+                        }
+
+                        // =================================================
+                        // CHECK FOR EXISTING ACTIVE OFFER
+                        // =================================================
+
+                        var existingOffer =
+                            await _onboardingService
+                                .GetActiveOfferAsync(
+                                    onboarding.VolunteerOnboardingId);
+
+                        VolunteerOfferCreationResult offerResult;
+
+                        if (existingOffer != null &&
+                            existingOffer.Status ==
+                            VolunteerOfferStatus.Pending &&
+                            existingOffer.ExpiryDate > DateTime.Now)
+                        {
+                            /*
+                             * There is already a valid offer.
+                             *
+                             * We cannot recover its raw token because the
+                             * database only stores the hash.
+                             *
+                             * Therefore do not create another offer here.
+                             */
+                            TempData["Success"] =
+                                "Interview decision saved. " +
+                                "The applicant already has an active offer.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        // =================================================
+                        // CREATE NEW OFFER
+                        // =================================================
+
+                        var expiryDate =
+                            DateTime.Now.AddDays(7);
+
+                        offerResult =
+                            await _onboardingService
+                                .CreateOfferAsync(
+                                    onboarding.VolunteerOnboardingId,
+                                    expiryDate,
+                                    admin.Id);
+
+                        if (offerResult == null ||
+                            offerResult.Offer == null ||
+                            string.IsNullOrWhiteSpace(
+                                offerResult.RawAcceptanceToken))
+                        {
+                            TempData["Error"] =
+                                "The applicant was approved, but the volunteer offer could not be created.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        var offer =
+                            offerResult.Offer;
+
+                        // =================================================
+                        // BUILD SECURE OFFER LINK
+                        // =================================================
+
+                        var offerUrl =
+                            Url.Action(
+                                "Offer",
+                                "VolunteerOnboarding",
+                                new
+                                {
+                                    offerId =
+                                        offer.VolunteerOfferId,
+
+                                    token =
+                                        offerResult.RawAcceptanceToken
+                                },
+                                Request.Scheme);
+
+                        if (string.IsNullOrWhiteSpace(offerUrl))
+                        {
+                            TempData["Error"] =
+                                "The volunteer offer was created, but the offer link could not be generated.";
+
+                            return RedirectToAction(
+                                nameof(InterviewReview),
+                                new { applicationId });
+                        }
+
+                        // =================================================
+                        // APPLICANT DETAILS
+                        // =================================================
+
+                        var applicant =
+                            application.Applicant;
+
+                        var applicantName =
+                            $"{applicant.FirstName} {applicant.LastName}"
+                                .Trim();
+
+                        if (string.IsNullOrWhiteSpace(applicantName))
+                        {
+                            applicantName =
+                                "Applicant";
+                        }
+
+                        var positionTitle =
+                            application.VolunteerOpportunity?.Title
+                            ?? offer.PositionTitle
+                            ?? "Volunteer";
+
+                        // =================================================
+                        // EMAIL
+                        // =================================================
+
+                        var emailSubject =
+                            "SwiftCare Volunteer Offer";
+
+                        var emailBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"" />
+    <title>SwiftCare Volunteer Offer</title>
+</head>
+
+<body style=""
+    margin:0;
+    padding:0;
+    background:#f4f8f1;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#254d35;
+"">
+
+    <div style=""
+        max-width:680px;
+        margin:40px auto;
+        background:#ffffff;
+        border-radius:18px;
+        overflow:hidden;
+        box-shadow:0 8px 30px rgba(25,75,45,.08);
+    "">
+
+        <div style=""
+            background:#eaffd0;
+            padding:30px;
+        "">
+
+            <h1 style=""
+                margin:0;
+                color:#174d32;
+                font-size:28px;
+            "">
+                SwiftCare
+            </h1>
+
+            <p style=""
+                margin:8px 0 0;
+                color:#426244;
+                font-size:15px;
+            "">
+                Volunteer Opportunity
+            </p>
+
+        </div>
+
+        <div style=""
+            padding:35px;
+        "">
+
+            <h2 style=""
+                color:#174d32;
+                margin-top:0;
+            "">
+                Congratulations, {System.Net.WebUtility.HtmlEncode(applicantName)}!
+            </h2>
+
+            <p>
+                We are pleased to inform you that your interview for the
+                <strong>
+                    {System.Net.WebUtility.HtmlEncode(positionTitle)}
+                </strong>
+                volunteer position at SwiftCare has been successful.
+            </p>
+
+            <p>
+                We would like to offer you the opportunity to continue
+                with the SwiftCare volunteer onboarding process.
+            </p>
+
+            <div style=""
+                background:#f3faeb;
+                border-left:4px solid #72b82a;
+                padding:18px;
+                margin:25px 0;
+            "">
+
+                <strong style=""color:#174d32;"">
+                    Offer Reference
+                </strong>
+
+                <div style=""
+                    margin-top:6px;
+                    font-size:18px;
+                    font-weight:bold;
+                    color:#254d35;
+                "">
+                    {System.Net.WebUtility.HtmlEncode(offer.OfferReference)}
+                </div>
+
+                <div style=""
+                    margin-top:10px;
+                    color:#6c756e;
+                    font-size:14px;
+                "">
+                    Offer expires:
+                    {offer.ExpiryDate.ToLocalTime():dd MMM yyyy HH:mm}
+                </div>
+
+            </div>
+
+            <p>
+                Please review your volunteer offer and continue with the
+                onboarding process using the button below.
+            </p>
+
+            <div style=""
+                text-align:center;
+                margin:30px 0;
+            "">
+
+                <a href=""{offerUrl}""
+                   style=""
+                       display:inline-block;
+                       background:#72b82a;
+                       color:#163d25;
+                       text-decoration:none;
+                       font-weight:bold;
+                       padding:14px 26px;
+                       border-radius:10px;
+                   "">
+                    View My Volunteer Offer
+                </a>
+
+            </div>
+
+            <p style=""
+                color:#6c756e;
+                font-size:14px;
+                line-height:1.6;
+            "">
+                You will be able to accept or decline the offer from
+                the secure SwiftCare onboarding page.
+            </p>
+
+            <p style=""
+                color:#6c756e;
+                font-size:14px;
+                line-height:1.6;
+            "">
+                If you did not expect this email or believe you received
+                it in error, please contact SwiftCare.
+            </p>
+
+            <hr style=""
+                border:none;
+                border-top:1px solid #edf1ea;
+                margin:30px 0;
+            "" />
+
+            <p style=""
+                margin:0;
+                color:#78847b;
+                font-size:12px;
+            "">
+                This is an automated SwiftCare notification.
+                Please do not reply directly to this email.
+            </p>
+
+        </div>
+
+    </div>
+
+</body>
+</html>";
+
+                        await _emailService.SendEmailAsync(
+                            applicant.Email,
+                            emailSubject,
+                            emailBody,
+                            "SwiftCare Volunteer Services");
+
+                        _logger.LogInformation(
+                            "[SWIFTCARE ATS] Applicant approved and volunteer offer emailed. " +
+                            "ApplicationId: {ApplicationId}, ApplicantId: {ApplicantId}, " +
+                            "OnboardingId: {OnboardingId}, OfferId: {OfferId}",
+                            applicationId,
+                            applicant.Id,
+                            onboarding.VolunteerOnboardingId,
+                            offer.VolunteerOfferId);
+
+                        TempData["Success"] =
+                            "Interview decision approved successfully. " +
+                            "A volunteer offer has been created and emailed to the applicant.";
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex,
+                            "[SWIFTCARE ATS] Applicant was approved but volunteer offer/email processing failed. " +
+                            "ApplicationId: {ApplicationId}",
+                            applicationId);
+
+                        TempData["Error"] =
+                            "The applicant was approved, but the volunteer offer email could not be sent. " +
+                            "Please check the onboarding record and email configuration.";
+                    }
+
                     break;
 
+
+                // =========================================================
+                // REJECT
+                // =========================================================
 
                 case "reject":
 
@@ -1005,16 +1399,34 @@ namespace SwiftCare.Controllers
                     application.Stage =
                         VolunteerApplicationStage.Rejected;
 
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] =
+                        "Interview decision saved successfully.";
+
                     break;
 
+
+                // =========================================================
+                // REVIEW
+                // =========================================================
 
                 case "review":
 
                     application.Stage =
                         VolunteerApplicationStage.Interview;
 
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] =
+                        "Interview decision saved successfully.";
+
                     break;
 
+
+                // =========================================================
+                // INVALID
+                // =========================================================
 
                 default:
 
@@ -1025,11 +1437,6 @@ namespace SwiftCare.Controllers
                         nameof(InterviewReview),
                         new { applicationId });
             }
-
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] =
-                "Interview decision saved successfully.";
 
             return RedirectToAction(
                 nameof(InterviewReview),

@@ -73,11 +73,11 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
-        // DETAILS
+        // Review
         // ============================================================
 
         [HttpGet]
-        public async Task<IActionResult> Details(
+        public async Task<IActionResult> Review(
             int id,
             CancellationToken cancellationToken)
         {
@@ -137,7 +137,7 @@ namespace SwiftCare.Controllers
                     "An onboarding record already exists for this application.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = existing.VolunteerOnboardingId
@@ -179,7 +179,7 @@ namespace SwiftCare.Controllers
                         "An onboarding record already exists for this application.";
 
                     return RedirectToAction(
-                        nameof(Details),
+                        nameof(Review),
                         new
                         {
                             id = existing.VolunteerOnboardingId
@@ -196,7 +196,7 @@ namespace SwiftCare.Controllers
                     "Volunteer onboarding was created successfully.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboarding.VolunteerOnboardingId
@@ -240,7 +240,7 @@ namespace SwiftCare.Controllers
                     "The offer expiry date must be in the future.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -260,7 +260,7 @@ namespace SwiftCare.Controllers
                     $"Offer {offer.Offer.OfferReference} was created successfully.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -277,7 +277,7 @@ namespace SwiftCare.Controllers
                     "The volunteer offer could not be created.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -315,7 +315,7 @@ namespace SwiftCare.Controllers
                         "The onboarding verification could not be started.";
 
                     return RedirectToAction(
-                        nameof(Details),
+                        nameof(Review),
                         new
                         {
                             id = onboardingId
@@ -326,7 +326,7 @@ namespace SwiftCare.Controllers
                     "Volunteer onboarding verification has started.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -343,7 +343,7 @@ namespace SwiftCare.Controllers
                     "Verification could not be started.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -397,7 +397,7 @@ namespace SwiftCare.Controllers
                         "The document review could not be completed.";
 
                     return RedirectToAction(
-                        nameof(Details),
+                        nameof(Review),
                         new
                         {
                             id = document.VolunteerOnboardingId
@@ -417,7 +417,7 @@ namespace SwiftCare.Controllers
                 }
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = document.VolunteerOnboardingId
@@ -472,7 +472,7 @@ namespace SwiftCare.Controllers
                         "and documents have been completed and approved.";
 
                     return RedirectToAction(
-                        nameof(Details),
+                        nameof(Review),
                         new
                         {
                             id = onboardingId
@@ -484,7 +484,7 @@ namespace SwiftCare.Controllers
                     "The onboarding record is ready for activation.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -501,7 +501,7 @@ namespace SwiftCare.Controllers
                     "Verification could not be completed.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -532,7 +532,7 @@ namespace SwiftCare.Controllers
                     "A correction reason is required.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -554,7 +554,7 @@ namespace SwiftCare.Controllers
                         "The onboarding record could not be returned for correction.";
 
                     return RedirectToAction(
-                        nameof(Details),
+                        nameof(Review),
                         new
                         {
                             id = onboardingId
@@ -565,7 +565,7 @@ namespace SwiftCare.Controllers
                     "The onboarding record was returned to the applicant for correction.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -582,7 +582,7 @@ namespace SwiftCare.Controllers
                     "The onboarding record could not be returned for correction.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -621,7 +621,7 @@ namespace SwiftCare.Controllers
                 }
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -638,7 +638,7 @@ namespace SwiftCare.Controllers
                     "The activation readiness check failed.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId
@@ -669,7 +669,7 @@ namespace SwiftCare.Controllers
                     "This volunteer is not ready for activation.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id
@@ -784,7 +784,7 @@ namespace SwiftCare.Controllers
                     "Volunteer activated successfully.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = model.VolunteerOnboardingId
@@ -852,7 +852,7 @@ namespace SwiftCare.Controllers
                     "No active Volunteer account is linked to this onboarding record.";
 
                 return RedirectToAction(
-                    nameof(Details),
+                    nameof(Review),
                     new
                     {
                         id = onboardingId

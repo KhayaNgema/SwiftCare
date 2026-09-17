@@ -93,13 +93,20 @@
 
         <!-- =====================================================
              VOLUNTEER CARDS
+             ORDER:
+             1. Opportunities
+             2. Applications
+             3. Onboarding
+             4. Volunteers
+             5. Availability & Shifts
+             6. Tasks & Responsibilities
              ===================================================== -->
 
         <div class="sc-action-grid volunteer-action-grid">
 
 
             <!-- =================================================
-                 JOB OPPORTUNITIES
+                 1. JOB OPPORTUNITIES
                  ================================================= -->
 
             <a asp-controller="VolunteerOpportunities"
@@ -111,7 +118,7 @@
                     <div class="sc-action-icon volunteer-icon">
                         <i class="bi bi-briefcase-fill"></i>
                     </div>
-                    
+
                     <div class="volunteer-card-arrow">
                         <i class="bi bi-arrow-up-right"></i>
                     </div>
@@ -149,7 +156,7 @@
 
 
             <!-- =================================================
-                 APPLICATIONS
+                 2. APPLICATIONS
                  ================================================= -->
 
             <a asp-controller="VolunteerApplications"
@@ -199,7 +206,57 @@
 
 
             <!-- =================================================
-                 VOLUNTEERS
+                 3. ONBOARDING
+                 ================================================= -->
+
+            <a asp-controller="VolunteerOnboardingAdmin"
+                   asp-action="Index"
+                   class="sc-action-card volunteer-card">
+
+                <div class="sc-action-top">
+
+                    <div class="volunteer-icon">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+
+                    <div class="volunteer-card-arrow">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+
+                </div>
+
+                <div class="sc-action-body">
+
+                    <span class="volunteer-card-label">
+                        VOLUNTEER PROCESS
+                    </span>
+
+                    <h3>
+                        Onboarding
+                    </h3>
+
+                    <p>
+                        Manage volunteer onboarding, documents, screening,
+                        agreements and orientation.
+                    </p>
+
+                </div>
+
+                <div class="sc-action-footer">
+
+                    <span>
+                        Manage Onboarding
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </div>
+
+            </a>
+
+
+            <!-- =================================================
+                 4. VOLUNTEERS
                  ================================================= -->
 
             <a asp-controller="Volunteers"
@@ -249,7 +306,7 @@
 
 
             <!-- =================================================
-                 AVAILABILITY & SHIFTS
+                 5. AVAILABILITY & SHIFTS
                  ================================================= -->
 
             <a asp-controller="VolunteerAvailability"
@@ -296,11 +353,18 @@
                 </div>
 
             </a>
+
+
+            <!-- =================================================
+                 6. TASKS & RESPONSIBILITIES
+                 ================================================= -->
+
             <a asp-controller="VolunteerTasks"
                    asp-action="Tasks"
                    class="sc-action-card volunteer-card">
 
                 <div class="sc-action-top">
+
                     <div class="volunteer-icon">
                         <i class="bi bi-list-task"></i>
                     </div>
@@ -308,52 +372,38 @@
                     <div class="volunteer-card-arrow">
                         <i class="bi bi-arrow-up-right"></i>
                     </div>
+
                 </div>
 
                 <div class="sc-action-body">
-                    <span class="volunteer-card-label">VOLUNTEER OPERATIONS</span>
-                    <h3>Tasks & Responsibilities</h3>
+
+                    <span class="volunteer-card-label">
+                        VOLUNTEER OPERATIONS
+                    </span>
+
+                    <h3>
+                        Tasks & Responsibilities
+                    </h3>
+
                     <p>
-                        Assign, manage and monitor volunteer tasks and responsibilities.
+                        Assign, manage and monitor volunteer tasks and
+                        responsibilities.
                     </p>
+
                 </div>
 
                 <div class="sc-action-footer">
-                    <span>Manage Tasks</span>
+
+                    <span>
+                        Manage Tasks
+                    </span>
+
                     <i class="bi bi-arrow-right"></i>
+
                 </div>
 
             </a>
 
-
-            <a asp-controller="VolunteerOnboarding"
-                   asp-action="Onboarding"
-                   class="sc-action-card volunteer-card">
-
-                <div class="sc-action-top">
-                    <div class="volunteer-icon">
-                        <i class="bi bi-person-check"></i>
-                    </div>
-
-                    <div class="volunteer-card-arrow">
-                        <i class="bi bi-arrow-up-right"></i>
-                    </div>
-                </div>
-
-                <div class="sc-action-body">
-                    <span class="volunteer-card-label">VOLUNTEER PROCESS</span>
-                    <h3>Onboarding</h3>
-                    <p>
-                        Manage volunteer onboarding, documents, screening, agreements and orientation.
-                    </p>
-                </div>
-
-                <div class="sc-action-footer">
-                    <span>Manage Onboarding</span>
-                    <i class="bi bi-arrow-right"></i>
-                </div>
-
-            </a>
 
         </div>
 

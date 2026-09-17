@@ -8,22 +8,39 @@
         ViewBag.Policies as List<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy>
         ?? new List<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy>();
 
-    var allPoliciesAccepted =
-        policies.Any() &&
+    var requiredPolicies =
         policies
             .Where(x => x.IsRequired)
-            .All(policy =>
-                Model.PolicyAcceptances.Any(x =>
-                    x.VolunteerPolicyId == policy.VolunteerPolicyId &&
-                    x.Accepted &&
-                    x.PolicyVersion == policy.Version));
+            .ToList();
+
+    var allPoliciesAccepted =
+        requiredPolicies.Any() &&
+        requiredPolicies.All(policy =>
+            Model.PolicyAcceptances.Any(x =>
+                x.VolunteerPolicyId == policy.VolunteerPolicyId &&
+                x.Accepted &&
+                x.PolicyVersion == policy.Version));
+
+    var acceptedCount =
+        requiredPolicies.Count(policy =>
+            Model.PolicyAcceptances.Any(x =>
+                x.VolunteerPolicyId == policy.VolunteerPolicyId &&
+                x.Accepted &&
+                x.PolicyVersion == policy.Version));
+
+    var totalRequiredPolicies =
+        requiredPolicies.Count;
+
+    var progressPercentage =
+        totalRequiredPolicies > 0
+            ? (acceptedCount * 100) / totalRequiredPolicies
+            : 0;
 }
 
-
-<div class="container policy-page">
+<div class="policy-page">
 
     <!-- =========================================================
-         HEADER
+         POLICY HEADER
          ========================================================= -->
 
     <div class="policy-header">
@@ -34,38 +51,44 @@
                 <i class="bi bi-shield-check"></i>
             </div>
 
-            <h1>
-                Volunteer Policies
-            </h1>
+            <div>
 
-            <p>
-                Please carefully review each SwiftCare policy and accept
-                all required policies before continuing with your volunteer
-                onboarding.
-            </p>
+                <h1>
+                    Volunteer Policies
+                </h1>
 
-            <div class="policy-progress">
+                <p>
+                    Please review and accept all required SwiftCare
+                    volunteer policies before continuing.
+                </p>
 
-                <div class="policy-progress-top">
+            </div>
 
-                    <span class="policy-progress-label">
-                        <i class="bi bi-list-check me-1"></i>
-                        Policy completion
-                    </span>
+        </div>
 
-                    <span class="policy-progress-count"
-                          id="policyProgressCount">
-                        0 of 0 accepted
-                    </span>
 
-                </div>
+        <!-- =====================================================
+             POLICY PROGRESS
+             ===================================================== -->
 
-                <div class="policy-progress-track">
+        <div class="policy-progress">
 
-                    <div class="policy-progress-bar"
-                         id="policyProgressBar">
-                    </div>
+            <div class="policy-progress-top">
 
+                <span class="policy-progress-label">
+                    Policy Completion
+                </span>
+
+                <span class="policy-progress-count">
+                    @acceptedCount of @totalRequiredPolicies accepted
+                </span>
+
+            </div>
+
+            <div class="policy-progress-track">
+
+                <div class="policy-progress-bar"
+                     style="width: @progressPercentage%;">
                 </div>
 
             </div>
@@ -79,72 +102,86 @@
          POLICIES
          ========================================================= -->
 
-    @if (!policies.Any())
-    {
-        <div class="empty-policy">
+    <div class="policies-container">
 
-            <div class="empty-policy-icon">
-                <i class="bi bi-file-earmark-text"></i>
+        @if (!policies.Any())
+        {
+            <div class="policy-card">
+
+                <div class="policy-card-body">
+
+                    <div class="policy-description">
+
+                        <div class="policy-description-intro">
+
+                            <i class="bi bi-info-circle me-2"></i>
+
+                            No active volunteer policies are currently
+                            available.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
+        }
+        else
+        {
+            var policyNumber = 1;
 
-            <h4>
-                No Policies Available
-            </h4>
-
-            <p>
-                There are currently no active volunteer policies available.
-            </p>
-
-        </div>
-    }
-    else
-    {
-        <div class="policies-container"
-             id="policiesContainer">
-
-            @{
-                var policyIndex = 0;
-            }
-
-            @foreach (var policy in policies)
+            foreach (var policy in policies)
             {
-                policyIndex++;
+                var isAccepted =
+                    Model.PolicyAcceptances.Any(x =>
+                        x.VolunteerPolicyId == policy.VolunteerPolicyId &&
+                        x.Accepted &&
+                        x.PolicyVersion == policy.Version);
 
-                var accepted = Model.PolicyAcceptances.Any(x =>
-                    x.VolunteerPolicyId == policy.VolunteerPolicyId &&
-                    x.Accepted &&
-                    x.PolicyVersion == policy.Version);
+                var items =
+                    policy.Items?
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ToList()
+                    ?? new List<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicyItem>();
 
-                var documentUrl =
-                    !string.IsNullOrWhiteSpace(policy.DocumentPath)
-                        ? Url.Content("~/" + policy.DocumentPath)
-                        : null;
+                var introItems =
+                    items
+                        .Where(x =>
+                            !x.IsSubheading &&
+                            string.IsNullOrWhiteSpace(x.Heading))
+                        .ToList();
 
-                <div class="policy-card @(accepted ? "accepted" : "")"
-                     id="policy-card-@policy.VolunteerPolicyId"
+                var sectionItems =
+                    items
+                        .Where(x =>
+                            x.IsSubheading ||
+                            !string.IsNullOrWhiteSpace(x.Heading))
+                        .ToList();
+
+                <div class="policy-card"
                      data-policy-id="@policy.VolunteerPolicyId"
-                     data-required="@policy.IsRequired.ToString().ToLowerInvariant()"
-                     data-accepted="@accepted.ToString().ToLowerInvariant()">
+                     data-required="@policy.IsRequired.ToString().ToLower()"
+                     data-accepted="@isAccepted.ToString().ToLower()">
 
-                    <!-- POLICY HEADER -->
+                    <!-- =================================================
+                         POLICY CARD HEADER
+                         ================================================= -->
 
                     <div class="policy-card-header">
 
                         <div class="policy-title-row">
 
-                            <div class="flex-grow-1">
+                            <div class="policy-number">
+                                @policyNumber
+                            </div>
 
-                                <div class="d-flex align-items-start">
+                            <div>
 
-                                    <span class="policy-number">
-                                        @policyIndex
-                                    </span>
-
-                                    <h4>
-                                        @policy.Title
-                                    </h4>
-
-                                </div>
+                                <h2 class="policy-title">
+                                    @policy.Title
+                                </h2>
 
                                 <div class="policy-meta">
 
@@ -161,23 +198,15 @@
                                         </span>
                                     }
 
+                                    @if (isAccepted)
+                                    {
+                                        <span class="policy-status accepted">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            Accepted
+                                        </span>
+                                    }
+
                                 </div>
-
-                            </div>
-
-                            <div class="policy-status @(accepted ? "accepted" : "pending")"
-                                 id="policy-status-@policy.VolunteerPolicyId">
-
-                                @if (accepted)
-                                {
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    <span>Accepted</span>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-clock"></i>
-                                    <span>Pending</span>
-                                }
 
                             </div>
 
@@ -186,62 +215,120 @@
                     </div>
 
 
-                    <!-- POLICY BODY -->
+                    <!-- =================================================
+                         POLICY BODY
+                         ================================================= -->
 
                     <div class="policy-card-body">
 
-                        @if (!string.IsNullOrWhiteSpace(policy.Description))
-                        {
-                            <div class="policy-description"
-                                 data-policy-description>
+                        <div class="policy-description">
 
-                                @policy.Description
-
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="policy-description">
-
-                                <div class="policy-section">
-
-                                    <div class="policy-section-text">
-                                        No additional description was
-                                        provided for this policy.
+                            <!-- =============================================
+                                 INTRODUCTION
+                                 ============================================= -->
+                            @foreach (var intro in introItems)
+                            {
+                                if (!string.IsNullOrWhiteSpace(intro.Description))
+                                {
+                                    <div class="policy-description-intro">
+                                        @intro.Description
                                     </div>
+                                }
+                            }
+
+
+                            <!-- =============================================
+                                 POLICY SECTIONS
+                                 ============================================= -->
+                            @if (sectionItems.Any())
+                            {
+                                <div class="policy-sections">
+
+                                    @foreach (var item in sectionItems)
+                                    {
+                                        <div class="policy-section">
+
+                                            @if (!string.IsNullOrWhiteSpace(item.Heading))
+                                            {
+                                                <div class="policy-section-title">
+                                                    @item.Heading
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                                            {
+                                                <div class="policy-section-text">
+                                                    @item.Description
+                                                </div>
+                                            }
+
+                                        </div>
+                                    }
 
                                 </div>
+                            }
 
-                            </div>
-                        }
+
+                            <!-- =============================================
+                                 PLAIN TEXT
+                                 ============================================= -->
+                            @foreach (var item in items.Where(x =>
+                                                            !x.IsSubheading &&
+                                                            !string.IsNullOrWhiteSpace(x.Heading)))
+                            {
+                                <div class="policy-plain-text">
+                                    @item.Description
+                                </div>
+                            }
+
+                        </div>
 
                     </div>
 
 
-                    <!-- POLICY FOOTER -->
+                    <!-- =================================================
+                         POLICY FOOTER
+                         ================================================= -->
 
                     <div class="policy-card-footer">
 
                         <div class="policy-actions">
 
-                            @if (!string.IsNullOrWhiteSpace(documentUrl))
+                            @if (!string.IsNullOrWhiteSpace(policy.DocumentPath))
                             {
-                                <a href="@documentUrl"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="btn-policy-view">
+                                <a href="@policy.DocumentPath"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="btn-policy-view">
 
-                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <i class="bi bi-file-earmark-text"></i>
 
-                                    View Policy
+                                    View Document
 
                                 </a>
                             }
 
-                            @if (!accepted)
+                        </div>
+
+
+                        <div class="policy-actions">
+
+                            @if (isAccepted)
                             {
-                                <form class="accept-policy-form"
-                                      data-policy-id="@policy.VolunteerPolicyId">
+                                <div class="accepted-message">
+
+                                    <i class="bi bi-check-circle-fill"></i>
+
+                                    Policy Accepted
+
+                                </div>
+                            }
+                            else
+                            {
+                                <form asp-action="AcceptPolicy"
+                                      asp-controller="VolunteerOnboarding"
+                                      method="post"
+                                      class="accept-policy-form">
 
                                     @Html.AntiForgeryToken()
 
@@ -254,20 +341,11 @@
                                            value="@policy.VolunteerPolicyId" />
 
                                     <button type="submit"
-                                            class="btn btn-policy accept-policy-button">
+                                            class="btn-policy accept-policy-button">
 
-                                        <span class="accept-icon">
-                                            <i class="bi bi-check2-circle"></i>
-                                        </span>
+                                        <i class="bi bi-check2-circle"></i>
 
-                                        <span class="accept-spinner">
-                                            <span class="spinner-border spinner-border-sm"
-                                                  role="status"
-                                                  aria-hidden="true">
-                                            </span>
-                                        </span>
-
-                                        <span class="accept-text">
+                                        <span>
                                             Accept Policy
                                         </span>
 
@@ -275,856 +353,404 @@
 
                                 </form>
                             }
-                            else
-                            {
-                                <div class="accepted-message">
-
-                                    <i class="bi bi-check-circle-fill"></i>
-
-                                    Policy Accepted
-
-                                </div>
-                            }
 
                         </div>
 
                     </div>
 
                 </div>
-            }
 
-        </div>
-    }
+                policyNumber++;
+            }
+        }
+
+    </div>
 
 
     <!-- =========================================================
-         CONTINUE
+         CONTINUE CARD
          ========================================================= -->
-
-    @if (policies.Any())
+    @if (allPoliciesAccepted)
     {
-        <div class="continue-card"
-             id="continueCard"
-             style="@(allPoliciesAccepted ? "" : "display:none;")">
+        <div class="continue-card">
 
-            <div class="d-flex justify-content-between align-items-center gap-4">
+            <div class="continue-card-content">
 
                 <div>
 
-                    <h5>
-                        <i class="bi bi-arrow-right-circle me-1"></i>
-                        Continue with your onboarding
-                    </h5>
+                    <h3>
+                        All Required Policies Accepted
+                    </h3>
 
-                    <p id="continueMessage">
-                        @if (allPoliciesAccepted)
-                        {
-                            @:All required policies have been accepted. You can now continue to your volunteer contract.
-                        }
-                        else
-                        {
-                            @:Accept all required policies to continue to your volunteer contract.
-                        }
+                    <p>
+                        You have accepted all required SwiftCare
+                        volunteer policies. You can now continue
+                        to upload your onboarding documents.
                     </p>
 
                 </div>
 
-                <form asp-action="GenerateContract"
-                      asp-controller="VolunteerOnboarding"
-                      method="post"
-                      id="generateContractForm"
-                      class="continue-form">
 
-                    @Html.AntiForgeryToken()
+                <!-- =================================================
+                     CONTINUE BUTTON
+                     ================================================= -->
 
-                    <input type="hidden"
-                           name="onboardingId"
-                           value="@Model.VolunteerOnboardingId" />
+                <div class="continue-actions">
 
-                    <button type="submit"
-                            class="btn-continue"
-                            id="continueButton">
+                    <a href="@Url.Action("Documents", "VolunteerOnboarding", new { id = Model.VolunteerOnboardingId })"
+                           class="btn-continue"
+                           id="continueButton">
 
                         <span>
-                            Continue to Contract
+                            Continue to Documents
                         </span>
 
                         <i class="bi bi-arrow-right"></i>
 
-                    </button>
+                    </a>
 
-                </form>
+                </div>
 
             </div>
 
         </div>
     }
 
-</div>
 
+    <!-- =========================================================
+         POLICY TOAST
+         ========================================================= -->
 
-<!-- =============================================================
-     TOAST
-     ============================================================= -->
+    <div id="policyToast"
+         class="policy-toast"
+         role="alert"
+         aria-live="polite">
 
-<div id="policyToast"
-     class="policy-toast"
-     role="alert">
+        <div class="policy-toast-icon">
 
-    <i id="policyToastIcon"
-       class="bi bi-check-circle-fill">
-    </i>
+            <i class="bi bi-check-circle-fill"></i>
 
-    <div id="policyToastMessage">
+        </div>
+
+        <div class="policy-toast-content">
+
+            <strong id="policyToastTitle">
+                Success
+            </strong>
+
+            <span id="policyToastMessage">
+                Policy accepted successfully.
+            </span>
+
+        </div>
+
+        <button type="button"
+                class="policy-toast-close"
+                id="policyToastClose"
+                aria-label="Close">
+
+            <i class="bi bi-x"></i>
+
+        </button>
+
     </div>
 
 </div>
 
 
-<script>
+@section Scripts {
 
-    document.addEventListener("DOMContentLoaded", function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-        /*
-         * Format the policy descriptions after Razor
-         * has rendered the page.
-         */
-        formatPolicyDescriptions();
+            const policyCards =
+                document.querySelectorAll(".policy-card");
 
-        /*
-         * Calculate initial progress.
-         */
-        updatePolicyProgress();
+            const progressBar =
+                document.querySelector(".policy-progress-bar");
 
-        /*
-         * Attach AJAX submit handlers.
-         */
-        document
-            .querySelectorAll(".accept-policy-form")
-            .forEach(function (form) {
+            const progressCount =
+                document.querySelector(".policy-progress-count");
 
-                form.addEventListener("submit", function (event) {
+            const toast =
+                document.getElementById("policyToast");
 
-                    event.preventDefault();
+            const toastTitle =
+                document.getElementById("policyToastTitle");
 
-                    acceptPolicy(form);
+            const toastMessage =
+                document.getElementById("policyToastMessage");
+
+            const toastClose =
+                document.getElementById("policyToastClose");
+
+
+            /* =====================================================
+               TOAST
+               ===================================================== */
+
+            let toastTimer = null;
+
+            function showToast(title, message) {
+
+                if (!toast)
+                    return;
+
+                if (toastTitle)
+                    toastTitle.textContent = title;
+
+                if (toastMessage)
+                    toastMessage.textContent = message;
+
+                toast.classList.add("show");
+
+                clearTimeout(toastTimer);
+
+                toastTimer = setTimeout(function () {
+
+                    toast.classList.remove("show");
+
+                }, 4000);
+            }
+
+
+            if (toastClose) {
+
+                toastClose.addEventListener("click", function () {
+
+                    toast.classList.remove("show");
 
                 });
-
-            });
-
-        /*
-         * Prevent accidental double submission
-         * while generating the contract.
-         */
-           /*
-     * Continue to Contract
-     *
-     * IMPORTANT:
-     * This form is intentionally submitted normally.
-     * The controller generates the contract and then
-     * redirects to the Contract page.
-     */
-    const generateContractForm =
-        document.getElementById("generateContractForm");
-
-    if (generateContractForm) {
-
-        generateContractForm.addEventListener(
-            "submit",
-            function (event) {
-
-                const button =
-                    document.getElementById("continueButton");
-
-                if (!button) {
-                    return;
-                }
-
-                /*
-                 * Prevent accidental double-clicks.
-                 *
-                 * DO NOT call event.preventDefault().
-                 *
-                 * The browser must submit the form to:
-                 *
-                 * POST /VolunteerOnboarding/GenerateContract
-                 *
-                 * The controller will then redirect to:
-                 *
-                 * GET /VolunteerOnboarding/Contract/{id}
-                 */
-                if (button.disabled) {
-
-                    event.preventDefault();
-
-                    return;
-
-                }
-
-                button.disabled = true;
-
-                const buttonText =
-                    button.querySelector("span");
-
-                if (buttonText) {
-
-                    buttonText.textContent =
-                        "Generating Contract...";
-
-                }
 
             }
-        );
-
-    }
-
-    });
 
 
-    /* =============================================================
-       FORMAT POLICY DESCRIPTION
-       ============================================================= */
+            /* =====================================================
+               UPDATE POLICY PROGRESS
+               ===================================================== */
 
-    function formatPolicyDescriptions() {
+            function updatePolicyProgress() {
 
-        document
-            .querySelectorAll("[data-policy-description]")
-            .forEach(function (container) {
+                const requiredCards =
+                    Array.from(policyCards)
+                        .filter(card =>
+                            card.dataset.required === "true");
 
-                const rawText =
-                    container.innerText
-                        .replace(/\r\n/g, "\n")
-                        .replace(/\r/g, "\n")
-                        .trim();
+                const acceptedCards =
+                    requiredCards.filter(card =>
+                        card.dataset.accepted === "true");
 
-                if (!rawText) {
-                    return;
-                }
+                const total =
+                    requiredCards.length;
 
-                const regex =
-                    /(?:^|\s)(\d+)\.\s+([A-Z][A-Z0-9 &,'’\/\-]+?)(?=\s+\d+\.\s+|$)/g;
+                const accepted =
+                    acceptedCards.length;
 
-                const matches = [];
+                const percentage =
+                    total > 0
+                        ? Math.round((accepted / total) * 100)
+                        : 0;
 
-                let match;
+                if (progressBar) {
 
-                while ((match = regex.exec(rawText)) !== null) {
-
-                    matches.push({
-                        number: match[1],
-                        title: match[2].trim(),
-                        index: match.index,
-                        fullMatchLength: match[0].length
-                    });
+                    progressBar.style.width =
+                        percentage + "%";
 
                 }
 
-                if (matches.length === 0) {
+                if (progressCount) {
 
-                    container.innerHTML =
-                        "<div class=\"policy-plain-text\">" +
-                        escapeHtml(rawText) +
-                        "</div>";
-
-                    return;
-                }
-
-                const sections = [];
-
-                for (let i = 0; i < matches.length; i++) {
-
-                    const current = matches[i];
-
-                    const start =
-                        current.index +
-                        current.fullMatchLength;
-
-                    const end =
-                        i < matches.length - 1
-                            ? matches[i + 1].index
-                            : rawText.length;
-
-                    let content =
-                        rawText
-                            .substring(start, end)
-                            .trim();
-
-                    content =
-                        content
-                            .replace(/^[\s:–—-]+/, "")
-                            .trim();
-
-                    sections.push({
-                        number: current.number,
-                        title: current.title,
-                        content: content
-                    });
+                    progressCount.textContent =
+                        `${accepted} of ${total} accepted`;
 
                 }
-
-                container.innerHTML = "";
-
-                const introText =
-                    rawText
-                        .substring(0, matches[0].index)
-                        .trim();
-
-                if (introText) {
-
-                    const intro =
-                        document.createElement("div");
-
-                    intro.className =
-                        "policy-description-intro";
-
-                    intro.textContent =
-                        introText;
-
-                    container.appendChild(intro);
-
-                }
-
-                const sectionContainer =
-                    document.createElement("div");
-
-                sectionContainer.className =
-                    "policy-sections";
-
-                sections.forEach(function (section) {
-
-                    const sectionElement =
-                        document.createElement("div");
-
-                    sectionElement.className =
-                        "policy-section";
-
-                    const title =
-                        document.createElement("div");
-
-                    title.className =
-                        "policy-section-title";
-
-                    title.textContent =
-                        section.number +
-                        ". " +
-                        section.title;
-
-                    const text =
-                        document.createElement("p");
-
-                    text.className =
-                        "policy-section-text";
-
-                    text.textContent =
-                        section.content;
-
-                    sectionElement.appendChild(title);
-
-                    sectionElement.appendChild(text);
-
-                    sectionContainer.appendChild(
-                        sectionElement
-                    );
-
-                });
-
-                container.appendChild(
-                    sectionContainer
-                );
-
-            });
-
-    }
+            }
 
 
-    /* =============================================================
-       ACCEPT POLICY
-       ============================================================= */
+            /* =====================================================
+               ACCEPT POLICY
+               ===================================================== */
 
-    async function acceptPolicy(form) {
+            document
+                .querySelectorAll(".accept-policy-form")
+                .forEach(function (form) {
 
-        const button =
-            form.querySelector(".accept-policy-button");
+                    form.addEventListener("submit", async function (event) {
 
-        const card =
-            form.closest(".policy-card");
+                        event.preventDefault();
 
-        const policyId =
-            form.dataset.policyId;
+                        const button =
+                            form.querySelector(".accept-policy-button");
 
-        if (!button || !card) {
-            return;
-        }
+                        if (!button)
+                            return;
 
-        if (button.disabled) {
-            return;
-        }
+                        if (button.disabled)
+                            return;
 
-        button.disabled = true;
+                        const originalHtml =
+                            button.innerHTML;
 
-        button.classList.add("accepting");
+                        button.disabled = true;
 
-        const formData =
-            new FormData(form);
+                        button.innerHTML = `
+                            <span class="spinner-border spinner-border-sm"
+                                  role="status"
+                                  aria-hidden="true"></span>
+                            <span>Accepting...</span>
+                        `;
 
-        try {
+                        try {
 
-            const response =
-                await fetch(
-                    "@Url.Action("AcceptPolicy", "VolunteerOnboarding")",
-                    {
-                        method: "POST",
+                            const response =
+                                await fetch(
+                                    form.action,
+                                    {
+                                        method: "POST",
+                                        body: new FormData(form),
+                                        headers: {
+                                            "X-Requested-With": "XMLHttpRequest"
+                                        }
+                                    });
 
-                        body: formData,
+                            if (!response.ok) {
 
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest"
+                                throw new Error(
+                                    "Unable to accept the policy."
+                                );
+
+                            }
+
+                            let result = null;
+
+                            const contentType =
+                                response.headers.get("content-type") || "";
+
+                            if (contentType.includes("application/json")) {
+
+                                result =
+                                    await response.json();
+
+                            }
+
+
+                            /* =============================================
+                               UPDATE CARD
+                               ============================================= */
+
+                            const card =
+                                form.closest(".policy-card");
+
+                            if (card) {
+
+                                card.dataset.accepted = "true";
+
+                                const status =
+                                    card.querySelector(".policy-status");
+
+                                if (status) {
+
+                                    status.innerHTML = `
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Accepted
+                                    `;
+
+                                    status.classList.add("accepted");
+
+                                }
+
+
+                                const actions =
+                                    form.closest(".policy-actions");
+
+                                if (actions) {
+
+                                    actions.innerHTML = `
+                                        <div class="accepted-message">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            Policy Accepted
+                                        </div>
+                                    `;
+
+                                }
+
+                            }
+
+
+                            /* =============================================
+                               SHOW SUCCESS
+                               ============================================= */
+
+                            showToast(
+                                "Policy Accepted",
+                                result?.message ||
+                                "The policy has been accepted successfully."
+                            );
+
+
+                            /* =============================================
+                               UPDATE PROGRESS
+                               ============================================= */
+
+                            updatePolicyProgress();
+
+
+                            /* =============================================
+                               RELOAD WHEN ALL REQUIRED POLICIES
+                               ARE ACCEPTED
+                               ============================================= */
+
+                            const requiredCards =
+                                Array.from(policyCards)
+                                    .filter(card =>
+                                        card.dataset.required === "true");
+
+                            const acceptedCards =
+                                requiredCards.filter(card =>
+                                    card.dataset.accepted === "true");
+
+
+                            if (
+                                requiredCards.length > 0 &&
+                                acceptedCards.length === requiredCards.length
+                            ) {
+
+                                setTimeout(function () {
+
+                                    window.location.reload();
+
+                                }, 700);
+
+                            }
+
                         }
-                    }
-                );
+                        catch (error) {
 
-            let result = null;
+                            console.error(error);
 
-            const contentType =
-                response.headers.get("content-type") || "";
+                            button.disabled = false;
 
-            if (
-                contentType.includes("application/json")
-            ) {
+                            button.innerHTML =
+                                originalHtml;
 
-                result =
-                    await response.json();
+                            showToast(
+                                "Unable to Accept Policy",
+                                "Something went wrong while accepting this policy. Please try again."
+                            );
 
-            }
-            else {
+                        }
 
-                result = {
-                    success: response.ok
-                };
+                    });
 
-            }
-
-            if (
-                !response.ok ||
-                result.success === false
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    "The policy could not be accepted."
-                );
-
-            }
+                });
 
 
-            /*
-             * Mark the policy card as accepted.
-             */
-            card.classList.add("accepted");
+            /* =====================================================
+               INITIAL PROGRESS
+               ===================================================== */
 
-            card.dataset.accepted =
-                "true";
-
-
-            /*
-             * Update status badge.
-             */
-            const status =
-                document.getElementById(
-                    "policy-status-" + policyId
-                );
-
-            if (status) {
-
-                status.className =
-                    "policy-status accepted";
-
-                status.innerHTML =
-                    '<i class="bi bi-check-circle-fill"></i>' +
-                    '<span>Accepted</span>';
-
-            }
-
-
-            /*
-             * Replace the accept button
-             * with the accepted message.
-             */
-            const acceptedMessage =
-                document.createElement("div");
-
-            acceptedMessage.className =
-                "accepted-message";
-
-            acceptedMessage.innerHTML =
-                '<i class="bi bi-check-circle-fill"></i>' +
-                '<span>Policy Accepted</span>';
-
-            form.replaceWith(
-                acceptedMessage
-            );
-
-
-            /*
-             * Update progress.
-             */
             updatePolicyProgress();
 
-
-            /*
-             * Check whether ALL REQUIRED policies
-             * are now accepted.
-             */
-            checkAllRequiredPoliciesAccepted();
-
-
-            showPolicyToast(
-                "Policy accepted successfully.",
-                "success"
-            );
-
-        }
-        catch (error) {
-
-            console.error(
-                "SwiftCare policy acceptance error:",
-                error
-            );
-
-            button.disabled = false;
-
-            button.classList.remove(
-                "accepting"
-            );
-
-            showPolicyToast(
-                error.message ||
-                "Something went wrong while accepting the policy.",
-                "error"
-            );
-
-        }
-
-    }
-
-
-    /* =============================================================
-       CHECK REQUIRED POLICIES
-       ============================================================= */
-
-    function checkAllRequiredPoliciesAccepted() {
-
-        const cards =
-            Array.from(
-                document.querySelectorAll(
-                    ".policy-card"
-                )
-            );
-
-        const requiredCards =
-            cards.filter(function (card) {
-
-                return (
-                    card.dataset.required === "true"
-                );
-
-            });
-
-        /*
-         * If there are no required policies,
-         * there is nothing to unlock.
-         */
-        if (requiredCards.length === 0) {
-            return;
-        }
-
-        const allRequiredAccepted =
-            requiredCards.every(function (card) {
-
-                return (
-                    card.dataset.accepted === "true"
-                );
-
-            });
-
-        const continueCard =
-            document.getElementById(
-                "continueCard"
-            );
-
-        const continueMessage =
-            document.getElementById(
-                "continueMessage"
-            );
-
-        if (!continueCard) {
-            return;
-        }
-
-        if (allRequiredAccepted) {
-
-            /*
-             * Reveal the existing Continue card
-             * immediately without reloading.
-             */
-            continueCard.style.display = "";
-
-            if (continueMessage) {
-
-                continueMessage.textContent =
-                    "All required policies have been accepted. " +
-                    "You can now continue to your volunteer contract.";
-
-            }
-
-            /*
-             * Smoothly bring the user to the
-             * Continue section.
-             */
-            setTimeout(function () {
-
-                continueCard.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-            }, 150);
-
-        }
-        else {
-
-            continueCard.style.display = "none";
-
-            if (continueMessage) {
-
-                const remaining =
-                    requiredCards.filter(function (card) {
-
-                        return (
-                            card.dataset.accepted !== "true"
-                        );
-
-                    }).length;
-
-                continueMessage.textContent =
-                    remaining +
-                    (remaining === 1
-                        ? " required policy remaining."
-                        : " required policies remaining.") +
-                    " Accept all required policies to continue.";
-
-            }
-
-        }
-
-    }
-
-
-    /* =============================================================
-       UPDATE PROGRESS
-       ============================================================= */
-
-    function updatePolicyProgress() {
-
-        const cards =
-            Array.from(
-                document.querySelectorAll(
-                    ".policy-card"
-                )
-            );
-
-        const total =
-            cards.length;
-
-        const accepted =
-            cards.filter(function (card) {
-
-                return (
-                    card.dataset.accepted === "true"
-                );
-
-            }).length;
-
-        const percentage =
-            total > 0
-                ? Math.round(
-                    (accepted / total) * 100
-                )
-                : 0;
-
-        const count =
-            document.getElementById(
-                "policyProgressCount"
-            );
-
-        const bar =
-            document.getElementById(
-                "policyProgressBar"
-            );
-
-        if (count) {
-
-            count.textContent =
-                accepted +
-                " of " +
-                total +
-                " accepted";
-
-        }
-
-        if (bar) {
-
-            bar.style.width =
-                percentage + "%";
-
-        }
-
-        /*
-         * Update continuation message.
-         */
-        const message =
-            document.getElementById(
-                "continueMessage"
-            );
-
-        if (!message) {
-            return;
-        }
-
-        const requiredCards =
-            cards.filter(function (card) {
-
-                return (
-                    card.dataset.required === "true"
-                );
-
-            });
-
-        const requiredAccepted =
-            requiredCards.filter(function (card) {
-
-                return (
-                    card.dataset.accepted === "true"
-                );
-
-            }).length;
-
-        if (
-            requiredCards.length > 0 &&
-            requiredAccepted === requiredCards.length
-        ) {
-
-            message.textContent =
-                "All required policies have been accepted. " +
-                "You can now continue to your volunteer contract.";
-
-        }
-        else {
-
-            const remaining =
-                requiredCards.length -
-                requiredAccepted;
-
-            message.textContent =
-                remaining +
-                (remaining === 1
-                    ? " required policy remaining."
-                    : " required policies remaining.") +
-                " Accept all required policies to continue.";
-
-        }
-
-    }
-
-
-    /* =============================================================
-       TOAST
-       ============================================================= */
-
-    let toastTimer = null;
-
-    function showPolicyToast(
-        message,
-        type
-    ) {
-
-        const toast =
-            document.getElementById(
-                "policyToast"
-            );
-
-        const toastMessage =
-            document.getElementById(
-                "policyToastMessage"
-            );
-
-        const toastIcon =
-            document.getElementById(
-                "policyToastIcon"
-            );
-
-        if (!toast || !toastMessage) {
-            return;
-        }
-
-        toast.classList.remove(
-            "success",
-            "error"
-        );
-
-        toast.classList.add(
-            type === "error"
-                ? "error"
-                : "success"
-        );
-
-        if (toastIcon) {
-
-            toastIcon.className =
-                type === "error"
-                    ? "bi bi-exclamation-triangle-fill"
-                    : "bi bi-check-circle-fill";
-
-        }
-
-        toastMessage.textContent =
-            message;
-
-        toast.classList.add(
-            "show"
-        );
-
-        clearTimeout(
-            toastTimer
-        );
-
-        toastTimer =
-            setTimeout(function () {
-
-                toast.classList.remove(
-                    "show"
-                );
-
-            }, 4000);
-
-    }
-
-
-    /* =============================================================
-       HTML ESCAPE
-       ============================================================= */
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement("div");
-
-        div.textContent =
-            value;
-
-        return div.innerHTML;
-
-    }
-
-</script>
+        });
+    </script>
+}

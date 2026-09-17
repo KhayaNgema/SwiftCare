@@ -601,6 +601,8 @@ namespace SwiftCare.Data
         }
         public DbSet<VolunteerInterviewEvaluation>VolunteerInterviewEvaluations{ get; set; }
 
+        public DbSet<VolunteerPolicyItem> VolunteerPolicyItems { get; set; }
+
         public DbSet<VolunteerInterviewSkillEvaluation> VolunteerInterviewSkillEvaluations{ get; set; }
 
         public DbSet<VolunteerInterviewCompetencyEvaluation>VolunteerInterviewCompetencyEvaluations{ get; set; }

@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\Templates\Contracts\VolunteerServiceAgreement.html" />
+    <None Include="wwwroot\Templates\VolunteerContracts\VolunteerServiceAgreement.html" />
   </ItemGroup>
 
   <ItemGroup>

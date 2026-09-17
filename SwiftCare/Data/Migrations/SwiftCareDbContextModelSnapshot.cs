@@ -2103,10 +2103,6 @@ namespace SwiftCare.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
                     b.Property<string>("DocumentFileName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2197,6 +2193,56 @@ namespace SwiftCare.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("VolunteerPolicyAcceptances");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerPolicyItem", b =>
+                {
+                    b.Property<int>("VolunteerPolicyItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerPolicyItemId"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Heading")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSubheading")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VolunteerPolicyId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerPolicyItemId");
+
+                    b.HasIndex("VolunteerPolicyId");
+
+                    b.ToTable("VolunteerPolicyItems");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>
@@ -3505,6 +3551,17 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("VolunteerPolicy");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerPolicyItem", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy", "VolunteerPolicy")
+                        .WithMany("Items")
+                        .HasForeignKey("VolunteerPolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("VolunteerPolicy");
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>
                 {
                     b.HasOne("SwiftCare.Models.City", null)
@@ -3723,6 +3780,8 @@ namespace SwiftCare.Data.Migrations
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy", b =>
                 {
                     b.Navigation("Acceptances");
+
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOpportunity", b =>

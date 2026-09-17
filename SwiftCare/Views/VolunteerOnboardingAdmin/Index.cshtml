@@ -1,162 +1,834 @@
-﻿@model IEnumerable<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding>
+﻿@using System.Linq
+@using SwiftCare.Helpers
+@using SwiftCare.Models.VolunteerOnboarding
+
+@model IEnumerable<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding>
 
 @{
     ViewData["Title"] = "Volunteer Onboarding";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
-}
 
-<style>
-    .admin-onboarding-page {
-        padding: 30px 0 60px;
+    var onboardings = Model?.ToList()
+        ?? new List<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding>();
+
+    var totalOnboardings = onboardings.Count;
+
+    var offersPending = onboardings.Count(x =>
+        x.Status == VolunteerOnboardingStatus.OfferPending);
+
+    var verificationCount = onboardings.Count(x =>
+        x.Status == VolunteerOnboardingStatus.AdminVerification);
+
+    var readyCount = onboardings.Count(x =>
+        x.Status == VolunteerOnboardingStatus.ReadyForActivation);
+
+    var completedCount = onboardings.Count(x =>
+        x.Status == VolunteerOnboardingStatus.Completed);
+
+
+    string GetInitials(
+        SwiftCare.Models.Applicant? applicant)
+    {
+        if (applicant == null)
+            return "?";
+
+        var first =
+            applicant.FirstName?
+                .Trim()
+                .FirstOrDefault();
+
+        var last =
+            applicant.LastName?
+                .Trim()
+                .FirstOrDefault();
+
+        if (first.HasValue && last.HasValue)
+            return $"{first}{last}".ToUpper();
+
+        if (first.HasValue)
+            return first.Value.ToString().ToUpper();
+
+        if (last.HasValue)
+            return last.Value.ToString().ToUpper();
+
+        return "?";
     }
 
-    .page-header {
-        background: linear-gradient(135deg, #eaffd0, #f7ffed);
-        border-radius: 22px;
-        padding: 28px;
-        margin-bottom: 25px;
+
+    string GetStatusClass(
+        VolunteerOnboardingStatus status)
+    {
+        return status switch
+        {
+            VolunteerOnboardingStatus.OfferPending
+                => "status-pending",
+
+            VolunteerOnboardingStatus.AdminVerification
+                => "status-verification",
+
+            VolunteerOnboardingStatus.ReadyForActivation
+                => "status-ready",
+
+            VolunteerOnboardingStatus.Completed
+                => "status-completed",
+
+            VolunteerOnboardingStatus.OfferDeclined
+                => "status-rejected",
+
+            _ => "status-neutral"
+        };
     }
 
-        .page-header h1 {
-            color: #174d32;
-            font-weight: 800;
+
+    string GetStatusIcon(
+        VolunteerOnboardingStatus status)
+    {
+        return status switch
+        {
+            VolunteerOnboardingStatus.OfferPending
+                => "bi-hourglass-split",
+
+            VolunteerOnboardingStatus.AdminVerification
+                => "bi-search",
+
+            VolunteerOnboardingStatus.ReadyForActivation
+                => "bi-check2-circle",
+
+            VolunteerOnboardingStatus.Completed
+                => "bi-person-check-fill",
+
+            VolunteerOnboardingStatus.OfferDeclined
+                => "bi-x-circle-fill",
+
+            _ => "bi-circle-fill"
+        };
+    }
+
+
+    string GetStepTitle(int step)
+    {
+        return step switch
+        {
+            1 => "Volunteer Offer",
+            2 => "Policies & Code",
+            3 => "Documents",
+            4 => "Admin Verification",
+            5 => "Volunteer Contract",
+            6 => "Activation",
+            _ => "Onboarding"
+        };
+    }
+
+
+    string GetStepClass(int step)
+    {
+        return step switch
+        {
+            1 => "step-one",
+            2 => "step-two",
+            3 => "step-three",
+            4 => "step-four",
+            5 => "step-five",
+            6 => "step-six",
+            _ => "step-default"
+        };
+    }
+
+
+    string GetDocumentStatus(
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding onboarding)
+    {
+        var documents =
+            onboarding.Documents?
+                .ToList()
+            ?? new List<VolunteerOnboardingDocument>();
+
+        if (!documents.Any())
+            return "No Documents";
+
+        if (documents.Any(x =>
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.Rejected ||
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.ResubmissionRequired))
+        {
+            return "Attention Required";
         }
 
-    .onboarding-table-card {
-        background: #fff;
-        border: 1px solid #dfe9da;
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 8px 25px rgba(25, 75, 45, .06);
+        if (documents.All(x =>
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.Approved))
+        {
+            return "Verified";
+        }
+
+        if (documents.Any(x =>
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.UnderReview))
+        {
+            return "Under Review";
+        }
+
+        return "Uploaded";
     }
 
-    .table th {
-        color: #42604c;
-        font-size: .8rem;
-        text-transform: uppercase;
-        letter-spacing: .04em;
+
+    string GetDocumentClass(
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding onboarding)
+    {
+        var value = GetDocumentStatus(onboarding);
+
+        return value switch
+        {
+            "Verified" => "document-verified",
+            "Under Review" => "document-review",
+            "Uploaded" => "document-uploaded",
+            "Attention Required" => "document-attention",
+            _ => "document-empty"
+        };
     }
 
-    .table td {
-        vertical-align: middle;
-        color: #415246;
+
+    string GetDocumentIcon(
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding onboarding)
+    {
+        var value = GetDocumentStatus(onboarding);
+
+        return value switch
+        {
+            "Verified" => "bi-check-circle-fill",
+            "Under Review" => "bi-search",
+            "Uploaded" => "bi-file-earmark-arrow-up-fill",
+            "Attention Required" => "bi-exclamation-circle-fill",
+            _ => "bi-file-earmark"
+        };
     }
 
-    .applicant-name {
-        color: #174d32;
-        font-weight: 750;
+
+    int GetProgress(
+        VolunteerOnboardingStatus status,
+        int currentStep)
+    {
+        if (status == VolunteerOnboardingStatus.Completed)
+            return 100;
+
+        return currentStep switch
+        {
+            1 => 16,
+            2 => 33,
+            3 => 50,
+            4 => 66,
+            5 => 83,
+            6 => 100,
+            _ => 0
+        };
     }
+}
 
-    .status-badge {
-        padding: 6px 10px;
-        border-radius: 8px;
-        background: #edf5e9;
-        color: #426344;
-        font-size: .78rem;
-        font-weight: 700;
-    }
+<div class="sc-admin-onboarding-page">
 
-    .btn-view {
-        background: #72b82a;
-        border: none;
-        color: #163d25;
-        font-weight: 700;
-        border-radius: 9px;
-    }
-</style>
+    <div class="sc-admin-onboarding-container">
 
-<div class="container admin-onboarding-page">
 
-    <div class="page-header">
+        <!-- =====================================================
+             PAGE HEADER
+             ===================================================== -->
 
-        <h1>
-            <i class="bi bi-person-vcard me-2"></i>
-            Volunteer Onboarding
-        </h1>
+        <div class="sc-admin-onboarding-header">
 
-        <p class="mb-0 text-muted">
-            Review, verify and activate approved volunteer applicants.
-        </p>
+            <div class="sc-admin-onboarding-heading">
 
-    </div>
+                <div class="sc-admin-onboarding-icon">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
 
-    <div class="onboarding-table-card">
+                <div>
 
-        <div class="table-responsive">
+                    <div class="sc-admin-onboarding-eyebrow">
+                        SwiftCare Administration
+                    </div>
 
-            <table class="table align-middle">
+                    <h1 class="sc-admin-onboarding-title">
+                        Volunteer Onboarding
+                    </h1>
 
-                <thead>
+                    <p class="sc-admin-onboarding-subtitle">
+                        Review volunteer onboarding progress, documents,
+                        verification and activation readiness.
+                    </p>
 
-                    <tr>
-                        <th>Applicant</th>
-                        <th>Opportunity</th>
-                        <th>Status</th>
-                        <th>Step</th>
-                        <th>Created</th>
-                        <th></th>
-                    </tr>
+                </div>
 
-                </thead>
+            </div>
 
-                <tbody>
 
-                    @foreach (var onboarding in Model)
-                    {
-                        <tr>
+            <div class="sc-admin-onboarding-actions">
 
-                            <td>
-                                <div class="applicant-name">
-                                    @onboarding.Applicant?.FirstName
-                                    @onboarding.Applicant?.LastName
-                                </div>
+                <a href="javascript:history.back();"
+                       class="sc-admin-onboarding-back">
 
-                                <small class="text-muted">
-                                    @onboarding.Applicant?.Email
-                                </small>
-                            </td>
+                    <i class="bi bi-arrow-left"></i>
 
-                            <td>
-                                @(onboarding.VolunteerApplication
-                                    ?.VolunteerOpportunity
-                                    ?.Title ?? "—")
-                            </td>
+                    <span>
+                        Back
+                    </span>
 
-                            <td>
-                                <span class="status-badge">
-                                    @onboarding.Status
-                                </span>
-                            </td>
+                </a>
 
-                            <td>
-                                Step @onboarding.CurrentStep
-                            </td>
+            </div>
 
-                            <td>
-                                @onboarding.CreatedDate
-                                .ToLocalTime()
-                                .ToString("dd MMM yyyy")
-                            </td>
+        </div>
 
-                            <td class="text-end">
 
-                                <a asp-action="Details"
-                                       asp-route-id="@onboarding.VolunteerOnboardingId"
-                                       class="btn btn-sm btn-view">
+        <!-- =====================================================
+             SUMMARY CARDS
+             ===================================================== -->
 
-                                    <i class="bi bi-eye me-1"></i>
-                                    Review
+        <div class="sc-admin-onboarding-summary">
 
-                                </a>
 
-                            </td>
+            <!-- TOTAL -->
 
-                        </tr>
-                    }
+            <div class="sc-admin-onboarding-summary-card">
 
-                </tbody>
+                <div class="sc-onboarding-summary-content">
 
-            </table>
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Total
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @totalOnboardings
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- OFFERS -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-envelope-paper-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Offers Pending
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @offersPending
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- VERIFICATION -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Verification
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @verificationCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- READY -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Ready
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @readyCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPLETED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Completed
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @completedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             MAIN ONBOARDING TABLE
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-card">
+
+
+            <!-- TABLE HEADER -->
+
+            <div class="sc-admin-onboarding-card-header">
+
+                <div>
+
+                    <div class="sc-admin-onboarding-card-eyebrow">
+                        Volunteer Onboarding Management
+                    </div>
+
+                    <h2 class="sc-admin-onboarding-card-title">
+                        Onboarding Candidates
+                    </h2>
+
+                </div>
+
+
+                <div class="sc-admin-onboarding-count">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <span>
+                        @totalOnboardings Onboardings
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            @if (onboardings.Any())
+            {
+
+                <div class="sc-admin-onboarding-table-wrapper">
+
+                    <table class="sc-admin-onboarding-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Reference
+                                </th>
+
+                                <th>
+                                    Applicant
+                                </th>
+
+                                <th>
+                                    Opportunity
+                                </th>
+
+                                <th>
+                                    Current Step
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Documents
+                                </th>
+
+                                <th>
+                                    Progress
+                                </th>
+
+                                <th>
+                                    Created
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var onboarding in onboardings)
+                            {
+
+                                var applicant =
+                                    onboarding.Applicant;
+
+                                var application =
+                                    onboarding.VolunteerApplication;
+
+                                var applicantName =
+                                    $"{applicant?.FirstName} {applicant?.LastName}"
+                                        .Trim();
+
+                                if (string.IsNullOrWhiteSpace(applicantName))
+                                {
+                                    applicantName =
+                                        applicant?.Email
+                                        ?? "Unknown Applicant";
+                                }
+
+
+                                var reference =
+                                    application?.Reference
+                                    ?? $"ONB-{onboarding.VolunteerOnboardingId:D5}";
+
+
+                                var opportunityTitle =
+                                    application?
+                                        .VolunteerOpportunity?
+                                        .Title
+                                    ?? "Volunteer Opportunity";
+
+
+                                var statusText =
+                                    onboarding.Status
+                                        .GetDisplayName();
+
+
+                                var documentStatus =
+                                    GetDocumentStatus(onboarding);
+
+
+                                var progress =
+                                    GetProgress(
+                                        onboarding.Status,
+                                        onboarding.CurrentStep);
+
+
+                                <tr>
+
+
+                                    <!-- =================================
+                                         REFERENCE
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-reference">
+
+                                            <span class="sc-onboarding-reference-icon">
+                                                #
+                                            </span>
+
+                                            <span>
+                                                @reference
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         APPLICANT
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-applicant">
+
+                                            <div class="sc-onboarding-avatar">
+
+                                                @GetInitials(applicant)
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <p class="sc-onboarding-applicant-name">
+                                                    @applicantName
+                                                </p>
+
+                                                <p class="sc-onboarding-applicant-email">
+
+                                                    @(
+                                                        applicant?.Email
+                                                        ?? "No email available"
+                                                    )
+
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         OPPORTUNITY
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-opportunity">
+
+                                            <div class="sc-onboarding-opportunity-icon">
+
+                                                <i class="bi bi-heart-pulse-fill"></i>
+
+                                            </div>
+
+
+                                            <span class="sc-onboarding-opportunity-title"
+                                                  title="@opportunityTitle">
+
+                                                @opportunityTitle
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         CURRENT STEP
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-step @GetStepClass(onboarding.CurrentStep)">
+
+                                            @if (onboarding.CurrentStep <= 1)
+                                            {
+                                                <i class="bi bi-envelope-paper-fill"></i>
+                                            }
+                                            else if (onboarding.CurrentStep == 2)
+                                            {
+                                                <i class="bi bi-shield-check"></i>
+                                            }
+                                            else if (onboarding.CurrentStep == 3)
+                                            {
+                                                <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                                            }
+                                            else if (onboarding.CurrentStep == 4)
+                                            {
+                                                <i class="bi bi-search"></i>
+                                            }
+                                            else if (onboarding.CurrentStep == 5)
+                                            {
+                                                <i class="bi bi-file-earmark-text-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-person-check-fill"></i>
+                                            }
+
+                                            @GetStepTitle(onboarding.CurrentStep)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         STATUS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-status @GetStatusClass(onboarding.Status)">
+
+                                            <i class="bi @GetStatusIcon(onboarding.Status)"></i>
+
+                                            @statusText
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         DOCUMENTS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-document @GetDocumentClass(onboarding)">
+
+                                            <i class="bi @GetDocumentIcon(onboarding)"></i>
+
+                                            @documentStatus
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         PROGRESS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-progress">
+
+                                            <div class="sc-onboarding-progress-track">
+
+                                                <div class="sc-onboarding-progress-fill"
+                                                     style="width:@progress%;">
+                                                </div>
+
+                                            </div>
+
+                                            <span class="sc-onboarding-progress-text">
+                                                @progress%
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         CREATED
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-date">
+
+                                            <i class="bi bi-calendar3"></i>
+
+                                            <span>
+                                                @onboarding.CreatedDate.ToString("dd MMM yyyy")
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         ACTION
+                                         ================================= -->
+
+                                    <td>
+
+                                        <a asp-controller="VolunteerOnboardingAdmin"
+                                               asp-action="Review"
+                                               asp-route-id="@onboarding.VolunteerOnboardingId"
+                                               class="sc-onboarding-review-button">
+
+                                            <i class="bi bi-eye-fill"></i>
+
+                                            <span>
+                                                Review
+                                            </span>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+            else
+            {
+
+                <!-- =============================================
+                     EMPTY STATE
+                     ============================================= -->
+
+                <div class="sc-admin-onboarding-empty">
+
+                    <div class="sc-admin-onboarding-empty-icon">
+
+                        <i class="bi bi-person-check"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Volunteer Onboarding Records
+                    </h3>
+
+
+                    <p>
+                        There are currently no volunteer onboarding records to review.
+                    </p>
+
+                </div>
+
+            }
 
         </div>
 

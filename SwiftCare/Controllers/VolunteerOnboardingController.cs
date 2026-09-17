@@ -675,12 +675,40 @@ namespace SwiftCare.Controllers
             if (onboarding.ApplicantId != user.Id)
                 return Forbid();
 
-            var policies = await _context.VolunteerPolicies
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.Title)
-                .ToListAsync(cancellationToken);
+
+            // ============================================================
+            // LOAD ACTIVE POLICIES AND THEIR ACTIVE ITEMS
+            // ============================================================
+
+            var policies =
+                await _context.VolunteerPolicies
+                    .AsNoTracking()
+                    .Include(x => x.Items)
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.Title)
+                    .ToListAsync(cancellationToken);
+
+
+            // ============================================================
+            // ENSURE ITEMS ARE ORDERED CORRECTLY
+            // ============================================================
+
+            foreach (var policy in policies)
+            {
+                policy.Items =
+                    policy.Items
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ToList();
+            }
+
+
+            // ============================================================
+            // SEND POLICIES TO VIEW
+            // ============================================================
 
             ViewBag.Policies = policies;
+
 
             return View(onboarding);
         }
@@ -1364,7 +1392,7 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
-        // COMPLETE / SUBMIT ONBOARDING FOR VERIFICATION
+        // COMPLETE / SUBMIT ONBOARDING DOCUMENTS FOR VERIFICATION
         // ============================================================
 
         [HttpPost]
@@ -1389,26 +1417,89 @@ namespace SwiftCare.Controllers
             if (onboarding.ApplicantId != user.Id)
                 return Forbid();
 
-            var ready =
-                await _onboardingService.IsReadyForActivationAsync(
-                    id,
-                    cancellationToken);
+            var documents =
+                onboarding.Documents?
+                    .ToList()
+                ?? new List<VolunteerOnboardingDocument>();
 
-            if (!ready)
+            // ------------------------------------------------------------
+            // At least one document must have been uploaded.
+            // Not every document type is required.
+            // ------------------------------------------------------------
+
+            if (!documents.Any())
             {
                 TempData["Error"] =
-                    "Your onboarding information is not complete yet.";
+                    "Please upload at least one applicable onboarding document before submitting for verification.";
 
                 return RedirectToAction(
                     nameof(Documents),
-                    new
-                    {
-                        id
-                    });
+                    new { id });
             }
 
+            // ------------------------------------------------------------
+            // Required policies must already be accepted.
+            // ------------------------------------------------------------
+
+            var policiesAccepted =
+                await _onboardingService.HasAcceptedAllRequiredPoliciesAsync(
+                    id,
+                    cancellationToken);
+
+            if (!policiesAccepted)
+            {
+                TempData["Error"] =
+                    "You must accept all required volunteer policies before submitting your documents.";
+
+                return RedirectToAction(
+                    nameof(Policies),
+                    new { id });
+            }
+
+
+            var hasRejectedDocuments =
+                documents.Any(x =>
+                    x.Status ==
+                        VolunteerOnboardingDocumentStatus.Rejected ||
+
+                    x.Status ==
+                        VolunteerOnboardingDocumentStatus.ResubmissionRequired);
+
+            if (hasRejectedDocuments)
+            {
+                TempData["Error"] =
+                    "One or more onboarding documents require attention. Please resolve the rejected or resubmission-required documents before submitting.";
+
+                return RedirectToAction(
+                    nameof(Documents),
+                    new { id });
+            }
+
+
+            if (onboarding.DocumentsSubmittedDate.HasValue)
+            {
+                TempData["Info"] =
+                    "Your onboarding documents have already been submitted for verification.";
+
+                return RedirectToAction(
+                    nameof(Documents),
+                    new { id });
+            }
+
+            onboarding.DocumentsSubmittedDate = DateTime.Now;
+            onboarding.VerificationStartedDate = DateTime.Now;
+            onboarding.ModifiedDate = DateTime.Now;
+            onboarding.ModifiedBy = user.Id;
+
+            onboarding.Status =
+                VolunteerOnboardingStatus.AdminVerification;
+
+            onboarding.CurrentStep = 4;
+
+            await _context.SaveChangesAsync(cancellationToken);
+
             TempData["Success"] =
-                "Your onboarding information has been submitted for verification.";
+                "Your onboarding documents have been submitted successfully. SwiftCare will now review your documents.";
 
             return RedirectToAction(
                 nameof(Index));

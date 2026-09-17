@@ -3,97 +3,39 @@
 @{
     ViewData["Title"] = "Onboarding Documents";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var documents =
+        Model.Documents?
+            .OrderByDescending(x => x.UploadedDate)
+            .ToList()
+        ?? new List<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocument>();
+
+    var hasDocuments = documents.Any();
+
+    var hasPendingDocuments =
+        documents.Any(x =>
+            x.Status ==
+            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Uploaded ||
+            x.Status ==
+            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.UnderReview);
+
+    var hasRejectedDocuments =
+        documents.Any(x =>
+            x.Status ==
+            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Rejected ||
+            x.Status ==
+            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.ResubmissionRequired);
+
+    var documentsSubmitted =
+        Model.DocumentsSubmittedDate.HasValue;
 }
 
-<style>
-    .documents-page {
-        max-width: 1100px;
-        margin: 35px auto 60px;
-    }
-
-    .documents-header {
-        background: linear-gradient(135deg, #eaffd0, #f7ffed);
-        border-radius: 22px;
-        padding: 28px;
-        margin-bottom: 25px;
-    }
-
-        .documents-header h1 {
-            color: #174d32;
-            font-weight: 800;
-        }
-
-    .upload-card,
-    .documents-card {
-        background: #fff;
-        border: 1px solid #dfe9da;
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 8px 25px rgba(25, 75, 45, .06);
-    }
-
-        .upload-card h4,
-        .documents-card h4 {
-            color: #174d32;
-            font-weight: 750;
-        }
-
-    .form-label {
-        color: #31543e;
-        font-weight: 650;
-    }
-
-    .btn-swift {
-        background: #72b82a;
-        border: none;
-        color: #163d25;
-        font-weight: 750;
-        border-radius: 11px;
-        padding: 10px 18px;
-    }
-
-    .document-row {
-        padding: 17px 0;
-        border-bottom: 1px solid #edf1ea;
-    }
-
-        .document-row:last-child {
-            border-bottom: none;
-        }
-
-    .document-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: #eaffd0;
-        color: #23633d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .document-name {
-        color: #174d32;
-        font-weight: 700;
-    }
-
-    .document-meta {
-        color: #788379;
-        font-size: .82rem;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 6px 10px;
-        border-radius: 8px;
-        font-size: .78rem;
-        font-weight: 700;
-        background: #eef3ea;
-        color: #49604f;
-    }
-</style>
 
 <div class="container documents-page">
+
+    <!-- =========================================================
+         HEADER
+         ========================================================= -->
 
     <div class="documents-header">
 
@@ -103,50 +45,103 @@
         </h1>
 
         <p class="mb-0 text-muted">
-            Upload the documents required to complete your volunteer onboarding.
-            Maximum file size: 50 MB.
+            Upload the documents you want SwiftCare to review as part of
+            your volunteer onboarding. Documents will be reviewed before
+            you can proceed to the next onboarding stage.
         </p>
 
     </div>
 
+
+    <!-- =========================================================
+         SUCCESS MESSAGE
+         ========================================================= -->
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success">
+
             <i class="bi bi-check-circle me-2"></i>
+
             @TempData["Success"]
+
         </div>
     }
 
+
+    <!-- =========================================================
+         ERROR MESSAGE
+         ========================================================= -->
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger">
+
             <i class="bi bi-exclamation-circle me-2"></i>
+
             @TempData["Error"]
+
         </div>
     }
 
+
+    <!-- =========================================================
+         INFORMATION
+         ========================================================= -->
+
+    <div class="documents-info">
+
+        <i class="bi bi-info-circle me-2"></i>
+
+        <strong>Document requirements:</strong>
+
+        You do not need to upload every available document type.
+        Upload the documents that are applicable to your volunteer
+        onboarding. SwiftCare will review the documents after you
+        submit them for verification.
+
+    </div>
+
+
     <div class="row g-4">
 
-        <!-- UPLOAD -->
+
+        <!-- =====================================================
+             UPLOAD DOCUMENT
+             ===================================================== -->
 
         <div class="col-lg-5">
 
             <div class="upload-card">
 
                 <h4 class="mb-4">
+
                     <i class="bi bi-cloud-arrow-up me-2"></i>
+
                     Upload Document
+
                 </h4>
 
+
                 <form asp-action="UploadDocument"
+                      asp-controller="VolunteerOnboarding"
                       method="post"
-                      enctype="multipart/form-data">
+                      enctype="multipart/form-data"
+                      id="uploadDocumentForm">
 
                     @Html.AntiForgeryToken()
+
+
+                    <!-- =================================================
+                         ONBOARDING ID
+                         ================================================= -->
 
                     <input type="hidden"
                            name="onboardingId"
                            value="@Model.VolunteerOnboardingId" />
+
+
+                    <!-- =================================================
+                         DOCUMENT TYPE
+                         ================================================= -->
 
                     <div class="mb-3">
 
@@ -174,6 +169,11 @@
 
                     </div>
 
+
+                    <!-- =================================================
+                         DOCUMENT NAME
+                         ================================================= -->
+
                     <div class="mb-3">
 
                         <label class="form-label">
@@ -188,6 +188,11 @@
                                required />
 
                     </div>
+
+
+                    <!-- =================================================
+                         FILE
+                         ================================================= -->
 
                     <div class="mb-4">
 
@@ -206,10 +211,17 @@
 
                     </div>
 
+
+                    <!-- =================================================
+                         UPLOAD BUTTON
+                         ================================================= -->
+
                     <button type="submit"
-                            class="btn btn-swift w-100">
+                            class="btn btn-swift w-100"
+                            id="uploadDocumentButton">
 
                         <i class="bi bi-upload me-2"></i>
+
                         Upload Document
 
                     </button>
@@ -220,18 +232,25 @@
 
         </div>
 
-        <!-- EXISTING DOCUMENTS -->
+
+        <!-- =====================================================
+             EXISTING DOCUMENTS
+             ===================================================== -->
 
         <div class="col-lg-7">
 
             <div class="documents-card">
 
                 <h4 class="mb-3">
+
                     <i class="bi bi-files me-2"></i>
+
                     Uploaded Documents
+
                 </h4>
 
-                @if (!Model.Documents.Any())
+
+                @if (!documents.Any())
                 {
                     <div class="text-center py-5 text-muted">
 
@@ -243,56 +262,100 @@
                             No documents uploaded yet.
                         </p>
 
+                        <small>
+                            Upload the documents applicable to your
+                            volunteer onboarding.
+                        </small>
+
                     </div>
                 }
                 else
                 {
-                    foreach (var document in Model.Documents.OrderByDescending(x => x.UploadedDate))
+                    foreach (var document in documents)
                     {
                         <div class="document-row">
 
                             <div class="d-flex gap-3 align-items-center">
 
+
+                                <!-- =====================================
+                                     DOCUMENT ICON
+                                     ===================================== -->
+
                                 <div class="document-icon">
+
                                     <i class="bi bi-file-earmark"></i>
+
                                 </div>
+
+
+                                <!-- =====================================
+                                     DOCUMENT DETAILS
+                                     ===================================== -->
 
                                 <div class="flex-grow-1">
 
                                     <div class="document-name">
+
                                         @document.DocumentName
+
                                     </div>
 
+
                                     <div class="document-meta">
+
                                         @document.FileName
+
                                         ·
+
                                         @document.DocumentType
+
                                         ·
-                                        @document.FileSize.ToString("N0") bytes
+
+                                        @(document.FileSize < 1024 * 1024? $"{document.FileSize / 1024.0:N1} KB": $"{document.FileSize / (1024.0 * 1024.0):N1} MB")
+
                                     </div>
 
+
                                     <div class="document-meta">
+
                                         Uploaded
+
                                         @document.UploadedDate.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+
                                     </div>
 
                                 </div>
 
+
+                                <!-- =====================================
+                                     STATUS
+                                     ===================================== -->
+
                                 <div class="text-end">
 
                                     <div class="status-badge mb-2">
+
                                         @document.Status
+
                                     </div>
+
 
                                     @if (!string.IsNullOrWhiteSpace(document.FilePath))
                                     {
                                         <div>
+
                                             <a href="@Url.Content("~/" + document.FilePath)"
                                                    target="_blank"
+                                                   rel="noopener noreferrer"
                                                    class="btn btn-sm btn-outline-success">
+
                                                 <i class="bi bi-eye"></i>
+
                                                 View
+
                                             </a>
+
                                         </div>
                                     }
 
@@ -300,11 +363,20 @@
 
                             </div>
 
+
+                            <!-- =========================================
+                                 REJECTION / CORRECTION
+                                 ========================================= -->
                             @if (!string.IsNullOrWhiteSpace(document.RejectionReason))
                             {
                                 <div class="alert alert-danger mt-3 mb-0">
-                                    <strong>Correction required:</strong>
+
+                                    <strong>
+                                        Correction required:
+                                    </strong>
+
                                     @document.RejectionReason
+
                                 </div>
                             }
 
@@ -318,27 +390,170 @@
 
     </div>
 
-    <div class="d-flex justify-content-end mt-4">
 
-        <form asp-action="SubmitForVerification"
-              method="post">
+    <!-- =========================================================
+         VERIFICATION STATUS
+         ========================================================= -->
+    @if (documentsSubmitted)
+    {
+        <div class="verification-card mt-4">
 
-            @Html.AntiForgeryToken()
+            <div class="d-flex align-items-start gap-3">
 
-            <input type="hidden"
-                   name="id"
-                   value="@Model.VolunteerOnboardingId" />
+                <div class="document-icon">
 
-            <button type="submit"
-                    class="btn btn-swift">
+                    <i class="bi bi-hourglass-split"></i>
 
-                <i class="bi bi-send-check me-2"></i>
-                Submit for Verification
+                </div>
 
-            </button>
+                <div>
 
-        </form>
+                    <h5>
+                        Documents Submitted for Verification
+                    </h5>
 
-    </div>
+                    <p>
+                        Your uploaded documents have been submitted for
+                        SwiftCare administration to review. You will be
+                        able to continue once the required verification
+                        process has been completed.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <!-- =========================================================
+             SUBMIT FOR VERIFICATION
+             ========================================================= -->
+
+        <div class="d-flex justify-content-end mt-4">
+
+            @if (hasDocuments)
+            {
+                <form asp-action="SubmitForVerification"
+                      asp-controller="VolunteerOnboarding"
+                      method="post"
+                      id="submitVerificationForm">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.VolunteerOnboardingId" />
+
+                    <button type="submit"
+                            class="btn btn-swift"
+                            id="submitVerificationButton">
+
+                        <i class="bi bi-send-check me-2"></i>
+
+                        Submit for Verification
+
+                    </button>
+
+                </form>
+            }
+            else
+            {
+                <button type="button"
+                        class="btn btn-swift"
+                        disabled>
+
+                    <i class="bi bi-send-check me-2"></i>
+
+                    Upload Documents First
+
+                </button>
+            }
+
+        </div>
+    }
 
 </div>
+
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            /* =========================================================
+               UPLOAD BUTTON
+               ========================================================= */
+
+            const uploadForm =
+                document.getElementById("uploadDocumentForm");
+
+            const uploadButton =
+                document.getElementById("uploadDocumentButton");
+
+
+            if (uploadForm && uploadButton) {
+
+                uploadForm.addEventListener("submit", function () {
+
+                    uploadButton.disabled = true;
+
+                    uploadButton.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-2"
+                              role="status"
+                              aria-hidden="true"></span>
+                        Uploading...
+                    `;
+
+                });
+
+            }
+
+
+            /* =========================================================
+               SUBMIT FOR VERIFICATION
+               ========================================================= */
+
+            const verificationForm =
+                document.getElementById("submitVerificationForm");
+
+            const verificationButton =
+                document.getElementById("submitVerificationButton");
+
+
+            if (verificationForm && verificationButton) {
+
+                verificationForm.addEventListener("submit", function (event) {
+
+                    const confirmed =
+                        window.confirm(
+                            "Are you sure you want to submit your uploaded documents for verification?"
+                        );
+
+                    if (!confirmed) {
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+                    verificationButton.disabled = true;
+
+                    verificationButton.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-2"
+                              role="status"
+                              aria-hidden="true"></span>
+                        Submitting...
+                    `;
+
+                });
+
+            }
+
+        });
+
+    </script>
+}

@@ -17,6 +17,21 @@
     var adminVerification =
         onboardingStatus == VolunteerOnboardingStatus.AdminVerification;
 
+    var contractPending =
+        onboardingStatus == VolunteerOnboardingStatus.ContractPending;
+
+    var documentsPending =
+        onboardingStatus == VolunteerOnboardingStatus.DocumentsPending;
+
+    var policiesPending =
+        onboardingStatus == VolunteerOnboardingStatus.PoliciesPending;
+
+    var offerPending =
+        onboardingStatus == VolunteerOnboardingStatus.OfferPending;
+
+    var correctionRequired =
+        onboardingStatus == VolunteerOnboardingStatus.RejectedForCorrection;
+
     var applicantName =
         $"{Model.Applicant?.FirstName} {Model.Applicant?.LastName}".Trim();
 
@@ -97,24 +112,64 @@
     var hasIdentityDocument =
         identityDocuments.Any();
 
+    // IMPORTANT:
+    // Always use the LATEST identity document.
+    // Do not use an older approved identity document if a newer one
+    // is pending/rejected/resubmission.
+    var latestIdentityDocument =
+        identityDocuments.FirstOrDefault();
+
     var approvedIdentityDocument =
-        identityDocuments.FirstOrDefault(x =>
-            x.Status ==
-            VolunteerOnboardingDocumentStatus.Approved);
+        latestIdentityDocument?.Status ==
+        VolunteerOnboardingDocumentStatus.Approved
+            ? latestIdentityDocument
+            : null;
 
     var pendingIdentityDocument =
-        identityDocuments.FirstOrDefault(x =>
-            x.Status ==
-                VolunteerOnboardingDocumentStatus.Uploaded ||
-            x.Status ==
-                VolunteerOnboardingDocumentStatus.UnderReview);
+        latestIdentityDocument?.Status ==
+            VolunteerOnboardingDocumentStatus.Uploaded ||
+        latestIdentityDocument?.Status ==
+            VolunteerOnboardingDocumentStatus.UnderReview
+            ? latestIdentityDocument
+            : null;
 
     var rejectedIdentityDocument =
-        identityDocuments.FirstOrDefault(x =>
-            x.Status ==
-                VolunteerOnboardingDocumentStatus.Rejected ||
-            x.Status ==
-                VolunteerOnboardingDocumentStatus.ResubmissionRequired);
+        latestIdentityDocument?.Status ==
+            VolunteerOnboardingDocumentStatus.Rejected ||
+        latestIdentityDocument?.Status ==
+            VolunteerOnboardingDocumentStatus.ResubmissionRequired
+            ? latestIdentityDocument
+            : null;
+
+
+    // =============================================================
+    // REQUIREMENT HELPERS
+    // =============================================================
+
+    var supportingDocumentsRequirement =
+        displayRequirements.FirstOrDefault(x =>
+            x.RequirementType ==
+            VolunteerOnboardingRequirementType.DocumentUpload);
+
+    var contractRequirement =
+        displayRequirements.FirstOrDefault(x =>
+            x.RequirementType ==
+            VolunteerOnboardingRequirementType.Contract);
+
+    var identityRequirement =
+        displayRequirements.FirstOrDefault(x =>
+            x.RequirementType ==
+            VolunteerOnboardingRequirementType.IdentityVerification);
+
+
+    var supportingDocumentsComplete =
+        supportingDocumentsRequirement?.IsCompleted == true;
+
+    var contractComplete =
+        contractRequirement?.IsCompleted == true;
+
+    var identityRequirementComplete =
+        identityRequirement?.IsCompleted == true;
 }
 
 
@@ -141,8 +196,8 @@
                 </h1>
 
                 <p class="review-hero-subtitle">
-                    Review documents, requirements and verification before
-                    activating this volunteer.
+                    Review documents, identity verification, the volunteer
+                    agreement and final activation requirements.
                 </p>
 
             </div>
@@ -162,6 +217,7 @@
 
                 </a>
 
+
                 <span class="review-status-pill">
 
                     @if (onboardingCompleted)
@@ -175,6 +231,14 @@
                     else if (adminVerification)
                     {
                         <i class="bi bi-shield-check"></i>
+                    }
+                    else if (contractPending)
+                    {
+                        <i class="bi bi-file-earmark-check-fill"></i>
+                    }
+                    else if (correctionRequired)
+                    {
+                        <i class="bi bi-exclamation-triangle-fill"></i>
                     }
                     else
                     {
@@ -191,16 +255,23 @@
 
     </section>
 
+
+    <!-- =========================================================
+         TEMP DATA
+         ========================================================= -->
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4"
              role="alert">
+
             <div class="d-flex align-items-start gap-3">
+
                 <div class="flex-shrink-0">
                     <i class="bi bi-check-circle-fill fs-4"></i>
                 </div>
 
                 <div class="flex-grow-1">
+
                     <div class="fw-bold mb-1">
                         Success
                     </div>
@@ -208,6 +279,7 @@
                     <div>
                         @TempData["Success"]
                     </div>
+
                 </div>
 
                 <button type="button"
@@ -215,20 +287,26 @@
                         data-bs-dismiss="alert"
                         aria-label="Close">
                 </button>
+
             </div>
+
         </div>
     }
+
 
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4"
              role="alert">
+
             <div class="d-flex align-items-start gap-3">
+
                 <div class="flex-shrink-0">
                     <i class="bi bi-exclamation-triangle-fill fs-4"></i>
                 </div>
 
                 <div class="flex-grow-1">
+
                     <div class="fw-bold mb-1">
                         Action Required
                     </div>
@@ -236,6 +314,7 @@
                     <div>
                         @TempData["Error"]
                     </div>
+
                 </div>
 
                 <button type="button"
@@ -243,15 +322,338 @@
                         data-bs-dismiss="alert"
                         aria-label="Close">
                 </button>
+
             </div>
+
         </div>
     }
+
+
+    <!-- =========================================================
+         CURRENT ACTION / WORKFLOW STAGE
+         ========================================================= -->
+
+    <section class="review-card mb-4"
+             id="workflowActionCard">
+
+        <div class="review-card-header">
+
+            <h4 class="review-card-title">
+
+                <span class="review-card-title-icon">
+                    <i class="bi bi-signpost-split-fill"></i>
+                </span>
+
+                Current Onboarding Action
+
+            </h4>
+
+            <span class="status-badge"
+                  id="workflowStageBadge">
+
+                @Model.Status.GetDisplayName()
+
+            </span>
+
+        </div>
+
+
+        <div id="workflowActionContent">
+
+            @if (onboardingCompleted)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+
+                        <h5>
+                            Onboarding Completed
+                        </h5>
+
+                        <p class="mb-3">
+                            This volunteer has completed the onboarding
+                            process and has been activated.
+                        </p>
+
+                        <a asp-controller="VolunteerOnboardingAdmin"
+                               asp-action="ActivatedVolunteer"
+                               asp-route-onboardingId="@Model.VolunteerOnboardingId"
+                               class="btn-swift">
+
+                            <i class="bi bi-person-vcard"></i>
+
+                            View Volunteer
+
+                        </a>
+
+                    </div>
+
+                </div>
+            }
+            else if (readyForActivation)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+
+                        <h5>
+                            Ready for Activation
+                        </h5>
+
+                        <p class="mb-3">
+                            Identity verification, supporting documentation,
+                            the Volunteer Service Agreement and final
+                            verification have been completed.
+                        </p>
+
+                        <a asp-controller="VolunteerOnboardingAdmin"
+                               asp-action="Activate"
+                               asp-route-id="@Model.VolunteerOnboardingId"
+                               class="btn-swift">
+
+                            <i class="bi bi-person-check"></i>
+
+                            Activate Volunteer
+
+                        </a>
+
+                    </div>
+
+                </div>
+            }
+            else if (adminVerification)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+
+                        <h5>
+                            Final Verification Required
+                        </h5>
+
+                        <p class="mb-3">
+                            The Volunteer Service Agreement has been completed.
+                            Review the completed onboarding record and perform
+                            the final administrative verification before
+                            activation.
+                        </p>
+
+                        <button type="button"
+                                class="btn-swift"
+                                data-bs-toggle="modal"
+                                data-bs-target="#completeVerificationModal">
+
+                            <i class="bi bi-check-circle"></i>
+
+                            Complete Final Verification
+
+                        </button>
+
+                    </div>
+
+                </div>
+            }
+            else if (contractPending)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+
+                        <h5>
+                            Volunteer Service Agreement Required
+                        </h5>
+
+                        <p class="mb-3">
+                            Identity verification has been successfully
+                            completed. The next stage is the Volunteer
+                            Service Agreement. The volunteer must complete
+                            and upload the contract before final verification
+                            and activation can continue.
+                        </p>
+
+                        <div class="d-flex justify-content-center flex-wrap gap-2">
+
+                            <span class="status-badge pending">
+
+                                <i class="bi bi-file-earmark-arrow-up"></i>
+
+                                Contract Pending
+
+                            </span>
+
+                            @if (contractComplete)
+                            {
+                                <span class="status-badge verified">
+
+                                    <i class="bi bi-check-circle-fill"></i>
+
+                                    Contract Completed
+
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+            else if (correctionRequired)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+
+                        <h5>
+                            Correction Required
+                        </h5>
+
+                        <p class="mb-3">
+                            One or more onboarding items require correction
+                            or resubmission before the onboarding process
+                            can continue.
+                        </p>
+
+                        <button type="button"
+                                class="btn btn-outline-danger rounded-3 fw-bold"
+                                data-bs-toggle="modal"
+                                data-bs-target="#correctionModal">
+
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+
+                            Request / Review Correction
+
+                        </button>
+
+                    </div>
+
+                </div>
+            }
+            else if (documentsPending)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-folder-check"></i>
+                        </div>
+
+                        <h5>
+                            Documents and Identity Verification
+                        </h5>
+
+                        <p class="mb-3">
+                            Complete the outstanding document reviews and
+                            identity verification before the Volunteer
+                            Service Agreement becomes available.
+                        </p>
+
+                    </div>
+
+                </div>
+            }
+            else if (policiesPending)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-file-earmark-check"></i>
+                        </div>
+
+                        <h5>
+                            Required Policies Pending
+                        </h5>
+
+                        <p class="mb-3">
+                            The applicant must complete all required
+                            policies and the Code of Conduct before
+                            onboarding can proceed.
+                        </p>
+
+                    </div>
+
+                </div>
+            }
+            else if (offerPending)
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-envelope-paper"></i>
+                        </div>
+
+                        <h5>
+                            Volunteer Offer Pending
+                        </h5>
+
+                        <p class="mb-3">
+                            The applicant must accept the volunteer offer
+                            before the remaining onboarding stages can begin.
+                        </p>
+
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="activation-panel">
+
+                    <div class="activation-content">
+
+                        <div class="activation-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+
+                        <h5>
+                            Onboarding In Progress
+                        </h5>
+
+                        <p class="mb-0">
+                            Complete the outstanding onboarding actions
+                            shown below.
+                        </p>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+    </section>
+
+
     <!-- =========================================================
          SUMMARY
          ========================================================= -->
 
     <section class="review-summary-grid">
-
 
         <div class="review-summary-card">
 
@@ -331,22 +733,24 @@
                     Review State
                 </span>
 
-                <div class="summary-value" style="font-size:1rem;">
+                <div class="summary-value"
+                     style="font-size:1rem;">
 
                     @(adminVerification
-                        ? "In Review"
-                        : readyForActivation
-                            ? "Ready"
-                            : onboardingCompleted
-                                ? "Complete"
-                                : "Pending")
+                        ? "Final Review"
+                        : contractPending
+                            ? "Contract Pending"
+                            : readyForActivation
+                                ? "Ready"
+                                : onboardingCompleted
+                                    ? "Complete"
+                                    : "Pending")
 
                 </div>
 
             </div>
 
         </div>
-
 
     </section>
 
@@ -403,7 +807,6 @@
 
 
                 <div class="info-grid">
-
 
                     <div class="info-box full-width">
 
@@ -481,7 +884,6 @@
                         </div>
 
                     </div>
-
 
                 </div>
 
@@ -571,8 +973,20 @@
                     foreach (var requirement in displayRequirements)
                     {
 
-                        <div class="requirement-item">
+                        var requirementIsContract =
+                            requirement.RequirementType ==
+                            VolunteerOnboardingRequirementType.Contract;
 
+                        var requirementIsIdentity =
+                            requirement.RequirementType ==
+                            VolunteerOnboardingRequirementType.IdentityVerification;
+
+                        var requirementIsDocuments =
+                            requirement.RequirementType ==
+                            VolunteerOnboardingRequirementType.DocumentUpload;
+
+
+                        <div class="requirement-item">
 
                             <div class="requirement-icon
                                 @(requirement.IsCompleted ? "completed" : "")">
@@ -597,11 +1011,54 @@
 
                                 </div>
 
+
                                 @if (!string.IsNullOrWhiteSpace(
                                     requirement.Description))
                                 {
                                     <span class="requirement-description">
                                         @requirement.Description
+                                    </span>
+                                }
+
+
+                                @if (requirementIsIdentity &&
+                                     !requirement.IsCompleted)
+                                {
+                                    <span class="requirement-description">
+
+                                        <i class="bi bi-info-circle me-1"></i>
+
+                                        Requires successful Didit document,
+                                        liveness and face-match verification.
+
+                                    </span>
+                                }
+
+
+                                @if (requirementIsDocuments &&
+                                     !requirement.IsCompleted)
+                                {
+                                    <span class="requirement-description">
+
+                                        <i class="bi bi-info-circle me-1"></i>
+
+                                        Required supporting documents must
+                                        be uploaded and approved.
+
+                                    </span>
+                                }
+
+
+                                @if (requirementIsContract &&
+                                     !requirement.IsCompleted)
+                                {
+                                    <span class="requirement-description">
+
+                                        <i class="bi bi-info-circle me-1"></i>
+
+                                        Completed after identity and required
+                                        supporting documents are verified.
+
                                     </span>
                                 }
 
@@ -753,6 +1210,10 @@
                             document.DocumentType ==
                             VolunteerOnboardingDocumentType.IdentityDocument;
 
+                        var isContractDocument =
+                            document.DocumentType ==
+                            VolunteerOnboardingDocumentType.VolunteerContract;
+
                         var documentStatus =
                             document.Status;
 
@@ -785,6 +1246,10 @@
                                             {
                                                 <i class="bi bi-person-vcard-fill"></i>
                                             }
+                                            else if (isContractDocument)
+                                            {
+                                                <i class="bi bi-file-earmark-text-fill"></i>
+                                            }
                                             else
                                             {
                                                 <i class="bi bi-file-earmark-text"></i>
@@ -806,6 +1271,17 @@
                                                         <i class="bi bi-shield-check"></i>
 
                                                         Identity Document
+
+                                                    </span>
+                                                }
+
+                                                @if (isContractDocument)
+                                                {
+                                                    <span class="identity-document-label">
+
+                                                        <i class="bi bi-file-earmark-check"></i>
+
+                                                        Volunteer Contract
 
                                                     </span>
                                                 }
@@ -909,58 +1385,79 @@
                                     </button>
 
 
+                                    <!-- =====================================
+                                         IDENTITY ACTION
+                                         ===================================== -->
                                     @if (isIdentityDocument)
                                     {
-                                        <form asp-action="StartIdentityVerification"
-                                              method="post"
-                                              class="identity-verification-form">
+                                        <div class="identity-action-container"
+                                             data-identity-document-id="@document.VolunteerOnboardingDocumentId">
 
-                                            @Html.AntiForgeryToken()
-
-                                            <input type="hidden"
-                                                   name="onboardingId"
-                                                   value="@Model.VolunteerOnboardingId" />
-
-                                            <input type="hidden"
-                                                   name="identityDocumentId"
-                                                   value="@document.VolunteerOnboardingDocumentId" />
-
-
-                                            @if (documentStatus ==
-                                                VolunteerOnboardingDocumentStatus.Approved)
+                                            @if (approvedIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                                document.VolunteerOnboardingDocumentId)
                                             {
-                                                <button type="submit"
-                                                        class="btn-didit-verify">
+                                                <form asp-action="StartIdentityVerification"
+                                                      method="post"
+                                                      class="identity-verification-form">
 
-                                                    <i class="bi bi-shield-check"></i>
+                                                    @Html.AntiForgeryToken()
 
-                                                    <span>
-                                                        Start Didit Verification
-                                                    </span>
+                                                    <input type="hidden"
+                                                           name="onboardingId"
+                                                           value="@Model.VolunteerOnboardingId" />
 
-                                                </button>
+                                                    <input type="hidden"
+                                                           name="identityDocumentId"
+                                                           value="@document.VolunteerOnboardingDocumentId" />
+
+                                                    <button type="submit"
+                                                            class="btn-didit-verify">
+
+                                                        <i class="bi bi-shield-check"></i>
+
+                                                        <span>
+                                                            Start Didit Verification
+                                                        </span>
+
+                                                    </button>
+
+                                                </form>
                                             }
-                                            else
+                                            else if (pendingIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                                     document.VolunteerOnboardingDocumentId)
                                             {
                                                 <button type="button"
                                                         class="btn-didit-verify disabled"
                                                         disabled>
 
-                                                    <i class="bi bi-shield-lock"></i>
+                                                    <i class="bi bi-clock"></i>
 
                                                     <span>
-                                                        Approve Document First
+                                                        Awaiting Approval
+                                                    </span>
+
+                                                </button>
+                                            }
+                                            else if (rejectedIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                                     document.VolunteerOnboardingDocumentId)
+                                            {
+                                                <button type="button"
+                                                        class="btn-didit-verify disabled"
+                                                        disabled>
+
+                                                    <i class="bi bi-exclamation-circle"></i>
+
+                                                    <span>
+                                                        Resubmission Required
                                                     </span>
 
                                                 </button>
                                             }
 
-                                        </form>
+                                        </div>
                                     }
 
-
                                 </div>
-
 
                             </div>
 
@@ -987,10 +1484,9 @@
 
                                         <div class="identity-document-panel-text">
 
-                                            This document is designated as the
-                                            applicant's identity document and
-                                            can be used to start the Didit
-                                            identity verification process.
+                                            The latest approved identity document
+                                            can be used for Didit identity
+                                            verification.
 
                                         </div>
 
@@ -999,8 +1495,8 @@
 
                                     <div class="identity-document-panel-status">
 
-                                        @if (documentStatus ==
-                                            VolunteerOnboardingDocumentStatus.Approved)
+                                        @if (approvedIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                            document.VolunteerOnboardingDocumentId)
                                         {
                                             <span class="identity-ready-badge">
 
@@ -1011,26 +1507,26 @@
                                             </span>
                                         }
                                         else if (
-                                            documentStatus ==
-                                                VolunteerOnboardingDocumentStatus.Rejected ||
-                                            documentStatus ==
-                                                VolunteerOnboardingDocumentStatus.ResubmissionRequired)
-                                        {
-                                            <span class="identity-rejected-badge">
-
-                                                <i class="bi bi-exclamation-circle-fill"></i>
-
-                                                Document requires attention
-
-                                            </span>
-                                        }
-                                        else
+                                            pendingIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                            document.VolunteerOnboardingDocumentId)
                                         {
                                             <span class="identity-pending-badge">
 
                                                 <i class="bi bi-clock-fill"></i>
 
                                                 Awaiting document approval
+
+                                            </span>
+                                        }
+                                        else if (
+                                            rejectedIdentityDocument?.VolunteerOnboardingDocumentId ==
+                                            document.VolunteerOnboardingDocumentId)
+                                        {
+                                            <span class="identity-rejected-badge">
+
+                                                <i class="bi bi-exclamation-circle-fill"></i>
+
+                                                Document requires attention
 
                                             </span>
                                         }
@@ -1129,11 +1625,8 @@
 
                         <p>
 
-                            Start identity verification using the applicant's
-                            uploaded
-                            <strong>Identity Document</strong>.
-                            SwiftCare will associate the Didit verification
-                            session with this onboarding record.
+                            The applicant completes identity verification
+                            through Didit using the approved identity document.
 
                         </p>
 
@@ -1183,7 +1676,12 @@
                     </div>
 
 
-                    <div class="didit-verification-action">
+                    <!-- =============================================
+                         DYNAMIC DIDIT ACTION
+                         ============================================= -->
+
+                    <div class="didit-verification-action"
+                         id="diditActionArea">
 
                         @if (!hasIdentityDocument)
                         {
@@ -1192,7 +1690,7 @@
                                 <i class="bi bi-exclamation-circle"></i>
 
                                 <span>
-                                    No Identity Document uploaded
+                                    Upload an Identity Document first
                                 </span>
 
                             </div>
@@ -1204,7 +1702,7 @@
                                 <i class="bi bi-clock"></i>
 
                                 <span>
-                                    Identity document must be approved first
+                                    Approve the latest Identity Document first
                                 </span>
 
                             </div>
@@ -1212,7 +1710,8 @@
                         else
                         {
                             <form asp-action="StartIdentityVerification"
-                                  method="post">
+                                  method="post"
+                                  class="main-identity-verification-form">
 
                                 @Html.AntiForgeryToken()
 
@@ -1342,8 +1841,7 @@
                         font-size:.88rem;
                         ">
 
-                        The admin page checks automatically every 3 seconds
-                        while verification is active.
+                        The admin page checks automatically every 3 seconds.
 
                     </div>
 
@@ -1378,7 +1876,8 @@
                         <strong>
 
                             @(approvedIdentityDocument?.DocumentName
-                                ?? identityDocuments.First().DocumentName)
+                                ?? latestIdentityDocument?.DocumentName
+                                ?? "Identity Document")
 
                         </strong>
 
@@ -1406,7 +1905,7 @@
                             <i class="bi bi-shield-check"></i>
                         </span>
 
-                        Verification
+                        Administrative Verification
 
                     </h4>
 
@@ -1416,14 +1915,16 @@
                                                       ? "pending"
                                                       : onboardingCompleted || readyForActivation
                                                           ? "verified"
-                                                          : "")">
+                                                          : contractPending
+                                                              ? "pending"
+                                                              : "")">
 
                         @if (adminVerification)
                         {
                             <i class="bi bi-hourglass-split"></i>
 
                             <span>
-                                In Review
+                                Final Review
                             </span>
                         }
                         else if (onboardingCompleted)
@@ -1442,12 +1943,20 @@
                                 Verified
                             </span>
                         }
+                        else if (contractPending)
+                        {
+                            <i class="bi bi-file-earmark-text"></i>
+
+                            <span>
+                                Contract Pending
+                            </span>
+                        }
                         else
                         {
                             <i class="bi bi-clock"></i>
 
                             <span>
-                                Not Started
+                                Pending
                             </span>
                         }
 
@@ -1472,6 +1981,10 @@
                         {
                             <i class="bi bi-shield-check"></i>
                         }
+                        else if (contractPending)
+                        {
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                        }
                         else
                         {
                             <i class="bi bi-hourglass-split"></i>
@@ -1487,7 +2000,7 @@
                             @if (onboardingCompleted)
                             {
                                 <span>
-                                    Verification completed
+                                    Onboarding completed
                                 </span>
                             }
                             else if (readyForActivation)
@@ -1499,13 +2012,19 @@
                             else if (adminVerification)
                             {
                                 <span>
-                                    Volunteer onboarding is currently under review
+                                    Final administrative verification required
+                                </span>
+                            }
+                            else if (contractPending)
+                            {
+                                <span>
+                                    Waiting for Volunteer Service Agreement
                                 </span>
                             }
                             else
                             {
                                 <span>
-                                    Verification has not started
+                                    Onboarding requirements are still in progress
                                 </span>
                             }
 
@@ -1514,8 +2033,36 @@
 
                         <div class="verification-state-text">
 
-                            Review all uploaded documents and onboarding
-                            requirements before completing verification.
+                            @if (contractPending)
+                            {
+                                <span>
+                                    Identity verification has passed.
+                                    The contract must now be completed before
+                                    final verification can be performed.
+                                </span>
+                            }
+                            else if (adminVerification)
+                            {
+                                <span>
+                                    The contract has been completed.
+                                    Review the complete onboarding record
+                                    before confirming final verification.
+                                </span>
+                            }
+                            else if (readyForActivation)
+                            {
+                                <span>
+                                    All required onboarding stages have been
+                                    completed. The volunteer can now be activated.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Complete the required onboarding stages
+                                    in sequence.
+                                </span>
+                            }
 
                         </div>
 
@@ -1524,48 +2071,12 @@
                 </div>
 
 
-                <div class="verification-actions">
+                <!-- =============================================
+                     ADMIN ACTIONS
+                     ============================================= -->
 
-
-                    @if (!adminVerification &&
-                         !readyForActivation &&
-                         !onboardingCompleted)
-                    {
-                        <form asp-action="StartVerification"
-                              method="post">
-
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden"
-                                   name="onboardingId"
-                                   value="@Model.VolunteerOnboardingId" />
-
-                            <button type="submit"
-                                    class="btn-outline-swift">
-
-                                <i class="bi bi-play-circle"></i>
-
-                                Start Verification
-
-                            </button>
-
-                        </form>
-                    }
-
-
-                    @if (!onboardingCompleted)
-                    {
-                        <button type="button"
-                                class="btn btn-outline-danger rounded-3 fw-bold"
-                                data-bs-toggle="modal"
-                                data-bs-target="#correctionModal">
-
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>
-
-                            Request Correction
-
-                        </button>
-                    }
+                <div class="verification-actions"
+                     id="adminVerificationActions">
 
 
                     @if (adminVerification &&
@@ -1578,11 +2089,27 @@
 
                             <i class="bi bi-check-circle"></i>
 
-                            Complete Verification
+                            Complete Final Verification
 
                         </button>
                     }
 
+
+                    @if (!onboardingCompleted &&
+                         !readyForActivation &&
+                         !contractPending)
+                    {
+                        <button type="button"
+                                class="btn btn-outline-danger rounded-3 fw-bold"
+                                data-bs-toggle="modal"
+                                data-bs-target="#correctionModal">
+
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+
+                            Request Correction
+
+                        </button>
+                    }
 
                 </div>
 
@@ -1633,10 +2160,9 @@
 
                             <p class="mb-3">
 
-                                All required onboarding verification steps
-                                have been completed. The volunteer can now
-                                be activated and their Volunteer account
-                                created.
+                                All required onboarding stages have been
+                                completed. The volunteer can now be activated
+                                and their Volunteer account created.
 
                             </p>
 
@@ -1698,6 +2224,40 @@
                     </div>
 
                 }
+                else if (adminVerification)
+                {
+
+                    <div class="empty-state">
+
+                        <i class="bi bi-shield-check"></i>
+
+                        <span>
+
+                            Final verification must be completed before
+                            activation becomes available.
+
+                        </span>
+
+                    </div>
+
+                }
+                else if (contractPending)
+                {
+
+                    <div class="empty-state">
+
+                        <i class="bi bi-file-earmark-text"></i>
+
+                        <span>
+
+                            The Volunteer Service Agreement must be completed
+                            before final verification and activation.
+
+                        </span>
+
+                    </div>
+
+                }
                 else
                 {
 
@@ -1708,8 +2268,7 @@
                         <span>
 
                             This volunteer is not yet ready for activation.
-                            Complete verification before activation becomes
-                            available.
+                            Complete the onboarding stages above first.
 
                         </span>
 
@@ -1966,7 +2525,7 @@
 
                         <i class="bi bi-shield-check me-2"></i>
 
-                        Complete Verification
+                        Complete Final Verification
 
                     </h5>
 
@@ -2000,13 +2559,15 @@
                                 <div>
 
                                     <h5 class="mb-1">
-                                        Ready for the next stage
+                                        Final verification
                                     </h5>
 
                                     <p class="mb-0">
 
-                                        Completing verification will move
-                                        this onboarding record to
+                                        The Volunteer Service Agreement has
+                                        been completed. Completing this
+                                        verification will move the onboarding
+                                        record to
                                         <strong>
                                             Ready for Activation
                                         </strong>.
@@ -2052,7 +2613,7 @@
 
                         <i class="bi bi-check-circle"></i>
 
-                        Complete Verification
+                        Complete Final Verification
 
                     </button>
 
@@ -2123,7 +2684,7 @@
 
             const diditForms =
                 document.querySelectorAll(
-                    ".identity-verification-form"
+                    ".identity-verification-form, .main-identity-verification-form"
                 );
 
             diditForms.forEach(function (form) {
@@ -2171,7 +2732,7 @@
 
 
             // =============================================================
-            // LIVE DIDIT ADMIN POLLING
+            // DIDIT LIVE POLLING
             // =============================================================
 
             const diditCard =
@@ -2207,6 +2768,21 @@
             const checksContainer =
                 document.getElementById(
                     "diditLiveChecks"
+                );
+
+            const diditActionArea =
+                document.getElementById(
+                    "diditActionArea"
+                );
+
+            const workflowActionContent =
+                document.getElementById(
+                    "workflowActionContent"
+                );
+
+            const workflowStageBadge =
+                document.getElementById(
+                    "workflowStageBadge"
                 );
 
 
@@ -2281,7 +2857,7 @@
 
 
             // =============================================================
-            // TERMINAL STATUS
+            // TERMINAL DIDIT STATUS
             // =============================================================
 
             function isTerminalStatus(status) {
@@ -2296,6 +2872,242 @@
                     "Cancelled"
 
                 ].includes(status);
+
+            }
+
+
+            // =============================================================
+            // UPDATE DIDIT ACTION AREA
+            // =============================================================
+
+            function renderDiditAction(result) {
+
+                if (!diditActionArea) {
+                    return;
+                }
+
+
+                const status =
+                    result?.status;
+
+
+                // ---------------------------------------------------------
+                // VERIFIED
+                // ---------------------------------------------------------
+
+                if (status === "Verified") {
+
+                    diditActionArea.innerHTML =
+
+                        '<div class="didit-not-ready" ' +
+                        'style="background:#DCFCE7;color:#166534;">' +
+
+                            '<i class="bi bi-check-circle-fill"></i>' +
+
+                            '<span>' +
+
+                                '<strong>Identity Verification Complete</strong>' +
+                                '<br>' +
+                                '<small>' +
+                                    'Document, liveness and face verification passed. ' +
+                                    'The onboarding can now proceed to the contract stage.' +
+                                '</small>' +
+
+                            '</span>' +
+
+                        '</div>';
+
+                    return;
+
+                }
+
+
+                // ---------------------------------------------------------
+                // FAILED / REJECTED
+                // ---------------------------------------------------------
+
+                if (
+                    status === "Failed" ||
+                    status === "Rejected" ||
+                    status === "Expired" ||
+                    status === "Cancelled"
+                ) {
+
+                    diditActionArea.innerHTML =
+
+                        '<div class="didit-not-ready" ' +
+                        'style="background:#FEE2E2;color:#991B1B;">' +
+
+                            '<i class="bi bi-exclamation-circle-fill"></i>' +
+
+                            '<span>' +
+
+                                '<strong>' +
+                                    humanizeStatus(status) +
+                                '</strong>' +
+
+                                '<br>' +
+
+                                '<small>' +
+                                    'Review the verification result and determine whether ' +
+                                    'the applicant needs to resubmit or be reviewed.' +
+                                '</small>' +
+
+                            '</span>' +
+
+                        '</div>';
+
+                    return;
+
+                }
+
+
+                // ---------------------------------------------------------
+                // REQUIRES REVIEW
+                // ---------------------------------------------------------
+
+                if (status === "RequiresReview") {
+
+                    diditActionArea.innerHTML =
+
+                        '<div class="didit-not-ready" ' +
+                        'style="background:#FEF3C7;color:#92400E;">' +
+
+                            '<i class="bi bi-person-exclamation"></i>' +
+
+                            '<span>' +
+
+                                '<strong>Manual Review Required</strong>' +
+
+                                '<br>' +
+
+                                '<small>' +
+                                    'Didit has placed this verification under review.' +
+                                '</small>' +
+
+                            '</span>' +
+
+                        '</div>';
+
+                    return;
+
+                }
+
+
+                // ---------------------------------------------------------
+                // ACTIVE / AWAITING APPLICANT
+                // ---------------------------------------------------------
+
+                if (
+                    status === "AwaitingUser" ||
+                    status === "InProgress" ||
+                    status === "DocumentVerified" ||
+                    status === "FaceVerificationInProgress"
+                ) {
+
+                    diditActionArea.innerHTML =
+
+                        '<div class="didit-not-ready" ' +
+                        'style="background:#FEF3C7;color:#92400E;">' +
+
+                            '<i class="bi bi-hourglass-split"></i>' +
+
+                            '<span>' +
+
+                                '<strong>' +
+                                    humanizeStatus(status) +
+                                '</strong>' +
+
+                                '<br>' +
+
+                                '<small>' +
+                                    'Do not start another verification session. ' +
+                                    'The current Didit verification is already active.' +
+                                '</small>' +
+
+                            '</span>' +
+
+                        '</div>';
+
+                    return;
+
+                }
+
+            }
+
+
+            // =============================================================
+            // UPDATE WORKFLOW AFTER DIDIT
+            // =============================================================
+
+            function updateWorkflowAfterDidit(result) {
+
+                if (!result) {
+                    return;
+                }
+
+                if (result.status !== "Verified") {
+                    return;
+                }
+
+
+                // ---------------------------------------------------------
+                // Didit has passed.
+                //
+                // We intentionally DO NOT show Ready for Activation here.
+                //
+                // The next stage is CONTRACT.
+                // ---------------------------------------------------------
+
+                if (workflowStageBadge) {
+
+                    workflowStageBadge.textContent =
+                        "Contract Pending";
+
+                    workflowStageBadge.className =
+                        "status-badge pending";
+
+                }
+
+
+                if (workflowActionContent) {
+
+                    workflowActionContent.innerHTML =
+
+                        '<div class="activation-panel">' +
+
+                            '<div class="activation-content">' +
+
+                                '<div class="activation-icon">' +
+                                    '<i class="bi bi-file-earmark-text-fill"></i>' +
+                                '</div>' +
+
+                                '<h5>' +
+                                    'Volunteer Service Agreement Required' +
+                                '</h5>' +
+
+                                '<p class="mb-3">' +
+
+                                    'Identity verification has been completed successfully. ' +
+                                    'The next onboarding stage is the Volunteer Service Agreement. ' +
+                                    'The volunteer must complete and upload the contract before ' +
+                                    'final verification and activation can continue.' +
+
+                                '</p>' +
+
+                                '<span class="status-badge pending">' +
+
+                                    '<i class="bi bi-file-earmark-arrow-up"></i>' +
+
+                                    ' Contract Pending' +
+
+                                '</span>' +
+
+                            '</div>' +
+
+                        '</div>';
+
+                }
 
             }
 
@@ -2422,6 +3234,12 @@
 
                         statusText.textContent =
                             "Didit has placed this verification under review";
+
+                    }
+                    else if (status === "AwaitingUser") {
+
+                        statusText.textContent =
+                            "Waiting for the applicant to complete verification";
 
                     }
                     else {
@@ -2666,7 +3484,10 @@
 
                         }
 
+                        pollingStopped = true;
+
                         return;
+
                     }
 
 
@@ -2716,6 +3537,20 @@
 
 
                     // -----------------------------------------------------
+                    // UPDATE ACTIONS
+                    // -----------------------------------------------------
+
+                    renderDiditAction(result);
+
+
+                    // -----------------------------------------------------
+                    // DIDIT VERIFIED
+                    // -----------------------------------------------------
+
+                    updateWorkflowAfterDidit(result);
+
+
+                    // -----------------------------------------------------
                     // CHECKS
                     // -----------------------------------------------------
 
@@ -2734,13 +3569,20 @@
 
                             statusDetails.textContent =
                                 "Verification completed successfully. " +
-                                "The applicant passed the Didit verification checks.";
+                                "The next onboarding stage is the Volunteer Service Agreement.";
 
                         }
                         else if (result.failureReason) {
 
                             statusDetails.textContent =
                                 result.failureReason;
+
+                        }
+                        else if (result.status === "AwaitingUser") {
+
+                            statusDetails.textContent =
+                                "The verification invitation has been sent. " +
+                                "Waiting for the applicant to complete Didit.";
 
                         }
                         else if (result.modifiedDate) {
@@ -2794,8 +3636,7 @@
 
                     if (isTerminal) {
 
-                        pollingStopped =
-                            true;
+                        pollingStopped = true;
 
 
                         if (pollingTimer) {

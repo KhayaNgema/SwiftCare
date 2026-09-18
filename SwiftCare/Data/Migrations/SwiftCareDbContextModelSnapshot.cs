@@ -1629,6 +1629,79 @@ namespace SwiftCare.Data.Migrations
                     b.ToTable("VolunteerInterviewSkillEvaluations");
                 });
 
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.DiditWebhookLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Environment")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("Processed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ProcessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("ProcessingFailed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RawBody")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ReceivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("SignatureVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("VendorData")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WebhookType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("Processed");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("WebhookType");
+
+                    b.ToTable("DiditWebhookLogs", (string)null);
+                });
+
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerContract", b =>
                 {
                     b.Property<int>("VolunteerContractId")
@@ -1784,6 +1857,102 @@ namespace SwiftCare.Data.Migrations
                     b.HasIndex("VolunteerOpportunityId");
 
                     b.ToTable("VolunteerContracts");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerIdentityVerification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("DocumentVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("FaceIdentityEnrolled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("FaceMatchVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("IdentityDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("LivenessVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderPersonId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProviderSessionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProviderVerificationId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerificationStartedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerificationUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("VerifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VolunteerId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("VolunteerOnboardingId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdentityDocumentId");
+
+                    b.HasIndex("ProviderPersonId")
+                        .IsUnique()
+                        .HasFilter("[ProviderPersonId] IS NOT NULL");
+
+                    b.HasIndex("ProviderSessionId")
+                        .IsUnique()
+                        .HasFilter("[ProviderSessionId] IS NOT NULL");
+
+                    b.HasIndex("ProviderVerificationId")
+                        .IsUnique()
+                        .HasFilter("[ProviderVerificationId] IS NOT NULL");
+
+                    b.HasIndex("VolunteerId");
+
+                    b.HasIndex("VolunteerOnboardingId");
+
+                    b.ToTable("VolunteerIdentityVerifications", (string)null);
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerOffer", b =>
@@ -3462,6 +3631,31 @@ namespace SwiftCare.Data.Migrations
                     b.Navigation("VolunteerOnboarding");
 
                     b.Navigation("VolunteerOpportunity");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerIdentityVerification", b =>
+                {
+                    b.HasOne("SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocument", "IdentityDocument")
+                        .WithMany()
+                        .HasForeignKey("IdentityDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SwiftCare.Models.Volunteer", "Volunteer")
+                        .WithMany()
+                        .HasForeignKey("VolunteerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding", "VolunteerOnboarding")
+                        .WithMany()
+                        .HasForeignKey("VolunteerOnboardingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("IdentityDocument");
+
+                    b.Navigation("Volunteer");
+
+                    b.Navigation("VolunteerOnboarding");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerOnboarding.VolunteerOffer", b =>

@@ -1,16 +1,23 @@
-﻿// IVolunteerOnboardingService.cs
-
-using SwiftCare.Models;
+﻿using SwiftCare.Models;
 using SwiftCare.Models.VolunteerOnboarding;
 
 namespace SwiftCare.Services.VolunteerOnboarding
 {
     public interface IVolunteerOnboardingService
     {
+        // ============================================================
+        // CREATE ONBOARDING
+        // ============================================================
+
         Task<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding> CreateOnboardingAsync(
             int volunteerApplicationId,
             string? adminId = null,
             CancellationToken cancellationToken = default);
+
+
+        // ============================================================
+        // GET ONBOARDING
+        // ============================================================
 
         Task<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding?> GetOnboardingAsync(
             int volunteerOnboardingId,
@@ -23,6 +30,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
         Task<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding?> GetOnboardingByApplicantAsync(
             string applicantId,
             CancellationToken cancellationToken = default);
+
+
+        // ============================================================
+        // VOLUNTEER OFFER
+        // ============================================================
 
         Task<VolunteerOfferCreationResult> CreateOfferAsync(
             int volunteerOnboardingId,
@@ -43,6 +55,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
             int volunteerOnboardingId,
             CancellationToken cancellationToken = default);
 
+
+        // ============================================================
+        // POLICIES
+        // ============================================================
+
         Task<bool> AcceptPolicyAsync(
             int volunteerOnboardingId,
             int volunteerPolicyId,
@@ -54,6 +71,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
         Task<bool> HasAcceptedAllRequiredPoliciesAsync(
             int volunteerOnboardingId,
             CancellationToken cancellationToken = default);
+
+
+        // ============================================================
+        // ONBOARDING DOCUMENTS
+        // ============================================================
 
         Task<VolunteerOnboardingDocument> AddDocumentAsync(
             int volunteerOnboardingId,
@@ -74,6 +96,28 @@ namespace SwiftCare.Services.VolunteerOnboarding
             string? rejectionReason = null,
             CancellationToken cancellationToken = default);
 
+
+        // ============================================================
+        // REQUIREMENTS
+        // ============================================================
+
+        /// <summary>
+        /// Marks a specific onboarding requirement as completed.
+        /// Used for requirements completed by a separate workflow,
+        /// such as contract completion, orientation, role training,
+        /// or supervisor assignment.
+        /// </summary>
+        Task<bool> CompleteRequirementAsync(
+            int volunteerOnboardingId,
+            VolunteerOnboardingRequirementType requirementType,
+            string? completedByAdminId = null,
+            CancellationToken cancellationToken = default);
+
+
+        // ============================================================
+        // ADMIN VERIFICATION
+        // ============================================================
+
         Task<bool> StartVerificationAsync(
             int volunteerOnboardingId,
             string adminId,
@@ -91,9 +135,19 @@ namespace SwiftCare.Services.VolunteerOnboarding
             string reason,
             CancellationToken cancellationToken = default);
 
+
+        // ============================================================
+        // ACTIVATION READINESS
+        // ============================================================
+
         Task<bool> IsReadyForActivationAsync(
             int volunteerOnboardingId,
             CancellationToken cancellationToken = default);
+
+
+        // ============================================================
+        // CURRENT STATUS
+        // ============================================================
 
         Task<VolunteerOnboardingStatus> GetCurrentStatusAsync(
             int volunteerOnboardingId,

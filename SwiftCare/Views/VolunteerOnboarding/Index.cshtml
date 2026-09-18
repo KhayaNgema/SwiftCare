@@ -1,5 +1,5 @@
 ﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
-
+@using SwiftCare.Helpers
 @{
     ViewData["Title"] = "Volunteer Onboarding";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
@@ -22,6 +22,9 @@
 
         SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification
             => "status-warning",
+
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ContractPending
+            => "status-info",
 
         _ => "status-info"
     };
@@ -57,6 +60,30 @@
         Model.Status ==
         SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification;
 
+    var contractPending =
+        Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ContractPending;
+
+    /*
+     * CONTRACT IS NOW AVAILABLE AFTER IDENTITY VERIFICATION.
+     *
+     * It must NOT wait for ReadyForActivation.
+     *
+     * Once the onboarding reaches ContractPending, the applicant
+     * can open and complete the existing contract workflow.
+     *
+     * We also keep it available during later stages so that a
+     * completed/generated contract can still be viewed.
+     */
+    var contractAvailable =
+        contractPending ||
+        Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification ||
+        Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ReadyForActivation ||
+        Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.Completed;
+
     var readyForActivation =
         Model.Status ==
         SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ReadyForActivation;
@@ -85,21 +112,28 @@
                     </div>
 
                     <div>
+
                         <h1>Volunteer Onboarding</h1>
 
                         <p>
                             Complete each stage below to become an active
                             SwiftCare volunteer.
                         </p>
+
                     </div>
 
                 </div>
 
                 <div>
+
                     <span class="status-pill @statusClass">
+
                         <i class="bi bi-circle-fill"></i>
+
                         @status
+
                     </span>
+
                 </div>
 
             </div>
@@ -118,12 +152,17 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
 
             <span class="progress-heading">
+
                 <i class="bi bi-bar-chart-steps me-1"></i>
+
                 Onboarding Progress
+
             </span>
 
             <span class="progress-step">
+
                 Step @Model.CurrentStep of 6
+
             </span>
 
         </div>
@@ -260,6 +299,7 @@
                            class="btn btn-swift">
 
                         <span>Review Offer</span>
+
                         <i class="bi bi-arrow-right"></i>
 
                     </a>
@@ -268,15 +308,21 @@
                     SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.OfferDeclined)
                 {
                     <span class="step-state">
+
                         <i class="bi bi-x-circle-fill"></i>
+
                         Offer Declined
+
                     </span>
                 }
                 else
                 {
                     <span class="step-state completed-state">
+
                         <i class="bi bi-check-circle-fill"></i>
+
                         Offer Accepted
+
                     </span>
                 }
 
@@ -315,6 +361,7 @@
                            class="btn btn-swift">
 
                         <span>Review Policies</span>
+
                         <i class="bi bi-arrow-right"></i>
 
                     </a>
@@ -322,8 +369,11 @@
                 else
                 {
                     <span class="step-state locked-state">
+
                         <i class="bi bi-lock-fill"></i>
+
                         Complete the offer first
+
                     </span>
                 }
 
@@ -362,6 +412,7 @@
                            class="btn btn-swift">
 
                         <span>Manage Documents</span>
+
                         <i class="bi bi-arrow-right"></i>
 
                     </a>
@@ -369,8 +420,11 @@
                 else
                 {
                     <span class="step-state locked-state">
+
                         <i class="bi bi-lock-fill"></i>
+
                         Complete previous stages
+
                     </span>
                 }
 
@@ -380,7 +434,7 @@
 
 
         <!-- ========================================================
-             STEP 4 — ADMIN VERIFICATION
+             STEP 4 — IDENTITY / ADMIN VERIFICATION
              ======================================================== -->
 
         <div class="col-md-6 col-lg-4">
@@ -396,33 +450,45 @@
                 </div>
 
                 <h5>
-                    Admin Verification
+                    Identity Verification
                 </h5>
 
                 <p>
                     SwiftCare administrators will review your submitted
-                    onboarding documents and verify the information provided.
+                    documents and complete your identity verification,
+                    including document, liveness and face verification.
                 </p>
 
                 @if (verificationActive)
                 {
                     <span class="status-pill status-warning">
+
                         <i class="bi bi-hourglass-split"></i>
+
                         Under Review
+
                     </span>
                 }
-                else if (readyForActivation || onboardingCompleted)
+                else if (contractPending ||
+                         readyForActivation ||
+                         onboardingCompleted)
                 {
                     <span class="step-state completed-state">
+
                         <i class="bi bi-check-circle-fill"></i>
-                        Verification Complete
+
+                        Identity Verification Complete
+
                     </span>
                 }
                 else
                 {
                     <span class="step-state locked-state">
+
                         <i class="bi bi-lock-fill"></i>
-                        Awaiting document submission
+
+                        Awaiting verification
+
                     </span>
                 }
 
@@ -438,7 +504,8 @@
         <div class="col-md-6 col-lg-4">
 
             <div class="step-card
-                @(readyForActivation ? "" : "locked")">
+                @(contractPending ? "completed" : "")
+                @(contractAvailable ? "" : "locked")">
 
                 <span class="step-number">5</span>
 
@@ -447,22 +514,23 @@
                 </div>
 
                 <h5>
-                    Volunteer Contract
+                    Volunteer Service Agreement
                 </h5>
 
                 <p>
-                    Once your documents have been verified, review your
-                    SwiftCare Volunteer Service Agreement and complete
-                    the contract stage.
+                    After your identity verification is completed,
+                    review your SwiftCare Volunteer Service Agreement
+                    and complete the contract stage.
                 </p>
 
-                @if (readyForActivation || onboardingCompleted)
+                @if (contractAvailable)
                 {
                     <a asp-action="Contract"
                            asp-route-id="@Model.VolunteerOnboardingId"
                            class="btn btn-swift">
 
                         <span>Open Contract</span>
+
                         <i class="bi bi-arrow-right"></i>
 
                     </a>
@@ -470,8 +538,11 @@
                 else
                 {
                     <span class="step-state locked-state">
+
                         <i class="bi bi-lock-fill"></i>
-                        Available after verification
+
+                        Available after identity verification
+
                     </span>
                 }
 
@@ -508,22 +579,31 @@
                 @if (onboardingCompleted)
                 {
                     <span class="status-pill status-success">
+
                         <i class="bi bi-check-circle-fill"></i>
+
                         Volunteer Activated
+
                     </span>
                 }
                 else if (readyForActivation)
                 {
                     <span class="status-pill status-success">
+
                         <i class="bi bi-check-circle"></i>
+
                         Ready for Activation
+
                     </span>
                 }
                 else
                 {
                     <span class="step-state locked-state">
+
                         <i class="bi bi-lock-fill"></i>
+
                         Awaiting previous stages
+
                     </span>
                 }
 
@@ -538,27 +618,60 @@
          STATUS MESSAGE
          ============================================================ -->
     @if (Model.Status ==
-            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification)
+                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification)
     {
         <div class="onboarding-message warning-message">
 
             <div class="d-flex align-items-start gap-3">
 
                 <div class="message-icon">
+
                     <i class="bi bi-hourglass-split"></i>
+
                 </div>
 
                 <div>
 
                     <h6>
-                        Your documents are being reviewed
+                        Your identity verification is being completed
                     </h6>
 
                     <p>
-                        Your onboarding documents have been submitted to
-                        SwiftCare for verification. You do not need to
-                        submit them again unless an administrator requests
-                        a correction or replacement.
+                        SwiftCare is reviewing your submitted information
+                        and completing the required identity verification.
+                        Once identity verification is complete, your
+                        Volunteer Service Agreement will become available.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+    else if (Model.Status ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ContractPending)
+    {
+        <div class="onboarding-message success-message">
+
+            <div class="d-flex align-items-start gap-3">
+
+                <div class="message-icon">
+
+                    <i class="bi bi-file-earmark-check"></i>
+
+                </div>
+
+                <div>
+
+                    <h6>
+                        Identity verification completed
+                    </h6>
+
+                    <p>
+                        Your identity verification has been completed
+                        successfully. Your SwiftCare Volunteer Service
+                        Agreement is now available for review and completion.
                     </p>
 
                 </div>
@@ -575,19 +688,22 @@
             <div class="d-flex align-items-start gap-3">
 
                 <div class="message-icon">
+
                     <i class="bi bi-check-circle"></i>
+
                 </div>
 
                 <div>
 
                     <h6>
-                        Your onboarding has been verified
+                        Your onboarding is ready for activation
                     </h6>
 
                     <p>
-                        Your submitted information and documents have been
-                        verified by SwiftCare. You can now proceed with the
-                        contract stage.
+                        Your identity verification and Volunteer Service
+                        Agreement have been completed successfully.
+                        Your volunteer profile is now ready for activation
+                        by SwiftCare.
                     </p>
 
                 </div>
@@ -604,7 +720,9 @@
             <div class="d-flex align-items-start gap-3">
 
                 <div class="message-icon">
+
                     <i class="bi bi-person-check-fill"></i>
+
                 </div>
 
                 <div>
@@ -633,7 +751,9 @@
             <div class="d-flex align-items-start gap-3">
 
                 <div class="message-icon">
+
                     <i class="bi bi-exclamation-triangle"></i>
+
                 </div>
 
                 <div>

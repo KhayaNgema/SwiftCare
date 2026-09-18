@@ -221,7 +221,7 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 relativePath;
 
             contract.Status =
-                VolunteerContractStatus.AwaitingSignature;
+                VolunteerContractStatus.AwaitingApplicant;
 
             contract.ModifiedDate =
                 DateTime.Now;

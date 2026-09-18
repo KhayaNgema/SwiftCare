@@ -21,6 +21,7 @@ using SwiftCare.Interfaces;
 using SwiftCare.Models;
 using SwiftCare.Services;
 using SwiftCare.Services.AI;
+using SwiftCare.Services.IdentityVerification;
 using SwiftCare.Services.VolunteerActivation;
 using SwiftCare.Services.VolunteerATS;
 using SwiftCare.Services.VolunteerATS.CV;
@@ -30,6 +31,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
+using SwiftCare.Services.VolunteerContracts;
 
 public class Startup
 {
@@ -331,7 +333,19 @@ public class Startup
         // ============================================================
 
         services.AddScoped<FileUploadService>();
+        services.Configure<DiditOptions>(Configuration.GetSection(DiditOptions.SectionName));
+        services.AddScoped<IDiditService, DiditService>();
 
+        services.AddScoped<
+            IVolunteerIdentityVerificationService,
+            VolunteerIdentityVerificationService>();
+        services.AddScoped<
+    IDiditWebhookSignatureValidator,
+    DiditWebhookSignatureValidator>();
+
+        services.AddScoped<
+            IDiditWebhookService,
+            DiditWebhookService>();
         services.AddScoped<
             RandomPasswordGeneratorService>();
 
@@ -349,14 +363,10 @@ public class Startup
             VolunteerContractReferenceGenerator>();
 
         services.AddScoped<
-            IVolunteerContractGenerationService,
-            VolunteerContractGenerationService>();
+            IVolunteerContractService,
+            VolunteerContractService>();
 
         services.AddScoped<VolunteerContractReferenceGenerator>();
-
-        services.AddScoped<
-            IVolunteerContractGenerationService,
-            VolunteerContractGenerationService>();
 
         services.AddScoped<
             IVolunteerContractContentBuilder,

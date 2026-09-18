@@ -8,7 +8,9 @@ using SwiftCare.Data;
 using SwiftCare.Models;
 using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services;
+using SwiftCare.Services.IdentityVerification;
 using SwiftCare.Services.VolunteerActivation;
+using SwiftCare.Services.VolunteerContracts;
 using SwiftCare.Services.VolunteerOnboarding;
 using SwiftCare.ViewModels;
 using System;
@@ -28,6 +30,8 @@ namespace SwiftCare.Controllers
         private readonly IVolunteerActivationService _activationService;
         private readonly EmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly IVolunteerIdentityVerificationService _identityVerificationService;
+        private readonly IVolunteerContractService _contractService;
 
         public VolunteerOnboardingAdminController(
             ILogger<VolunteerOnboardingAdminController> logger,
@@ -36,7 +40,9 @@ namespace SwiftCare.Controllers
             IVolunteerOnboardingService onboardingService,
             IVolunteerActivationService activationService,
             EmailService emailService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IVolunteerIdentityVerificationService identityVerificationService,
+            IVolunteerContractService contractService)
         {
             _logger = logger;
             _context = context;
@@ -45,6 +51,8 @@ namespace SwiftCare.Controllers
             _activationService = activationService;
             _emailService = emailService;
             _configuration = configuration;
+            _contractService = contractService;
+            _identityVerificationService = identityVerificationService;
         }
 
         // ============================================================
@@ -457,6 +465,15 @@ namespace SwiftCare.Controllers
 
             try
             {
+                _logger.LogInformation(
+                    "[SWIFTCARE ONBOARDING] Admin {AdminId} attempting to complete identity verification for OnboardingId {OnboardingId}.",
+                    admin.Id,
+                    onboardingId);
+
+                // ====================================================
+                // 1. COMPLETE IDENTITY VERIFICATION
+                // ====================================================
+
                 var success =
                     await _onboardingService.CompleteVerificationAsync(
                         onboardingId,
@@ -466,6 +483,10 @@ namespace SwiftCare.Controllers
 
                 if (!success)
                 {
+                    _logger.LogWarning(
+                        "[SWIFTCARE ONBOARDING] Identity verification could not be completed for OnboardingId {OnboardingId}.",
+                        onboardingId);
+
                     TempData["Error"] =
                         "Verification could not be completed. " +
                         "Please ensure all required policies, requirements, " +
@@ -479,9 +500,133 @@ namespace SwiftCare.Controllers
                         });
                 }
 
-                TempData["Success"] =
-                    "Volunteer verification completed. " +
-                    "The onboarding record is ready for activation.";
+                _logger.LogInformation(
+                    "[SWIFTCARE ONBOARDING] Identity verification completed successfully for OnboardingId {OnboardingId}.",
+                    onboardingId);
+
+                // ====================================================
+                // 2. REFRESH ONBOARDING
+                // ====================================================
+
+                var onboarding =
+                    await _onboardingService.GetOnboardingAsync(
+                        onboardingId,
+                        cancellationToken);
+
+                if (onboarding == null)
+                {
+                    _logger.LogWarning(
+                        "[SWIFTCARE ONBOARDING] Onboarding {OnboardingId} could not be found after verification completion.",
+                        onboardingId);
+
+                    TempData["Error"] =
+                        "Verification was completed, but the onboarding record could not be found.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new
+                        {
+                            id = onboardingId
+                        });
+                }
+
+                _logger.LogInformation(
+                    "[SWIFTCARE ONBOARDING] Onboarding {OnboardingId} current status after verification: {Status}.",
+                    onboardingId,
+                    onboarding.Status);
+
+                // ====================================================
+                // 3. GENERATE VOLUNTEER SERVICE AGREEMENT
+                // ====================================================
+                //
+                // Identity verification is now complete.
+                // Generate the existing Volunteer Service Agreement.
+                //
+                // CreateAndGenerateContractAsync() itself performs
+                // the Didit verification checks before generating.
+                // ====================================================
+
+                if (onboarding.Status ==
+                    VolunteerOnboardingStatus.ContractPending)
+                {
+                    _logger.LogInformation(
+                        "[SWIFTCARE CONTRACT] Identity verification completed. Generating Volunteer Service Agreement for OnboardingId {OnboardingId}.",
+                        onboardingId);
+
+                    try
+                    {
+                        var contract =
+                            await _contractService
+                                .CreateAndGenerateContractAsync(
+                                    onboardingId,
+                                    cancellationToken);
+
+                        _logger.LogInformation(
+                            "[SWIFTCARE CONTRACT] Volunteer Service Agreement generated successfully. " +
+                            "OnboardingId {OnboardingId}, ContractId {ContractId}, ContractReference {ContractReference}, Status {Status}.",
+                            onboardingId,
+                            contract.VolunteerContractId,
+                            contract.ContractReference,
+                            contract.Status);
+
+                        TempData["Success"] =
+                            "Identity verification completed successfully. " +
+                            "The Volunteer Service Agreement has now been generated and is ready for completion.";
+
+                        return RedirectToAction(
+                            nameof(Review),
+                            new
+                            {
+                                id = onboardingId
+                            });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        _logger.LogWarning(
+                            ex,
+                            "[SWIFTCARE CONTRACT] Contract generation could not be completed after identity verification. " +
+                            "OnboardingId {OnboardingId}.",
+                            onboardingId);
+
+                        TempData["Error"] =
+                            "Identity verification was completed, but the Volunteer Service Agreement " +
+                            "could not be generated yet. Please review the onboarding requirements.";
+
+                        return RedirectToAction(
+                            nameof(Review),
+                            new
+                            {
+                                id = onboardingId
+                            });
+                    }
+                }
+
+                // ====================================================
+                // 4. OTHER POSSIBLE ONBOARDING STATES
+                // ====================================================
+
+                if (onboarding.Status ==
+                    VolunteerOnboardingStatus.ReadyForActivation)
+                {
+                    _logger.LogInformation(
+                        "[SWIFTCARE ONBOARDING] OnboardingId {OnboardingId} is already ReadyForActivation after verification.",
+                        onboardingId);
+
+                    TempData["Success"] =
+                        "Volunteer verification completed successfully. " +
+                        "The onboarding record is now ready for activation.";
+                }
+                else
+                {
+                    _logger.LogInformation(
+                        "[SWIFTCARE ONBOARDING] Verification completed for OnboardingId {OnboardingId}. " +
+                        "Current onboarding status: {Status}.",
+                        onboardingId,
+                        onboarding.Status);
+
+                    TempData["Success"] =
+                        "Verification completed successfully.";
+                }
 
                 return RedirectToAction(
                     nameof(Review),
@@ -494,7 +639,7 @@ namespace SwiftCare.Controllers
             {
                 _logger.LogError(
                     ex,
-                    "[SWIFTCARE ONBOARDING] Failed to complete verification. OnboardingId {OnboardingId}",
+                    "[SWIFTCARE ONBOARDING] Failed to complete verification for OnboardingId {OnboardingId}.",
                     onboardingId);
 
                 TempData["Error"] =
@@ -862,6 +1007,167 @@ namespace SwiftCare.Controllers
             return View(
                 "Volunteer",
                 volunteer);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartIdentityVerification(
+            int onboardingId,
+            int identityDocumentId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Make sure the selected document actually belongs to this onboarding
+                // and is specifically an IdentityDocument.
+                var identityDocument = await _context.VolunteerOnboardingDocuments
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId == onboardingId &&
+                            x.VolunteerOnboardingDocumentId == identityDocumentId &&
+                            x.DocumentType ==
+                                VolunteerOnboardingDocumentType.IdentityDocument,
+                        cancellationToken);
+
+                if (identityDocument == null)
+                {
+                    TempData["Error"] =
+                        "The selected document could not be found or is not an identity document.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
+                }
+
+                var verification =
+                    await _identityVerificationService
+                        .StartIdentityVerificationAsync(
+                            onboardingId,
+                            identityDocumentId,
+                            cancellationToken);
+
+                if (verification == null)
+                {
+                    TempData["Error"] =
+                        "Unable to start identity verification.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
+                }
+
+                if (verification.Status ==
+                    VolunteerIdentityVerificationStatus.Verified)
+                {
+                    TempData["Success"] =
+                        "This volunteer's identity has already been verified.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
+                }
+
+                if (verification.Status ==
+                    VolunteerIdentityVerificationStatus.Failed ||
+                    verification.Status ==
+                    VolunteerIdentityVerificationStatus.Rejected)
+                {
+                    TempData["Error"] =
+                        verification.FailureReason ??
+                        "Didit could not start the identity verification.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
+                }
+
+                TempData["Success"] =
+                    "Didit identity verification has been started successfully. " +
+                    "The selected identity document has been associated with the verification session.";
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new { id = onboardingId });
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to start Didit identity verification for onboarding {OnboardingId} using identity document {IdentityDocumentId}.",
+                    onboardingId,
+                    identityDocumentId);
+
+                TempData["Error"] =
+                    "Unable to start identity verification. Please try again.";
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new { id = onboardingId });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> IdentityVerificationStatus(
+       int onboardingId,
+       CancellationToken cancellationToken)
+        {
+            var verification =
+                await _context.VolunteerIdentityVerifications
+                    .AsNoTracking()
+                    .Where(x => x.VolunteerOnboardingId == onboardingId)
+                    .OrderByDescending(x => x.ModifiedDate)
+                    .ThenByDescending(x => x.Id)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Status,
+                        x.DocumentVerified,
+                        x.LivenessVerified,
+                        x.FaceMatchVerified,
+                        x.FaceIdentityEnrolled,
+                        x.FailureReason,
+                        x.ProviderVerificationId,
+                        x.ProviderSessionId,
+                        x.VerificationUrl,
+                        x.VerificationStartedDate,
+                        x.VerifiedDate,
+                        x.CreatedDate,
+                        x.ModifiedDate
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+            if (verification == null)
+            {
+                return Json(new
+                {
+                    exists = false,
+                    status = "Pending"
+                });
+            }
+
+            return Json(new
+            {
+                exists = true,
+                id = verification.Id,
+                status = verification.Status.ToString(),
+                documentVerified = verification.DocumentVerified,
+                livenessVerified = verification.LivenessVerified,
+                faceMatchVerified = verification.FaceMatchVerified,
+                faceIdentityEnrolled = verification.FaceIdentityEnrolled,
+                failureReason = verification.FailureReason,
+                providerVerificationId = verification.ProviderVerificationId,
+                providerSessionId = verification.ProviderSessionId,
+                verificationUrl = verification.VerificationUrl,
+                verificationStartedDate = verification.VerificationStartedDate,
+                verifiedDate = verification.VerifiedDate,
+                createdDate = verification.CreatedDate,
+                modifiedDate = verification.ModifiedDate
+            });
         }
     }
 }

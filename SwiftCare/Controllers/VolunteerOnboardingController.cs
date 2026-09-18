@@ -7,6 +7,7 @@ using SwiftCare.Models;
 using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services;
 using SwiftCare.Services.VolunteerOnboarding;
+using SwiftCare.Services.VolunteerContracts;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
@@ -59,7 +60,8 @@ namespace SwiftCare.Controllers
         public async Task<IActionResult> Index(
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -139,13 +141,14 @@ namespace SwiftCare.Controllers
             // LOAD OFFER
             // ========================================================
 
-            var offer = await _context.VolunteerOffers
-                .Include(x => x.VolunteerOpportunity)
-                .Include(x => x.VolunteerOnboarding)
-                    .ThenInclude(x => x.Applicant)
-                .FirstOrDefaultAsync(
-                    x => x.VolunteerOfferId == offerId,
-                    cancellationToken);
+            var offer =
+                await _context.VolunteerOffers
+                    .Include(x => x.VolunteerOpportunity)
+                    .Include(x => x.VolunteerOnboarding)
+                        .ThenInclude(x => x.Applicant)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerOfferId == offerId,
+                        cancellationToken);
 
             if (offer == null)
             {
@@ -160,17 +163,15 @@ namespace SwiftCare.Controllers
             }
 
             _logger.LogInformation(
-                "[SWIFTCARE OFFER] Offer found. OfferId={OfferId}, Status={Status}, ExpiryDate={ExpiryDate}, TokenExpiryDate={TokenExpiryDate}, HashExists={HashExists}",
+                "[SWIFTCARE OFFER] Offer found. " +
+                "OfferId={OfferId}, Status={Status}, ExpiryDate={ExpiryDate}, " +
+                "TokenExpiryDate={TokenExpiryDate}, HashExists={HashExists}",
                 offer.VolunteerOfferId,
                 offer.Status,
                 offer.ExpiryDate,
                 offer.TokenExpiryDate,
                 !string.IsNullOrWhiteSpace(
                     offer.AcceptanceTokenHash));
-
-            // ========================================================
-            // KEEP TOKEN FOR VIEW
-            // ========================================================
 
             ViewBag.Token = token;
 
@@ -276,13 +277,6 @@ namespace SwiftCare.Controllers
                 offerId,
                 offer.ApplicantId);
 
-            _logger.LogInformation(
-                "[SWIFTCARE OFFER] Rendering Offer.cshtml for OfferId={OfferId}.",
-                offerId);
-
-            // IMPORTANT:
-            // Keep the RAW token available for the
-            // Accept / Decline forms.
             ViewBag.Token = token;
 
             return View(offer);
@@ -305,10 +299,6 @@ namespace SwiftCare.Controllers
                 id,
                 !string.IsNullOrWhiteSpace(token));
 
-            // ========================================================
-            // BASIC VALIDATION
-            // ========================================================
-
             if (id <= 0)
             {
                 TempData["Error"] =
@@ -329,15 +319,12 @@ namespace SwiftCare.Controllers
                 return View("OfferError");
             }
 
-            // ========================================================
-            // LOAD OFFER
-            // ========================================================
-
-            var offer = await _context.VolunteerOffers
-                .Include(x => x.VolunteerOnboarding)
-                .FirstOrDefaultAsync(
-                    x => x.VolunteerOfferId == id,
-                    cancellationToken);
+            var offer =
+                await _context.VolunteerOffers
+                    .Include(x => x.VolunteerOnboarding)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerOfferId == id,
+                        cancellationToken);
 
             if (offer == null)
             {
@@ -350,10 +337,6 @@ namespace SwiftCare.Controllers
 
                 return View("OfferError");
             }
-
-            // ========================================================
-            // TOKEN VALIDATION
-            // ========================================================
 
             if (!ValidateOfferToken(
                     token,
@@ -369,10 +352,6 @@ namespace SwiftCare.Controllers
                 return View("OfferError");
             }
 
-            // ========================================================
-            // STATUS VALIDATION
-            // ========================================================
-
             if (offer.Status != VolunteerOfferStatus.Pending)
             {
                 _logger.LogWarning(
@@ -385,10 +364,6 @@ namespace SwiftCare.Controllers
 
                 return View("OfferError");
             }
-
-            // ========================================================
-            // EXPIRY VALIDATION
-            // ========================================================
 
             var now = DateTime.Now;
 
@@ -418,10 +393,6 @@ namespace SwiftCare.Controllers
                 return View("OfferError");
             }
 
-            // ========================================================
-            // ACCEPT OFFER THROUGH SERVICE
-            // ========================================================
-
             var result =
                 await _onboardingService.AcceptOfferAsync(
                     id,
@@ -442,10 +413,6 @@ namespace SwiftCare.Controllers
 
             TempData["Success"] =
                 "Your volunteer offer has been accepted.";
-
-            // ========================================================
-            // REDIRECT TO POLICIES
-            // ========================================================
 
             return RedirectToAction(
                 nameof(Policies),
@@ -472,10 +439,6 @@ namespace SwiftCare.Controllers
                 "[SWIFTCARE OFFER] DeclineOffer called. OfferId={OfferId}, TokenProvided={TokenProvided}",
                 id,
                 !string.IsNullOrWhiteSpace(token));
-
-            // ========================================================
-            // BASIC VALIDATION
-            // ========================================================
 
             if (id <= 0)
             {
@@ -507,7 +470,7 @@ namespace SwiftCare.Controllers
                     new
                     {
                         offerId = id,
-                        token = token
+                        token
                     });
             }
 
@@ -524,19 +487,16 @@ namespace SwiftCare.Controllers
                     new
                     {
                         offerId = id,
-                        token = token
+                        token
                     });
             }
 
-            // ========================================================
-            // LOAD OFFER
-            // ========================================================
-
-            var offer = await _context.VolunteerOffers
-                .Include(x => x.VolunteerOnboarding)
-                .FirstOrDefaultAsync(
-                    x => x.VolunteerOfferId == id,
-                    cancellationToken);
+            var offer =
+                await _context.VolunteerOffers
+                    .Include(x => x.VolunteerOnboarding)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerOfferId == id,
+                        cancellationToken);
 
             if (offer == null)
             {
@@ -549,10 +509,6 @@ namespace SwiftCare.Controllers
 
                 return View("OfferError");
             }
-
-            // ========================================================
-            // TOKEN VALIDATION
-            // ========================================================
 
             if (!ValidateOfferToken(
                     token,
@@ -568,10 +524,6 @@ namespace SwiftCare.Controllers
                 return View("OfferError");
             }
 
-            // ========================================================
-            // STATUS VALIDATION
-            // ========================================================
-
             if (offer.Status != VolunteerOfferStatus.Pending)
             {
                 _logger.LogWarning(
@@ -584,10 +536,6 @@ namespace SwiftCare.Controllers
 
                 return View("OfferError");
             }
-
-            // ========================================================
-            // EXPIRY VALIDATION
-            // ========================================================
 
             var now = DateTime.Now;
 
@@ -616,10 +564,6 @@ namespace SwiftCare.Controllers
 
                 return View("OfferError");
             }
-
-            // ========================================================
-            // DECLINE OFFER THROUGH SERVICE
-            // ========================================================
 
             var result =
                 await _onboardingService.DeclineOfferAsync(
@@ -656,7 +600,8 @@ namespace SwiftCare.Controllers
             int id,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -675,11 +620,6 @@ namespace SwiftCare.Controllers
             if (onboarding.ApplicantId != user.Id)
                 return Forbid();
 
-
-            // ============================================================
-            // LOAD ACTIVE POLICIES AND THEIR ACTIVE ITEMS
-            // ============================================================
-
             var policies =
                 await _context.VolunteerPolicies
                     .AsNoTracking()
@@ -687,11 +627,6 @@ namespace SwiftCare.Controllers
                     .Where(x => x.IsActive)
                     .OrderBy(x => x.Title)
                     .ToListAsync(cancellationToken);
-
-
-            // ============================================================
-            // ENSURE ITEMS ARE ORDERED CORRECTLY
-            // ============================================================
 
             foreach (var policy in policies)
             {
@@ -702,13 +637,7 @@ namespace SwiftCare.Controllers
                         .ToList();
             }
 
-
-            // ============================================================
-            // SEND POLICIES TO VIEW
-            // ============================================================
-
             ViewBag.Policies = policies;
-
 
             return View(onboarding);
         }
@@ -724,7 +653,8 @@ namespace SwiftCare.Controllers
             int policyId,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -739,10 +669,6 @@ namespace SwiftCare.Controllers
 
             if (onboarding.ApplicantId != user.Id)
                 return Forbid();
-
-            // ========================================================
-            // ACCEPT THE POLICY
-            // ========================================================
 
             var result =
                 await _onboardingService.AcceptPolicyAsync(
@@ -766,19 +692,11 @@ namespace SwiftCare.Controllers
                     });
             }
 
-            // ========================================================
-            // CHECK WHETHER ALL REQUIRED POLICIES ARE ACCEPTED
-            // ========================================================
-
             var allAccepted =
                 await _onboardingService
                     .HasAcceptedAllRequiredPoliciesAsync(
                         onboardingId,
                         cancellationToken);
-
-            // ========================================================
-            // NOT ALL POLICIES ACCEPTED YET
-            // ========================================================
 
             TempData["Success"] =
                 "Policy acceptance recorded.";
@@ -791,134 +709,18 @@ namespace SwiftCare.Controllers
                 });
         }
 
-
-        // ============================================================
-        // GENERATE CONTRACT
-        // ============================================================
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GenerateContract(
-            int onboardingId,
-            CancellationToken cancellationToken)
-        {
-            var user =
-                await _userManager.GetUserAsync(User);
-
-            if (user == null)
-                return Challenge();
-
-            // ========================================================
-            // LOAD ONBOARDING
-            // ========================================================
-
-            var onboarding =
-                await _onboardingService.GetOnboardingAsync(
-                    onboardingId,
-                    cancellationToken);
-
-            if (onboarding == null)
-                return NotFound();
-
-            // ========================================================
-            // SECURITY CHECK
-            // ========================================================
-
-            if (onboarding.ApplicantId != user.Id)
-                return Forbid();
-
-            // ========================================================
-            // VERIFY ALL REQUIRED POLICIES
-            // ========================================================
-
-            var allPoliciesAccepted =
-                await _onboardingService
-                    .HasAcceptedAllRequiredPoliciesAsync(
-                        onboardingId,
-                        cancellationToken);
-
-            if (!allPoliciesAccepted)
-            {
-                TempData["Error"] =
-                    "Please accept all required policies before continuing to your contract.";
-
-                return RedirectToAction(
-                    nameof(Policies),
-                    new
-                    {
-                        id = onboardingId
-                    });
-            }
-
-            try
-            {
-                // ====================================================
-                // CREATE CONTRACT + GENERATE PDF
-                // ====================================================
-
-                var contract =
-                    await _contractService
-                        .CreateAndGenerateContractAsync(
-                            onboardingId,
-                            cancellationToken);
-
-                _logger.LogInformation(
-                    "[SWIFTCARE CONTRACT] Contract {ContractReference} generated successfully for onboarding {OnboardingId}.",
-                    contract.ContractReference,
-                    onboardingId);
-
-                // ====================================================
-                // SUCCESS
-                // ====================================================
-
-                TempData["Success"] =
-                    "Your volunteer contract has been generated successfully.";
-
-                return RedirectToAction(
-                    nameof(Contract),
-                    new
-                    {
-                        id = onboardingId
-                    });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "[SWIFTCARE CONTRACT] Contract generation could not be completed for onboarding {OnboardingId}.",
-                    onboardingId);
-
-                TempData["Error"] =
-                    ex.Message;
-
-                return RedirectToAction(
-                    nameof(Policies),
-                    new
-                    {
-                        id = onboardingId
-                    });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "[SWIFTCARE CONTRACT] Unexpected error generating contract for onboarding {OnboardingId}.",
-                    onboardingId);
-
-                TempData["Error"] =
-                    "We could not generate your volunteer contract right now. Please try again.";
-
-                return RedirectToAction(
-                    nameof(Policies),
-                    new
-                    {
-                        id = onboardingId
-                    });
-            }
-        }
-
         // ============================================================
         // CONTRACT
+        // ============================================================
+        //
+        // IMPORTANT:
+        // This controller DOES NOT generate contracts.
+        //
+        // The administrator's identity-verification completion flow
+        // calls IVolunteerContractService.CreateAndGenerateContractAsync().
+        //
+        // This action only retrieves and displays the contract that
+        // has already been generated.
         // ============================================================
 
         [HttpGet]
@@ -952,48 +754,105 @@ namespace SwiftCare.Controllers
             // ========================================================
 
             if (onboarding.ApplicantId != user.Id)
+            {
+                _logger.LogWarning(
+                    "[SWIFTCARE CONTRACT] Unauthorized contract access attempt. " +
+                    "OnboardingId={OnboardingId}, UserId={UserId}, ApplicantId={ApplicantId}",
+                    id,
+                    user.Id,
+                    onboarding.ApplicantId);
+
                 return Forbid();
+            }
 
             // ========================================================
-            // LOAD GENERATED CONTRACT
+            // VERIFY IDENTITY VERIFICATION
+            // ========================================================
+
+            var identityVerification =
+                await _context.VolunteerIdentityVerifications
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.VolunteerOnboardingId == id)
+                    .OrderByDescending(x => x.VerifiedDate)
+                    .ThenByDescending(x => x.ModifiedDate)
+                    .ThenByDescending(x => x.Id)
+                    .FirstOrDefaultAsync(
+                        cancellationToken);
+
+            var identityVerified =
+                identityVerification != null &&
+                identityVerification.Status ==
+                    VolunteerIdentityVerificationStatus.Verified &&
+                identityVerification.DocumentVerified &&
+                identityVerification.LivenessVerified &&
+                identityVerification.FaceMatchVerified;
+
+            if (!identityVerified)
+            {
+                _logger.LogWarning(
+                    "[SWIFTCARE CONTRACT] Contract access blocked because " +
+                    "identity verification is not complete. " +
+                    "OnboardingId={OnboardingId}, UserId={UserId}, " +
+                    "VerificationStatus={VerificationStatus}",
+                    id,
+                    user.Id,
+                    identityVerification?.Status);
+
+                TempData["Error"] =
+                    "Your identity verification must be completed successfully " +
+                    "before your volunteer service agreement becomes available.";
+
+                return RedirectToAction(
+                    nameof(Index));
+            }
+
+            // ========================================================
+            // LOAD EXISTING GENERATED CONTRACT
             // ========================================================
 
             var contract =
-                await _context.VolunteerContracts
-                    .FirstOrDefaultAsync(
-                        x =>
-                            x.VolunteerOnboardingId == id &&
-                            x.Status != VolunteerContractStatus.Cancelled,
-                        cancellationToken);
+                await _contractService.GetContractByOnboardingAsync(
+                    id,
+                    cancellationToken);
 
             if (contract == null)
             {
+                _logger.LogWarning(
+                    "[SWIFTCARE CONTRACT] No generated contract found. " +
+                    "OnboardingId={OnboardingId}, UserId={UserId}",
+                    id,
+                    user.Id);
+
                 TempData["Error"] =
-                    "Your volunteer contract has not been generated yet.";
+                    "Your volunteer service agreement has not been generated yet.";
 
                 return RedirectToAction(
-                    nameof(Policies),
-                    new
-                    {
-                        id
-                    });
+                    nameof(Index));
             }
 
             // ========================================================
             // VERIFY GENERATED PDF
             // ========================================================
 
-            if (string.IsNullOrWhiteSpace(contract.GeneratedFilePath))
+            if (string.IsNullOrWhiteSpace(
+                    contract.GeneratedFilePath))
             {
+                _logger.LogError(
+                    "[SWIFTCARE CONTRACT] Contract exists but generated PDF path " +
+                    "is missing. ContractId={ContractId}, " +
+                    "ContractReference={ContractReference}, " +
+                    "OnboardingId={OnboardingId}",
+                    contract.VolunteerContractId,
+                    contract.ContractReference,
+                    id);
+
                 TempData["Error"] =
-                    "Your contract was created, but the generated PDF could not be located.";
+                    "Your volunteer service agreement was created, " +
+                    "but the generated PDF could not be located.";
 
                 return RedirectToAction(
-                    nameof(Policies),
-                    new
-                    {
-                        id
-                    });
+                    nameof(Index));
             }
 
             // ========================================================
@@ -1001,14 +860,18 @@ namespace SwiftCare.Controllers
             // ========================================================
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Contract page loaded. " +
+                "[SWIFTCARE CONTRACT] Contract page loaded successfully. " +
+                "ContractId={ContractId}, " +
                 "ContractReference={ContractReference}, " +
                 "OnboardingId={OnboardingId}, " +
+                "ApplicantId={ApplicantId}, " +
                 "GeneratedFilePath={GeneratedFilePath}, " +
                 "GeneratedFileName={GeneratedFileName}, " +
                 "Status={Status}",
+                contract.VolunteerContractId,
                 contract.ContractReference,
                 id,
+                user.Id,
                 contract.GeneratedFilePath,
                 contract.GeneratedFileName,
                 contract.Status);
@@ -1021,7 +884,6 @@ namespace SwiftCare.Controllers
 
             return View(onboarding);
         }
-
 
         // ============================================================
         // DOWNLOAD GENERATED CONTRACT
@@ -1057,30 +919,78 @@ namespace SwiftCare.Controllers
             // ========================================================
 
             if (onboarding.ApplicantId != user.Id)
+            {
+                _logger.LogWarning(
+                    "[SWIFTCARE CONTRACT] Unauthorized contract download attempt. " +
+                    "OnboardingId={OnboardingId}, UserId={UserId}, ApplicantId={ApplicantId}",
+                    id,
+                    user.Id,
+                    onboarding.ApplicantId);
+
                 return Forbid();
+            }
 
             // ========================================================
-            // LOAD CONTRACT
+            // VERIFY IDENTITY VERIFICATION
+            // ========================================================
+
+            var identityVerification =
+                await _context.VolunteerIdentityVerifications
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.VolunteerOnboardingId == id)
+                    .OrderByDescending(x => x.VerifiedDate)
+                    .ThenByDescending(x => x.ModifiedDate)
+                    .ThenByDescending(x => x.Id)
+                    .FirstOrDefaultAsync(
+                        cancellationToken);
+
+            var identityVerified =
+                identityVerification != null &&
+                identityVerification.Status ==
+                    VolunteerIdentityVerificationStatus.Verified &&
+                identityVerification.DocumentVerified &&
+                identityVerification.LivenessVerified &&
+                identityVerification.FaceMatchVerified;
+
+            if (!identityVerified)
+            {
+                _logger.LogWarning(
+                    "[SWIFTCARE CONTRACT] Contract download blocked because " +
+                    "identity verification is incomplete. " +
+                    "OnboardingId={OnboardingId}, UserId={UserId}, " +
+                    "VerificationStatus={VerificationStatus}",
+                    id,
+                    user.Id,
+                    identityVerification?.Status);
+
+                TempData["Error"] =
+                    "Your identity verification must be completed successfully " +
+                    "before you can access your volunteer service agreement.";
+
+                return RedirectToAction(
+                    nameof(Index));
+            }
+
+            // ========================================================
+            // LOAD EXISTING CONTRACT
             // ========================================================
 
             var contract =
-                await _context.VolunteerContracts
-                    .FirstOrDefaultAsync(
-                        x =>
-                            x.VolunteerOnboardingId == id &&
-                            x.Status != VolunteerContractStatus.Cancelled,
-                        cancellationToken);
+                await _contractService.GetContractByOnboardingAsync(
+                    id,
+                    cancellationToken);
 
             if (contract == null)
             {
                 _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Download requested but no active contract exists. " +
+                    "[SWIFTCARE CONTRACT] Download requested but no contract exists. " +
                     "OnboardingId={OnboardingId}, UserId={UserId}",
                     id,
                     user.Id);
 
                 TempData["Error"] =
-                    "Your volunteer contract has not been generated yet.";
+                    "Your volunteer service agreement has not been generated yet.";
 
                 return RedirectToAction(
                     nameof(Contract),
@@ -1094,7 +1004,8 @@ namespace SwiftCare.Controllers
             // VALIDATE GENERATED FILE PATH
             // ========================================================
 
-            if (string.IsNullOrWhiteSpace(contract.GeneratedFilePath))
+            if (string.IsNullOrWhiteSpace(
+                    contract.GeneratedFilePath))
             {
                 _logger.LogWarning(
                     "[SWIFTCARE CONTRACT] Contract has no GeneratedFilePath. " +
@@ -1124,13 +1035,40 @@ namespace SwiftCare.Controllers
                     .TrimStart('/');
 
             // ========================================================
+            // SECURITY: PREVENT PATH TRAVERSAL
+            // ========================================================
+
+            if (relativePath.Contains(".."))
+            {
+                _logger.LogError(
+                    "[SWIFTCARE CONTRACT] Invalid generated contract path detected. " +
+                    "ContractId={ContractId}, RelativePath={RelativePath}",
+                    contract.VolunteerContractId,
+                    relativePath);
+
+                TempData["Error"] =
+                    "The generated contract file path is invalid.";
+
+                return RedirectToAction(
+                    nameof(Contract),
+                    new
+                    {
+                        id
+                    });
+            }
+
+            // ========================================================
             // GET WEB ROOT
             // ========================================================
 
-            if (string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            if (string.IsNullOrWhiteSpace(
+                    _environment.WebRootPath))
             {
                 _logger.LogError(
-                    "[SWIFTCARE CONTRACT] WebRootPath is not configured.");
+                    "[SWIFTCARE CONTRACT] WebRootPath is not configured. " +
+                    "OnboardingId={OnboardingId}, ContractReference={ContractReference}",
+                    id,
+                    contract.ContractReference);
 
                 TempData["Error"] =
                     "The contract file storage location is not available.";
@@ -1160,10 +1098,14 @@ namespace SwiftCare.Controllers
 
             _logger.LogInformation(
                 "[SWIFTCARE CONTRACT] Download requested. " +
+                "ContractId={ContractId}, " +
                 "ContractReference={ContractReference}, " +
+                "OnboardingId={OnboardingId}, " +
                 "RelativePath={RelativePath}, " +
                 "PhysicalPath={PhysicalPath}",
+                contract.VolunteerContractId,
                 contract.ContractReference,
+                id,
                 relativePath,
                 filePath);
 
@@ -1175,8 +1117,10 @@ namespace SwiftCare.Controllers
             {
                 _logger.LogError(
                     "[SWIFTCARE CONTRACT] Generated contract file does not exist. " +
+                    "ContractId={ContractId}, " +
                     "ContractReference={ContractReference}, " +
                     "PhysicalPath={PhysicalPath}",
+                    contract.VolunteerContractId,
                     contract.ContractReference,
                     filePath);
 
@@ -1196,9 +1140,11 @@ namespace SwiftCare.Controllers
             // ========================================================
 
             var fileName =
-                !string.IsNullOrWhiteSpace(contract.GeneratedFileName)
-                    ? contract.GeneratedFileName
-                    : $"{contract.ContractReference}.pdf";
+                !string.IsNullOrWhiteSpace(
+                    contract.GeneratedFileName)
+                        ? Path.GetFileName(
+                            contract.GeneratedFileName)
+                        : $"{contract.ContractReference}.pdf";
 
             // ========================================================
             // CONTENT TYPE
@@ -1220,11 +1166,15 @@ namespace SwiftCare.Controllers
             // ========================================================
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Returning generated contract PDF. " +
+                "[SWIFTCARE CONTRACT] Returning generated contract file. " +
+                "ContractId={ContractId}, " +
                 "ContractReference={ContractReference}, " +
-                "FileName={FileName}",
+                "FileName={FileName}, " +
+                "ContentType={ContentType}",
+                contract.VolunteerContractId,
                 contract.ContractReference,
-                fileName);
+                fileName,
+                contentType);
 
             return PhysicalFile(
                 filePath,
@@ -1241,7 +1191,8 @@ namespace SwiftCare.Controllers
             int id,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -1276,7 +1227,8 @@ namespace SwiftCare.Controllers
             IFormFile file,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -1305,7 +1257,6 @@ namespace SwiftCare.Controllers
                     });
             }
 
-            // Maximum 50 MB
             const long maxFileSize =
                 50 * 1024 * 1024;
 
@@ -1331,17 +1282,9 @@ namespace SwiftCare.Controllers
 
             try
             {
-                // ====================================================
-                // UPLOAD USING EXISTING FILE SERVICE
-                // ====================================================
-
                 var filePath =
                     await _fileUploadService.UploadFileAsync(
                         file);
-
-                // ====================================================
-                // SAVE DOCUMENT RECORD
-                // ====================================================
 
                 var document =
                     await _onboardingService.AddDocumentAsync(
@@ -1401,7 +1344,8 @@ namespace SwiftCare.Controllers
             int id,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user =
+                await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return Challenge();
@@ -1422,11 +1366,6 @@ namespace SwiftCare.Controllers
                     .ToList()
                 ?? new List<VolunteerOnboardingDocument>();
 
-            // ------------------------------------------------------------
-            // At least one document must have been uploaded.
-            // Not every document type is required.
-            // ------------------------------------------------------------
-
             if (!documents.Any())
             {
                 TempData["Error"] =
@@ -1434,17 +1373,17 @@ namespace SwiftCare.Controllers
 
                 return RedirectToAction(
                     nameof(Documents),
-                    new { id });
+                    new
+                    {
+                        id
+                    });
             }
 
-            // ------------------------------------------------------------
-            // Required policies must already be accepted.
-            // ------------------------------------------------------------
-
             var policiesAccepted =
-                await _onboardingService.HasAcceptedAllRequiredPoliciesAsync(
-                    id,
-                    cancellationToken);
+                await _onboardingService
+                    .HasAcceptedAllRequiredPoliciesAsync(
+                        id,
+                        cancellationToken);
 
             if (!policiesAccepted)
             {
@@ -1453,9 +1392,11 @@ namespace SwiftCare.Controllers
 
                 return RedirectToAction(
                     nameof(Policies),
-                    new { id });
+                    new
+                    {
+                        id
+                    });
             }
-
 
             var hasRejectedDocuments =
                 documents.Any(x =>
@@ -1472,9 +1413,11 @@ namespace SwiftCare.Controllers
 
                 return RedirectToAction(
                     nameof(Documents),
-                    new { id });
+                    new
+                    {
+                        id
+                    });
             }
-
 
             if (onboarding.DocumentsSubmittedDate.HasValue)
             {
@@ -1483,20 +1426,32 @@ namespace SwiftCare.Controllers
 
                 return RedirectToAction(
                     nameof(Documents),
-                    new { id });
+                    new
+                    {
+                        id
+                    });
             }
 
-            onboarding.DocumentsSubmittedDate = DateTime.Now;
-            onboarding.VerificationStartedDate = DateTime.Now;
-            onboarding.ModifiedDate = DateTime.Now;
-            onboarding.ModifiedBy = user.Id;
+            onboarding.DocumentsSubmittedDate =
+                DateTime.Now;
+
+            onboarding.VerificationStartedDate =
+                DateTime.Now;
+
+            onboarding.ModifiedDate =
+                DateTime.Now;
+
+            onboarding.ModifiedBy =
+                user.Id;
 
             onboarding.Status =
                 VolunteerOnboardingStatus.AdminVerification;
 
-            onboarding.CurrentStep = 4;
+            onboarding.CurrentStep =
+                4;
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(
+                cancellationToken);
 
             TempData["Success"] =
                 "Your onboarding documents have been submitted successfully. SwiftCare will now review your documents.";
@@ -1521,16 +1476,8 @@ namespace SwiftCare.Controllers
 
             try
             {
-                // ====================================================
-                // HASH THE RAW TOKEN RECEIVED FROM THE URL/FORM
-                // ====================================================
-
                 var suppliedHash =
                     HashToken(rawToken);
-
-                // ====================================================
-                // NORMALIZE HASHES
-                // ====================================================
 
                 var suppliedHashText =
                     suppliedHash.Trim();
@@ -1538,16 +1485,11 @@ namespace SwiftCare.Controllers
                 var storedHashText =
                     storedHash.Trim();
 
-                // SHA-256 produces 32 bytes = 64 hex characters.
                 if (storedHashText.Length != 64 ||
                     suppliedHashText.Length != 64)
                 {
                     return false;
                 }
-
-                // ====================================================
-                // CONVERT HEX TO BYTES
-                // ====================================================
 
                 var suppliedHashBytes =
                     Convert.FromHexString(
@@ -1556,10 +1498,6 @@ namespace SwiftCare.Controllers
                 var storedHashBytes =
                     Convert.FromHexString(
                         storedHashText);
-
-                // ====================================================
-                // CONSTANT-TIME COMPARISON
-                // ====================================================
 
                 return CryptographicOperations.FixedTimeEquals(
                     suppliedHashBytes,
@@ -1583,9 +1521,7 @@ namespace SwiftCare.Controllers
             string token)
         {
             if (string.IsNullOrWhiteSpace(token))
-            {
                 return string.Empty;
-            }
 
             var bytes =
                 Encoding.UTF8.GetBytes(token);

@@ -1,4 +1,5 @@
 ﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
+@using SwiftCare.Helpers
 
 @{
     ViewData["Title"] = "Onboarding Documents";
@@ -89,17 +90,25 @@
 
     <div class="documents-info">
 
-        <i class="bi bi-info-circle me-2"></i>
+        <i class="bi bi-info-circle"></i>
 
-        <strong>Document requirements:</strong>
+        <div>
 
-        You do not need to upload every available document type.
-        Upload the documents that are applicable to your volunteer
-        onboarding. SwiftCare will review the documents after you
-        submit them for verification.
+            <strong>Document requirements:</strong>
+
+            You do not need to upload every available document type.
+            Upload the documents that are applicable to your volunteer
+            onboarding. SwiftCare will review the documents after you
+            submit them for verification.
+
+        </div>
 
     </div>
 
+
+    <!-- =========================================================
+         MAIN CONTENT
+         ========================================================= -->
 
     <div class="row g-4">
 
@@ -157,11 +166,10 @@
                                 Select document type
                             </option>
 
-                            @foreach (var type in
-                                Enum.GetValues<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentType>())
+                            @foreach (var documentType in Enum.GetValues<SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentType>())
                             {
-                                <option value="@type">
-                                    @type.ToString()
+                                <option value="@documentType">
+                                    @documentType.GetDisplayName()
                                 </option>
                             }
 
@@ -197,17 +205,65 @@
                     <div class="mb-4">
 
                         <label class="form-label">
-                            File
+                            Document File
                         </label>
 
-                        <input type="file"
-                               name="file"
-                               class="form-control"
-                               required />
 
-                        <div class="form-text">
-                            Maximum size: 50 MB.
-                        </div>
+                        <label class="document-upload-zone"
+                               id="documentUploadZone"
+                               for="documentFile">
+
+                            <input type="file"
+                                   id="documentFile"
+                                   name="file"
+                                   class="document-upload-input"
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                   required />
+
+
+                            <div class="document-upload-content">
+
+                                <div class="document-upload-icon">
+
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                </div>
+
+
+                                <div class="document-upload-title">
+
+                                    Drop your document here
+
+                                </div>
+
+
+                                <div class="document-upload-subtitle">
+
+                                    or click to browse your computer
+
+                                </div>
+
+
+                                <div class="document-upload-file-name"
+                                     id="selectedFileName">
+                                </div>
+
+
+                                <div class="document-upload-hint">
+
+                                    <i class="bi bi-paperclip"></i>
+
+                                    PDF, JPG, PNG, DOC or DOCX
+
+                                    <span>•</span>
+
+                                    Maximum 50 MB
+
+                                </div>
+
+                            </div>
+
+                        </label>
 
                     </div>
 
@@ -241,7 +297,7 @@
 
             <div class="documents-card">
 
-                <h4 class="mb-3">
+                <h4 class="mb-0">
 
                     <i class="bi bi-files me-2"></i>
 
@@ -252,13 +308,15 @@
 
                 @if (!documents.Any())
                 {
-                    <div class="text-center py-5 text-muted">
+                    <div class="documents-empty">
 
-                        <i class="bi bi-folder2-open"
-                               style="font-size:3rem;">
-                        </i>
+                        <div class="documents-empty-icon">
 
-                        <p class="mt-3 mb-0">
+                            <i class="bi bi-folder2-open"></i>
+
+                        </div>
+
+                        <p>
                             No documents uploaded yet.
                         </p>
 
@@ -271,117 +329,114 @@
                 }
                 else
                 {
-                    foreach (var document in documents)
-                    {
-                        <div class="document-row">
+                    <div class="document-list">
 
-                            <div class="d-flex gap-3 align-items-center">
+                        @foreach (var document in documents)
+                        {
+                            <div class="document-row">
 
+                                <div class="document-row-inner">
 
-                                <!-- =====================================
-                                     DOCUMENT ICON
-                                     ===================================== -->
+                                    <!-- DOCUMENT ICON -->
+                                    <div class="document-icon">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
 
-                                <div class="document-icon">
+                                    <!-- DOCUMENT DETAILS -->
+                                    <div class="document-details">
 
-                                    <i class="bi bi-file-earmark"></i>
+                                        <div class="document-name">
+                                            @document.DocumentName
+                                        </div>
 
-                                </div>
+                                        <div class="document-meta document-file-meta">
 
+                                            <span class="document-file-name">
+                                                @document.FileName
+                                            </span>
 
-                                <!-- =====================================
-                                     DOCUMENT DETAILS
-                                     ===================================== -->
+                                            <span class="document-separator">•</span>
 
-                                <div class="flex-grow-1">
+                                            <span>
+                                                @document.DocumentType.GetDisplayName()
+                                            </span>
 
-                                    <div class="document-name">
+                                            <span class="document-separator">•</span>
 
-                                        @document.DocumentName
+                                            <span>
+                                                @(document.FileSize < 1024 * 1024
+                                                    ? $"{document.FileSize / 1024.0:N1} KB"
+                                                    : $"{document.FileSize / (1024.0 * 1024.0):N1} MB")
+                                            </span>
+
+                                        </div>
+
+                                        <div class="document-meta document-uploaded-meta">
+
+                                            <i class="bi bi-clock"></i>
+
+                                            <span>
+                                                Uploaded
+                                            </span>
+
+                                            <span>
+                                                @(document.UploadedDate
+                                                    .ToLocalTime()
+                                                    .ToString("dd MMM yyyy HH:mm"))
+                                            </span>
+
+                                        </div>
 
                                     </div>
 
+                                    <!-- DOCUMENT ACTIONS -->
+                                    <div class="document-actions">
 
-                                    <div class="document-meta">
+                                        <span class="status-badge">
+                                            @document.Status
+                                        </span>
 
-                                        @document.FileName
-
-                                        ·
-
-                                        @document.DocumentType
-
-                                        ·
-
-                                        @(document.FileSize < 1024 * 1024? $"{document.FileSize / 1024.0:N1} KB": $"{document.FileSize / (1024.0 * 1024.0):N1} MB")
-
-                                    </div>
-
-
-                                    <div class="document-meta">
-
-                                        Uploaded
-
-                                        @document.UploadedDate.ToLocalTime().ToString("dd MMM yyyy HH:mm")
-
-                                    </div>
-
-                                </div>
-
-
-                                <!-- =====================================
-                                     STATUS
-                                     ===================================== -->
-
-                                <div class="text-end">
-
-                                    <div class="status-badge mb-2">
-
-                                        @document.Status
-
-                                    </div>
-
-
-                                    @if (!string.IsNullOrWhiteSpace(document.FilePath))
-                                    {
-                                        <div>
-
+                                        @if (!string.IsNullOrWhiteSpace(document.FilePath))
+                                        {
                                             <a href="@Url.Content("~/" + document.FilePath)"
                                                    target="_blank"
                                                    rel="noopener noreferrer"
                                                    class="btn btn-sm btn-outline-success">
 
-                                                <i class="bi bi-eye"></i>
-
+                                                <i class="bi bi-eye me-1"></i>
                                                 View
-
                                             </a>
+                                        }
+
+                                    </div>
+
+                                </div>
+
+                                <!-- REJECTION / CORRECTION -->
+                                @if (!string.IsNullOrWhiteSpace(document.RejectionReason))
+                                {
+                                    <div class="document-correction">
+
+                                        <div class="alert alert-danger mb-0">
+
+                                            <strong>
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                Correction required:
+                                            </strong>
+
+                                            <span>
+                                                @document.RejectionReason
+                                            </span>
 
                                         </div>
-                                    }
 
-                                </div>
+                                    </div>
+                                }
 
                             </div>
+                        }
 
-
-                            <!-- =========================================
-                                 REJECTION / CORRECTION
-                                 ========================================= -->
-                            @if (!string.IsNullOrWhiteSpace(document.RejectionReason))
-                            {
-                                <div class="alert alert-danger mt-3 mb-0">
-
-                                    <strong>
-                                        Correction required:
-                                    </strong>
-
-                                    @document.RejectionReason
-
-                                </div>
-                            }
-
-                        </div>
-                    }
+                    </div>
                 }
 
             </div>
@@ -431,7 +486,7 @@
              SUBMIT FOR VERIFICATION
              ========================================================= -->
 
-        <div class="d-flex justify-content-end mt-4">
+        <div class="documents-submit-area">
 
             @if (hasDocuments)
             {
@@ -482,6 +537,109 @@
     <script>
 
         document.addEventListener("DOMContentLoaded", function () {
+
+            /* =========================================================
+               FILE UPLOAD ZONE
+               ========================================================= */
+
+            const uploadZone =
+                document.getElementById("documentUploadZone");
+
+            const fileInput =
+                document.getElementById("documentFile");
+
+            const selectedFileName =
+                document.getElementById("selectedFileName");
+
+
+            if (uploadZone && fileInput) {
+
+                fileInput.addEventListener("change", function () {
+
+                    if (this.files && this.files.length > 0) {
+
+                        const file = this.files[0];
+
+                        selectedFileName.innerHTML = `
+                            <i class="bi bi-check-circle me-1"></i>
+                            ${escapeHtml(file.name)}
+                        `;
+
+                        uploadZone.classList.add("has-file");
+
+                    }
+                    else {
+
+                        selectedFileName.innerHTML = "";
+
+                        uploadZone.classList.remove("has-file");
+
+                    }
+
+                });
+
+
+                /* =====================================================
+                   DRAG OVER
+                   ===================================================== */
+
+                uploadZone.addEventListener("dragover", function (event) {
+
+                    event.preventDefault();
+
+                    uploadZone.classList.add("dragover");
+
+                });
+
+
+                /* =====================================================
+                   DRAG LEAVE
+                   ===================================================== */
+
+                uploadZone.addEventListener("dragleave", function (event) {
+
+                    event.preventDefault();
+
+                    uploadZone.classList.remove("dragover");
+
+                });
+
+
+                /* =====================================================
+                   DROP
+                   ===================================================== */
+
+                uploadZone.addEventListener("drop", function (event) {
+
+                    event.preventDefault();
+
+                    uploadZone.classList.remove("dragover");
+
+                    const files = event.dataTransfer.files;
+
+                    if (!files || files.length === 0) {
+                        return;
+                    }
+
+                    const dataTransfer = new DataTransfer();
+
+                    dataTransfer.items.add(files[0]);
+
+                    fileInput.files = dataTransfer.files;
+
+                    const file = files[0];
+
+                    selectedFileName.innerHTML = `
+                        <i class="bi bi-check-circle me-1"></i>
+                        ${escapeHtml(file.name)}
+                    `;
+
+                    uploadZone.classList.add("has-file");
+
+                });
+
+            }
+
 
             /* =========================================================
                UPLOAD BUTTON
@@ -550,6 +708,21 @@
                     `;
 
                 });
+
+            }
+
+
+            /* =========================================================
+               HTML ESCAPE
+               ========================================================= */
+
+            function escapeHtml(value) {
+
+                const div = document.createElement("div");
+
+                div.textContent = value;
+
+                return div.innerHTML;
 
             }
 

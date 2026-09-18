@@ -561,9 +561,124 @@ namespace SwiftCare.Data
                     .HasMaxLength(450);
             });
 
+            modelBuilder.Entity<VolunteerIdentityVerification>(entity =>
+            {
+                entity.ToTable("VolunteerIdentityVerifications");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Provider)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.ProviderVerificationId)
+                    .HasMaxLength(200);
+
+                entity.Property(x => x.ProviderPersonId)
+                    .HasMaxLength(200);
+
+                entity.Property(x => x.FailureReason)
+                    .HasMaxLength(2000);
+
+                entity.Property(x => x.ReviewNotes)
+                    .HasMaxLength(2000);
+
+                entity.Property(x => x.Status)
+                    .HasConversion<int>()
+                    .IsRequired();
+
+                entity.HasIndex(x => x.VolunteerOnboardingId);
+
+                entity.HasIndex(x => x.VolunteerId);
+
+                entity.HasIndex(x => x.IdentityDocumentId);
+
+                entity.HasIndex(x => x.ProviderVerificationId)
+                    .IsUnique()
+                    .HasFilter("[ProviderVerificationId] IS NOT NULL");
+
+                entity.HasIndex(x => x.ProviderPersonId)
+                    .IsUnique()
+                    .HasFilter("[ProviderPersonId] IS NOT NULL");
+
+                entity.HasOne(x => x.VolunteerOnboarding)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerOnboardingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.Volunteer)
+                    .WithMany()
+                    .HasForeignKey(x => x.VolunteerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.IdentityDocument)
+                    .WithMany()
+                    .HasForeignKey(x => x.IdentityDocumentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(x => x.ProviderSessionId)
+                    .HasMaxLength(200);
+
+                entity.Property(x => x.VerificationUrl)
+                    .HasMaxLength(2000);
+
+                entity.HasIndex(x => x.ProviderSessionId)
+                    .IsUnique()
+                    .HasFilter("[ProviderSessionId] IS NOT NULL");
+            });
+
+            modelBuilder.Entity<DiditWebhookLog>(entity =>
+            {
+                entity.ToTable("DiditWebhookLogs");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.EventId)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(x => x.WebhookType)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.SessionId)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.VendorData)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.Status)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.Environment)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.ProcessingError)
+                    .HasMaxLength(4000);
+
+                entity.Property(x => x.RawBody)
+                    .IsRequired();
+
+                entity.HasIndex(x => x.EventId)
+                    .IsUnique();
+
+                entity.HasIndex(x => x.SessionId);
+
+                entity.HasIndex(x => x.WebhookType);
+
+                entity.HasIndex(x => x.Processed);
+
+
+            });
+
         }
-
-
+        public DbSet<DiditWebhookLog> DiditWebhookLogs
+        {
+            get; set;
+        }
+        public DbSet<VolunteerIdentityVerification> VolunteerIdentityVerifications
+        {
+            get; set;
+        }
         public DbSet<VolunteerOnboarding> VolunteerOnboardings
         {
             get;

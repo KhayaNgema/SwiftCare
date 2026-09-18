@@ -163,7 +163,7 @@ namespace SwiftCare.Models.VolunteerOnboarding
 
         [Required]
         public VolunteerContractStatus Status { get; set; }
-            = VolunteerContractStatus.Draft;
+            = VolunteerContractStatus.Generated;
 
 
         // =========================================================
@@ -277,29 +277,30 @@ namespace SwiftCare.Models.VolunteerOnboarding
             = null!;
     }
 
-
-    // =============================================================
-    // CONTRACT STATUS
-    // =============================================================
-
     public enum VolunteerContractStatus
     {
-        Draft = 1,
+        [Display(Name = "Not Generated")]
+        NotGenerated = 0,
 
-        Generated = 2,
+        [Display(Name = "Generated")]
+        Generated = 1,
 
-        AwaitingSignature = 3,
+        [Display(Name = "Awaiting Applicant")]
+        AwaitingApplicant = 2,
 
-        Signed = 4,
+        [Display(Name = "Submitted")]
+        Submitted = 3,
 
-        UnderReview = 5,
+        [Display(Name = "Under Review")]
+        UnderReview = 4,
 
+        [Display(Name = "Correction Required")]
+        CorrectionRequired = 5,
+
+        [Display(Name = "Approved")]
         Approved = 6,
 
-        Rejected = 7,
-
-        ResubmissionRequired = 8,
-
-        Cancelled = 9
+        [Display(Name = "Rejected")]
+        Rejected = 7
     }
 }

@@ -1,5 +1,7 @@
 ﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
 
+@using SwiftCare.Models.VolunteerOnboarding
+
 @{
     ViewData["Title"] = "Volunteer Onboarding Review";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
@@ -7,16 +9,13 @@
     var onboardingStatus = Model.Status;
 
     var readyForActivation =
-        onboardingStatus ==
-        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.ReadyForActivation;
+        onboardingStatus == VolunteerOnboardingStatus.ReadyForActivation;
 
     var onboardingCompleted =
-        onboardingStatus ==
-        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.Completed;
+        onboardingStatus == VolunteerOnboardingStatus.Completed;
 
     var adminVerification =
-        onboardingStatus ==
-        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingStatus.AdminVerification;
+        onboardingStatus == VolunteerOnboardingStatus.AdminVerification;
 
     var applicantName =
         $"{Model.Applicant?.FirstName} {Model.Applicant?.LastName}".Trim();
@@ -32,37 +31,92 @@
             ?.Title
         ?? "Volunteer Opportunity";
 
+
+    // =============================================================
+    // REQUIREMENTS
+    // =============================================================
+
+    var displayRequirements =
+        Model.Requirements?
+            .GroupBy(x => x.RequirementType)
+            .Select(group =>
+                group
+                    .OrderByDescending(x => x.IsCompleted)
+                    .ThenBy(x => x.DisplayOrder)
+                    .ThenBy(x => x.VolunteerOnboardingRequirementId)
+                    .First())
+            .OrderBy(x => x.DisplayOrder)
+            .ToList()
+        ?? new List<VolunteerOnboardingRequirement>();
+
     var totalRequirements =
-        Model.Requirements?.Count() ?? 0;
+        displayRequirements.Count;
 
     var completedRequirements =
-        Model.Requirements?.Count(x => x.IsCompleted) ?? 0;
+        displayRequirements.Count(x => x.IsCompleted);
+
+
+    // =============================================================
+    // DOCUMENTS
+    // =============================================================
 
     var totalDocuments =
         Model.Documents?.Count() ?? 0;
 
     var verifiedDocuments =
         Model.Documents?.Count(x =>
-            x.Status ==
-            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Approved)
+            x.Status == VolunteerOnboardingDocumentStatus.Approved)
         ?? 0;
 
     var pendingDocuments =
         Model.Documents?.Count(x =>
-            x.Status ==
-                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Uploaded ||
-            x.Status ==
-                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.UnderReview)
+            x.Status == VolunteerOnboardingDocumentStatus.Uploaded ||
+            x.Status == VolunteerOnboardingDocumentStatus.UnderReview)
         ?? 0;
 
     var rejectedDocuments =
         Model.Documents?.Count(x =>
-            x.Status ==
-                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Rejected ||
-            x.Status ==
-                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.ResubmissionRequired)
+            x.Status == VolunteerOnboardingDocumentStatus.Rejected ||
+            x.Status == VolunteerOnboardingDocumentStatus.ResubmissionRequired)
         ?? 0;
+
+
+    // =============================================================
+    // IDENTITY DOCUMENTS
+    // =============================================================
+
+    var identityDocuments =
+        Model.Documents?
+            .Where(x =>
+                x.DocumentType ==
+                VolunteerOnboardingDocumentType.IdentityDocument)
+            .OrderByDescending(x => x.UploadedDate)
+            .ToList()
+        ?? new List<VolunteerOnboardingDocument>();
+
+    var hasIdentityDocument =
+        identityDocuments.Any();
+
+    var approvedIdentityDocument =
+        identityDocuments.FirstOrDefault(x =>
+            x.Status ==
+            VolunteerOnboardingDocumentStatus.Approved);
+
+    var pendingIdentityDocument =
+        identityDocuments.FirstOrDefault(x =>
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.Uploaded ||
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.UnderReview);
+
+    var rejectedIdentityDocument =
+        identityDocuments.FirstOrDefault(x =>
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.Rejected ||
+            x.Status ==
+                VolunteerOnboardingDocumentStatus.ResubmissionRequired);
 }
+
 
 <div class="onboarding-review-page">
 
@@ -137,7 +191,61 @@
 
     </section>
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4"
+             role="alert">
+            <div class="d-flex align-items-start gap-3">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                </div>
 
+                <div class="flex-grow-1">
+                    <div class="fw-bold mb-1">
+                        Success
+                    </div>
+
+                    <div>
+                        @TempData["Success"]
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close">
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4"
+             role="alert">
+            <div class="d-flex align-items-start gap-3">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                </div>
+
+                <div class="flex-grow-1">
+                    <div class="fw-bold mb-1">
+                        Action Required
+                    </div>
+
+                    <div>
+                        @TempData["Error"]
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close">
+                </button>
+            </div>
+        </div>
+    }
     <!-- =========================================================
          SUMMARY
          ========================================================= -->
@@ -224,6 +332,7 @@
                 </span>
 
                 <div class="summary-value" style="font-size:1rem;">
+
                     @(adminVerification
                         ? "In Review"
                         : readyForActivation
@@ -231,6 +340,7 @@
                             : onboardingCompleted
                                 ? "Complete"
                                 : "Pending")
+
                 </div>
 
             </div>
@@ -274,9 +384,7 @@
                 <div class="applicant-profile">
 
                     <div class="applicant-avatar">
-
                         <i class="bi bi-person-fill"></i>
-
                     </div>
 
                     <div>
@@ -412,8 +520,7 @@
                 </div>
 
 
-                @if (Model.Requirements == null ||
-                     !Model.Requirements.Any())
+                @if (!displayRequirements.Any())
                 {
                     <div class="empty-state">
 
@@ -461,8 +568,7 @@
                     </div>
 
 
-                    foreach (var requirement in Model.Requirements
-                        .OrderBy(x => x.DisplayOrder))
+                    foreach (var requirement in displayRequirements)
                     {
 
                         <div class="requirement-item">
@@ -486,7 +592,9 @@
                             <div class="requirement-content">
 
                                 <div class="requirement-title">
-                                    @requirement.Title
+
+                                    @requirement.RequirementType.GetDisplayName()
+
                                 </div>
 
                                 @if (!string.IsNullOrWhiteSpace(
@@ -508,12 +616,18 @@
                                 @if (requirement.IsCompleted)
                                 {
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <span>Completed</span>
+
+                                    <span>
+                                        Completed
+                                    </span>
                                 }
                                 else
                                 {
                                     <i class="bi bi-clock"></i>
-                                    <span>Pending</span>
+
+                                    <span>
+                                        Pending
+                                    </span>
                                 }
 
                             </span>
@@ -635,8 +749,26 @@
                         .OrderByDescending(x => x.UploadedDate))
                     {
 
-                        <div class="document-item">
+                        var isIdentityDocument =
+                            document.DocumentType ==
+                            VolunteerOnboardingDocumentType.IdentityDocument;
 
+                        var documentStatus =
+                            document.Status;
+
+                        var documentStatusClass =
+                            documentStatus ==
+                                VolunteerOnboardingDocumentStatus.Approved
+                                    ? "verified"
+                                    : documentStatus ==
+                                        VolunteerOnboardingDocumentStatus.Rejected ||
+                                      documentStatus ==
+                                        VolunteerOnboardingDocumentStatus.ResubmissionRequired
+                                        ? "rejected"
+                                        : "pending";
+
+
+                        <div class="document-item">
 
                             <div class="document-row">
 
@@ -649,7 +781,14 @@
 
                                         <div class="document-icon">
 
-                                            <i class="bi bi-file-earmark-text"></i>
+                                            @if (isIdentityDocument)
+                                            {
+                                                <i class="bi bi-person-vcard-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            }
 
                                         </div>
 
@@ -657,8 +796,22 @@
                                         <div class="min-w-0">
 
                                             <div class="document-name">
+
                                                 @document.DocumentName
+
+                                                @if (isIdentityDocument)
+                                                {
+                                                    <span class="identity-document-label">
+
+                                                        <i class="bi bi-shield-check"></i>
+
+                                                        Identity Document
+
+                                                    </span>
+                                                }
+
                                             </div>
+
 
                                             <div class="document-meta">
 
@@ -685,34 +838,18 @@
 
                                 <div>
 
-                                    @{
-                                        var documentStatus =
-                                            document.Status;
-
-                                        var documentStatusClass =
-                                            documentStatus ==
-                                                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Approved
-                                                    ? "verified"
-                                                    : documentStatus ==
-                                                        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Rejected ||
-                                                      documentStatus ==
-                                                        SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.ResubmissionRequired
-                                                        ? "rejected"
-                                                        : "pending";
-                                    }
-
                                     <span class="status-badge @documentStatusClass">
 
                                         @if (documentStatus ==
-                                            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Approved)
+                                            VolunteerOnboardingDocumentStatus.Approved)
                                         {
                                             <i class="bi bi-check-circle-fill"></i>
                                         }
                                         else if (
                                             documentStatus ==
-                                                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.Rejected ||
+                                                VolunteerOnboardingDocumentStatus.Rejected ||
                                             documentStatus ==
-                                                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentStatus.ResubmissionRequired)
+                                                VolunteerOnboardingDocumentStatus.ResubmissionRequired)
                                         {
                                             <i class="bi bi-exclamation-circle-fill"></i>
                                         }
@@ -771,10 +908,137 @@
 
                                     </button>
 
+
+                                    @if (isIdentityDocument)
+                                    {
+                                        <form asp-action="StartIdentityVerification"
+                                              method="post"
+                                              class="identity-verification-form">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="onboardingId"
+                                                   value="@Model.VolunteerOnboardingId" />
+
+                                            <input type="hidden"
+                                                   name="identityDocumentId"
+                                                   value="@document.VolunteerOnboardingDocumentId" />
+
+
+                                            @if (documentStatus ==
+                                                VolunteerOnboardingDocumentStatus.Approved)
+                                            {
+                                                <button type="submit"
+                                                        class="btn-didit-verify">
+
+                                                    <i class="bi bi-shield-check"></i>
+
+                                                    <span>
+                                                        Start Didit Verification
+                                                    </span>
+
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button"
+                                                        class="btn-didit-verify disabled"
+                                                        disabled>
+
+                                                    <i class="bi bi-shield-lock"></i>
+
+                                                    <span>
+                                                        Approve Document First
+                                                    </span>
+
+                                                </button>
+                                            }
+
+                                        </form>
+                                    }
+
+
                                 </div>
 
 
                             </div>
+
+
+                            <!-- IDENTITY DOCUMENT INFORMATION -->
+                            @if (isIdentityDocument)
+                            {
+                                <div class="identity-document-panel">
+
+                                    <div class="identity-document-panel-icon">
+
+                                        <i class="bi bi-shield-check"></i>
+
+                                    </div>
+
+
+                                    <div class="identity-document-panel-content">
+
+                                        <div class="identity-document-panel-title">
+
+                                            Identity verification document
+
+                                        </div>
+
+                                        <div class="identity-document-panel-text">
+
+                                            This document is designated as the
+                                            applicant's identity document and
+                                            can be used to start the Didit
+                                            identity verification process.
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="identity-document-panel-status">
+
+                                        @if (documentStatus ==
+                                            VolunteerOnboardingDocumentStatus.Approved)
+                                        {
+                                            <span class="identity-ready-badge">
+
+                                                <i class="bi bi-check-circle-fill"></i>
+
+                                                Ready for verification
+
+                                            </span>
+                                        }
+                                        else if (
+                                            documentStatus ==
+                                                VolunteerOnboardingDocumentStatus.Rejected ||
+                                            documentStatus ==
+                                                VolunteerOnboardingDocumentStatus.ResubmissionRequired)
+                                        {
+                                            <span class="identity-rejected-badge">
+
+                                                <i class="bi bi-exclamation-circle-fill"></i>
+
+                                                Document requires attention
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="identity-pending-badge">
+
+                                                <i class="bi bi-clock-fill"></i>
+
+                                                Awaiting document approval
+
+                                            </span>
+                                        }
+
+                                    </div>
+
+                                </div>
+                            }
 
 
                             <!-- REJECTION REASON -->
@@ -784,8 +1048,11 @@
                                 <div class="document-rejection">
 
                                     <strong>
+
                                         <i class="bi bi-exclamation-triangle me-1"></i>
+
                                         Review Note:
+
                                     </strong>
 
                                     @document.RejectionReason
@@ -798,6 +1065,324 @@
 
                     }
 
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             DIDIT IDENTITY VERIFICATION
+             ===================================================== -->
+
+        <div class="col-12">
+
+            <div class="review-card didit-verification-card"
+                 id="diditVerificationCard"
+                 data-onboarding-id="@Model.VolunteerOnboardingId"
+                 data-status-url="@Url.Action(
+                                                      "IdentityVerificationStatus",
+                                                      "VolunteerOnboardingAdmin")">
+
+                <div class="review-card-header">
+
+                    <h4 class="review-card-title">
+
+                        <span class="review-card-title-icon">
+
+                            <i class="bi bi-person-vcard-fill"></i>
+
+                        </span>
+
+                        Identity Verification
+
+                    </h4>
+
+
+                    <span class="didit-header-badge">
+
+                        <i class="bi bi-shield-check"></i>
+
+                        Didit
+
+                    </span>
+
+                </div>
+
+
+                <div class="didit-verification-content">
+
+
+                    <div class="didit-verification-icon">
+
+                        <i class="bi bi-person-badge-fill"></i>
+
+                    </div>
+
+
+                    <div class="didit-verification-information">
+
+                        <h5>
+                            Verify Applicant Identity
+                        </h5>
+
+                        <p>
+
+                            Start identity verification using the applicant's
+                            uploaded
+                            <strong>Identity Document</strong>.
+                            SwiftCare will associate the Didit verification
+                            session with this onboarding record.
+
+                        </p>
+
+
+                        <div class="didit-verification-steps">
+
+                            <div class="didit-step">
+
+                                <span class="didit-step-number">
+                                    1
+                                </span>
+
+                                <span>
+                                    Identity document
+                                </span>
+
+                            </div>
+
+
+                            <div class="didit-step">
+
+                                <span class="didit-step-number">
+                                    2
+                                </span>
+
+                                <span>
+                                    Liveness
+                                </span>
+
+                            </div>
+
+
+                            <div class="didit-step">
+
+                                <span class="didit-step-number">
+                                    3
+                                </span>
+
+                                <span>
+                                    Face verification
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="didit-verification-action">
+
+                        @if (!hasIdentityDocument)
+                        {
+                            <div class="didit-not-ready">
+
+                                <i class="bi bi-exclamation-circle"></i>
+
+                                <span>
+                                    No Identity Document uploaded
+                                </span>
+
+                            </div>
+                        }
+                        else if (approvedIdentityDocument == null)
+                        {
+                            <div class="didit-not-ready">
+
+                                <i class="bi bi-clock"></i>
+
+                                <span>
+                                    Identity document must be approved first
+                                </span>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <form asp-action="StartIdentityVerification"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="onboardingId"
+                                       value="@Model.VolunteerOnboardingId" />
+
+                                <input type="hidden"
+                                       name="identityDocumentId"
+                                       value="@approvedIdentityDocument.VolunteerOnboardingDocumentId" />
+
+                                <button type="submit"
+                                        class="btn-didit-main">
+
+                                    <i class="bi bi-shield-check"></i>
+
+                                    Start Didit Verification
+
+                                    <i class="bi bi-arrow-right"></i>
+
+                                </button>
+
+                            </form>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- =====================================================
+                     LIVE DIDIT STATUS
+                     ===================================================== -->
+
+                <div id="diditLiveStatus"
+                     class="didit-live-status"
+                     style="
+                    margin-top:1.25rem;
+                    padding:1rem 1.15rem;
+                    border:1px solid rgba(27,94,32,.14);
+                    border-radius:16px;
+                    background:rgba(240,253,244,.72);
+                    ">
+
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        justify-content:space-between;
+                        gap:1rem;
+                        flex-wrap:wrap;
+                        ">
+
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            gap:.75rem;
+                            ">
+
+                            <span id="diditLiveIcon"
+                                  style="
+                                width:38px;
+                                height:38px;
+                                border-radius:50%;
+                                display:inline-flex;
+                                align-items:center;
+                                justify-content:center;
+                                background:#DCEDC8;
+                                color:#1B5E20;
+                                ">
+
+                                <i class="bi bi-arrow-repeat"></i>
+
+                            </span>
+
+
+                            <div>
+
+                                <div style="
+                                    font-size:.72rem;
+                                    font-weight:800;
+                                    letter-spacing:.08em;
+                                    color:#5d7561;
+                                    text-transform:uppercase;
+                                    ">
+                                    Live Didit Status
+                                </div>
+
+                                <div id="diditLiveStatusText"
+                                     style="
+                                    font-weight:800;
+                                    color:#1B5E20;
+                                    ">
+
+                                    Checking verification status...
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <span id="diditLiveBadge"
+                              style="
+                            display:inline-flex;
+                            align-items:center;
+                            gap:.35rem;
+                            padding:.45rem .75rem;
+                            border-radius:999px;
+                            background:#DCEDC8;
+                            color:#1B5E20;
+                            font-size:.8rem;
+                            font-weight:800;
+                            ">
+
+                            Checking
+
+                        </span>
+
+                    </div>
+
+
+                    <div id="diditLiveDetails"
+                         style="
+                        margin-top:.8rem;
+                        color:#5d7561;
+                        font-size:.88rem;
+                        ">
+
+                        The admin page checks automatically every 3 seconds
+                        while verification is active.
+
+                    </div>
+
+
+                    <div id="diditLiveChecks"
+                         style="
+                        display:none;
+                        margin-top:.85rem;
+                        gap:.5rem;
+                        flex-wrap:wrap;
+                        ">
+                    </div>
+
+                </div>
+
+
+                @if (hasIdentityDocument)
+                {
+                    <div class="didit-document-reference">
+
+                        <div>
+
+                            <i class="bi bi-file-earmark-person-fill"></i>
+
+                            <span>
+                                Selected Identity Document
+                            </span>
+
+                        </div>
+
+
+                        <strong>
+
+                            @(approvedIdentityDocument?.DocumentName
+                                ?? identityDocuments.First().DocumentName)
+
+                        </strong>
+
+                    </div>
                 }
 
             </div>
@@ -836,22 +1421,34 @@
                         @if (adminVerification)
                         {
                             <i class="bi bi-hourglass-split"></i>
-                            <span>In Review</span>
+
+                            <span>
+                                In Review
+                            </span>
                         }
                         else if (onboardingCompleted)
                         {
                             <i class="bi bi-check-circle-fill"></i>
-                            <span>Completed</span>
+
+                            <span>
+                                Completed
+                            </span>
                         }
                         else if (readyForActivation)
                         {
                             <i class="bi bi-patch-check-fill"></i>
-                            <span>Verified</span>
+
+                            <span>
+                                Verified
+                            </span>
                         }
                         else
                         {
                             <i class="bi bi-clock"></i>
-                            <span>Not Started</span>
+
+                            <span>
+                                Not Started
+                            </span>
                         }
 
                     </span>
@@ -1035,10 +1632,12 @@
                             </h5>
 
                             <p class="mb-3">
+
                                 All required onboarding verification steps
                                 have been completed. The volunteer can now
                                 be activated and their Volunteer account
                                 created.
+
                             </p>
 
 
@@ -1076,8 +1675,10 @@
                             </h5>
 
                             <p class="mb-3">
+
                                 This onboarding process has been completed
                                 and the Volunteer account has been activated.
+
                             </p>
 
 
@@ -1105,9 +1706,11 @@
                         <i class="bi bi-hourglass-split"></i>
 
                         <span>
+
                             This volunteer is not yet ready for activation.
                             Complete verification before activation becomes
                             available.
+
                         </span>
 
                     </div>
@@ -1173,9 +1776,7 @@
                     <div class="mb-3">
 
                         <label class="swift-form-label">
-
                             Decision
-
                         </label>
 
                         <select name="status"
@@ -1202,9 +1803,7 @@
                     <div>
 
                         <label class="swift-form-label">
-
                             Review Reason
-
                         </label>
 
                         <textarea name="rejectionReason"
@@ -1405,9 +2004,13 @@
                                     </h5>
 
                                     <p class="mb-0">
+
                                         Completing verification will move
                                         this onboarding record to
-                                        <strong>Ready for Activation</strong>.
+                                        <strong>
+                                            Ready for Activation
+                                        </strong>.
+
                                     </p>
 
                                 </div>
@@ -1464,44 +2067,819 @@
 </div>
 
 
+
 @section Scripts {
 
     <script>
 
         document.addEventListener("DOMContentLoaded", function () {
 
+            // =============================================================
+            // REVIEW DOCUMENT MODAL
+            // =============================================================
+
             const reviewDocumentModal =
                 document.getElementById("reviewDocumentModal");
 
-            if (!reviewDocumentModal) {
+            if (reviewDocumentModal) {
+
+                reviewDocumentModal.addEventListener(
+                    "show.bs.modal",
+                    function (event) {
+
+                        const button =
+                            event.relatedTarget;
+
+                        if (!button) {
+                            return;
+                        }
+
+                        const documentId =
+                            button.getAttribute(
+                                "data-document-id"
+                            );
+
+                        const hiddenInput =
+                            document.getElementById(
+                                "reviewDocumentId"
+                            );
+
+                        if (hiddenInput) {
+
+                            hiddenInput.value =
+                                documentId || "";
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            // =============================================================
+            // DIDIT START BUTTON PROTECTION
+            // =============================================================
+
+            const diditForms =
+                document.querySelectorAll(
+                    ".identity-verification-form"
+                );
+
+            diditForms.forEach(function (form) {
+
+                form.addEventListener(
+                    "submit",
+                    function () {
+
+                        const button =
+                            form.querySelector(
+                                "button[type='submit']"
+                            );
+
+                        if (!button) {
+                            return;
+                        }
+
+                        const originalHtml =
+                            button.innerHTML;
+
+                        button.disabled = true;
+
+                        button.innerHTML =
+                            '<span class="spinner-border spinner-border-sm me-1" ' +
+                            'role="status" aria-hidden="true"></span>' +
+                            ' Starting Didit...';
+
+                        setTimeout(function () {
+
+                            if (document.body.contains(button)) {
+
+                                button.disabled = false;
+
+                                button.innerHTML =
+                                    originalHtml;
+
+                            }
+
+                        }, 10000);
+
+                    }
+                );
+
+            });
+
+
+            // =============================================================
+            // LIVE DIDIT ADMIN POLLING
+            // =============================================================
+
+            const diditCard =
+                document.getElementById(
+                    "diditVerificationCard"
+                );
+
+            if (!diditCard) {
                 return;
             }
 
-            reviewDocumentModal.addEventListener(
-                "show.bs.modal",
-                function (event) {
 
-                    const button =
-                        event.relatedTarget;
+            const statusText =
+                document.getElementById(
+                    "diditLiveStatusText"
+                );
 
-                    if (!button) {
+            const statusBadge =
+                document.getElementById(
+                    "diditLiveBadge"
+                );
+
+            const statusIcon =
+                document.getElementById(
+                    "diditLiveIcon"
+                );
+
+            const statusDetails =
+                document.getElementById(
+                    "diditLiveDetails"
+                );
+
+            const checksContainer =
+                document.getElementById(
+                    "diditLiveChecks"
+                );
+
+
+            const onboardingId =
+                diditCard.getAttribute(
+                    "data-onboarding-id"
+                );
+
+            const statusUrl =
+                diditCard.getAttribute(
+                    "data-status-url"
+                );
+
+
+            let pollingTimer = null;
+
+            let requestInProgress = false;
+
+            let pollingStopped = false;
+
+
+            // =============================================================
+            // STATUS TEXT
+            // =============================================================
+
+            function humanizeStatus(status) {
+
+                if (!status) {
+                    return "Not Started";
+                }
+
+                const names = {
+
+                    Pending:
+                        "Pending",
+
+                    InProgress:
+                        "In Progress",
+
+                    AwaitingUser:
+                        "Awaiting Applicant",
+
+                    DocumentVerified:
+                        "Document Verified",
+
+                    FaceVerificationInProgress:
+                        "Face Verification In Progress",
+
+                    Verified:
+                        "Verified",
+
+                    Failed:
+                        "Failed",
+
+                    Rejected:
+                        "Rejected",
+
+                    RequiresReview:
+                        "Requires Review",
+
+                    Expired:
+                        "Expired",
+
+                    Cancelled:
+                        "Cancelled"
+
+                };
+
+                return names[status] || status;
+
+            }
+
+
+            // =============================================================
+            // TERMINAL STATUS
+            // =============================================================
+
+            function isTerminalStatus(status) {
+
+                return [
+
+                    "Verified",
+                    "Failed",
+                    "Rejected",
+                    "RequiresReview",
+                    "Expired",
+                    "Cancelled"
+
+                ].includes(status);
+
+            }
+
+
+            // =============================================================
+            // LIVE STATUS VISUAL
+            // =============================================================
+
+            function setLiveVisual(status) {
+
+                const verified =
+                    status === "Verified";
+
+                const negative =
+                    [
+                        "Failed",
+                        "Rejected",
+                        "Expired",
+                        "Cancelled"
+                    ].includes(status);
+
+                const review =
+                    status === "RequiresReview";
+
+
+                const badgeBackground =
+                    verified
+                        ? "#DCFCE7"
+                        : negative
+                            ? "#FEE2E2"
+                            : review
+                                ? "#FEF3C7"
+                                : "#DCEDC8";
+
+
+                const badgeColor =
+                    verified
+                        ? "#166534"
+                        : negative
+                            ? "#991B1B"
+                            : review
+                                ? "#92400E"
+                                : "#1B5E20";
+
+
+                // ---------------------------------------------------------
+                // BADGE
+                // ---------------------------------------------------------
+
+                if (statusBadge) {
+
+                    statusBadge.textContent =
+                        humanizeStatus(status);
+
+                    statusBadge.style.background =
+                        badgeBackground;
+
+                    statusBadge.style.color =
+                        badgeColor;
+
+                }
+
+
+                // ---------------------------------------------------------
+                // ICON
+                // ---------------------------------------------------------
+
+                if (statusIcon) {
+
+                    statusIcon.style.background =
+                        badgeBackground;
+
+                    statusIcon.style.color =
+                        badgeColor;
+
+
+                    if (verified) {
+
+                        statusIcon.innerHTML =
+                            '<i class="bi bi-check-circle-fill"></i>';
+
+                    }
+                    else if (negative) {
+
+                        statusIcon.innerHTML =
+                            '<i class="bi bi-exclamation-circle-fill"></i>';
+
+                    }
+                    else if (review) {
+
+                        statusIcon.innerHTML =
+                            '<i class="bi bi-person-exclamation"></i>';
+
+                    }
+                    else {
+
+                        statusIcon.innerHTML =
+                            '<i class="bi bi-arrow-repeat"></i>';
+
+                    }
+
+                }
+
+
+                // ---------------------------------------------------------
+                // MAIN STATUS TEXT
+                // ---------------------------------------------------------
+
+                if (statusText) {
+
+                    if (verified) {
+
+                        statusText.textContent =
+                            "Applicant identity verified successfully";
+
+                    }
+                    else if (negative) {
+
+                        statusText.textContent =
+                            "Applicant identity verification requires attention";
+
+                    }
+                    else if (review) {
+
+                        statusText.textContent =
+                            "Didit has placed this verification under review";
+
+                    }
+                    else {
+
+                        statusText.textContent =
+                            "Applicant identity verification is in progress";
+
+                    }
+
+
+                    statusText.style.color =
+                        badgeColor;
+
+                }
+
+
+                return isTerminalStatus(status);
+
+            }
+
+
+            // =============================================================
+            // CHECK BADGES
+            // =============================================================
+
+            function renderChecks(result) {
+
+                if (!checksContainer) {
+                    return;
+                }
+
+
+                const checks = [
+
+                    {
+                        label: "Document",
+                        value: result.documentVerified === true
+                    },
+
+                    {
+                        label: "Liveness",
+                        value: result.livenessVerified === true
+                    },
+
+                    {
+                        label: "Face Match",
+                        value: result.faceMatchVerified === true
+                    }
+
+                ];
+
+
+                checksContainer.style.display =
+                    "flex";
+
+
+                checksContainer.innerHTML =
+                    checks.map(function (check) {
+
+                        const background =
+                            check.value
+                                ? "#DCFCE7"
+                                : "#F3F4F6";
+
+                        const color =
+                            check.value
+                                ? "#166534"
+                                : "#64748B";
+
+                        const icon =
+                            check.value
+                                ? "bi-check-circle-fill"
+                                : "bi-clock";
+
+
+                        return (
+
+                            '<span style="' +
+                                'display:inline-flex;' +
+                                'align-items:center;' +
+                                'gap:.35rem;' +
+                                'padding:.35rem .6rem;' +
+                                'border-radius:999px;' +
+                                'background:' + background + ';' +
+                                'color:' + color + ';' +
+                                'font-size:.76rem;' +
+                                'font-weight:800;' +
+                            '">' +
+
+                                '<i class="bi ' +
+                                    icon +
+                                '"></i>' +
+
+                                check.label +
+
+                            '</span>'
+
+                        );
+
+                    }).join("");
+
+            }
+
+
+            // =============================================================
+            // NO VERIFICATION
+            // =============================================================
+
+            function renderNotStarted() {
+
+                if (statusBadge) {
+
+                    statusBadge.textContent =
+                        "Not Started";
+
+                    statusBadge.style.background =
+                        "#DCEDC8";
+
+                    statusBadge.style.color =
+                        "#1B5E20";
+
+                }
+
+
+                if (statusIcon) {
+
+                    statusIcon.style.background =
+                        "#DCEDC8";
+
+                    statusIcon.style.color =
+                        "#1B5E20";
+
+                    statusIcon.innerHTML =
+                        '<i class="bi bi-shield-check"></i>';
+
+                }
+
+
+                if (statusText) {
+
+                    statusText.textContent =
+                        "No Didit verification session has been created yet";
+
+                    statusText.style.color =
+                        "#1B5E20";
+
+                }
+
+
+                if (statusDetails) {
+
+                    statusDetails.textContent =
+                        "Start Didit Verification after the applicant's identity document has been approved.";
+
+                }
+
+
+                if (checksContainer) {
+
+                    checksContainer.style.display =
+                        "none";
+
+                    checksContainer.innerHTML =
+                        "";
+
+                }
+
+            }
+
+
+            // =============================================================
+            // POLL DIDIT STATUS
+            // =============================================================
+
+            async function pollDiditStatus() {
+
+                if (
+                    requestInProgress ||
+                    pollingStopped ||
+                    !statusUrl ||
+                    !onboardingId
+                ) {
+                    return;
+                }
+
+
+                requestInProgress = true;
+
+
+                try {
+
+                    const separator =
+                        statusUrl.includes("?")
+                            ? "&"
+                            : "?";
+
+
+                    const requestUrl =
+                        statusUrl +
+                        separator +
+                        "onboardingId=" +
+                        encodeURIComponent(onboardingId) +
+                        "&_=" +
+                        Date.now();
+
+
+                    const response =
+                        await fetch(
+                            requestUrl,
+                            {
+                                method: "GET",
+
+                                headers: {
+                                    "Accept":
+                                        "application/json",
+
+                                    "X-Requested-With":
+                                        "XMLHttpRequest"
+                                },
+
+                                cache: "no-store",
+
+                                credentials:
+                                    "same-origin"
+                            }
+                        );
+
+
+                    // -----------------------------------------------------
+                    // AUTHENTICATION
+                    // -----------------------------------------------------
+
+                    if (
+                        response.status === 401 ||
+                        response.status === 403
+                    ) {
+
+                        if (statusDetails) {
+
+                            statusDetails.textContent =
+                                "Your administrator session has expired. Please sign in again.";
+
+                        }
+
                         return;
                     }
 
-                    const documentId =
-                        button.getAttribute(
-                            "data-document-id"
+
+                    // -----------------------------------------------------
+                    // SERVER ERROR
+                    // -----------------------------------------------------
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            "Status endpoint returned HTTP " +
+                            response.status
                         );
 
-                    const hiddenInput =
-                        document.getElementById(
-                            "reviewDocumentId"
+                    }
+
+
+                    // -----------------------------------------------------
+                    // JSON
+                    // -----------------------------------------------------
+
+                    const result =
+                        await response.json();
+
+
+                    // -----------------------------------------------------
+                    // NO SESSION
+                    // -----------------------------------------------------
+
+                    if (!result.exists) {
+
+                        renderNotStarted();
+
+                        return;
+
+                    }
+
+
+                    // -----------------------------------------------------
+                    // LIVE STATUS
+                    // -----------------------------------------------------
+
+                    const isTerminal =
+                        setLiveVisual(
+                            result.status
                         );
 
-                    if (hiddenInput) {
 
-                        hiddenInput.value =
-                            documentId || "";
+                    // -----------------------------------------------------
+                    // CHECKS
+                    // -----------------------------------------------------
+
+                    renderChecks(
+                        result
+                    );
+
+
+                    // -----------------------------------------------------
+                    // DETAILS
+                    // -----------------------------------------------------
+
+                    if (statusDetails) {
+
+                        if (result.status === "Verified") {
+
+                            statusDetails.textContent =
+                                "Verification completed successfully. " +
+                                "The applicant passed the Didit verification checks.";
+
+                        }
+                        else if (result.failureReason) {
+
+                            statusDetails.textContent =
+                                result.failureReason;
+
+                        }
+                        else if (result.modifiedDate) {
+
+                            const modified =
+                                new Date(
+                                    result.modifiedDate
+                                );
+
+
+                            if (!isNaN(modified.getTime())) {
+
+                                statusDetails.textContent =
+                                    "Last updated " +
+                                    modified.toLocaleTimeString(
+                                        [],
+                                        {
+                                            hour:
+                                                "2-digit",
+
+                                            minute:
+                                                "2-digit",
+
+                                            second:
+                                                "2-digit"
+                                        }
+                                    );
+
+                            }
+                            else {
+
+                                statusDetails.textContent =
+                                    "Waiting for the latest verification update...";
+
+                            }
+
+                        }
+                        else {
+
+                            statusDetails.textContent =
+                                "Waiting for the latest verification update...";
+
+                        }
+
+                    }
+
+
+                    // -----------------------------------------------------
+                    // STOP ON TERMINAL STATUS
+                    // -----------------------------------------------------
+
+                    if (isTerminal) {
+
+                        pollingStopped =
+                            true;
+
+
+                        if (pollingTimer) {
+
+                            clearInterval(
+                                pollingTimer
+                            );
+
+                            pollingTimer =
+                                null;
+
+                        }
+
+                    }
+
+                }
+                catch (error) {
+
+                    console.warn(
+                        "[SwiftCare] Didit status polling failed:",
+                        error
+                    );
+
+
+                    if (statusDetails) {
+
+                        statusDetails.textContent =
+                            "Waiting for the latest verification update...";
+
+                    }
+
+                }
+                finally {
+
+                    requestInProgress =
+                        false;
+
+                }
+
+            }
+
+
+            // =============================================================
+            // INITIAL CHECK
+            // =============================================================
+
+            pollDiditStatus();
+
+
+            // =============================================================
+            // CONTINUOUS POLLING
+            // =============================================================
+
+            pollingTimer =
+                window.setInterval(
+                    function () {
+
+                        pollDiditStatus();
+
+                    },
+                    3000
+                );
+
+
+            // =============================================================
+            // CLEANUP
+            // =============================================================
+
+            window.addEventListener(
+                "beforeunload",
+                function () {
+
+                    pollingStopped =
+                        true;
+
+
+                    if (pollingTimer) {
+
+                        clearInterval(
+                            pollingTimer
+                        );
+
+                        pollingTimer =
+                            null;
 
                     }
 

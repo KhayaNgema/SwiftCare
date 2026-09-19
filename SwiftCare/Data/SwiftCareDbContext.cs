@@ -670,7 +670,55 @@ namespace SwiftCare.Data
 
             });
 
+            // ============================================================
+            // SUPERVISOR RELATIONSHIPS
+            // ============================================================
+
+            // Volunteer -> Supervisor
+            modelBuilder.Entity<Volunteer>()
+                .HasOne(v => v.Supervisor)
+                .WithMany(s => s.Volunteers)
+                .HasForeignKey(v => v.SupervisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VolunteerRoster -> Supervisor
+            modelBuilder.Entity<VolunteerRoster>()
+                .HasOne(r => r.Supervisor)
+                .WithMany(s => s.Rosters)
+                .HasForeignKey(r => r.SupervisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VolunteerRoster>()
+                .HasOne(r => r.Volunteer)
+                .WithMany(v => v.Rosters)
+                .HasForeignKey(r => r.VolunteerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VolunteerTask -> VolunteerRoster
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.VolunteerRoster)
+                .WithMany(r => r.Tasks)
+                .HasForeignKey(t => t.VolunteerRosterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // VolunteerTask -> Volunteer
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.Volunteer)
+                .WithMany(v => v.Tasks)
+                .HasForeignKey(t => t.VolunteerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VolunteerTask -> AssignedBy
+            modelBuilder.Entity<VolunteerTask>()
+                .HasOne(t => t.AssignedBy)
+                .WithMany()
+                .HasForeignKey(t => t.AssignedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
+
+        public DbSet<Supervisor> Supervisors { get; set; }
+        public DbSet<VolunteerRoster> VolunteerRosters { get; set; }
         public DbSet<DiditWebhookLog> DiditWebhookLogs
         {
             get; set;
@@ -768,7 +816,6 @@ namespace SwiftCare.Data
 
         public DbSet<VolunteerScreening> VolunteerScreenings { get; set; }
 
-        public DbSet<VolunteerOrientation> VolunteerOrientations { get; set; }
         public DbSet<SwiftCare.Models.TransportRequest> TransportRequests { get; set; } = default!;
         public DbSet<SwiftCare.Models.Doctor> Doctors { get; set; } = default!;
         public DbSet<SwiftCare.Models.Nurse> Nurses{ get; set; } = default!;

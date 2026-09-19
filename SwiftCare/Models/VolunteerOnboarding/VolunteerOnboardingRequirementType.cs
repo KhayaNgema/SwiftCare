@@ -26,12 +26,6 @@ namespace SwiftCare.Models.VolunteerOnboarding
         [Display(Name = "Document Upload")]
         DocumentUpload = 7,
 
-        [Display(Name = "Orientation")]
-        Orientation = 8,
-
-        [Display(Name = "Role Training")]
-        RoleTraining = 9,
-
         [Display(Name = "Supervisor Assignment")]
         SupervisorAssignment = 10,
 

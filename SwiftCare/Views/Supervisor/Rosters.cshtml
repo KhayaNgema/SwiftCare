@@ -1,0 +1,758 @@
+﻿@using System.Linq
+@using SwiftCare.Helpers
+@using SwiftCare.Models
+
+@model IEnumerable<SwiftCare.Models.VolunteerRoster>
+
+@{
+    ViewData["Title"] = "Volunteer Rosters";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var rosters = Model?.ToList()
+        ?? new List<SwiftCare.Models.VolunteerRoster>();
+
+    var totalRosters = rosters.Count;
+
+    var draftCount = rosters.Count(x =>
+        x.Status == VolunteerRosterStatus.Draft);
+
+    var publishedCount = rosters.Count(x =>
+        x.Status == VolunteerRosterStatus.Published);
+
+    var activeCount = rosters.Count(x =>
+        x.Status == VolunteerRosterStatus.Active);
+
+    var completedCount = rosters.Count(x =>
+        x.Status == VolunteerRosterStatus.Completed);
+
+    var cancelledCount = rosters.Count(x =>
+        x.Status == VolunteerRosterStatus.Cancelled);
+
+
+    string GetInitials(Volunteer? volunteer)
+    {
+        if (volunteer == null)
+            return "?";
+
+        var first =
+            volunteer.FirstName?
+                .Trim()
+                .FirstOrDefault();
+
+        var last =
+            volunteer.LastName?
+                .Trim()
+                .FirstOrDefault();
+
+        if (first.HasValue && last.HasValue)
+            return $"{first}{last}".ToUpper();
+
+        if (first.HasValue)
+            return first.Value.ToString().ToUpper();
+
+        if (last.HasValue)
+            return last.Value.ToString().ToUpper();
+
+        return "?";
+    }
+
+
+    string GetVolunteerName(Volunteer? volunteer)
+    {
+        if (volunteer == null)
+            return "Unknown Volunteer";
+
+        var name =
+            $"{volunteer.FirstName} {volunteer.LastName}"
+                .Trim();
+
+        return string.IsNullOrWhiteSpace(name)
+            ? volunteer.Email ?? "Unknown Volunteer"
+            : name;
+    }
+
+
+    string GetStatusClass(VolunteerRosterStatus status)
+    {
+        return status switch
+        {
+            VolunteerRosterStatus.Draft
+                => "status-pending",
+
+            VolunteerRosterStatus.Published
+                => "status-ready",
+
+            VolunteerRosterStatus.Active
+                => "status-verification",
+
+            VolunteerRosterStatus.Completed
+                => "status-completed",
+
+            VolunteerRosterStatus.Cancelled
+                => "status-rejected",
+
+            _ => "status-neutral"
+        };
+    }
+
+
+    string GetStatusIcon(VolunteerRosterStatus status)
+    {
+        return status switch
+        {
+            VolunteerRosterStatus.Draft
+                => "bi-pencil-square",
+
+            VolunteerRosterStatus.Published
+                => "bi-send-check-fill",
+
+            VolunteerRosterStatus.Active
+                => "bi-play-circle-fill",
+
+            VolunteerRosterStatus.Completed
+                => "bi-check2-circle",
+
+            VolunteerRosterStatus.Cancelled
+                => "bi-x-circle-fill",
+
+            _ => "bi-circle-fill"
+        };
+    }
+
+
+    string GetStatusText(VolunteerRosterStatus status)
+    {
+        return status switch
+        {
+            VolunteerRosterStatus.Draft
+                => "Draft",
+
+            VolunteerRosterStatus.Published
+                => "Published",
+
+            VolunteerRosterStatus.Active
+                => "Active",
+
+            VolunteerRosterStatus.Completed
+                => "Completed",
+
+            VolunteerRosterStatus.Cancelled
+                => "Cancelled",
+
+            _ => "Unknown"
+        };
+    }
+
+
+    string GetRosterProgress(VolunteerRoster roster)
+    {
+        if (roster.Status == VolunteerRosterStatus.Completed)
+            return "100%";
+
+        if (roster.Status == VolunteerRosterStatus.Cancelled)
+            return "0%";
+
+        var totalTasks =
+            roster.Tasks?.Count ?? 0;
+
+        if (totalTasks == 0)
+            return "0%";
+
+        var completedTasks =
+            roster.Tasks.Count(x =>
+                x.Status == VolunteerTaskStatus.Completed);
+
+        var progress =
+            (int)Math.Round(
+                (double)completedTasks /
+                totalTasks *
+                100);
+
+        return $"{progress}%";
+    }
+
+
+    string GetRosterProgressClass(VolunteerRoster roster)
+    {
+        if (roster.Status == VolunteerRosterStatus.Completed)
+            return "progress-completed";
+
+        if (roster.Status == VolunteerRosterStatus.Cancelled)
+            return "progress-cancelled";
+
+        return "progress-active";
+    }
+
+
+    string GetAreaText(Volunteer? volunteer)
+    {
+        if (volunteer?.PreferredArea == null)
+            return "Not Assigned";
+
+        return volunteer.PreferredArea.Value.GetDisplayName();
+    }
+}
+
+
+<div class="sc-admin-onboarding-page">
+
+    <div class="sc-admin-onboarding-container">
+
+
+        <!-- =====================================================
+             PAGE HEADER
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-header">
+
+            <div class="sc-admin-onboarding-heading">
+
+                <div class="sc-admin-onboarding-icon">
+                    <i class="bi bi-calendar-week-fill"></i>
+                </div>
+
+                <div>
+
+                    <div class="sc-admin-onboarding-eyebrow">
+                        Supervisor Management
+                    </div>
+
+                    <h1 class="sc-admin-onboarding-title">
+                        Volunteer Rosters
+                    </h1>
+
+                    <p class="sc-admin-onboarding-subtitle">
+                        Manage and monitor weekly volunteer rosters,
+                        assigned tasks and roster progress.
+                    </p>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- =====================================================
+             SUMMARY CARDS
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-summary">
+
+
+            <!-- TOTAL -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-calendar-week-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Total Rosters
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @totalRosters
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- PUBLISHED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-send-check-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Published
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @publishedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACTIVE -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-play-circle-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Active
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @activeCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPLETED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Completed
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @completedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CANCELLED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Cancelled
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @cancelledCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             MAIN ROSTER TABLE
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-card">
+
+
+            <!-- TABLE HEADER -->
+
+            <div class="sc-admin-onboarding-card-header">
+
+                <div>
+
+                    <div class="sc-admin-onboarding-card-eyebrow">
+                        Weekly Roster Management
+                    </div>
+
+                    <h2 class="sc-admin-onboarding-card-title">
+                        Volunteer Rosters
+                    </h2>
+
+                </div>
+
+
+                <div class="sc-admin-onboarding-count">
+
+                    <i class="bi bi-calendar-week-fill"></i>
+
+                    <span>
+                        @totalRosters Rosters
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            @if (rosters.Any())
+            {
+
+                <div class="sc-admin-onboarding-table-wrapper">
+
+                    <table class="sc-admin-onboarding-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Roster
+                                </th>
+
+                                <th>
+                                    Volunteer
+                                </th>
+
+                                <th>
+                                    Area
+                                </th>
+
+                                <th>
+                                    Week
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Tasks
+                                </th>
+
+                                <th>
+                                    Progress
+                                </th>
+
+                                <th>
+                                    Created
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var roster in rosters)
+                            {
+
+                                var volunteer =
+                                    roster.Volunteer;
+
+                                var volunteerName =
+                                    GetVolunteerName(volunteer);
+
+                                var taskCount =
+                                    roster.Tasks?.Count ?? 0;
+
+                                var completedTasks =
+                                    roster.Tasks?.Count(x =>
+                                        x.Status ==
+                                        VolunteerTaskStatus.Completed)
+                                    ?? 0;
+
+                                var progress =
+                                    GetRosterProgress(roster);
+
+
+                                <tr>
+
+
+                                    <!-- =================================
+                                         ROSTER
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-reference">
+
+                                            <span class="sc-onboarding-reference-icon">
+                                                <i class="bi bi-calendar-week-fill"></i>
+                                            </span>
+
+                                            <span title="@roster.RosterName">
+                                                @roster.RosterName
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         VOLUNTEER
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-applicant">
+
+                                            <div class="sc-onboarding-avatar">
+
+                                                @GetInitials(volunteer)
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <p class="sc-onboarding-applicant-name">
+
+                                                    @volunteerName
+
+                                                </p>
+
+                                                <p class="sc-onboarding-applicant-email">
+
+                                                    @(volunteer?.Email
+                                                        ?? "No email available")
+
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         AREA
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-opportunity">
+
+                                            <div class="sc-onboarding-opportunity-icon">
+
+                                                <i class="bi bi-heart-pulse-fill"></i>
+
+                                            </div>
+
+
+                                            <span class="sc-onboarding-opportunity-title"
+                                                  title="@GetAreaText(volunteer)">
+
+                                                @GetAreaText(volunteer)
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         WEEK
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-date">
+
+                                            <i class="bi bi-calendar3"></i>
+
+                                            <div>
+
+                                                <span>
+                                                    @roster.StartDate.ToString("dd MMM yyyy")
+                                                </span>
+
+                                                <span>
+                                                    -
+                                                    @roster.EndDate.ToString("dd MMM yyyy")
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         STATUS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-status @GetStatusClass(roster.Status)">
+
+                                            <i class="bi @GetStatusIcon(roster.Status)"></i>
+
+                                            @GetStatusText(roster.Status)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         TASKS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document document-uploaded">
+
+                                            <i class="bi bi-list-task"></i>
+
+                                            <span>
+                                                @completedTasks / @taskCount
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         PROGRESS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-progress">
+
+                                            <div class="sc-onboarding-progress-track">
+
+                                                <div class="sc-onboarding-progress-fill @GetRosterProgressClass(roster)"
+                                                     style="width:@progress;">
+                                                </div>
+
+                                            </div>
+
+                                            <span class="sc-onboarding-progress-text">
+
+                                                @progress
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         CREATED
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-date">
+
+                                            <i class="bi bi-calendar3"></i>
+
+                                            <span>
+
+                                                @roster.CreatedDate.ToString(
+                                                    "dd MMM yyyy")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         ACTION
+                                         ================================= -->
+
+                                    <td>
+
+                                        <a asp-controller="Supervisor"
+                                               asp-action="RosterDetails"
+                                               asp-route-id="@roster.VolunteerRosterId"
+                                               class="sc-onboarding-review-button">
+
+                                            <i class="bi bi-eye-fill"></i>
+
+                                            <span>
+                                                View
+                                            </span>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+            else
+            {
+
+                <!-- =============================================
+                     EMPTY STATE
+                     ============================================= -->
+
+                <div class="sc-admin-onboarding-empty">
+
+                    <div class="sc-admin-onboarding-empty-icon">
+
+                        <i class="bi bi-calendar-week"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Volunteer Rosters
+                    </h3>
+
+
+                    <p>
+                        There are currently no weekly rosters.
+                        Create a roster to begin assigning volunteer tasks.
+                    </p>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>

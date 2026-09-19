@@ -2,14 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SwiftCare.Data;
-using SwiftCare.Models;
 using SwiftCare.Models.VolunteerOnboarding;
-using SwiftCare.Services;
 using SwiftCare.Services.VolunteerOnboarding;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +20,12 @@ namespace SwiftCare.Services.VolunteerContracts
         private readonly FileUploadService _fileUploadService;
         private readonly IVolunteerContractPdfGenerator _pdfGenerator;
         private readonly ILogger<VolunteerContractService> _logger;
+
+        private const long MaxContractFileSize =
+            25 * 1024 * 1024;
+
+        private const string RequiredContractContentType =
+            "application/pdf";
 
         public VolunteerContractService(
             SwiftCareDbContext context,
@@ -38,44 +42,35 @@ namespace SwiftCare.Services.VolunteerContracts
         }
 
         // ============================================================
-        // CREATE + GENERATE VOLUNTEER SERVICE AGREEMENT
+        // CREATE + GENERATE CONTRACT
         // ============================================================
 
-        public async Task<VolunteerContract>
-            CreateAndGenerateContractAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract> CreateAndGenerateContractAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Starting contract generation for OnboardingId {OnboardingId}.",
+                "[VOLUNTEER CONTRACT] Starting contract generation. " +
+                "OnboardingId={OnboardingId}",
                 onboardingId);
-
-            // ========================================================
-            // LOAD ONBOARDING
-            // ========================================================
 
             var onboarding =
                 await _context.VolunteerOnboardings
-
                     .Include(x => x.Applicant)
-
+                    .Include(x => x.VolunteerApplication)
+                        .ThenInclude(x => x.VolunteerOpportunity)
                     .Include(x => x.VolunteerApplication)
                         .ThenInclude(x => x.VolunteerOpportunity)
                             .ThenInclude(x => x.Requirements)
-
                     .Include(x => x.VolunteerApplication)
                         .ThenInclude(x => x.VolunteerOpportunity)
                             .ThenInclude(x => x.Responsibilities)
-
                     .Include(x => x.VolunteerApplication)
                         .ThenInclude(x => x.VolunteerOpportunity)
                             .ThenInclude(x => x.RequiredSkills)
-
                     .Include(x => x.Offers)
-
                     .Include(x => x.PolicyAcceptances)
                         .ThenInclude(x => x.VolunteerPolicy)
-
                     .FirstOrDefaultAsync(
                         x =>
                             x.VolunteerOnboardingId ==
@@ -85,73 +80,41 @@ namespace SwiftCare.Services.VolunteerContracts
             if (onboarding == null)
             {
                 _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Onboarding {OnboardingId} was not found.",
+                    "[VOLUNTEER CONTRACT] Onboarding not found. " +
+                    "OnboardingId={OnboardingId}",
                     onboardingId);
 
                 throw new InvalidOperationException(
                     "The volunteer onboarding record could not be found.");
             }
 
-            // ========================================================
-            // APPLICATION
-            // ========================================================
-
             if (onboarding.VolunteerApplication == null)
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Onboarding {OnboardingId} has no volunteer application.",
-                    onboardingId);
-
                 throw new InvalidOperationException(
                     "The volunteer application could not be found.");
             }
 
-            var application =
-                onboarding.VolunteerApplication;
-
-            // ========================================================
-            // OPPORTUNITY
-            // ========================================================
-
-            if (application.VolunteerOpportunity == null)
+            if (onboarding.VolunteerApplication.VolunteerOpportunity == null)
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Application {ApplicationId} has no volunteer opportunity.",
-                    application.VolunteerApplicationId);
-
                 throw new InvalidOperationException(
                     "The volunteer opportunity could not be found.");
             }
 
-            var opportunity =
-                application.VolunteerOpportunity;
-
-            // ========================================================
-            // APPLICANT
-            // ========================================================
-
             if (onboarding.Applicant == null)
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Onboarding {OnboardingId} has no applicant.",
-                    onboardingId);
-
                 throw new InvalidOperationException(
                     "The applicant could not be found.");
             }
 
-            // ========================================================
-            // IDENTITY VERIFICATION
-            // ========================================================
-            //
-            // Contract generation is only allowed after Didit has
-            // successfully completed:
-            //
-            // Document verification
-            // Liveness verification
-            // Face match verification
-            //
-            // ========================================================
+            var opportunity =
+                onboarding.VolunteerApplication.VolunteerOpportunity;
+
+            var applicant =
+                onboarding.Applicant;
+
+            // --------------------------------------------------------
+            // DIDIT VERIFICATION
+            // --------------------------------------------------------
 
             var identityVerification =
                 await _context.VolunteerIdentityVerifications
@@ -168,134 +131,92 @@ namespace SwiftCare.Services.VolunteerContracts
             if (identityVerification == null)
             {
                 _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] No identity verification exists for OnboardingId {OnboardingId}.",
+                    "[VOLUNTEER CONTRACT] No identity verification found. " +
+                    "OnboardingId={OnboardingId}",
                     onboardingId);
 
                 throw new InvalidOperationException(
-                    "Identity verification must be completed before the volunteer service agreement can be generated.");
+                    "Identity verification has not been completed.");
             }
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Identity verification found. " +
-                "VerificationId={VerificationId}, Status={Status}, " +
-                "DocumentVerified={DocumentVerified}, " +
-                "LivenessVerified={LivenessVerified}, " +
-                "FaceMatchVerified={FaceMatchVerified}.",
-                identityVerification.Id,
-                identityVerification.Status,
-                identityVerification.DocumentVerified,
-                identityVerification.LivenessVerified,
-                identityVerification.FaceMatchVerified);
-
             if (identityVerification.Status !=
-                    VolunteerIdentityVerificationStatus.Verified ||
-                !identityVerification.DocumentVerified ||
+                VolunteerIdentityVerificationStatus.Verified)
+            {
+                throw new InvalidOperationException(
+                    $"Identity verification is not complete. " +
+                    $"Current status: {identityVerification.Status}.");
+            }
+
+            if (!identityVerification.DocumentVerified ||
                 !identityVerification.LivenessVerified ||
                 !identityVerification.FaceMatchVerified)
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Contract generation blocked. " +
-                    "OnboardingId={OnboardingId}, Status={Status}, " +
-                    "Document={Document}, Liveness={Liveness}, FaceMatch={FaceMatch}.",
-                    onboardingId,
-                    identityVerification.Status,
-                    identityVerification.DocumentVerified,
-                    identityVerification.LivenessVerified,
-                    identityVerification.FaceMatchVerified);
-
                 throw new InvalidOperationException(
-                    "Identity verification must be completed successfully before the volunteer service agreement can be generated.");
+                    "Identity verification is marked as verified, " +
+                    "but the document, liveness, and face verification " +
+                    "checks have not all completed successfully.");
             }
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Identity verification requirements passed for OnboardingId {OnboardingId}.",
-                onboardingId);
-
-            // ========================================================
+            // --------------------------------------------------------
             // ACCEPTED OFFER
-            // ========================================================
+            // --------------------------------------------------------
 
             var acceptedOffer =
-                onboarding.Offers
+                onboarding.Offers?
                     .Where(x =>
                         x.Status ==
                         VolunteerOfferStatus.Accepted)
                     .OrderByDescending(x => x.AcceptedDate)
+                    .ThenByDescending(x => x.CreatedDate)
                     .FirstOrDefault();
 
             if (acceptedOffer == null)
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] No accepted offer exists for OnboardingId {OnboardingId}.",
-                    onboardingId);
-
                 throw new InvalidOperationException(
-                    "A volunteer offer must be accepted before a contract can be generated.");
+                    "The volunteer offer has not been accepted.");
             }
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Accepted offer {OfferId} found for OnboardingId {OnboardingId}.",
-                acceptedOffer.VolunteerOfferId,
-                onboardingId);
-
-            // ========================================================
+            // --------------------------------------------------------
             // REQUIRED POLICIES
-            // ========================================================
+            // --------------------------------------------------------
 
             var requiredPolicies =
                 await _context.VolunteerPolicies
+                    .AsNoTracking()
                     .Where(x =>
                         x.IsActive &&
                         x.IsRequired)
-                    .ToListAsync(
-                        cancellationToken);
+                    .Select(x => x.VolunteerPolicyId)
+                    .ToListAsync(cancellationToken);
 
             var acceptedPolicyIds =
-                onboarding.PolicyAcceptances
+                onboarding.PolicyAcceptances?
                     .Where(x => x.Accepted)
                     .Select(x => x.VolunteerPolicyId)
-                    .ToHashSet();
+                    .ToHashSet()
+                ?? new HashSet<int>();
 
             var missingPolicies =
                 requiredPolicies
                     .Where(x =>
-                        !acceptedPolicyIds.Contains(
-                            x.VolunteerPolicyId))
+                        !acceptedPolicyIds.Contains(x))
                     .ToList();
 
             if (missingPolicies.Any())
             {
                 _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Contract generation blocked. " +
-                    "{MissingPolicyCount} required policies are not accepted. " +
-                    "OnboardingId={OnboardingId}.",
-                    missingPolicies.Count,
-                    onboardingId);
+                    "[VOLUNTEER CONTRACT] Required policies are incomplete. " +
+                    "OnboardingId={OnboardingId}, MissingCount={MissingCount}",
+                    onboardingId,
+                    missingPolicies.Count);
 
                 throw new InvalidOperationException(
-                    "All required volunteer policies must be accepted before the contract can be generated.");
+                    "The applicant has not accepted all required policies.");
             }
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] All required policies accepted for OnboardingId {OnboardingId}.",
-                onboardingId);
-
-            // ========================================================
-            // CHECK EXISTING CONTRACT
-            // ========================================================
-            //
-            // IMPORTANT:
-            //
-            // If a contract already exists but its GeneratedFilePath
-            // is missing, DO NOT simply return it.
-            //
-            // This repairs the exact situation we currently have:
-            //
-            // ContractId=3
-            // ContractReference=SC-CON-260918-7435
-            // GeneratedFilePath=NULL
-            //
-            // ========================================================
+            // --------------------------------------------------------
+            // EXISTING CONTRACT
+            // --------------------------------------------------------
 
             var existingContract =
                 await _context.VolunteerContracts
@@ -308,30 +229,20 @@ namespace SwiftCare.Services.VolunteerContracts
             if (existingContract != null)
             {
                 _logger.LogInformation(
-                    "[SWIFTCARE CONTRACT] Existing contract found. " +
-                    "ContractId={ContractId}, Reference={ContractReference}, " +
-                    "Status={Status}, GeneratedFileName={GeneratedFileName}, " +
-                    "GeneratedFilePath={GeneratedFilePath}.",
+                    "[VOLUNTEER CONTRACT] Existing contract found. " +
+                    "ContractId={ContractId}, Status={Status}, " +
+                    "GeneratedFilePath={GeneratedFilePath}",
                     existingContract.VolunteerContractId,
-                    existingContract.ContractReference,
                     existingContract.Status,
-                    existingContract.GeneratedFileName,
                     existingContract.GeneratedFilePath);
 
                 // ----------------------------------------------------
-                // EXISTING PDF ALREADY AVAILABLE
+                // Existing generated file is still valid.
                 // ----------------------------------------------------
 
                 if (!string.IsNullOrWhiteSpace(
                         existingContract.GeneratedFilePath))
                 {
-                    _logger.LogInformation(
-                        "[SWIFTCARE CONTRACT] Existing contract already has a generated PDF. " +
-                        "ContractId={ContractId}, Path={GeneratedFilePath}. " +
-                        "No duplicate contract will be generated.",
-                        existingContract.VolunteerContractId,
-                        existingContract.GeneratedFilePath);
-
                     if (existingContract.Status ==
                         VolunteerContractStatus.Generated)
                     {
@@ -339,10 +250,10 @@ namespace SwiftCare.Services.VolunteerContracts
                             VolunteerContractStatus.AwaitingApplicant;
 
                         existingContract.ModifiedDate =
-                            DateTime.UtcNow;
+                            DateTime.Now;
 
                         existingContract.ModifiedBy =
-                            onboarding.ApplicantId;
+                            applicant.Id;
 
                         await _context.SaveChangesAsync(
                             cancellationToken);
@@ -352,164 +263,66 @@ namespace SwiftCare.Services.VolunteerContracts
                 }
 
                 // ----------------------------------------------------
-                // EXISTING CONTRACT BUT PDF PATH IS MISSING
-                // ----------------------------------------------------
-                //
-                // THIS IS THE REPAIR PATH FOR YOUR CURRENT CONTRACT #3.
-                //
+                // Existing contract record but generated file missing.
+                // Repair the PDF instead of creating another contract.
                 // ----------------------------------------------------
 
                 _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Existing contract has no generated PDF path. " +
-                    "The PDF will now be generated. " +
-                    "ContractId={ContractId}, Reference={ContractReference}, " +
-                    "OnboardingId={OnboardingId}.",
-                    existingContract.VolunteerContractId,
-                    existingContract.ContractReference,
-                    onboardingId);
+                    "[VOLUNTEER CONTRACT] Existing contract has no " +
+                    "generated file. Regenerating. ContractId={ContractId}",
+                    existingContract.VolunteerContractId);
 
                 var repairedContract =
                     await _pdfGenerator.GeneratePdfAsync(
                         existingContract,
                         cancellationToken);
 
-                if (repairedContract == null)
-                {
-                    throw new InvalidOperationException(
-                        "The volunteer service agreement PDF generator returned no contract.");
-                }
-
                 if (string.IsNullOrWhiteSpace(
                         repairedContract.GeneratedFilePath))
                 {
-                    _logger.LogError(
-                        "[SWIFTCARE CONTRACT] PDF generator completed but GeneratedFilePath is still empty. " +
-                        "ContractId={ContractId}, Reference={ContractReference}.",
-                        repairedContract.VolunteerContractId,
-                        repairedContract.ContractReference);
-
                     throw new InvalidOperationException(
-                        "The volunteer service agreement PDF was generated but its file path was not saved.");
+                        "The volunteer contract PDF could not be generated.");
                 }
-
-                _logger.LogInformation(
-                    "[SWIFTCARE CONTRACT] Existing contract repaired successfully. " +
-                    "ContractId={ContractId}, Reference={ContractReference}, " +
-                    "GeneratedFileName={GeneratedFileName}, " +
-                    "GeneratedFilePath={GeneratedFilePath}.",
-                    repairedContract.VolunteerContractId,
-                    repairedContract.ContractReference,
-                    repairedContract.GeneratedFileName,
-                    repairedContract.GeneratedFilePath);
 
                 return repairedContract;
             }
 
-            // ========================================================
-            // SNAPSHOT REQUIREMENTS
-            // ========================================================
+            // --------------------------------------------------------
+            // SNAPSHOT OPPORTUNITY DATA
+            // --------------------------------------------------------
 
             var requirementsSnapshot =
-                string.Join(
-                    Environment.NewLine,
-                    opportunity.Requirements?
-                        .Where(x => x != null)
-                        .Select(
-                            x =>
-                                GetRequirementOrResponsibilityText(
-                                    x!))
-                        .Where(
-                            x =>
-                                !string.IsNullOrWhiteSpace(x))
-                    ?? Enumerable.Empty<string>());
-
-            // ========================================================
-            // SNAPSHOT RESPONSIBILITIES
-            // ========================================================
+                BuildSnapshot(
+                    opportunity.Requirements);
 
             var responsibilitiesSnapshot =
-                string.Join(
-                    Environment.NewLine,
-                    opportunity.Responsibilities?
-                        .Where(x => x != null)
-                        .Select(
-                            x =>
-                                GetRequirementOrResponsibilityText(
-                                    x!))
-                        .Where(
-                            x =>
-                                !string.IsNullOrWhiteSpace(x))
-                    ?? Enumerable.Empty<string>());
-
-            // ========================================================
-            // SNAPSHOT REQUIRED SKILLS
-            // ========================================================
+                BuildSnapshot(
+                    opportunity.Responsibilities);
 
             var requiredSkillsSnapshot =
-                string.Join(
-                    Environment.NewLine,
-                    opportunity.RequiredSkills?
-                        .Where(x => x != null)
-                        .Select(x => x.Skill)
-                        .Where(
-                            x =>
-                                !string.IsNullOrWhiteSpace(x))
-                    ?? Enumerable.Empty<string>());
+                BuildSnapshot(
+                    opportunity.RequiredSkills);
 
-            // ========================================================
-            // LOG SNAPSHOT INFORMATION
-            // ========================================================
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Opportunity {OpportunityId} contains " +
-                "{RequirementCount} requirements, " +
-                "{ResponsibilityCount} responsibilities and " +
-                "{SkillCount} required skills.",
-                opportunity.VolunteerOpportunityId,
-                opportunity.Requirements?.Count ?? 0,
-                opportunity.Responsibilities?.Count ?? 0,
-                opportunity.RequiredSkills?.Count ?? 0);
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Requirements snapshot: {RequirementsSnapshot}",
-                string.IsNullOrWhiteSpace(
-                    requirementsSnapshot)
-                    ? "[NONE]"
-                    : requirementsSnapshot);
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Responsibilities snapshot: {ResponsibilitiesSnapshot}",
-                string.IsNullOrWhiteSpace(
-                    responsibilitiesSnapshot)
-                    ? "[NONE]"
-                    : responsibilitiesSnapshot);
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Required skills snapshot: {RequiredSkillsSnapshot}",
-                string.IsNullOrWhiteSpace(
-                    requiredSkillsSnapshot)
-                    ? "[NONE]"
-                    : requiredSkillsSnapshot);
-
-            // ========================================================
+            // --------------------------------------------------------
             // CONTRACT REFERENCE
-            // ========================================================
+            // --------------------------------------------------------
 
             var contractReference =
                 await _referenceGenerator.GenerateAsync(
                     cancellationToken);
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Generated contract reference {ContractReference} for OnboardingId {OnboardingId}.",
-                contractReference,
-                onboardingId);
-
-            // ========================================================
-            // CREATE CONTRACT
-            // ========================================================
+            if (string.IsNullOrWhiteSpace(contractReference))
+            {
+                throw new InvalidOperationException(
+                    "A contract reference could not be generated.");
+            }
 
             var now =
-                DateTime.UtcNow;
+                DateTime.Now;
+
+            // --------------------------------------------------------
+            // CREATE CONTRACT
+            // --------------------------------------------------------
 
             var contract =
                 new VolunteerContract
@@ -518,7 +331,7 @@ namespace SwiftCare.Services.VolunteerContracts
                         onboarding.VolunteerOnboardingId,
 
                     VolunteerApplicationId =
-                        application.VolunteerApplicationId,
+                        onboarding.VolunteerApplicationId,
 
                     VolunteerOpportunityId =
                         opportunity.VolunteerOpportunityId,
@@ -536,8 +349,7 @@ namespace SwiftCare.Services.VolunteerContracts
                         "1.0",
 
                     PositionTitle =
-                        opportunity.Title ??
-                        "Volunteer Position",
+                        opportunity.Title,
 
                     RoleDescription =
                         opportunity.Description,
@@ -570,25 +382,19 @@ namespace SwiftCare.Services.VolunteerContracts
                         opportunity.MinimumAge,
 
                     RequirementsSnapshot =
-                        string.IsNullOrWhiteSpace(
-                            requirementsSnapshot)
-                            ? null
-                            : requirementsSnapshot,
+                        requirementsSnapshot,
 
                     ResponsibilitiesSnapshot =
-                        string.IsNullOrWhiteSpace(
-                            responsibilitiesSnapshot)
-                            ? null
-                            : responsibilitiesSnapshot,
+                        responsibilitiesSnapshot,
 
                     RequiredSkillsSnapshot =
-                        string.IsNullOrWhiteSpace(
-                            requiredSkillsSnapshot)
-                            ? null
-                            : requiredSkillsSnapshot,
+                        requiredSkillsSnapshot,
+
+                    AdditionalClausesSnapshot =
+                        null,
 
                     Status =
-                        VolunteerContractStatus.AwaitingApplicant,
+                        VolunteerContractStatus.Generated,
 
                     GeneratedDate =
                         now,
@@ -600,162 +406,76 @@ namespace SwiftCare.Services.VolunteerContracts
                         now,
 
                     CreatedBy =
-                        onboarding.ApplicantId,
+                        applicant.Id,
 
                     ModifiedBy =
-                        onboarding.ApplicantId
+                        applicant.Id
                 };
 
-            // ========================================================
-            // SAVE CONTRACT FIRST
-            // ========================================================
-            //
-            // We save first so the contract has its database ID.
-            //
-            // Then the PDF generator can populate:
-            //
-            // GeneratedFileName
-            // GeneratedFilePath
-            //
-            // ========================================================
-
-            _context.VolunteerContracts.Add(
-                contract);
+            _context.VolunteerContracts.Add(contract);
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Contract database record created. " +
+                "[VOLUNTEER CONTRACT] Contract record created. " +
                 "ContractId={ContractId}, Reference={ContractReference}, " +
-                "OnboardingId={OnboardingId}.",
+                "OnboardingId={OnboardingId}",
                 contract.VolunteerContractId,
                 contract.ContractReference,
                 onboardingId);
 
-            // ========================================================
+            // --------------------------------------------------------
             // GENERATE PDF
-            // ========================================================
-            //
-            // This was the missing operation in the old service.
-            //
-            // VolunteerContractPdfGenerator:
-            //
-            // 1. Builds the contract content.
-            // 2. Loads VolunteerServiceAgreement.html.
-            // 3. Populates placeholders.
-            // 4. Creates the QuestPDF document.
-            // 5. Writes the PDF to:
-            //
-            //    UploadedFiles/
-            //        VolunteerContracts/
-            //            Generated/
-            //
-            // 6. Sets GeneratedFileName.
-            // 7. Sets GeneratedFilePath.
-            // 8. Saves the contract.
-            //
-            // ========================================================
+            // --------------------------------------------------------
 
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Starting PDF generation. " +
-                "ContractId={ContractId}, Reference={ContractReference}.",
-                contract.VolunteerContractId,
-                contract.ContractReference);
-
-            var generatedContract =
+            contract =
                 await _pdfGenerator.GeneratePdfAsync(
                     contract,
                     cancellationToken);
 
-            if (generatedContract == null)
-            {
-                _logger.LogError(
-                    "[SWIFTCARE CONTRACT] PDF generator returned null. " +
-                    "ContractId={ContractId}, Reference={ContractReference}.",
-                    contract.VolunteerContractId,
-                    contract.ContractReference);
-
-                throw new InvalidOperationException(
-                    "The volunteer service agreement PDF could not be generated.");
-            }
-
-            // ========================================================
-            // VERIFY GENERATED PDF PATH
-            // ========================================================
-
             if (string.IsNullOrWhiteSpace(
-                    generatedContract.GeneratedFilePath))
+                    contract.GeneratedFilePath))
             {
-                _logger.LogError(
-                    "[SWIFTCARE CONTRACT] PDF generator returned a contract " +
-                    "without GeneratedFilePath. " +
-                    "ContractId={ContractId}, Reference={ContractReference}.",
-                    generatedContract.VolunteerContractId,
-                    generatedContract.ContractReference);
-
                 throw new InvalidOperationException(
-                    "The volunteer service agreement PDF was generated but its file path was not saved.");
+                    "The volunteer contract PDF was not generated.");
             }
 
             if (string.IsNullOrWhiteSpace(
-                    generatedContract.GeneratedFileName))
+                    contract.GeneratedFileName))
             {
-                _logger.LogError(
-                    "[SWIFTCARE CONTRACT] PDF generator returned a contract " +
-                    "without GeneratedFileName. " +
-                    "ContractId={ContractId}, Reference={ContractReference}.",
-                    generatedContract.VolunteerContractId,
-                    generatedContract.ContractReference);
-
                 throw new InvalidOperationException(
-                    "The volunteer service agreement PDF was generated but its file name was not saved.");
+                    "The generated volunteer contract filename is missing.");
             }
-
-            // ========================================================
-            // FINAL LOG
-            // ========================================================
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Volunteer Service Agreement generated successfully. " +
+                "[VOLUNTEER CONTRACT] Contract generated successfully. " +
                 "ContractId={ContractId}, Reference={ContractReference}, " +
-                "OnboardingId={OnboardingId}, Status={Status}, " +
-                "GeneratedFileName={GeneratedFileName}, " +
-                "GeneratedFilePath={GeneratedFilePath}.",
-                generatedContract.VolunteerContractId,
-                generatedContract.ContractReference,
-                onboardingId,
-                generatedContract.Status,
-                generatedContract.GeneratedFileName,
-                generatedContract.GeneratedFilePath);
+                "FilePath={FilePath}, Status={Status}",
+                contract.VolunteerContractId,
+                contract.ContractReference,
+                contract.GeneratedFilePath,
+                contract.Status);
 
-            return generatedContract;
+            return contract;
         }
 
         // ============================================================
         // GET CONTRACT BY ONBOARDING
         // ============================================================
 
-        public async Task<VolunteerContract?>
-            GetContractByOnboardingAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract?> GetContractByOnboardingAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
                 .AsNoTracking()
-
-                .Include(x => x.VolunteerApplication)
-
-                .Include(x => x.VolunteerOpportunity)
-
-                .Include(x => x.VolunteerOffer)
-
-                .Include(x => x.Applicant)
-
+                .Where(x =>
+                    x.VolunteerOnboardingId ==
+                    onboardingId)
+                .OrderByDescending(x => x.CreatedDate)
+                .ThenByDescending(x => x.VolunteerContractId)
                 .FirstOrDefaultAsync(
-                    x =>
-                        x.VolunteerOnboardingId ==
-                        onboardingId,
                     cancellationToken);
         }
 
@@ -763,40 +483,25 @@ namespace SwiftCare.Services.VolunteerContracts
         // GET CONTRACT
         // ============================================================
 
-        public async Task<VolunteerContract?>
-            GetContractAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract?> GetContractAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
-            return await _context.VolunteerContracts
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x =>
-                        x.VolunteerOnboardingId ==
-                        onboardingId,
-                    cancellationToken);
+            return await GetContractByOnboardingAsync(
+                onboardingId,
+                cancellationToken);
         }
 
         // ============================================================
         // GET CONTRACT BY ID
         // ============================================================
 
-        public async Task<VolunteerContract?>
-            GetContractByIdAsync(
-                int contractId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract?> GetContractByIdAsync(
+            int contractId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
                 .AsNoTracking()
-
-                .Include(x => x.VolunteerApplication)
-
-                .Include(x => x.VolunteerOpportunity)
-
-                .Include(x => x.VolunteerOffer)
-
-                .Include(x => x.Applicant)
-
                 .FirstOrDefaultAsync(
                     x =>
                         x.VolunteerContractId ==
@@ -808,12 +513,12 @@ namespace SwiftCare.Services.VolunteerContracts
         // CONTRACT EXISTS
         // ============================================================
 
-        public async Task<bool>
-            ContractExistsAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<bool> ContractExistsAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
+                .AsNoTracking()
                 .AnyAsync(
                     x =>
                         x.VolunteerOnboardingId ==
@@ -822,39 +527,38 @@ namespace SwiftCare.Services.VolunteerContracts
         }
 
         // ============================================================
-        // UPLOAD COMPLETED CONTRACT
+        // UPLOAD SIGNED CONTRACT
         // ============================================================
 
-        public async Task<VolunteerContract>
-            UploadCompletedContractAsync(
-                int onboardingId,
-                IFormFile file,
-                string applicantId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract> UploadCompletedContractAsync(
+            int onboardingId,
+            IFormFile file,
+            string applicantId,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(applicantId))
             {
                 throw new ArgumentException(
-                    "Applicant ID is required.",
+                    "An applicant ID is required.",
                     nameof(applicantId));
             }
 
-            if (file == null || file.Length == 0)
+            if (file == null ||
+                file.Length <= 0)
             {
-                throw new InvalidOperationException(
-                    "Please select a completed contract to upload.");
+                throw new ArgumentException(
+                    "A signed contract file is required.",
+                    nameof(file));
             }
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Applicant {ApplicantId} uploading completed contract for OnboardingId {OnboardingId}. File={FileName}, Size={FileSize}.",
-                applicantId,
+                "[VOLUNTEER CONTRACT] Signed contract upload started. " +
+                "OnboardingId={OnboardingId}, ApplicantId={ApplicantId}, " +
+                "FileName={FileName}, FileSize={FileSize}",
                 onboardingId,
+                applicantId,
                 file.FileName,
                 file.Length);
-
-            // ========================================================
-            // LOAD ONBOARDING
-            // ========================================================
 
             var onboarding =
                 await _context.VolunteerOnboardings
@@ -870,25 +574,14 @@ namespace SwiftCare.Services.VolunteerContracts
                     "The volunteer onboarding record could not be found.");
             }
 
-            // ========================================================
-            // OWNERSHIP
-            // ========================================================
-
-            if (onboarding.ApplicantId != applicantId)
+            if (!string.Equals(
+                    onboarding.ApplicantId,
+                    applicantId,
+                    StringComparison.Ordinal))
             {
-                _logger.LogWarning(
-                    "[SWIFTCARE CONTRACT] Unauthorized contract upload attempt. " +
-                    "OnboardingId={OnboardingId}, ApplicantId={ApplicantId}.",
-                    onboardingId,
-                    applicantId);
-
                 throw new UnauthorizedAccessException(
-                    "You are not authorized to upload this contract.");
+                    "You are not authorised to upload a contract for this onboarding.");
             }
-
-            // ========================================================
-            // LOAD CONTRACT
-            // ========================================================
 
             var contract =
                 await _context.VolunteerContracts
@@ -901,12 +594,8 @@ namespace SwiftCare.Services.VolunteerContracts
             if (contract == null)
             {
                 throw new InvalidOperationException(
-                    "A volunteer service agreement has not yet been generated.");
+                    "A generated volunteer contract could not be found.");
             }
-
-            // ========================================================
-            // VALID STATUS
-            // ========================================================
 
             if (contract.Status !=
                     VolunteerContractStatus.AwaitingApplicant &&
@@ -914,42 +603,33 @@ namespace SwiftCare.Services.VolunteerContracts
                     VolunteerContractStatus.CorrectionRequired)
             {
                 throw new InvalidOperationException(
-                    "This contract is not currently available for submission.");
+                    $"The signed contract cannot be uploaded while the " +
+                    $"contract is in status '{contract.Status}'.");
             }
 
-            // ========================================================
-            // VALIDATE FILE
-            // ========================================================
-
             ValidateContractFile(file);
-
-            // ========================================================
-            // UPLOAD THROUGH FILE UPLOAD SERVICE
-            // ========================================================
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Uploading completed contract through FileUploadService. " +
-                "OnboardingId={OnboardingId}, File={FileName}.",
-                onboardingId,
-                file.FileName);
 
             var signedFilePath =
                 await _fileUploadService.UploadFileAsync(
                     file);
 
-            // ========================================================
-            // UPDATE CONTRACT
-            // ========================================================
+            if (string.IsNullOrWhiteSpace(signedFilePath))
+            {
+                throw new InvalidOperationException(
+                    "The signed contract could not be uploaded.");
+            }
+
+            var now =
+                DateTime.Now;
 
             contract.SignedFileName =
-                Path.GetFileName(
-                    file.FileName);
+                Path.GetFileName(file.FileName);
 
             contract.SignedFilePath =
                 signedFilePath;
 
             contract.SignedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.Status =
                 VolunteerContractStatus.Submitted;
@@ -964,99 +644,56 @@ namespace SwiftCare.Services.VolunteerContracts
                 null;
 
             contract.ModifiedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.ModifiedBy =
+                applicantId;
+
+            // --------------------------------------------------------
+            // The contract has now been submitted.
+            // Record the onboarding submission date.
+            // --------------------------------------------------------
+
+            onboarding.ContractSubmittedDate =
+                now;
+
+            onboarding.ModifiedDate =
+                now;
+
+            onboarding.ModifiedBy =
                 applicantId;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Contract {ContractReference} submitted successfully. " +
-                "OnboardingId={OnboardingId}, ApplicantId={ApplicantId}, File={SignedFilePath}.",
-                contract.ContractReference,
+                "[VOLUNTEER CONTRACT] Signed contract submitted. " +
+                "ContractId={ContractId}, OnboardingId={OnboardingId}, " +
+                "ApplicantId={ApplicantId}, Status={Status}",
+                contract.VolunteerContractId,
                 onboardingId,
                 applicantId,
-                signedFilePath);
+                contract.Status);
 
             return contract;
         }
 
         // ============================================================
-        // RESUBMIT CONTRACT
+        // RESUBMIT SIGNED CONTRACT
         // ============================================================
 
-        public async Task<VolunteerContract>
-            ResubmitContractAsync(
-                int onboardingId,
-                IFormFile file,
-                string applicantId,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract> ResubmitContractAsync(
+            int onboardingId,
+            IFormFile file,
+            string applicantId,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(applicantId))
             {
                 throw new ArgumentException(
-                    "Applicant ID is required.",
+                    "An applicant ID is required.",
                     nameof(applicantId));
             }
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Contract resubmission requested. " +
-                "OnboardingId={OnboardingId}, ApplicantId={ApplicantId}.",
-                onboardingId,
-                applicantId);
-
-            var contract =
-                await _context.VolunteerContracts
-                    .FirstOrDefaultAsync(
-                        x =>
-                            x.VolunteerOnboardingId ==
-                            onboardingId,
-                        cancellationToken);
-
-            if (contract == null)
-            {
-                throw new InvalidOperationException(
-                    "The volunteer service agreement could not be found.");
-            }
-
-            if (contract.Status !=
-                VolunteerContractStatus.CorrectionRequired)
-            {
-                throw new InvalidOperationException(
-                    "This contract is not currently awaiting correction.");
-            }
-
-            return await UploadCompletedContractAsync(
-                onboardingId,
-                file,
-                applicantId,
-                cancellationToken);
-        }
-
-        // ============================================================
-        // APPROVE CONTRACT
-        // ============================================================
-
-        public async Task<VolunteerContract>
-            ApproveContractAsync(
-                int onboardingId,
-                string adminId,
-                string? reviewNotes = null,
-                CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(adminId))
-            {
-                throw new ArgumentException(
-                    "Administrator ID is required.",
-                    nameof(adminId));
-            }
-
-            _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Administrator {AdminId} attempting to approve contract for OnboardingId {OnboardingId}.",
-                adminId,
-                onboardingId);
 
             var contract =
                 await _context.VolunteerContracts
@@ -1072,9 +709,56 @@ namespace SwiftCare.Services.VolunteerContracts
                     "The volunteer contract could not be found.");
             }
 
-            // ========================================================
-            // VALID STATUS
-            // ========================================================
+            if (contract.Status !=
+                VolunteerContractStatus.CorrectionRequired)
+            {
+                throw new InvalidOperationException(
+                    "This contract does not currently require correction.");
+            }
+
+            return await UploadCompletedContractAsync(
+                onboardingId,
+                file,
+                applicantId,
+                cancellationToken);
+        }
+
+        // ============================================================
+        // APPROVE CONTRACT
+        // ============================================================
+
+        public async Task<VolunteerContract> ApproveContractAsync(
+            int onboardingId,
+            string adminId,
+            string? reviewNotes = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(adminId))
+            {
+                throw new ArgumentException(
+                    "An administrator ID is required.",
+                    nameof(adminId));
+            }
+
+            _logger.LogInformation(
+                "[VOLUNTEER CONTRACT] Contract approval started. " +
+                "OnboardingId={OnboardingId}, AdminId={AdminId}",
+                onboardingId,
+                adminId);
+
+            var contract =
+                await _context.VolunteerContracts
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            onboardingId,
+                        cancellationToken);
+
+            if (contract == null)
+            {
+                throw new InvalidOperationException(
+                    "The volunteer contract could not be found.");
+            }
 
             if (contract.Status !=
                     VolunteerContractStatus.Submitted &&
@@ -1082,23 +766,50 @@ namespace SwiftCare.Services.VolunteerContracts
                     VolunteerContractStatus.UnderReview)
             {
                 throw new InvalidOperationException(
-                    "Only a submitted contract can be approved.");
+                    $"The contract cannot be approved while it is in " +
+                    $"status '{contract.Status}'.");
             }
-
-            // ========================================================
-            // SIGNED FILE MUST EXIST
-            // ========================================================
 
             if (string.IsNullOrWhiteSpace(
                     contract.SignedFilePath))
             {
                 throw new InvalidOperationException(
-                    "The completed contract has not been uploaded.");
+                    "The applicant has not uploaded a signed contract.");
             }
 
-            // ========================================================
-            // APPROVE
-            // ========================================================
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .Include(x => x.Requirements)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            onboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                throw new InvalidOperationException(
+                    "The volunteer onboarding record could not be found.");
+            }
+
+            var contractRequirement =
+                onboarding.Requirements
+                    .FirstOrDefault(x =>
+                        x.RequirementType ==
+                        VolunteerOnboardingRequirementType.Contract);
+
+            if (contractRequirement == null)
+            {
+                throw new InvalidOperationException(
+                    "The Volunteer Service Agreement requirement could not be found.");
+            }
+
+            var now =
+                DateTime.Now;
+
+            // --------------------------------------------------------
+            // APPROVE CONTRACT
+            // --------------------------------------------------------
 
             contract.Status =
                 VolunteerContractStatus.Approved;
@@ -1107,26 +818,56 @@ namespace SwiftCare.Services.VolunteerContracts
                 adminId;
 
             contract.ReviewedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.RejectionReason =
                 null;
 
             contract.ModifiedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.ModifiedBy =
+                adminId;
+
+            // --------------------------------------------------------
+            // COMPLETE CONTRACT REQUIREMENT
+            // --------------------------------------------------------
+
+            contractRequirement.IsCompleted =
+                true;
+
+            // --------------------------------------------------------
+            // IMPORTANT:
+            //
+            // We deliberately do NOT move the onboarding directly
+            // to ReadyForActivation here.
+            //
+            // Contract approval only completes the Contract
+            // requirement.
+            //
+            // Final verification must still be performed by the
+            // administrator through CompleteVerificationAsync().
+            // --------------------------------------------------------
+
+            onboarding.ModifiedDate =
+                now;
+
+            onboarding.ModifiedBy =
                 adminId;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
             _logger.LogInformation(
-                "[SWIFTCARE CONTRACT] Contract {ContractReference} approved successfully. " +
-                "OnboardingId={OnboardingId}, AdminId={AdminId}.",
-                contract.ContractReference,
+                "[VOLUNTEER CONTRACT] Contract approved successfully. " +
+                "ContractId={ContractId}, OnboardingId={OnboardingId}, " +
+                "AdminId={AdminId}, RequirementId={RequirementId}, " +
+                "RequirementCompleted={RequirementCompleted}",
+                contract.VolunteerContractId,
                 onboardingId,
-                adminId);
+                adminId,
+                contractRequirement.VolunteerOnboardingRequirementId,
+                contractRequirement.IsCompleted);
 
             return contract;
         }
@@ -1135,17 +876,16 @@ namespace SwiftCare.Services.VolunteerContracts
         // REQUEST CORRECTION
         // ============================================================
 
-        public async Task<VolunteerContract>
-            RequestCorrectionAsync(
-                int onboardingId,
-                string adminId,
-                string correctionReason,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract> RequestCorrectionAsync(
+            int onboardingId,
+            string adminId,
+            string correctionReason,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(adminId))
             {
                 throw new ArgumentException(
-                    "Administrator ID is required.",
+                    "An administrator ID is required.",
                     nameof(adminId));
             }
 
@@ -1170,22 +910,45 @@ namespace SwiftCare.Services.VolunteerContracts
                     "The volunteer contract could not be found.");
             }
 
-            // ========================================================
-            // VALID STATUS
-            // ========================================================
-
             if (contract.Status !=
                     VolunteerContractStatus.Submitted &&
                 contract.Status !=
                     VolunteerContractStatus.UnderReview)
             {
                 throw new InvalidOperationException(
-                    "Only a submitted contract can be returned for correction.");
+                    $"A correction cannot be requested while the contract " +
+                    $"is in status '{contract.Status}'.");
             }
 
-            // ========================================================
-            // REQUEST CORRECTION
-            // ========================================================
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .Include(x => x.Requirements)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            onboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                throw new InvalidOperationException(
+                    "The volunteer onboarding record could not be found.");
+            }
+
+            var contractRequirement =
+                onboarding.Requirements
+                    .FirstOrDefault(x =>
+                        x.RequirementType ==
+                        VolunteerOnboardingRequirementType.Contract);
+
+            if (contractRequirement == null)
+            {
+                throw new InvalidOperationException(
+                    "The Volunteer Service Agreement requirement could not be found.");
+            }
+
+            var now =
+                DateTime.Now;
 
             contract.Status =
                 VolunteerContractStatus.CorrectionRequired;
@@ -1194,27 +957,40 @@ namespace SwiftCare.Services.VolunteerContracts
                 adminId;
 
             contract.ReviewedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.RejectionReason =
                 correctionReason.Trim();
 
             contract.ModifiedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.ModifiedBy =
+                adminId;
+
+            // --------------------------------------------------------
+            // Ensure the contract requirement remains incomplete.
+            // --------------------------------------------------------
+
+            contractRequirement.IsCompleted =
+                false;
+
+            onboarding.ModifiedDate =
+                now;
+
+            onboarding.ModifiedBy =
                 adminId;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-            _logger.LogWarning(
-                "[SWIFTCARE CONTRACT] Correction requested for Contract {ContractReference}. " +
-                "OnboardingId={OnboardingId}, AdminId={AdminId}, Reason={Reason}.",
-                contract.ContractReference,
+            _logger.LogInformation(
+                "[VOLUNTEER CONTRACT] Contract correction requested. " +
+                "ContractId={ContractId}, OnboardingId={OnboardingId}, " +
+                "AdminId={AdminId}",
+                contract.VolunteerContractId,
                 onboardingId,
-                adminId,
-                correctionReason);
+                adminId);
 
             return contract;
         }
@@ -1223,17 +999,16 @@ namespace SwiftCare.Services.VolunteerContracts
         // REJECT CONTRACT
         // ============================================================
 
-        public async Task<VolunteerContract>
-            RejectContractAsync(
-                int onboardingId,
-                string adminId,
-                string rejectionReason,
-                CancellationToken cancellationToken = default)
+        public async Task<VolunteerContract> RejectContractAsync(
+            int onboardingId,
+            string adminId,
+            string rejectionReason,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(adminId))
             {
                 throw new ArgumentException(
-                    "Administrator ID is required.",
+                    "An administrator ID is required.",
                     nameof(adminId));
             }
 
@@ -1258,10 +1033,6 @@ namespace SwiftCare.Services.VolunteerContracts
                     "The volunteer contract could not be found.");
             }
 
-            // ========================================================
-            // VALID STATUS
-            // ========================================================
-
             if (contract.Status !=
                     VolunteerContractStatus.Submitted &&
                 contract.Status !=
@@ -1270,12 +1041,39 @@ namespace SwiftCare.Services.VolunteerContracts
                     VolunteerContractStatus.CorrectionRequired)
             {
                 throw new InvalidOperationException(
-                    "This contract cannot currently be rejected.");
+                    $"The contract cannot be rejected while it is in " +
+                    $"status '{contract.Status}'.");
             }
 
-            // ========================================================
-            // REJECT
-            // ========================================================
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .Include(x => x.Requirements)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            onboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                throw new InvalidOperationException(
+                    "The volunteer onboarding record could not be found.");
+            }
+
+            var contractRequirement =
+                onboarding.Requirements
+                    .FirstOrDefault(x =>
+                        x.RequirementType ==
+                        VolunteerOnboardingRequirementType.Contract);
+
+            if (contractRequirement == null)
+            {
+                throw new InvalidOperationException(
+                    "The Volunteer Service Agreement requirement could not be found.");
+            }
+
+            var now =
+                DateTime.Now;
 
             contract.Status =
                 VolunteerContractStatus.Rejected;
@@ -1284,314 +1082,239 @@ namespace SwiftCare.Services.VolunteerContracts
                 adminId;
 
             contract.ReviewedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.RejectionReason =
                 rejectionReason.Trim();
 
             contract.ModifiedDate =
-                DateTime.UtcNow;
+                now;
 
             contract.ModifiedBy =
+                adminId;
+
+            // --------------------------------------------------------
+            // A rejected contract must never satisfy the requirement.
+            // --------------------------------------------------------
+
+            contractRequirement.IsCompleted =
+                false;
+
+            onboarding.ModifiedDate =
+                now;
+
+            onboarding.ModifiedBy =
                 adminId;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-            _logger.LogWarning(
-                "[SWIFTCARE CONTRACT] Contract {ContractReference} rejected. " +
-                "OnboardingId={OnboardingId}, AdminId={AdminId}, Reason={Reason}.",
-                contract.ContractReference,
+            _logger.LogInformation(
+                "[VOLUNTEER CONTRACT] Contract rejected. " +
+                "ContractId={ContractId}, OnboardingId={OnboardingId}, " +
+                "AdminId={AdminId}",
+                contract.VolunteerContractId,
                 onboardingId,
-                adminId,
-                rejectionReason);
+                adminId);
 
             return contract;
         }
 
         // ============================================================
-        // CONTRACT COMPLETED?
+        // CONTRACT COMPLETED
         // ============================================================
 
-        public async Task<bool>
-            IsContractCompletedAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<bool> IsContractCompletedAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
+                .AsNoTracking()
                 .AnyAsync(
                     x =>
                         x.VolunteerOnboardingId ==
-                            onboardingId &&
+                        onboardingId &&
                         x.Status ==
-                            VolunteerContractStatus.Approved,
+                        VolunteerContractStatus.Approved,
                     cancellationToken);
         }
 
         // ============================================================
-        // CONTRACT AWAITING REVIEW?
+        // CONTRACT AWAITING REVIEW
         // ============================================================
 
-        public async Task<bool>
-            IsContractAwaitingReviewAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<bool> IsContractAwaitingReviewAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
+                .AsNoTracking()
                 .AnyAsync(
                     x =>
                         x.VolunteerOnboardingId ==
-                            onboardingId &&
+                        onboardingId &&
                         (
                             x.Status ==
-                                VolunteerContractStatus.Submitted ||
+                            VolunteerContractStatus.Submitted ||
+
                             x.Status ==
-                                VolunteerContractStatus.UnderReview
+                            VolunteerContractStatus.UnderReview
                         ),
                     cancellationToken);
         }
 
         // ============================================================
-        // CORRECTION REQUIRED?
+        // CONTRACT CORRECTION REQUIRED
         // ============================================================
 
-        public async Task<bool>
-            IsContractCorrectionRequiredAsync(
-                int onboardingId,
-                CancellationToken cancellationToken = default)
+        public async Task<bool> IsContractCorrectionRequiredAsync(
+            int onboardingId,
+            CancellationToken cancellationToken = default)
         {
             return await _context.VolunteerContracts
+                .AsNoTracking()
                 .AnyAsync(
                     x =>
                         x.VolunteerOnboardingId ==
-                            onboardingId &&
+                        onboardingId &&
                         x.Status ==
-                            VolunteerContractStatus.CorrectionRequired,
+                        VolunteerContractStatus.CorrectionRequired,
                     cancellationToken);
         }
 
         // ============================================================
-        // EXTRACT ACTUAL REQUIREMENT / RESPONSIBILITY TEXT
+        // FILE VALIDATION
         // ============================================================
 
-        private static string?
-            GetRequirementOrResponsibilityText(
-                object item)
+        private static void ValidateContractFile(
+            IFormFile file)
+        {
+            if (file == null ||
+                file.Length <= 0)
+            {
+                throw new ArgumentException(
+                    "The contract file is empty.");
+            }
+
+            if (file.Length >
+                MaxContractFileSize)
+            {
+                throw new InvalidOperationException(
+                    "The signed contract may not exceed 25 MB.");
+            }
+
+            var extension =
+                Path.GetExtension(
+                    file.FileName);
+
+            if (!string.Equals(
+                    extension,
+                    ".pdf",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "The signed contract must be a PDF file.");
+            }
+
+            if (!string.Equals(
+                    file.ContentType,
+                    RequiredContractContentType,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "The signed contract must be uploaded as a PDF.");
+            }
+        }
+
+        // ============================================================
+        // BUILD SNAPSHOT
+        // ============================================================
+
+        private static string? BuildSnapshot<T>(
+            IEnumerable<T>? items)
+        {
+            if (items == null)
+            {
+                return null;
+            }
+
+            var values =
+                items
+                    .Select(GetSnapshotValue)
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            return string.Join(
+                Environment.NewLine,
+                values.Select(
+                    x => $"• {x}"));
+        }
+
+        // ============================================================
+        // SNAPSHOT VALUE
+        // ============================================================
+
+        private static string? GetSnapshotValue<T>(
+            T item)
         {
             if (item == null)
             {
                 return null;
             }
 
-            var itemType =
+            var type =
                 item.GetType();
 
-            // --------------------------------------------------------
-            // DESCRIPTION
-            // --------------------------------------------------------
-
-            var descriptionProperty =
-                itemType.GetProperty(
+            var propertyNames =
+                new[]
+                {
                     "Description",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (descriptionProperty != null)
-            {
-                var value =
-                    descriptionProperty
-                        .GetValue(item)?
-                        .ToString();
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            // --------------------------------------------------------
-            // REQUIREMENT
-            // --------------------------------------------------------
-
-            var requirementProperty =
-                itemType.GetProperty(
                     "Requirement",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (requirementProperty != null)
-            {
-                var value =
-                    requirementProperty
-                        .GetValue(item)?
-                        .ToString();
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            // --------------------------------------------------------
-            // RESPONSIBILITY
-            // --------------------------------------------------------
-
-            var responsibilityProperty =
-                itemType.GetProperty(
                     "Responsibility",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (responsibilityProperty != null)
-            {
-                var value =
-                    responsibilityProperty
-                        .GetValue(item)?
-                        .ToString();
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            // --------------------------------------------------------
-            // NAME
-            // --------------------------------------------------------
-
-            var nameProperty =
-                itemType.GetProperty(
                     "Name",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (nameProperty != null)
-            {
-                var value =
-                    nameProperty
-                        .GetValue(item)?
-                        .ToString();
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            // --------------------------------------------------------
-            // TITLE
-            // --------------------------------------------------------
-
-            var titleProperty =
-                itemType.GetProperty(
                     "Title",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (titleProperty != null)
-            {
-                var value =
-                    titleProperty
-                        .GetValue(item)?
-                        .ToString();
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            // --------------------------------------------------------
-            // TEXT
-            // --------------------------------------------------------
-
-            var textProperty =
-                itemType.GetProperty(
                     "Text",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
+                    "Value"
+                };
 
-            if (textProperty != null)
+            foreach (var propertyName in propertyNames)
             {
-                var value =
-                    textProperty
-                        .GetValue(item)?
-                        .ToString();
+                var property =
+                    type.GetProperty(
+                        propertyName);
 
-                if (!string.IsNullOrWhiteSpace(value))
+                if (property == null)
                 {
-                    return value.Trim();
+                    continue;
                 }
-            }
 
-            // --------------------------------------------------------
-            // VALUE
-            // --------------------------------------------------------
-
-            var valueProperty =
-                itemType.GetProperty(
-                    "Value",
-                    BindingFlags.Public |
-                    BindingFlags.Instance |
-                    BindingFlags.IgnoreCase);
-
-            if (valueProperty != null)
-            {
                 var value =
-                    valueProperty
-                        .GetValue(item)?
-                        .ToString();
+                    property.GetValue(item);
 
-                if (!string.IsNullOrWhiteSpace(value))
+                if (value == null)
                 {
-                    return value.Trim();
+                    continue;
+                }
+
+                var stringValue =
+                    Convert.ToString(value);
+
+                if (!string.IsNullOrWhiteSpace(
+                        stringValue))
+                {
+                    return stringValue;
                 }
             }
 
             return null;
-        }
-
-        // ============================================================
-        // VALIDATE CONTRACT FILE
-        // ============================================================
-
-        private static void ValidateContractFile(
-            IFormFile file)
-        {
-            const long maxFileSize =
-                25 * 1024 * 1024;
-
-            if (file.Length > maxFileSize)
-            {
-                throw new InvalidOperationException(
-                    "The completed contract cannot exceed 25 MB.");
-            }
-
-            var extension =
-                Path.GetExtension(
-                    file.FileName)
-                    .ToLowerInvariant();
-
-            if (extension != ".pdf")
-            {
-                throw new InvalidOperationException(
-                    "The completed volunteer contract must be uploaded as a PDF file.");
-            }
-
-            if (!string.Equals(
-                    file.ContentType,
-                    "application/pdf",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    "The uploaded contract must be a PDF file.");
-            }
         }
     }
 }

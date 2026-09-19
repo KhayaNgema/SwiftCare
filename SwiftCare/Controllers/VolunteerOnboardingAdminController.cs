@@ -81,7 +81,7 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
-        // Review
+        // REVIEW VOLUNTEER ONBOARDING
         // ============================================================
 
         [HttpGet]
@@ -92,25 +92,389 @@ namespace SwiftCare.Controllers
             var onboarding =
                 await _context.VolunteerOnboardings
                     .AsNoTracking()
+
                     .Include(x => x.Applicant)
+
                     .Include(x => x.VolunteerApplication)
                         .ThenInclude(x => x.VolunteerOpportunity)
+
                     .Include(x => x.Documents)
+
                     .Include(x => x.Requirements)
+
                     .Include(x => x.PolicyAcceptances)
                         .ThenInclude(x => x.VolunteerPolicy)
+
                     .Include(x => x.Offers)
+
                     .Include(x => x.Volunteer)
+
                     .FirstOrDefaultAsync(
                         x => x.VolunteerOnboardingId == id,
                         cancellationToken);
 
             if (onboarding == null)
+            {
                 return NotFound();
+            }
+
+
+            // ============================================================
+            // LATEST VOLUNTEER CONTRACT
+            // ============================================================
+            //
+            // IMPORTANT:
+            // We intentionally retrieve the latest contract for this
+            // onboarding record.
+            //
+            // The View does not need a direct VolunteerContract navigation
+            // property on VolunteerOnboarding.
+            //
+            // ============================================================
+
+            var latestContract =
+                await _context.VolunteerContracts
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.VolunteerOnboardingId == id)
+                    .OrderByDescending(x => x.CreatedDate)
+                    .ThenByDescending(x => x.VolunteerContractId)
+                    .FirstOrDefaultAsync(
+                        cancellationToken);
+
+            ViewBag.Contract = latestContract;
+
+
+            // ============================================================
+            // LATEST DIDIT IDENTITY VERIFICATION
+            // ============================================================
+
+            var latestIdentityVerification =
+                await _context.VolunteerIdentityVerifications
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.VolunteerOnboardingId == id)
+                    .OrderByDescending(x => x.VerifiedDate)
+                    .ThenByDescending(x => x.ModifiedDate)
+                    .ThenByDescending(x => x.Id)
+                    .FirstOrDefaultAsync(
+                        cancellationToken);
+
+            ViewBag.IdentityVerification =
+                latestIdentityVerification;
+
 
             return View(onboarding);
         }
 
+
+        // ============================================================
+        // APPROVE VOLUNTEER CONTRACT
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveContract(
+    int onboardingId,
+    string? reviewNotes,
+    CancellationToken cancellationToken)
+        {
+            try
+            {
+                var admin = await _userManager.GetUserAsync(User);
+
+                if (admin == null)
+                {
+                    TempData["Error"] = "Administrator account could not be found.";
+                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                }
+
+                var contract =
+                    await _contractService.GetContractByOnboardingAsync(
+                        onboardingId,
+                        cancellationToken);
+
+                if (contract == null)
+                {
+                    TempData["Error"] = "No volunteer service agreement was found.";
+                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                }
+
+                // Approve the signed contract.
+                await _contractService.ApproveContractAsync(
+                    onboardingId,
+                    admin.Id,
+                    reviewNotes,
+                    cancellationToken);
+
+                // Reload onboarding after contract approval.
+                var onboarding =
+                    await _context.VolunteerOnboardings
+                        .FirstOrDefaultAsync(
+                            x => x.VolunteerOnboardingId == onboardingId,
+                            cancellationToken);
+
+                if (onboarding == null)
+                {
+                    TempData["Error"] = "Volunteer onboarding record could not be found.";
+                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                }
+
+                // ------------------------------------------------------------
+                // CONTRACT APPROVED
+                // Move onboarding to FINAL ADMINISTRATIVE VERIFICATION.
+                // ------------------------------------------------------------
+                if (onboarding.Status == VolunteerOnboardingStatus.ContractPending)
+                {
+                    onboarding.Status = VolunteerOnboardingStatus.AdminVerification;
+                    onboarding.CurrentStep = 4;
+                    onboarding.ModifiedDate = DateTime.Now;
+                    onboarding.ModifiedBy = admin.Id;
+
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                TempData["Success"] =
+                    "The Volunteer Service Agreement has been approved. " +
+                    "The onboarding record is now ready for final administrative verification.";
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new { id = onboardingId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error approving volunteer contract for onboarding {OnboardingId}.",
+                    onboardingId);
+
+                TempData["Error"] =
+                    "An error occurred while approving the Volunteer Service Agreement.";
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new { id = onboardingId });
+            }
+        }
+
+
+        // ============================================================
+        // REQUEST CONTRACT CORRECTION
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestContractCorrection(
+            int onboardingId,
+            string correctionReason,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var admin =
+                    await _userManager.GetUserAsync(User);
+
+                if (admin == null)
+                {
+                    TempData["Error"] =
+                        "Your administrator session could not be found.";
+
+                    return RedirectToAction(
+                        nameof(Index));
+                }
+
+
+                if (string.IsNullOrWhiteSpace(
+                        correctionReason))
+                {
+                    TempData["Error"] =
+                        "Please provide a correction reason.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new
+                        {
+                            id = onboardingId
+                        });
+                }
+
+
+                var contract =
+                    await _contractService.GetContractByOnboardingAsync(
+                        onboardingId,
+                        cancellationToken);
+
+                if (contract == null)
+                {
+                    TempData["Error"] =
+                        "No Volunteer Service Agreement was found for this onboarding record.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new
+                        {
+                            id = onboardingId
+                        });
+                }
+
+
+                await _contractService.RequestCorrectionAsync(
+                    onboardingId,
+                    admin.Id,
+                    correctionReason.Trim(),
+                    cancellationToken);
+
+
+                _logger.LogInformation(
+                    "Volunteer contract correction requested. " +
+                    "OnboardingId={OnboardingId}, ContractId={ContractId}, AdminId={AdminId}",
+                    onboardingId,
+                    contract.VolunteerContractId,
+                    admin.Id);
+
+
+                TempData["Success"] =
+                    "The applicant has been asked to correct and resubmit the Volunteer Service Agreement.";
+
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new
+                    {
+                        id = onboardingId
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error requesting volunteer contract correction. " +
+                    "OnboardingId={OnboardingId}",
+                    onboardingId);
+
+                TempData["Error"] =
+                    "The contract correction request could not be completed. " +
+                    ex.Message;
+
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new
+                    {
+                        id = onboardingId
+                    });
+            }
+        }
+
+
+        // ============================================================
+        // REJECT VOLUNTEER CONTRACT
+        // ============================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectContract(
+            int onboardingId,
+            string rejectionReason,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var admin =
+                    await _userManager.GetUserAsync(User);
+
+                if (admin == null)
+                {
+                    TempData["Error"] =
+                        "Your administrator session could not be found.";
+
+                    return RedirectToAction(
+                        nameof(Index));
+                }
+
+
+                if (string.IsNullOrWhiteSpace(
+                        rejectionReason))
+                {
+                    TempData["Error"] =
+                        "Please provide a rejection reason.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new
+                        {
+                            id = onboardingId
+                        });
+                }
+
+
+                var contract =
+                    await _contractService.GetContractByOnboardingAsync(
+                        onboardingId,
+                        cancellationToken);
+
+                if (contract == null)
+                {
+                    TempData["Error"] =
+                        "No Volunteer Service Agreement was found for this onboarding record.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new
+                        {
+                            id = onboardingId
+                        });
+                }
+
+
+                await _contractService.RejectContractAsync(
+                    onboardingId,
+                    admin.Id,
+                    rejectionReason.Trim(),
+                    cancellationToken);
+
+
+                _logger.LogInformation(
+                    "Volunteer contract rejected. " +
+                    "OnboardingId={OnboardingId}, ContractId={ContractId}, AdminId={AdminId}",
+                    onboardingId,
+                    contract.VolunteerContractId,
+                    admin.Id);
+
+
+                TempData["Success"] =
+                    "The Volunteer Service Agreement has been rejected.";
+
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new
+                    {
+                        id = onboardingId
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error rejecting volunteer contract. " +
+                    "OnboardingId={OnboardingId}",
+                    onboardingId);
+
+                TempData["Error"] =
+                    "The contract could not be rejected. " +
+                    ex.Message;
+
+
+                return RedirectToAction(
+                    nameof(Review),
+                    new
+                    {
+                        id = onboardingId
+                    });
+            }
+        }
         // ============================================================
         // CREATE ONBOARDING - GET
         // ============================================================
@@ -391,11 +755,19 @@ namespace SwiftCare.Controllers
                 if (document == null)
                     return NotFound();
 
+                // IMPORTANT:
+                // Interface signature is:
+                // ReviewDocumentAsync(
+                //     documentId,
+                //     adminId,
+                //     status,
+                //     reviewNotes,
+                //     cancellationToken)
                 var success =
                     await _onboardingService.ReviewDocumentAsync(
                         documentId,
-                        status,
                         admin.Id,
+                        status,
                         rejectionReason,
                         cancellationToken);
 

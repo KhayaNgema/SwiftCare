@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Builder;
@@ -25,13 +26,14 @@ using SwiftCare.Services.IdentityVerification;
 using SwiftCare.Services.VolunteerActivation;
 using SwiftCare.Services.VolunteerATS;
 using SwiftCare.Services.VolunteerATS.CV;
+using SwiftCare.Services.VolunteerContracts;
 using SwiftCare.Services.VolunteerOnboarding;
+using SwiftCare.Services.Volunteers;
 using System;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
-using SwiftCare.Services.VolunteerContracts;
 
 public class Startup
 {
@@ -365,6 +367,8 @@ public class Startup
         services.AddScoped<
             IVolunteerContractService,
             VolunteerContractService>();
+
+        services.AddScoped<IVolunteerAccountService, VolunteerAccountService>();
 
         services.AddScoped<VolunteerContractReferenceGenerator>();
 
@@ -1009,7 +1013,34 @@ public class Startup
 
             throw;
         }
+        // ============================================================
+        // SEED SUPERVISORS
+        // ============================================================
 
+        Console.WriteLine("[SWIFTCARE STARTUP] Seeding supervisor accounts...");
+
+        try
+        {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                SupervisorSeedData
+                    .SeedAsync(scope.ServiceProvider)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+
+            Console.WriteLine(
+                "[SWIFTCARE STARTUP] Supervisor accounts seeded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                "[SWIFTCARE STARTUP] Supervisor seeding failed.");
+
+            Console.WriteLine(ex);
+
+            throw;
+        }
         // ============================================================
         // APPLICATION READY
         // ============================================================

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models;
 using SwiftCare.Models.VolunteerOnboarding;
+using SwiftCare.Services.Volunteers;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -11,11 +12,14 @@ namespace SwiftCare.Services.VolunteerOnboarding
     public class VolunteerOnboardingService : IVolunteerOnboardingService
     {
         private readonly SwiftCareDbContext _context;
+        private readonly IVolunteerAccountService _volunteerAccountService;
 
         public VolunteerOnboardingService(
-            SwiftCareDbContext context)
+            SwiftCareDbContext context,
+            IVolunteerAccountService volunteerAccountService)
         {
             _context = context;
+            _volunteerAccountService = volunteerAccountService;
         }
 
         // ============================================================
@@ -73,8 +77,7 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
                 return await GetOnboardingAsync(
                            existing.VolunteerOnboardingId,
-                           cancellationToken)
-                       ?? existing;
+                           cancellationToken);
             }
 
             if (string.IsNullOrWhiteSpace(application.ApplicantId))
@@ -85,24 +88,23 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             var now = DateTime.Now;
 
-            var onboarding =
-                new SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
-                {
-                    VolunteerApplicationId =
-                        application.VolunteerApplicationId,
+            var onboarding = new SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
+            {
+                VolunteerApplicationId =
+                    application.VolunteerApplicationId,
 
-                    ApplicantId =
-                        application.ApplicantId,
+                ApplicantId =
+                    application.ApplicantId,
 
-                    Status =
-                        VolunteerOnboardingStatus.OfferPending,
+                Status =
+                    VolunteerOnboardingStatus.OfferPending,
 
-                    CurrentStep = 1,
+                CurrentStep = 1,
 
-                    CreatedDate = now,
-                    ModifiedDate = now,
-                    CreatedBy = adminId
-                };
+                CreatedDate = now,
+                ModifiedDate = now,
+                CreatedBy = adminId
+            };
 
             _context.VolunteerOnboardings.Add(onboarding);
 
@@ -124,10 +126,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             return await GetOnboardingAsync(
                        onboarding.VolunteerOnboardingId,
-                       cancellationToken)
-                   ?? onboarding;
+                       cancellationToken);
         }
-
 
         // ============================================================
         // GET ONBOARDING
@@ -151,7 +151,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     cancellationToken);
         }
 
-
         // ============================================================
         // GET BY APPLICATION
         // ============================================================
@@ -173,7 +172,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     x => x.VolunteerApplicationId == volunteerApplicationId,
                     cancellationToken);
         }
-
 
         // ============================================================
         // GET BY APPLICANT
@@ -201,7 +199,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     x => x.ApplicantId == applicantId,
                     cancellationToken);
         }
-
 
         // ============================================================
         // CREATE OFFER
@@ -261,13 +258,18 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x.Status == VolunteerOfferStatus.Pending)
                     .ToListAsync(cancellationToken);
 
+            var now = DateTime.Now;
+
             foreach (var previousOffer in previousOffers)
             {
                 previousOffer.Status =
                     VolunteerOfferStatus.Cancelled;
 
                 previousOffer.ModifiedDate =
-                    DateTime.Now;
+                    now;
+
+                previousOffer.CreatedByAdminId =
+                    adminId;
             }
 
             var offerAcceptanceRequirement =
@@ -291,8 +293,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             var offerReference =
                 await GenerateOfferReferenceAsync(
                     cancellationToken);
-
-            var now = DateTime.Now;
 
             var offer =
                 new VolunteerOffer
@@ -367,15 +367,29 @@ namespace SwiftCare.Services.VolunteerOnboarding
             };
         }
 
-
         // ============================================================
-        // ACCEPT OFFER
+        // ACCEPT OFFER - SECURE TOKEN VERSION
+        //
+        // This is the version used by the public offer link.
         // ============================================================
 
-        public async Task<bool> AcceptOfferAsync(
+        public async Task<VolunteerOfferActionResult> AcceptOfferAsync(
             int volunteerOfferId,
+            string token,
             CancellationToken cancellationToken = default)
         {
+            if (volunteerOfferId <= 0)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "Invalid volunteer offer.");
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The offer token is missing.");
+            }
+
             var offer =
                 await _context.VolunteerOffers
                     .Include(x => x.VolunteerOnboarding)
@@ -383,15 +397,22 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x => x.VolunteerOfferId == volunteerOfferId,
                         cancellationToken);
 
-            if (offer == null ||
-                offer.Status != VolunteerOfferStatus.Pending)
+            if (offer == null)
             {
-                return false;
+                return VolunteerOfferActionResult.Failed(
+                    "The volunteer offer could not be found.");
+            }
+
+            if (offer.Status != VolunteerOfferStatus.Pending)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "This volunteer offer is no longer available.");
             }
 
             var now = DateTime.Now;
 
-            if (now > offer.ExpiryDate)
+            if (now > offer.ExpiryDate ||
+                now > offer.TokenExpiryDate)
             {
                 offer.Status =
                     VolunteerOfferStatus.Expired;
@@ -402,7 +423,19 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 await _context.SaveChangesAsync(
                     cancellationToken);
 
-                return false;
+                return VolunteerOfferActionResult.Failed(
+                    "This volunteer offer has expired.");
+            }
+
+            var suppliedHash =
+                HashToken(token);
+
+            if (!CryptographicEquals(
+                    suppliedHash,
+                    offer.AcceptanceTokenHash))
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The volunteer offer link is invalid.");
             }
 
             var onboarding =
@@ -410,7 +443,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             if (onboarding == null)
             {
-                return false;
+                return VolunteerOfferActionResult.Failed(
+                    "The onboarding record associated with this offer could not be found.");
             }
 
             await EnsureDefaultRequirementsAsync(
@@ -455,12 +489,225 @@ namespace SwiftCare.Services.VolunteerOnboarding
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-            return true;
+            var allPoliciesAccepted =
+                await HasAcceptedAllRequiredPoliciesAsync(
+                    onboarding.VolunteerOnboardingId,
+                    cancellationToken);
+
+            return VolunteerOfferActionResult.Successful(
+                "Volunteer offer accepted successfully.",
+                allPoliciesAccepted);
         }
 
+        // ============================================================
+        // ACCEPT OFFER - INTERNAL/LEGACY VERSION
+        // ============================================================
+
+        public async Task<bool> AcceptOfferAsync(
+             int volunteerOfferId,
+             CancellationToken cancellationToken = default)
+        {
+            var offer =
+                await _context.VolunteerOffers
+                    .Include(x => x.VolunteerOnboarding)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOfferId ==
+                            volunteerOfferId,
+                        cancellationToken);
+
+            if (offer == null)
+            {
+                return false;
+            }
+
+            if (offer.Status != VolunteerOfferStatus.Pending)
+            {
+                return false;
+            }
+
+            if (DateTime.Now > offer.ExpiryDate)
+            {
+                offer.Status =
+                    VolunteerOfferStatus.Expired;
+
+                offer.ModifiedDate =
+                    DateTime.Now;
+
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+
+                return false;
+            }
+
+            offer.Status =
+                VolunteerOfferStatus.Accepted;
+
+            offer.AcceptedDate =
+                DateTime.Now;
+
+            offer.ModifiedDate =
+                DateTime.Now;
+
+            var onboarding =
+                offer.VolunteerOnboarding;
+
+            if (onboarding != null)
+            {
+                onboarding.OfferAcceptedDate =
+                    DateTime.Now;
+
+                onboarding.Status =
+                    VolunteerOnboardingStatus.PoliciesPending;
+
+                onboarding.CurrentStep = 2;
+
+                onboarding.ModifiedDate =
+                    DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            return true;
+        }
+        // ============================================================
+        // DECLINE OFFER - SECURE TOKEN VERSION
+        // ============================================================
+
+        public async Task<VolunteerOfferActionResult> DeclineOfferAsync(
+            int volunteerOfferId,
+            string token,
+            string declineReason,
+            CancellationToken cancellationToken = default)
+        {
+            if (volunteerOfferId <= 0)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "Invalid volunteer offer.");
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The offer token is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(declineReason))
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "A reason is required when declining the offer.");
+            }
+
+            declineReason =
+                declineReason.Trim();
+
+            if (declineReason.Length > 1000)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The decline reason cannot exceed 1000 characters.");
+            }
+
+            var offer =
+                await _context.VolunteerOffers
+                    .Include(x => x.VolunteerOnboarding)
+                    .FirstOrDefaultAsync(
+                        x => x.VolunteerOfferId == volunteerOfferId,
+                        cancellationToken);
+
+            if (offer == null)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The volunteer offer could not be found.");
+            }
+
+            if (offer.Status != VolunteerOfferStatus.Pending)
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "This volunteer offer is no longer available.");
+            }
+
+            var now = DateTime.Now;
+
+            if (now > offer.ExpiryDate ||
+                now > offer.TokenExpiryDate)
+            {
+                offer.Status =
+                    VolunteerOfferStatus.Expired;
+
+                offer.ModifiedDate =
+                    now;
+
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+
+                return VolunteerOfferActionResult.Failed(
+                    "This volunteer offer has expired.");
+            }
+
+            var suppliedHash =
+                HashToken(token);
+
+            if (!CryptographicEquals(
+                    suppliedHash,
+                    offer.AcceptanceTokenHash))
+            {
+                return VolunteerOfferActionResult.Failed(
+                    "The volunteer offer link is invalid.");
+            }
+
+            var onboarding =
+                offer.VolunteerOnboarding;
+
+            offer.Status =
+                VolunteerOfferStatus.Declined;
+
+            offer.DeclinedDate =
+                now;
+
+            offer.DeclineReason =
+                declineReason;
+
+            offer.ModifiedDate =
+                now;
+
+            if (onboarding != null)
+            {
+                onboarding.Status =
+                    VolunteerOnboardingStatus.OfferDeclined;
+
+                onboarding.OfferDeclinedDate =
+                    now;
+
+                onboarding.OfferDeclineReason =
+                    declineReason;
+
+                onboarding.ModifiedDate =
+                    now;
+
+                var requirement =
+                    await GetRequirementAsync(
+                        onboarding.VolunteerOnboardingId,
+                        VolunteerOnboardingRequirementType.OfferAcceptance,
+                        cancellationToken);
+
+                if (requirement != null)
+                {
+                    MarkRequirementIncomplete(
+                        requirement);
+                }
+            }
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            return VolunteerOfferActionResult.Successful(
+                "The volunteer offer has been declined.",
+                false);
+        }
 
         // ============================================================
-        // DECLINE OFFER
+        // DECLINE OFFER - INTERNAL/LEGACY VERSION
         // ============================================================
 
         public async Task<bool> DeclineOfferAsync(
@@ -548,7 +795,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return true;
         }
 
-
         // ============================================================
         // GET ACTIVE OFFER
         // ============================================================
@@ -567,10 +813,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         VolunteerOfferStatus.Pending &&
 
                         x.ExpiryDate >
+                        DateTime.Now &&
+                        x.TokenExpiryDate >
                         DateTime.Now,
                     cancellationToken);
         }
-
 
         // ============================================================
         // ACCEPT POLICY
@@ -624,7 +871,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x =>
                             x.VolunteerOnboardingId ==
                             volunteerOnboardingId &&
-
                             x.VolunteerPolicyId ==
                             volunteerPolicyId,
                         cancellationToken);
@@ -720,7 +966,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return true;
         }
 
-
         // ============================================================
         // CHECK REQUIRED POLICIES
         // ============================================================
@@ -767,7 +1012,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     required.Version));
         }
 
-
         // ============================================================
         // ADD DOCUMENT
         // ============================================================
@@ -804,13 +1048,25 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     "The applicant does not belong to this onboarding record.");
             }
 
+            // --------------------------------------------------------
+            // IMPORTANT:
+            //
+            // VolunteerContract is no longer handled as a normal
+            // onboarding document.
+            //
+            // Signed contracts are handled by:
+            //
+            // IVolunteerContractService.UploadCompletedContractAsync()
+            //
+            // Therefore we reject attempts to push a contract through
+            // this generic document endpoint.
+            // --------------------------------------------------------
+
             if (documentType ==
-                    VolunteerOnboardingDocumentType.VolunteerContract &&
-                onboarding.Status !=
-                    VolunteerOnboardingStatus.ContractPending)
+                VolunteerOnboardingDocumentType.VolunteerContract)
             {
                 throw new InvalidOperationException(
-                    "The volunteer contract cannot be uploaded until the required onboarding documents have been verified.");
+                    "The Volunteer Service Agreement must be uploaded through the contract workflow.");
             }
 
             const long maximumFileSize =
@@ -851,10 +1107,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     .Where(x =>
                         x.VolunteerOnboardingId ==
                         volunteerOnboardingId &&
-
                         x.DocumentType ==
                         documentType &&
-
                         x.Status !=
                         VolunteerOnboardingDocumentStatus.Approved)
                     .ToListAsync(cancellationToken);
@@ -866,6 +1120,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
                 previous.ModifiedDate =
                     now;
+
+                previous.RejectionReason =
+                    "Superseded by a newer document upload.";
             }
 
             var document =
@@ -925,6 +1182,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             onboarding.ModifiedDate =
                 now;
 
+            onboarding.ModifiedBy =
+                applicantId;
+
             await _context.SaveChangesAsync(
                 cancellationToken);
 
@@ -938,7 +1198,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             return document;
         }
-
 
         // ============================================================
         // REVIEW DOCUMENT
@@ -958,6 +1217,12 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     nameof(adminId));
             }
 
+            Console.WriteLine(
+                $"[ReviewDocument] Starting document review. " +
+                $"DocumentId={documentId}, " +
+                $"Status={status}, " +
+                $"AdminId={adminId}");
+
             var document =
                 await _context.VolunteerOnboardingDocuments
                     .Include(x => x.VolunteerOnboarding)
@@ -969,8 +1234,23 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             if (document == null)
             {
+                Console.WriteLine(
+                    $"[ReviewDocument] Document not found. " +
+                    $"DocumentId={documentId}");
+
                 return false;
             }
+
+            Console.WriteLine(
+                $"[ReviewDocument] Document found. " +
+                $"DocumentId={document.VolunteerOnboardingDocumentId}, " +
+                $"OnboardingId={document.VolunteerOnboardingId}, " +
+                $"DocumentType={document.DocumentType}, " +
+                $"CurrentStatus={document.Status}");
+
+            // ------------------------------------------------------------
+            // VALIDATE REJECTION / RESUBMISSION REASON
+            // ------------------------------------------------------------
 
             if (status ==
                     VolunteerOnboardingDocumentStatus.Rejected ||
@@ -980,11 +1260,16 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 if (string.IsNullOrWhiteSpace(rejectionReason))
                 {
                     throw new ArgumentException(
-                        "A reason is required when rejecting or requesting resubmission.");
+                        "A reason is required when rejecting or requesting resubmission.",
+                        nameof(rejectionReason));
                 }
 
                 document.RejectionReason =
                     rejectionReason.Trim();
+
+                Console.WriteLine(
+                    $"[ReviewDocument] Rejection/resubmission reason supplied. " +
+                    $"DocumentId={documentId}");
             }
             else
             {
@@ -993,6 +1278,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
             }
 
             var now = DateTime.Now;
+
+            // ------------------------------------------------------------
+            // UPDATE DOCUMENT
+            // ------------------------------------------------------------
 
             document.Status =
                 status;
@@ -1005,6 +1294,16 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             document.ModifiedDate =
                 now;
+
+            Console.WriteLine(
+                $"[ReviewDocument] Document status updated. " +
+                $"DocumentId={documentId}, " +
+                $"NewStatus={status}");
+
+            // ------------------------------------------------------------
+            // IF DOCUMENT IS REJECTED / RESUBMISSION REQUIRED
+            // MOVE ONBOARDING BACK TO CORRECTION
+            // ------------------------------------------------------------
 
             if (document.VolunteerOnboarding != null)
             {
@@ -1021,11 +1320,27 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
                     document.VolunteerOnboarding.ModifiedBy =
                         adminId;
+
+                    Console.WriteLine(
+                        $"[ReviewDocument] Onboarding moved to RejectedForCorrection. " +
+                        $"OnboardingId={document.VolunteerOnboardingId}");
                 }
             }
 
+            // ------------------------------------------------------------
+            // SAVE DOCUMENT REVIEW
+            // ------------------------------------------------------------
+
             await _context.SaveChangesAsync(
                 cancellationToken);
+
+            Console.WriteLine(
+                $"[ReviewDocument] Document review saved. " +
+                $"DocumentId={documentId}");
+
+            // ------------------------------------------------------------
+            // SYNCHRONISE AUTOMATIC REQUIREMENTS
+            // ------------------------------------------------------------
 
             await SyncDocumentRequirementsAsync(
                 document.VolunteerOnboardingId,
@@ -1035,89 +1350,216 @@ namespace SwiftCare.Services.VolunteerOnboarding
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-            // --------------------------------------------------------
-            // Only move to ContractPending when all required
-            // pre-contract document requirements are complete.
-            //
-            // Identity verification includes Didit.
-            // --------------------------------------------------------
+            Console.WriteLine(
+                $"[ReviewDocument] Document requirements synchronised. " +
+                $"OnboardingId={document.VolunteerOnboardingId}");
 
-            if (document.VolunteerOnboarding != null &&
-                status ==
-                    VolunteerOnboardingDocumentStatus.Approved)
+            // ------------------------------------------------------------
+            // IF NOT APPROVED, WE ARE DONE
+            // ------------------------------------------------------------
+
+            if (status !=
+                VolunteerOnboardingDocumentStatus.Approved)
             {
-                var onboarding =
-                    await _context.VolunteerOnboardings
-                        .Include(x => x.Requirements)
-                        .Include(x => x.Documents)
-                        .FirstOrDefaultAsync(
-                            x =>
-                                x.VolunteerOnboardingId ==
-                                document.VolunteerOnboardingId,
-                            cancellationToken);
+                Console.WriteLine(
+                    $"[ReviewDocument] Review completed without advancing onboarding. " +
+                    $"DocumentId={documentId}, " +
+                    $"Status={status}");
 
-                if (onboarding != null)
-                {
-                    var documentRequirements =
-                        onboarding.Requirements
-                            .Where(x =>
-                                x.IsRequired &&
-                                (
-                                    x.RequirementType ==
-                                    VolunteerOnboardingRequirementType.IdentityVerification ||
-
-                                    x.RequirementType ==
-                                    VolunteerOnboardingRequirementType.QualificationVerification ||
-
-                                    x.RequirementType ==
-                                    VolunteerOnboardingRequirementType.DocumentUpload
-                                ))
-                            .ToList();
-
-                    var allRequiredDocumentRequirementsComplete =
-                        documentRequirements.All(
-                            x => x.IsCompleted);
-
-                    var hasUnapprovedDocuments =
-                        onboarding.Documents.Any(
-                            x =>
-                                x.Status !=
-                                VolunteerOnboardingDocumentStatus.Approved);
-
-                    Console.WriteLine(
-                        $"[ReviewDocument] OnboardingId={onboarding.VolunteerOnboardingId}, " +
-                        $"RequiredDocumentRequirementsComplete={allRequiredDocumentRequirementsComplete}, " +
-                        $"HasUnapprovedDocuments={hasUnapprovedDocuments}");
-
-                    if (allRequiredDocumentRequirementsComplete &&
-                        !hasUnapprovedDocuments)
-                    {
-                        onboarding.Status =
-                            VolunteerOnboardingStatus.ContractPending;
-
-                        onboarding.CurrentStep =
-                            4;
-
-                        onboarding.ModifiedDate =
-                            now;
-
-                        onboarding.ModifiedBy =
-                            adminId;
-
-                        await _context.SaveChangesAsync(
-                            cancellationToken);
-
-                        Console.WriteLine(
-                            $"[ReviewDocument] Onboarding {onboarding.VolunteerOnboardingId} " +
-                            $"moved to ContractPending.");
-                    }
-                }
+                return true;
             }
+
+            // ------------------------------------------------------------
+            // RELOAD ONBOARDING WITH REQUIREMENTS AND DOCUMENTS
+            // ------------------------------------------------------------
+
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .Include(x => x.Requirements)
+                    .Include(x => x.Documents)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            document.VolunteerOnboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                Console.WriteLine(
+                    $"[ReviewDocument] Onboarding not found after document review. " +
+                    $"OnboardingId={document.VolunteerOnboardingId}");
+
+                return true;
+            }
+
+            // ------------------------------------------------------------
+            // GET LATEST DOCUMENT FOR EACH DOCUMENT TYPE
+            //
+            // IMPORTANT:
+            // Old rejected/uploaded documents must NOT block onboarding.
+            // Only the latest document for each type is considered.
+            // ------------------------------------------------------------
+
+            var latestDocuments =
+                onboarding.Documents
+                    .GroupBy(x => x.DocumentType)
+                    .Select(group =>
+                        group
+                            .OrderByDescending(
+                                x => x.UploadedDate)
+                            .ThenByDescending(
+                                x => x.ModifiedDate)
+                            .ThenByDescending(
+                                x => x.VolunteerOnboardingDocumentId)
+                            .First())
+                    .ToList();
+
+            Console.WriteLine(
+                $"[ReviewDocument] Latest document count=" +
+                $"{latestDocuments.Count}");
+
+            foreach (var latestDocument in latestDocuments)
+            {
+                Console.WriteLine(
+                    $"[ReviewDocument] LatestDocument: " +
+                    $"DocumentId={latestDocument.VolunteerOnboardingDocumentId}, " +
+                    $"Type={latestDocument.DocumentType}, " +
+                    $"Status={latestDocument.Status}");
+            }
+
+            // ------------------------------------------------------------
+            // REQUIRED DOCUMENT REQUIREMENTS
+            // ------------------------------------------------------------
+
+            var documentRequirements =
+                onboarding.Requirements
+                    .Where(x =>
+                        x.IsRequired &&
+                        (
+                            x.RequirementType ==
+                                VolunteerOnboardingRequirementType.IdentityVerification ||
+
+                            x.RequirementType ==
+                                VolunteerOnboardingRequirementType.QualificationVerification ||
+
+                            x.RequirementType ==
+                                VolunteerOnboardingRequirementType.DocumentUpload
+                        ))
+                    .ToList();
+
+            var allRequiredDocumentRequirementsComplete =
+                documentRequirements.All(
+                    x => x.IsCompleted);
+
+            Console.WriteLine(
+                $"[ReviewDocument] Required document requirements complete=" +
+                $"{allRequiredDocumentRequirementsComplete}");
+
+            foreach (var requirement in documentRequirements)
+            {
+                Console.WriteLine(
+                    $"[ReviewDocument] Requirement: " +
+                    $"Type={requirement.RequirementType}, " +
+                    $"Required={requirement.IsRequired}, " +
+                    $"Completed={requirement.IsCompleted}");
+            }
+
+            // ------------------------------------------------------------
+            // CHECK LATEST DOCUMENTS ONLY
+            //
+            // An old rejected document should not block the applicant
+            // once a newer document of the same type has been approved.
+            // ------------------------------------------------------------
+
+            var hasUnapprovedLatestDocuments =
+                latestDocuments.Any(
+                    x =>
+                        x.Status !=
+                        VolunteerOnboardingDocumentStatus.Approved);
+
+            Console.WriteLine(
+                $"[ReviewDocument] HasUnapprovedLatestDocuments=" +
+                $"{hasUnapprovedLatestDocuments}");
+
+            // ------------------------------------------------------------
+            // CHECK WHETHER ANY DOCUMENTS EXIST
+            // ------------------------------------------------------------
+
+            var hasLatestDocuments =
+                latestDocuments.Any();
+
+            Console.WriteLine(
+                $"[ReviewDocument] HasLatestDocuments=" +
+                $"{hasLatestDocuments}");
+
+            // ------------------------------------------------------------
+            // DEBUG DOCUMENT STATE
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                $"[ReviewDocument] OnboardingId=" +
+                $"{onboarding.VolunteerOnboardingId}, " +
+                $"CurrentStatus={onboarding.Status}, " +
+                $"CurrentStep={onboarding.CurrentStep}, " +
+                $"RequiredDocumentRequirementsComplete=" +
+                $"{allRequiredDocumentRequirementsComplete}, " +
+                $"HasUnapprovedLatestDocuments=" +
+                $"{hasUnapprovedLatestDocuments}");
+
+            // ------------------------------------------------------------
+            // MOVE TO CONTRACT PENDING
+            //
+            // Only do this when:
+            //
+            // 1. All required document requirements are complete
+            // 2. Every latest document is approved
+            //
+            // Historical/superseded documents are ignored.
+            // ------------------------------------------------------------
+
+            if (allRequiredDocumentRequirementsComplete &&
+                hasLatestDocuments &&
+                !hasUnapprovedLatestDocuments)
+            {
+                onboarding.Status =
+                    VolunteerOnboardingStatus.ContractPending;
+
+                onboarding.CurrentStep =
+                    4;
+
+                onboarding.ModifiedDate =
+                    now;
+
+                onboarding.ModifiedBy =
+                    adminId;
+
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+
+                Console.WriteLine(
+                    $"[ReviewDocument] SUCCESS. " +
+                    $"Onboarding {onboarding.VolunteerOnboardingId} " +
+                    $"moved to ContractPending. " +
+                    $"CurrentStep={onboarding.CurrentStep}");
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"[ReviewDocument] Onboarding NOT moved to ContractPending. " +
+                    $"RequiredRequirementsComplete=" +
+                    $"{allRequiredDocumentRequirementsComplete}, " +
+                    $"HasLatestDocuments=" +
+                    $"{hasLatestDocuments}, " +
+                    $"HasUnapprovedLatestDocuments=" +
+                    $"{hasUnapprovedLatestDocuments}");
+            }
+
+            Console.WriteLine(
+                $"[ReviewDocument] Completed successfully. " +
+                $"DocumentId={documentId}");
 
             return true;
         }
-
-
         // ============================================================
         // COMPLETE REQUIREMENT
         // ============================================================
@@ -1125,16 +1567,39 @@ namespace SwiftCare.Services.VolunteerOnboarding
         public async Task<bool> CompleteRequirementAsync(
             int volunteerOnboardingId,
             VolunteerOnboardingRequirementType requirementType,
-            string? completedByAdminId = null,
+            string adminId,
+            string? notes = null,
             CancellationToken cancellationToken = default)
         {
+            if (volunteerOnboardingId <= 0)
+            {
+                throw new ArgumentException(
+                    "A valid volunteer onboarding ID is required.",
+                    nameof(volunteerOnboardingId));
+            }
+
+            if (string.IsNullOrWhiteSpace(adminId))
+            {
+                throw new ArgumentException(
+                    "An administrator ID is required.",
+                    nameof(adminId));
+            }
+
             Console.WriteLine(
-                $"[CompleteRequirement] START - " +
+                $"[CompleteRequirement] Starting. " +
                 $"OnboardingId={volunteerOnboardingId}, " +
-                $"RequirementType={requirementType}");
+                $"RequirementType={requirementType}, " +
+                $"AdminId={adminId}");
+
+            // ============================================================
+            // LOAD ONBOARDING
+            // ============================================================
 
             var onboarding =
                 await _context.VolunteerOnboardings
+                    .Include(x => x.Requirements)
+                    .Include(x => x.Volunteer)
+                        .ThenInclude(x => x!.Supervisor)
                     .FirstOrDefaultAsync(
                         x =>
                             x.VolunteerOnboardingId ==
@@ -1144,70 +1609,309 @@ namespace SwiftCare.Services.VolunteerOnboarding
             if (onboarding == null)
             {
                 Console.WriteLine(
-                    "[CompleteRequirement] Onboarding not found.");
+                    $"[CompleteRequirement] Onboarding not found. " +
+                    $"OnboardingId={volunteerOnboardingId}");
 
                 return false;
             }
 
-            await EnsureDefaultRequirementsAsync(
-                volunteerOnboardingId,
-                DateTime.Now,
-                cancellationToken);
+            // ============================================================
+            // FIND REQUIREMENT
+            // ============================================================
 
             var requirement =
-                await GetRequirementAsync(
-                    volunteerOnboardingId,
-                    requirementType,
-                    cancellationToken);
+                onboarding.Requirements
+                    .FirstOrDefault(
+                        x =>
+                            x.RequirementType ==
+                            requirementType);
 
             if (requirement == null)
             {
                 Console.WriteLine(
-                    "[CompleteRequirement] Requirement not found.");
+                    $"[CompleteRequirement] Requirement not found. " +
+                    $"OnboardingId={volunteerOnboardingId}, " +
+                    $"RequirementType={requirementType}");
 
                 return false;
             }
 
-            MarkRequirementCompleted(
-                requirement,
-                completedByAdminId);
+            var now = DateTime.Now;
 
-            onboarding.ModifiedDate =
-                DateTime.Now;
-
-            if (!string.IsNullOrWhiteSpace(completedByAdminId))
-            {
-                onboarding.ModifiedBy =
-                    completedByAdminId;
-            }
+            // ============================================================
+            // SPECIAL HANDLING
+            // SUPERVISOR ASSIGNMENT
+            // ============================================================
 
             if (requirementType ==
-                    VolunteerOnboardingRequirementType.Contract &&
-                requirement.IsCompleted)
+                VolunteerOnboardingRequirementType.SupervisorAssignment)
             {
+                Console.WriteLine(
+                    $"[CompleteRequirement] Checking Supervisor assignment. " +
+                    $"OnboardingId={volunteerOnboardingId}");
+
+                // --------------------------------------------------------
+                // VOLUNTEER MUST EXIST
+                // --------------------------------------------------------
+
+                var volunteer = onboarding.Volunteer;
+
+                if (volunteer == null)
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] Cannot complete SupervisorAssignment. " +
+                        $"Volunteer account does not exist. " +
+                        $"OnboardingId={volunteerOnboardingId}");
+
+                    return false;
+                }
+
+                // --------------------------------------------------------
+                // SUPERVISOR MUST BE ASSIGNED
+                // --------------------------------------------------------
+
+                if (string.IsNullOrWhiteSpace(volunteer.SupervisorId))
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] Cannot complete SupervisorAssignment. " +
+                        $"Volunteer has no SupervisorId. " +
+                        $"VolunteerId={volunteer.Id}");
+
+                    return false;
+                }
+
+                // --------------------------------------------------------
+                // SUPERVISOR MUST EXIST
+                // --------------------------------------------------------
+
+                var supervisor =
+                    await _context.Supervisors
+                        .FirstOrDefaultAsync(
+                            x =>
+                                x.Id == volunteer.SupervisorId &&
+                                x.IsActive,
+                            cancellationToken);
+
+                if (supervisor == null)
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] Cannot complete SupervisorAssignment. " +
+                        $"Assigned Supervisor was not found or is inactive. " +
+                        $"VolunteerId={volunteer.Id}, " +
+                        $"SupervisorId={volunteer.SupervisorId}");
+
+                    return false;
+                }
+
+                // --------------------------------------------------------
+                // COMPLETE SUPERVISOR ASSIGNMENT
+                // --------------------------------------------------------
+
+                requirement.IsCompleted = true;
+                requirement.CompletedDate = now;
+                requirement.CompletedByAdminId = adminId;
+                requirement.ModifiedDate = now;
+
+                onboarding.ModifiedDate = now;
+                onboarding.ModifiedBy = adminId;
+
+                Console.WriteLine(
+                    $"[CompleteRequirement] SupervisorAssignment completed. " +
+                    $"OnboardingId={volunteerOnboardingId}, " +
+                    $"VolunteerId={volunteer.Id}, " +
+                    $"SupervisorId={supervisor.Id}, " +
+                    $"SupervisorName={supervisor.FirstName} {supervisor.LastName}");
+
+                // --------------------------------------------------------
+                // CHECK WHETHER ALL REQUIRED ACTIVATION REQUIREMENTS
+                // ARE NOW COMPLETE
+                // --------------------------------------------------------
+
+                var activationRequirementTypes =
+                    new[]
+                    {
+                VolunteerOnboardingRequirementType.OfferAcceptance,
+                VolunteerOnboardingRequirementType.PolicyAcceptance,
+                VolunteerOnboardingRequirementType.CodeOfConduct,
+                VolunteerOnboardingRequirementType.IdentityVerification,
+                VolunteerOnboardingRequirementType.DocumentUpload,
+                VolunteerOnboardingRequirementType.Contract,
+                VolunteerOnboardingRequirementType.SupervisorAssignment
+                    };
+
+                var incompleteRequiredRequirements =
+                    onboarding.Requirements
+                        .Where(x =>
+                            activationRequirementTypes.Contains(
+                                x.RequirementType) &&
+                            !x.IsCompleted)
+                        .ToList();
+
+                if (incompleteRequiredRequirements.Count == 0)
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] ALL activation requirements completed. " +
+                        $"OnboardingId={volunteerOnboardingId}");
+
+                    onboarding.Status =
+                        VolunteerOnboardingStatus.ReadyForActivation;
+
+                    onboarding.CurrentStep = 6;
+
+                    onboarding.ModifiedDate = now;
+                    onboarding.ModifiedBy = adminId;
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] SupervisorAssignment completed, " +
+                        $"but other activation requirements remain incomplete. " +
+                        $"OnboardingId={volunteerOnboardingId}, " +
+                        $"RemainingCount={incompleteRequiredRequirements.Count}");
+                }
+
+                // --------------------------------------------------------
+                // SAVE
+                // --------------------------------------------------------
+
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+
+                Console.WriteLine(
+                    $"[CompleteRequirement] SUCCESS. " +
+                    $"OnboardingId={volunteerOnboardingId}, " +
+                    $"RequirementType={requirementType}");
+
+                return true;
+            }
+
+            // ============================================================
+            // COMPLETE NORMAL REQUIREMENT
+            // ============================================================
+
+            requirement.IsCompleted = true;
+
+            requirement.CompletedDate = now;
+
+            requirement.CompletedByAdminId = adminId;
+
+            requirement.ModifiedDate = now;
+
+            Console.WriteLine(
+                $"[CompleteRequirement] Requirement completed. " +
+                $"RequirementId={requirement.VolunteerOnboardingRequirementId}, " +
+                $"RequirementType={requirement.RequirementType}, " +
+                $"CompletedByAdminId={adminId}");
+
+            // ============================================================
+            // CONTRACT REQUIREMENT
+            //
+            // Once the signed contract has been approved and the contract
+            // requirement is completed:
+            //
+            // 1. Create the Volunteer account.
+            // 2. Automatically assign Supervisor based on Area.
+            // 3. Automatically complete SupervisorAssignment if a
+            //    Supervisor was successfully assigned.
+            // 4. Move onboarding into administrator verification.
+            // ============================================================
+
+            if (requirementType ==
+                VolunteerOnboardingRequirementType.Contract)
+            {
+                var volunteer =
+                    await _volunteerAccountService
+                        .CreateFromOnboardingAsync(
+                            volunteerOnboardingId,
+                            adminId,
+                            cancellationToken);
+
+                // --------------------------------------------------------
+                // AUTOMATIC SUPERVISOR ASSIGNMENT
+                // --------------------------------------------------------
+
+                if (volunteer != null &&
+                    !string.IsNullOrWhiteSpace(volunteer.SupervisorId))
+                {
+                    var supervisorAssignmentRequirement =
+                        onboarding.Requirements
+                            .FirstOrDefault(
+                                x =>
+                                    x.RequirementType ==
+                                    VolunteerOnboardingRequirementType
+                                        .SupervisorAssignment);
+
+                    if (supervisorAssignmentRequirement != null)
+                    {
+                        supervisorAssignmentRequirement.IsCompleted = true;
+
+                        supervisorAssignmentRequirement.CompletedDate = now;
+
+                        supervisorAssignmentRequirement.CompletedByAdminId =
+                            adminId;
+
+                        supervisorAssignmentRequirement.ModifiedDate = now;
+
+                        Console.WriteLine(
+                            $"[CompleteRequirement] SupervisorAssignment automatically completed. " +
+                            $"VolunteerId={volunteer.Id}, " +
+                            $"SupervisorId={volunteer.SupervisorId}");
+                    }
+                    else
+                    {
+                        Console.WriteLine(
+                            $"[CompleteRequirement] WARNING: SupervisorAssignment requirement " +
+                            $"does not exist. " +
+                            $"OnboardingId={volunteerOnboardingId}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"[CompleteRequirement] WARNING: Volunteer was created " +
+                        $"without a Supervisor assignment. " +
+                        $"SupervisorAssignment remains incomplete. " +
+                        $"OnboardingId={volunteerOnboardingId}");
+                }
+
+                // --------------------------------------------------------
+                // MOVE TO ADMIN VERIFICATION
+                // --------------------------------------------------------
+
                 onboarding.Status =
                     VolunteerOnboardingStatus.AdminVerification;
 
-                onboarding.CurrentStep =
-                    5;
+                onboarding.CurrentStep = 5;
 
-                Console.WriteLine(
-                    $"[CompleteRequirement] Contract completed. " +
-                    $"Onboarding {volunteerOnboardingId} moved to AdminVerification.");
+                if (!onboarding.ContractSubmittedDate.HasValue)
+                {
+                    onboarding.ContractSubmittedDate = now;
+                }
+
+                onboarding.ModifiedDate = now;
+                onboarding.ModifiedBy = adminId;
             }
+            else
+            {
+                onboarding.ModifiedDate = now;
+
+                onboarding.ModifiedBy = adminId;
+            }
+
+            // ============================================================
+            // SAVE
+            // ============================================================
 
             await _context.SaveChangesAsync(
                 cancellationToken);
 
             Console.WriteLine(
-                $"[CompleteRequirement] SUCCESS - " +
+                $"[CompleteRequirement] SUCCESS. " +
                 $"OnboardingId={volunteerOnboardingId}, " +
                 $"RequirementType={requirementType}");
 
             return true;
         }
-
-
         // ============================================================
         // START VERIFICATION
         // ============================================================
@@ -1260,7 +1964,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return true;
         }
 
-
         // ============================================================
         // COMPLETE VERIFICATION
         // ============================================================
@@ -1308,18 +2011,18 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     $"Status={onboarding.Status}, " +
                     $"Step={onboarding.CurrentStep}");
 
-                // --------------------------------------------------------
-                // ENSURE + DEDUPLICATE REQUIREMENTS
-                // --------------------------------------------------------
+                // ----------------------------------------------------
+                // ENSURE REQUIREMENTS
+                // ----------------------------------------------------
 
                 await EnsureDefaultRequirementsAsync(
                     volunteerOnboardingId,
                     DateTime.Now,
                     cancellationToken);
 
-                // --------------------------------------------------------
-                // SYNCHRONIZE AUTOMATIC REQUIREMENTS
-                // --------------------------------------------------------
+                // ----------------------------------------------------
+                // SYNC AUTOMATIC REQUIREMENTS
+                // ----------------------------------------------------
 
                 await SyncAutomaticRequirementsAsync(
                     volunteerOnboardingId,
@@ -1329,9 +2032,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 await _context.SaveChangesAsync(
                     cancellationToken);
 
-                // --------------------------------------------------------
-                // Reload requirements.
-                // --------------------------------------------------------
+                // ----------------------------------------------------
+                // RELOAD REQUIREMENTS + DOCUMENTS
+                // ----------------------------------------------------
 
                 await _context.Entry(onboarding)
                     .Collection(x => x.Requirements)
@@ -1346,9 +2049,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     $"Requirements={onboarding.Requirements.Count}, " +
                     $"Documents={onboarding.Documents.Count}");
 
-                // --------------------------------------------------------
+                // ----------------------------------------------------
                 // REQUIRED POLICIES
-                // --------------------------------------------------------
+                // ----------------------------------------------------
 
                 var policiesAccepted =
                     await HasAcceptedAllRequiredPoliciesAsync(
@@ -1364,9 +2067,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         "The applicant has not accepted all required policies.");
                 }
 
-                // --------------------------------------------------------
-                // DIDIT IDENTITY VERIFICATION
-                // --------------------------------------------------------
+                // ----------------------------------------------------
+                // DIDIT
+                // ----------------------------------------------------
 
                 var identityVerification =
                     await _context.VolunteerIdentityVerifications
@@ -1381,9 +2084,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
                 if (identityVerification == null)
                 {
-                    Console.WriteLine(
-                        "[CompleteVerification] No Didit verification found.");
-
                     throw new InvalidOperationException(
                         "Identity verification has not been completed.");
                 }
@@ -1414,32 +2114,19 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         "checks have not all completed successfully.");
                 }
 
-                // --------------------------------------------------------
-                // REQUIREMENTS
-                // --------------------------------------------------------
-
-                // ========================================================
-                // DOCUMENT-STAGE REQUIREMENTS
-                // ========================================================
-                //
-                // At this point Didit has already passed.
-                //
-                // We now need to make sure the requirements that must be
-                // completed BEFORE the contract are complete.
-                //
-                // The Contract requirement is deliberately excluded here.
-                // It belongs to the NEXT onboarding stage.
-                // ========================================================
+                // ----------------------------------------------------
+                // PRE-CONTRACT REQUIREMENTS
+                // ----------------------------------------------------
 
                 var preContractRequirementTypes =
                     new[]
                     {
-        VolunteerOnboardingRequirementType.OfferAcceptance,
-        VolunteerOnboardingRequirementType.PolicyAcceptance,
-        VolunteerOnboardingRequirementType.CodeOfConduct,
-        VolunteerOnboardingRequirementType.IdentityVerification,
-        VolunteerOnboardingRequirementType.QualificationVerification,
-        VolunteerOnboardingRequirementType.DocumentUpload
+                        VolunteerOnboardingRequirementType.OfferAcceptance,
+                        VolunteerOnboardingRequirementType.PolicyAcceptance,
+                        VolunteerOnboardingRequirementType.CodeOfConduct,
+                        VolunteerOnboardingRequirementType.IdentityVerification,
+                        VolunteerOnboardingRequirementType.QualificationVerification,
+                        VolunteerOnboardingRequirementType.DocumentUpload
                     };
 
                 var incompletePreContractRequirements =
@@ -1451,11 +2138,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             !x.IsCompleted)
                         .ToList();
 
-                Console.WriteLine(
-                    $"[CompleteVerification] Incomplete PRE-CONTRACT requirements=" +
-                    $"{incompletePreContractRequirements.Count}");
-
-                foreach (var requirement in incompletePreContractRequirements)
+                foreach (
+                    var requirement
+                    in incompletePreContractRequirements)
                 {
                     Console.WriteLine(
                         $"[CompleteVerification] PRE-CONTRACT INCOMPLETE - " +
@@ -1463,10 +2148,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         $"Type={requirement.RequirementType}, " +
                         $"Title={requirement.Title}");
                 }
-
-                // ========================================================
-                // STOP IF PRE-CONTRACT REQUIREMENTS ARE NOT COMPLETE
-                // ========================================================
 
                 if (incompletePreContractRequirements.Any())
                 {
@@ -1476,38 +2157,30 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             incompletePreContractRequirements
                                 .Select(x => x.Title));
 
-                    Console.WriteLine(
-                        $"[CompleteVerification] BLOCKED BEFORE CONTRACT - {names}");
-
                     throw new InvalidOperationException(
                         $"The following requirements must be completed before the Volunteer Service Agreement: {names}");
                 }
 
-                // ========================================================
-                // PRE-CONTRACT REQUIREMENTS ARE COMPLETE
-                // ========================================================
-                //
-                // Didit is verified.
-                // Identity requirement is complete.
-                // Supporting documents are complete.
-                //
-                // NOW move to ContractPending.
-                //
-                // DO NOT check the Contract requirement here.
-                // DO NOT move to ReadyForActivation.
-                // ========================================================
+                // ----------------------------------------------------
+                // CONTRACT REQUIREMENT
+                // ----------------------------------------------------
 
                 var contractRequirement =
                     onboarding.Requirements
-                        .FirstOrDefault(x =>
-                            x.RequirementType ==
-                            VolunteerOnboardingRequirementType.Contract);
+                        .FirstOrDefault(
+                            x =>
+                                x.RequirementType ==
+                                VolunteerOnboardingRequirementType.Contract);
 
                 if (contractRequirement == null)
                 {
                     throw new InvalidOperationException(
                         "The Volunteer Service Agreement requirement could not be found.");
                 }
+
+                // ----------------------------------------------------
+                // CONTRACT NOT APPROVED YET
+                // ----------------------------------------------------
 
                 if (!contractRequirement.IsCompleted)
                 {
@@ -1536,32 +2209,26 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         cancellationToken);
 
                     Console.WriteLine(
-                        "[CompleteVerification] PRE-CONTRACT REQUIREMENTS COMPLETE.");
-
-                    Console.WriteLine(
-                        "[CompleteVerification] Didit verification complete.");
-
-                    Console.WriteLine(
-                        "[CompleteVerification] Contract requirement is still incomplete.");
+                        "[CompleteVerification] Contract requirement is incomplete.");
 
                     Console.WriteLine(
                         "[CompleteVerification] Moving onboarding to ContractPending.");
 
-                    Console.WriteLine(
-                        $"[CompleteVerification] OnboardingId={volunteerOnboardingId}");
-
-                    Console.WriteLine(
-                        $"[CompleteVerification] Status={onboarding.Status}");
-
-                    Console.WriteLine(
-                        $"[CompleteVerification] Step={onboarding.CurrentStep}");
-
                     return true;
                 }
 
-                // --------------------------------------------------------
-                // DOCUMENTS
-                // --------------------------------------------------------
+                // ----------------------------------------------------
+                // CONTRACT IS APPROVED
+                //
+                // Now we are allowed to perform final verification.
+                // ----------------------------------------------------
+
+                Console.WriteLine(
+                    "[CompleteVerification] Contract requirement is COMPLETE.");
+
+                // ----------------------------------------------------
+                // ALL DOCUMENTS MUST BE APPROVED
+                // ----------------------------------------------------
 
                 var allDocuments =
                     onboarding.Documents?.ToList()
@@ -1594,11 +2261,12 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         $"{documentDetails}");
                 }
 
-                // --------------------------------------------------------
+                // ----------------------------------------------------
                 // FINAL STATUS
-                // --------------------------------------------------------
+                // ----------------------------------------------------
 
-                var now = DateTime.Now;
+                var now =
+                    DateTime.Now;
 
                 onboarding.Status =
                     VolunteerOnboardingStatus.ReadyForActivation;
@@ -1667,7 +2335,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             }
         }
 
-
         // ============================================================
         // REJECT FOR CORRECTION
         // ============================================================
@@ -1705,7 +2372,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 return false;
             }
 
-            var now = DateTime.Now;
+            var now =
+                DateTime.Now;
 
             onboarding.Status =
                 VolunteerOnboardingStatus.RejectedForCorrection;
@@ -1725,6 +2393,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return true;
         }
 
+        // ============================================================
+        // READY FOR ACTIVATION
+        // ============================================================
 
         // ============================================================
         // READY FOR ACTIVATION
@@ -1734,6 +2405,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
             int volunteerOnboardingId,
             CancellationToken cancellationToken = default)
         {
+            Console.WriteLine(
+                $"[IsReadyForActivation] START - " +
+                $"OnboardingId={volunteerOnboardingId}");
+
             var onboarding =
                 await _context.VolunteerOnboardings
                     .Include(x => x.Documents)
@@ -1746,8 +2421,15 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             if (onboarding == null)
             {
+                Console.WriteLine(
+                    "[IsReadyForActivation] Onboarding not found.");
+
                 return false;
             }
+
+            // ------------------------------------------------------------
+            // SYNCHRONISE REQUIREMENTS
+            // ------------------------------------------------------------
 
             await EnsureDefaultRequirementsAsync(
                 volunteerOnboardingId,
@@ -1762,6 +2444,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
             await _context.SaveChangesAsync(
                 cancellationToken);
 
+            // ------------------------------------------------------------
+            // RELOAD REQUIREMENTS + DOCUMENTS
+            // ------------------------------------------------------------
+
             await _context.Entry(onboarding)
                 .Collection(x => x.Requirements)
                 .LoadAsync(cancellationToken);
@@ -1770,34 +2456,110 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 .Collection(x => x.Documents)
                 .LoadAsync(cancellationToken);
 
+            Console.WriteLine(
+                $"[IsReadyForActivation] Status={onboarding.Status}, " +
+                $"Requirements={onboarding.Requirements.Count}, " +
+                $"Documents={onboarding.Documents.Count}");
+
+            // ------------------------------------------------------------
+            // ONBOARDING MUST ALREADY BE READY FOR ACTIVATION
+            // ------------------------------------------------------------
+
             if (onboarding.Status !=
                 VolunteerOnboardingStatus.ReadyForActivation)
             {
+                Console.WriteLine(
+                    $"[IsReadyForActivation] FALSE - " +
+                    $"Status is {onboarding.Status}.");
+
                 return false;
             }
+
+            // ------------------------------------------------------------
+            // REQUIRED POLICIES
+            // ------------------------------------------------------------
 
             if (!await HasAcceptedAllRequiredPoliciesAsync(
                     volunteerOnboardingId,
                     cancellationToken))
             {
+                Console.WriteLine(
+                    "[IsReadyForActivation] FALSE - " +
+                    "Required policies have not all been accepted.");
+
                 return false;
             }
 
-            if (onboarding.Requirements.Any(
-                    x =>
-                        x.IsRequired &&
-                        !x.IsCompleted))
+            // ------------------------------------------------------------
+            // ONLY TRUE ONBOARDING/VERIFICATION REQUIREMENTS BLOCK
+            //
+            // IMPORTANT:
+            // Do NOT use:
+            //
+            // onboarding.Requirements.Any(x => x.IsRequired && !x.IsCompleted)
+            //
+            // because that would make Orientation/Training block activation.
+            // ------------------------------------------------------------
+
+            var blockingIncompleteRequirements =
+                onboarding.Requirements
+                    .Where(IsFinalActivationBlockingRequirement)
+                    .Where(x => !x.IsCompleted)
+                    .ToList();
+
+            if (blockingIncompleteRequirements.Any())
             {
+                Console.WriteLine(
+                    "[IsReadyForActivation] FALSE - " +
+                    "Blocking requirements are incomplete.");
+
+                foreach (var requirement in
+                         blockingIncompleteRequirements)
+                {
+                    Console.WriteLine(
+                        $"[IsReadyForActivation] BLOCKING REQUIREMENT: " +
+                        $"Id={requirement.VolunteerOnboardingRequirementId}, " +
+                        $"Type={requirement.RequirementType}, " +
+                        $"Title={requirement.Title}");
+                }
+
                 return false;
             }
 
-            if (onboarding.Documents.Any(
-                    x =>
+            // ------------------------------------------------------------
+            // DOCUMENTS
+            //
+            // All currently uploaded onboarding documents must be approved.
+            // ------------------------------------------------------------
+
+            var unapprovedDocuments =
+                onboarding.Documents
+                    .Where(x =>
                         x.Status !=
-                        VolunteerOnboardingDocumentStatus.Approved))
+                        VolunteerOnboardingDocumentStatus.Approved)
+                    .ToList();
+
+            if (unapprovedDocuments.Any())
             {
+                Console.WriteLine(
+                    $"[IsReadyForActivation] FALSE - " +
+                    $"{unapprovedDocuments.Count} document(s) not approved.");
+
+                foreach (var document in unapprovedDocuments)
+                {
+                    Console.WriteLine(
+                        $"[IsReadyForActivation] DOCUMENT BLOCKING: " +
+                        $"Id={document.VolunteerOnboardingDocumentId}, " +
+                        $"Type={document.DocumentType}, " +
+                        $"Status={document.Status}");
+                }
+
                 return false;
             }
+
+            // ------------------------------------------------------------
+            // DIDIT
+            // ------------------------------------------------------------
 
             var identityVerification =
                 await _context.VolunteerIdentityVerifications
@@ -1810,20 +2572,46 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     .FirstOrDefaultAsync(
                         cancellationToken);
 
-            if (identityVerification == null ||
-                identityVerification.Status !=
-                    VolunteerIdentityVerificationStatus.Verified ||
-                !identityVerification.DocumentVerified ||
-                !identityVerification.LivenessVerified ||
-                !identityVerification.FaceMatchVerified)
+            if (identityVerification == null)
             {
+                Console.WriteLine(
+                    "[IsReadyForActivation] FALSE - " +
+                    "No Didit verification found.");
+
                 return false;
             }
 
+            if (identityVerification.Status !=
+                VolunteerIdentityVerificationStatus.Verified)
+            {
+                Console.WriteLine(
+                    $"[IsReadyForActivation] FALSE - " +
+                    $"Didit status={identityVerification.Status}");
+
+                return false;
+            }
+
+            if (!identityVerification.DocumentVerified ||
+                !identityVerification.LivenessVerified ||
+                !identityVerification.FaceMatchVerified)
+            {
+                Console.WriteLine(
+                    "[IsReadyForActivation] FALSE - " +
+                    "Didit verification flags are incomplete.");
+
+                return false;
+            }
+
+            // ------------------------------------------------------------
+            // SUCCESS
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                $"[IsReadyForActivation] SUCCESS - " +
+                $"OnboardingId={volunteerOnboardingId}");
+
             return true;
         }
-
-
         // ============================================================
         // CURRENT STATUS
         // ============================================================
@@ -1841,21 +2629,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     cancellationToken);
         }
 
-
         // ============================================================
         // ENSURE DEFAULT REQUIREMENTS
-        //
-        // IMPORTANT:
-        //
-        // This method is now SAFE to call repeatedly.
-        //
-        // It:
-        // 1. Creates missing requirement types.
-        // 2. Detects duplicate requirement types.
-        // 3. Keeps one canonical row.
-        // 4. Preserves completion if ANY duplicate was completed.
-        // 5. Removes duplicate rows.
-        //
         // ============================================================
 
         private async Task EnsureDefaultRequirementsAsync(
@@ -1877,13 +2652,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     .ThenBy(x =>
                         x.VolunteerOnboardingRequirementId)
                     .ToListAsync(cancellationToken);
-
-            Console.WriteLine(
-                $"[EnsureRequirements] Existing requirements={requirements.Count}");
-
-            // --------------------------------------------------------
-            // Defaults
-            // --------------------------------------------------------
 
             var defaults =
                 new List<VolunteerOnboardingRequirement>
@@ -2032,55 +2800,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             "Volunteer Service Agreement Completed",
 
                         Description =
-                            "The Volunteer Service Agreement must be generated, reviewed, and completed before activation.",
+                            "The Volunteer Service Agreement must be generated, signed, submitted, and approved before final verification.",
 
                         IsRequired = true,
                         IsCompleted = false,
                         DisplayOrder = 7,
-
-                        CreatedDate = now,
-                        ModifiedDate = now
-                    },
-
-                    new()
-                    {
-                        VolunteerOnboardingId =
-                            volunteerOnboardingId,
-
-                        RequirementType =
-                            VolunteerOnboardingRequirementType.Orientation,
-
-                        Title =
-                            "SwiftCare Orientation Completed",
-
-                        Description =
-                            "The volunteer must complete the required SwiftCare orientation before activation.",
-
-                        IsRequired = false,
-                        IsCompleted = false,
-                        DisplayOrder = 8,
-
-                        CreatedDate = now,
-                        ModifiedDate = now
-                    },
-
-                    new()
-                    {
-                        VolunteerOnboardingId =
-                            volunteerOnboardingId,
-
-                        RequirementType =
-                            VolunteerOnboardingRequirementType.RoleTraining,
-
-                        Title =
-                            "Role Training Completed",
-
-                        Description =
-                            "The volunteer must complete any training required for their assigned volunteer role.",
-
-                        IsRequired = false,
-                        IsCompleted = false,
-                        DisplayOrder = 9,
 
                         CreatedDate = now,
                         ModifiedDate = now
@@ -2110,7 +2834,7 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 };
 
             // --------------------------------------------------------
-            // Deduplicate existing requirements.
+            // DEDUPLICATE
             // --------------------------------------------------------
 
             var duplicateGroups =
@@ -2121,25 +2845,12 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             foreach (var group in duplicateGroups)
             {
-                Console.WriteLine(
-                    $"[EnsureRequirements] DUPLICATE FOUND - " +
-                    $"Type={group.Key}, Count={group.Count()}");
-
-                // Prefer a completed record.
                 var canonical =
                     group
                         .OrderByDescending(x => x.IsCompleted)
                         .ThenBy(x => x.VolunteerOnboardingRequirementId)
                         .First();
 
-                var duplicates =
-                    group
-                        .Where(x =>
-                            x.VolunteerOnboardingRequirementId !=
-                            canonical.VolunteerOnboardingRequirementId)
-                        .ToList();
-
-                // Preserve completion from any duplicate.
                 var completedDuplicate =
                     group.FirstOrDefault(
                         x => x.IsCompleted);
@@ -2159,6 +2870,13 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         DateTime.Now;
                 }
 
+                var duplicates =
+                    group
+                        .Where(x =>
+                            x.VolunteerOnboardingRequirementId !=
+                            canonical.VolunteerOnboardingRequirementId)
+                        .ToList();
+
                 foreach (var duplicate in duplicates)
                 {
                     Console.WriteLine(
@@ -2170,10 +2888,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         .Remove(duplicate);
                 }
             }
-
-            // --------------------------------------------------------
-            // Re-read canonical requirements after deduplication.
-            // --------------------------------------------------------
 
             await _context.SaveChangesAsync(
                 cancellationToken);
@@ -2189,10 +2903,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x.VolunteerOnboardingRequirementId)
                     .ToListAsync(cancellationToken);
 
-            // --------------------------------------------------------
-            // Create only genuinely missing requirement types.
-            // --------------------------------------------------------
-
             var existingTypes =
                 requirements
                     .Select(x => x.RequirementType)
@@ -2207,18 +2917,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             if (missingRequirements.Any())
             {
-                Console.WriteLine(
-                    $"[EnsureRequirements] Missing requirements=" +
-                    $"{missingRequirements.Count}");
-
-                foreach (var missing in missingRequirements)
-                {
-                    Console.WriteLine(
-                        $"[EnsureRequirements] Creating requirement - " +
-                        $"Type={missing.RequirementType}, " +
-                        $"Title={missing.Title}");
-                }
-
                 _context.VolunteerOnboardingRequirements
                     .AddRange(missingRequirements);
             }
@@ -2227,7 +2925,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 $"[EnsureRequirements] END - " +
                 $"OnboardingId={volunteerOnboardingId}");
         }
-
 
         // ============================================================
         // SYNCHRONIZE AUTOMATIC REQUIREMENTS
@@ -2238,10 +2935,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             string? adminId,
             CancellationToken cancellationToken)
         {
-            Console.WriteLine(
-                $"[SyncAutomaticRequirements] START - " +
-                $"OnboardingId={volunteerOnboardingId}");
-
             await EnsureDefaultRequirementsAsync(
                 volunteerOnboardingId,
                 DateTime.Now,
@@ -2259,12 +2952,7 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 volunteerOnboardingId,
                 adminId,
                 cancellationToken);
-
-            Console.WriteLine(
-                $"[SyncAutomaticRequirements] END - " +
-                $"OnboardingId={volunteerOnboardingId}");
         }
-
 
         // ============================================================
         // SYNC OFFER REQUIREMENT
@@ -2291,13 +2979,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x =>
                             x.VolunteerOnboardingId ==
                             volunteerOnboardingId &&
-
                             x.Status ==
                             VolunteerOfferStatus.Accepted,
                         cancellationToken);
-
-            Console.WriteLine(
-                $"[SyncOfferRequirement] AcceptedOffer={acceptedOffer}");
 
             if (acceptedOffer)
             {
@@ -2311,7 +2995,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     requirement);
             }
         }
-
 
         // ============================================================
         // SYNC POLICY REQUIREMENTS
@@ -2337,9 +3020,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 await HasAcceptedAllRequiredPoliciesAsync(
                     volunteerOnboardingId,
                     cancellationToken);
-
-            Console.WriteLine(
-                $"[SyncPolicyRequirements] AllPoliciesAccepted={allPoliciesAccepted}");
 
             if (policyRequirement != null)
             {
@@ -2372,7 +3052,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             }
         }
 
-
         // ============================================================
         // SYNC DOCUMENT REQUIREMENTS
         // ============================================================
@@ -2382,10 +3061,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             string? adminId,
             CancellationToken cancellationToken)
         {
-            Console.WriteLine(
-                $"[SyncDocumentRequirements] START - " +
-                $"OnboardingId={volunteerOnboardingId}");
-
             var requirements =
                 await _context.VolunteerOnboardingRequirements
                     .Where(x =>
@@ -2399,10 +3074,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x.VolunteerOnboardingId ==
                         volunteerOnboardingId)
                     .ToListAsync(cancellationToken);
-
-            Console.WriteLine(
-                $"[SyncDocumentRequirements] Requirements={requirements.Count}, " +
-                $"Documents={documents.Count}");
 
             var latestDocuments =
                 documents
@@ -2442,14 +3113,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             x.Status ==
                             VolunteerOnboardingDocumentStatus.Approved);
 
-                Console.WriteLine(
-                    $"[SyncDocumentRequirements] IdentityDocuments=" +
-                    $"{latestIdentityDocuments.Count}");
-
-                Console.WriteLine(
-                    $"[SyncDocumentRequirements] IdentityDocumentApproved=" +
-                    $"{identityDocumentApproved}");
-
                 var identityVerification =
                     await _context.VolunteerIdentityVerifications
                         .AsNoTracking()
@@ -2465,47 +3128,16 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
                 var diditVerified =
                     identityVerification != null &&
-
                     identityVerification.Status ==
                     VolunteerIdentityVerificationStatus.Verified &&
-
                     identityVerification.DocumentVerified &&
-
                     identityVerification.LivenessVerified &&
-
                     identityVerification.FaceMatchVerified;
 
-                if (identityVerification != null)
-                {
-                    Console.WriteLine(
-                        $"[SyncDocumentRequirements] DiditId=" +
-                        $"{identityVerification.Id}");
-
-                    Console.WriteLine(
-                        $"[SyncDocumentRequirements] DiditStatus=" +
-                        $"{identityVerification.Status}");
-
-                    Console.WriteLine(
-                        $"[SyncDocumentRequirements] DocumentVerified=" +
-                        $"{identityVerification.DocumentVerified}");
-
-                    Console.WriteLine(
-                        $"[SyncDocumentRequirements] LivenessVerified=" +
-                        $"{identityVerification.LivenessVerified}");
-
-                    Console.WriteLine(
-                        $"[SyncDocumentRequirements] FaceMatchVerified=" +
-                        $"{identityVerification.FaceMatchVerified}");
-                }
-                else
-                {
-                    Console.WriteLine(
-                        "[SyncDocumentRequirements] No Didit verification record.");
-                }
-
                 Console.WriteLine(
-                    $"[SyncDocumentRequirements] DiditFullyVerified=" +
-                    $"{diditVerified}");
+                    $"[SyncDocumentRequirements] " +
+                    $"IdentityDocumentApproved={identityDocumentApproved}, " +
+                    $"DiditFullyVerified={diditVerified}");
 
                 if (identityDocumentApproved &&
                     diditVerified)
@@ -2513,19 +3145,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     MarkRequirementCompleted(
                         identityRequirement,
                         adminId);
-
-                    Console.WriteLine(
-                        "[SyncDocumentRequirements] " +
-                        "Identity Verification requirement COMPLETED.");
                 }
                 else
                 {
                     MarkRequirementIncomplete(
                         identityRequirement);
-
-                    Console.WriteLine(
-                        "[SyncDocumentRequirements] " +
-                        "Identity Verification requirement INCOMPLETE.");
                 }
             }
 
@@ -2554,18 +3178,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         x =>
                             x.Status ==
                             VolunteerOnboardingDocumentStatus.Approved);
-
-                Console.WriteLine(
-                    $"[SyncDocumentRequirements] " +
-                    $"QualificationApproved={qualificationApproved}");
-
-                // Qualification is optional by default.
-                //
-                // If qualification documents exist, they must all
-                // be approved.
-                //
-                // If none exist and requirement is optional, do not
-                // mark it as required/incomplete.
 
                 if (qualificationApproved)
                 {
@@ -2598,12 +3210,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             !IsIdentityDocument(x.DocumentType) &&
                             !IsQualificationDocument(x.DocumentType) &&
                             x.DocumentType !=
-                                VolunteerOnboardingDocumentType.VolunteerContract)
+                            VolunteerOnboardingDocumentType.VolunteerContract)
                         .ToList();
-
-                Console.WriteLine(
-                    $"[SyncDocumentRequirements] SupportingDocuments=" +
-                    $"{supportingDocuments.Count}");
 
                 var allSupportingDocumentsApproved =
                     supportingDocuments.Any() &&
@@ -2612,18 +3220,13 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             x.Status ==
                             VolunteerOnboardingDocumentStatus.Approved);
 
-                Console.WriteLine(
-                    $"[SyncDocumentRequirements] " +
-                    $"AllSupportingDocumentsApproved=" +
-                    $"{allSupportingDocumentsApproved}");
-
                 if (allSupportingDocumentsApproved)
                 {
                     MarkRequirementCompleted(
                         documentUploadRequirement,
                         adminId);
                 }
-                else
+                else if (documentUploadRequirement.IsRequired)
                 {
                     MarkRequirementIncomplete(
                         documentUploadRequirement);
@@ -2632,32 +3235,16 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             // ========================================================
             // CONTRACT
-            // ========================================================
             //
-            // Contract is deliberately NOT synchronized here.
+            // NEVER synchronize this automatically from generic
+            // documents.
             //
-            // Your existing contract workflow is responsible for:
-            //
-            // Generate contract
-            //       ↓
-            // Applicant reviews
-            //       ↓
-            // Applicant signs/accepts
-            //       ↓
-            // CompleteRequirementAsync(
-            //     RequirementType.Contract)
-            //
+            // VolunteerContractService owns this workflow.
             // ========================================================
 
             Console.WriteLine(
-                "[SyncDocumentRequirements] " +
-                "Contract requirement intentionally left unchanged.");
-
-            Console.WriteLine(
-                $"[SyncDocumentRequirements] END - " +
-                $"OnboardingId={volunteerOnboardingId}");
+                "[SyncDocumentRequirements] Contract requirement left unchanged.");
         }
-
 
         // ============================================================
         // GET REQUIREMENT
@@ -2672,7 +3259,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 .Where(x =>
                     x.VolunteerOnboardingId ==
                     volunteerOnboardingId &&
-
                     x.RequirementType ==
                     requirementType)
                 .OrderByDescending(x => x.IsCompleted)
@@ -2682,7 +3268,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     cancellationToken);
         }
 
-
         // ============================================================
         // MARK REQUIREMENT COMPLETE
         // ============================================================
@@ -2691,7 +3276,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
             VolunteerOnboardingRequirement requirement,
             string? completedByAdminId)
         {
-            var now = DateTime.Now;
+            var now =
+                DateTime.Now;
 
             requirement.IsCompleted =
                 true;
@@ -2699,15 +3285,16 @@ namespace SwiftCare.Services.VolunteerOnboarding
             requirement.CompletedDate =
                 now;
 
-            requirement.CompletedByAdminId =
-                string.IsNullOrWhiteSpace(completedByAdminId)
-                    ? requirement.CompletedByAdminId
-                    : completedByAdminId;
+            if (!string.IsNullOrWhiteSpace(
+                    completedByAdminId))
+            {
+                requirement.CompletedByAdminId =
+                    completedByAdminId;
+            }
 
             requirement.ModifiedDate =
                 now;
         }
-
 
         // ============================================================
         // MARK REQUIREMENT INCOMPLETE
@@ -2716,10 +3303,13 @@ namespace SwiftCare.Services.VolunteerOnboarding
         private static void MarkRequirementIncomplete(
             VolunteerOnboardingRequirement requirement)
         {
-            // Do not touch already-completed requirements unnecessarily.
+            // --------------------------------------------------------
+            // VERY IMPORTANT:
             //
-            // This protects manually completed requirements such as
-            // the Contract requirement from unrelated synchronization.
+            // Do not automatically undo a completed contract or other
+            // manually completed requirement.
+            // --------------------------------------------------------
+
             if (requirement.IsCompleted)
             {
                 return;
@@ -2737,7 +3327,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             requirement.ModifiedDate =
                 DateTime.Now;
         }
-
 
         // ============================================================
         // DOCUMENT TYPE HELPERS
@@ -2764,7 +3353,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 value.Contains("driverslicense");
         }
 
-
         private static bool IsQualificationDocument(
             VolunteerOnboardingDocumentType documentType)
         {
@@ -2785,7 +3373,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 value.Contains("licence");
         }
 
-
         // ============================================================
         // SECURE TOKEN GENERATION
         // ============================================================
@@ -2795,9 +3382,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             var bytes =
                 RandomNumberGenerator.GetBytes(48);
 
-            return WebEncoders.Base64UrlEncode(bytes);
+            return WebEncoders.Base64UrlEncode(
+                bytes);
         }
-
 
         // ============================================================
         // TOKEN HASHING
@@ -2822,6 +3409,30 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 .ToLowerInvariant();
         }
 
+        // ============================================================
+        // CONSTANT-TIME TOKEN COMPARISON
+        // ============================================================
+
+        private static bool CryptographicEquals(
+            string left,
+            string right)
+        {
+            if (string.IsNullOrWhiteSpace(left) ||
+                string.IsNullOrWhiteSpace(right))
+            {
+                return false;
+            }
+
+            var leftBytes =
+                Encoding.UTF8.GetBytes(left);
+
+            var rightBytes =
+                Encoding.UTF8.GetBytes(right);
+
+            return CryptographicOperations.FixedTimeEquals(
+                leftBytes,
+                rightBytes);
+        }
 
         // ============================================================
         // OFFER REFERENCE
@@ -2853,5 +3464,224 @@ namespace SwiftCare.Services.VolunteerOnboarding
             throw new InvalidOperationException(
                 "Unable to generate a unique volunteer offer reference.");
         }
+
+
+      
+
+        // ============================================================
+        // DECLINE OFFER - INTERFACE COMPATIBLE VERSION
+        // ============================================================
+
+        public async Task<bool> DeclineOfferAsync(
+            int volunteerOnboardingId,
+            string token,
+            string applicantId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            if (volunteerOnboardingId <= 0)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(applicantId))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return false;
+            }
+
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            volunteerOnboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                return false;
+            }
+
+            if (!string.Equals(
+                    onboarding.ApplicantId,
+                    applicantId,
+                    StringComparison.Ordinal))
+            {
+                throw new UnauthorizedAccessException(
+                    "The applicant does not belong to this onboarding record.");
+            }
+
+            var offer = await _context.VolunteerOffers
+                    .Where(x =>
+                        x.VolunteerOnboardingId ==
+                        volunteerOnboardingId &&
+                        x.Status ==
+                        VolunteerOfferStatus.Pending)
+                    .OrderByDescending(x => x.IssuedDate)
+                    .ThenByDescending(x => x.VolunteerOfferId)
+                    .FirstOrDefaultAsync(
+                        cancellationToken);
+
+            if (offer == null)
+            {
+                return false;
+            }
+
+            var result =
+                await DeclineOfferAsync(
+                    offer.VolunteerOfferId,
+                    token,
+                    reason,
+                    cancellationToken);
+
+            return result.Success;
+        }
+
+        // ============================================================
+        // ADD DOCUMENT - INTERFACE COMPATIBLE VERSION
+        // ============================================================
+
+        public async Task<
+            SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocument>
+            AddDocumentAsync(
+                int volunteerOnboardingId,
+                string applicantId,
+                VolunteerOnboardingDocumentType documentType,
+                string documentName,
+                string filePath,
+                CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException(
+                    "A file path is required.",
+                    nameof(filePath));
+            }
+
+            var fileName =
+                Path.GetFileName(filePath);
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName =
+                    documentName.Trim();
+            }
+
+            return await AddDocumentAsync(
+                volunteerOnboardingId,
+                applicantId,
+                documentType,
+                documentName,
+                fileName,
+                filePath,
+                "application/octet-stream",
+                1,
+                null,
+                cancellationToken);
+        }
+
+        // ============================================================
+        // REVIEW DOCUMENT - INTERFACE COMPATIBLE VERSION
+        // ============================================================
+
+        public async Task<bool> ReviewDocumentAsync(
+            int documentId,
+            string adminId,
+            VolunteerOnboardingDocumentStatus status,
+            string? reviewNotes = null,
+            CancellationToken cancellationToken = default)
+        {
+            return await ReviewDocumentAsync(
+                documentId,
+                status,
+                adminId,
+                reviewNotes,
+                cancellationToken);
+        }
+
+        // ============================================================
+        // FINAL ACTIVATION REQUIREMENTS
+        //
+        // IMPORTANT:
+        // Only requirements that genuinely belong to the onboarding/
+        // verification gate should block ReadyForActivation.
+        //
+        // Orientation and Training are operational/post-onboarding
+        // requirements and MUST NOT block final verification or activation.
+        // ============================================================
+
+        private static readonly HashSet<VolunteerOnboardingRequirementType>
+            FinalActivationBlockingRequirementTypes =
+                new()
+                {
+            VolunteerOnboardingRequirementType.OfferAcceptance,
+            VolunteerOnboardingRequirementType.PolicyAcceptance,
+            VolunteerOnboardingRequirementType.CodeOfConduct,
+            VolunteerOnboardingRequirementType.IdentityVerification,
+            VolunteerOnboardingRequirementType.QualificationVerification,
+            VolunteerOnboardingRequirementType.DocumentUpload,
+            VolunteerOnboardingRequirementType.Contract,
+            VolunteerOnboardingRequirementType.SupervisorAssignment
+                };
+
+        private static bool IsFinalActivationBlockingRequirement(
+            VolunteerOnboardingRequirement requirement)
+        {
+            return requirement.IsRequired &&
+                   FinalActivationBlockingRequirementTypes.Contains(
+                       requirement.RequirementType);
+        }
+
+
+    }
+
+    // ================================================================
+    // OFFER ACTION RESULT
+    // ================================================================
+
+    public class VolunteerOfferActionResult
+    {
+        public bool Success { get; set; }
+
+        public string Message { get; set; } = string.Empty;
+
+        public bool AllRequiredPoliciesAccepted { get; set; }
+
+        public string? RedirectUrl { get; set; }
+
+        public static VolunteerOfferActionResult Successful(
+            string message,
+            bool allRequiredPoliciesAccepted = false)
+        {
+            return new VolunteerOfferActionResult
+            {
+                Success = true,
+                Message = message,
+                AllRequiredPoliciesAccepted =
+                    allRequiredPoliciesAccepted
+            };
+        }
+
+        public static VolunteerOfferActionResult Failed(
+            string message)
+        {
+            return new VolunteerOfferActionResult
+            {
+                Success = false,
+                Message = message,
+                AllRequiredPoliciesAccepted = false
+            };
+        }
+
     }
 }

@@ -208,7 +208,7 @@ namespace SwiftCare.Services.IdentityVerification
                 }
 
                 verification.ModifiedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
@@ -257,13 +257,13 @@ namespace SwiftCare.Services.IdentityVerification
                             false,
 
                         VerificationStartedDate =
-                            DateTime.UtcNow,
+                            DateTime.Now,
 
                         CreatedDate =
-                            DateTime.UtcNow,
+                            DateTime.Now,
 
                         ModifiedDate =
-                            DateTime.UtcNow
+                            DateTime.Now
                     };
 
                 _context.VolunteerIdentityVerifications
@@ -340,10 +340,10 @@ namespace SwiftCare.Services.IdentityVerification
                     null;
 
                 verification.VerificationStartedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 verification.ModifiedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
@@ -423,7 +423,7 @@ namespace SwiftCare.Services.IdentityVerification
                     "Didit verification session could not be created.";
 
                 verification.ModifiedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
@@ -475,10 +475,10 @@ namespace SwiftCare.Services.IdentityVerification
 
             verification.VerificationStartedDate =
                 verification.VerificationStartedDate ??
-                DateTime.UtcNow;
+                DateTime.Now;
 
             verification.ModifiedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
@@ -655,7 +655,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.Verified;
 
                     verification.VerifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     verification.FaceIdentityEnrolled =
                         verification.DocumentVerified &&
@@ -793,7 +793,7 @@ namespace SwiftCare.Services.IdentityVerification
             // =========================================================
 
             verification.ModifiedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             await _context.SaveChangesAsync(
                 cancellationToken);

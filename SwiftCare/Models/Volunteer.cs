@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using SwiftCare.Models.VolunteerOnboarding;
 
 namespace SwiftCare.Models
@@ -107,6 +108,13 @@ namespace SwiftCare.Models
         public string? SupervisorId { get; set; }
 
 
+        /// <summary>
+        /// The supervisor responsible for this volunteer.
+        /// </summary>
+        [ForeignKey(nameof(SupervisorId))]
+        public Supervisor? Supervisor { get; set; }
+
+
         // ============================================================
         // EXISTING VOLUNTEER DATA
         // ============================================================
@@ -125,6 +133,19 @@ namespace SwiftCare.Models
 
         public ICollection<VolunteerTask> Tasks { get; set; }
             = new List<VolunteerTask>();
+
+
+        // ============================================================
+        // WEEKLY ROSTERS
+        // ============================================================
+
+        /// <summary>
+        /// Weekly rosters created for this volunteer.
+        /// A volunteer may have multiple rosters over time,
+        /// but each roster represents one specific week.
+        /// </summary>
+        public ICollection<VolunteerRoster> Rosters { get; set; }
+            = new List<VolunteerRoster>();
 
 
         // ============================================================

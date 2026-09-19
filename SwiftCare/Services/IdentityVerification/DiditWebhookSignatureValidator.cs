@@ -27,7 +27,7 @@ namespace SwiftCare.Services.IdentityVerification
             }
 
             var now =
-                DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                DateTimeOffset.Now.ToUnixTimeSeconds();
 
             var difference =
                 Math.Abs(now - timestamp);

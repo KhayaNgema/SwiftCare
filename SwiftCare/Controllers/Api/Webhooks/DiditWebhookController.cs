@@ -367,7 +367,7 @@ namespace SwiftCare.Controllers.Api.Webhooks
                         timestamp,
 
                     ReceivedDate =
-                        DateTime.UtcNow,
+                        DateTime.Now,
 
                     SignatureVerified =
                         true,

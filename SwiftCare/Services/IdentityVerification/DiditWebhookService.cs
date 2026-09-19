@@ -167,7 +167,7 @@ namespace SwiftCare.Services.IdentityVerification
                 webhook.Processed = true;
                 webhook.ProcessingFailed = false;
                 webhook.ProcessedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
                 webhook.ProcessingError = null;
 
                 await _context.SaveChangesAsync(
@@ -298,7 +298,7 @@ namespace SwiftCare.Services.IdentityVerification
                         true;
 
                     verification.VerifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     verification.FailureReason = null;
 
@@ -307,7 +307,7 @@ namespace SwiftCare.Services.IdentityVerification
                         envelope.Decision);
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     _logger.LogInformation(
                         "Didit verification {VerificationId} marked VERIFIED.",
@@ -337,7 +337,7 @@ namespace SwiftCare.Services.IdentityVerification
                             envelope.Decision);
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     _logger.LogWarning(
                         "Didit verification {VerificationId} marked REJECTED. Reason={Reason}.",
@@ -352,7 +352,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.RequiresReview;
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     ApplyDecisionData(
                         verification,
@@ -370,7 +370,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.InProgress;
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     _logger.LogInformation(
                         "Didit verification {VerificationId} marked IN PROGRESS.",
@@ -396,7 +396,7 @@ namespace SwiftCare.Services.IdentityVerification
                         false;
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     break;
 
@@ -406,7 +406,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.Cancelled;
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     break;
 
@@ -418,7 +418,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.Expired;
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     break;
 
@@ -430,7 +430,7 @@ namespace SwiftCare.Services.IdentityVerification
                         verification.Id);
 
                     verification.ModifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
                     break;
             }

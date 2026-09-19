@@ -885,7 +885,205 @@
                             </li>
 
                         }
+                        @* =================================================
+   SUPERVISOR
+   ================================================= *@
 
+                        else if (User.IsInRole("Supervisor"))
+                        {
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Home">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Supervisor"
+                                       asp-action="Index">
+
+                                    <i class="bi bi-house-door-fill"></i>
+
+                                    <span>Home</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Volunteers">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Supervisor"
+                                       asp-action="Volunteers">
+
+                                    <i class="bi bi-people-fill"></i>
+
+                                    <span>My Volunteers</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Roster Management">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-supervisor-roster-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-calendar-week-fill"></i>
+
+                                        <span>Roster Management</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-supervisor-roster-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Supervisor"
+                                               asp-action="Rosters">
+                                            Weekly rosters
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Supervisor"
+                                               asp-action="CreateRoster">
+                                            Create roster
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Volunteer Tasks">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Supervisor"
+                                       asp-action="Tasks">
+
+                                    <i class="bi bi-list-task"></i>
+
+                                    <span>Volunteer Tasks</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Schedule">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Supervisor"
+                                       asp-action="Schedule">
+
+                                    <i class="bi bi-calendar-check-fill"></i>
+
+                                    <span>Schedule</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Volunteer Progress">
+
+                                <div class="scx-nav-parent"
+                                     data-submenu="scx-supervisor-progress-submenu">
+
+                                    <div class="scx-nav-link">
+
+                                        <i class="bi bi-graph-up-arrow"></i>
+
+                                        <span>Volunteer Progress</span>
+
+                                    </div>
+
+                                    <div class="scx-nav-arrow">
+
+                                        <i class="bi bi-chevron-down"></i>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ul id="scx-supervisor-progress-submenu"
+                                    class="scx-submenu">
+
+                                    <li>
+                                        <a asp-controller="Supervisor"
+                                               asp-action="Attendance">
+                                            Attendance
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a asp-controller="Supervisor"
+                                               asp-action="TaskProgress">
+                                            Task progress
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="Support">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="Queries"
+                                       asp-action="SupportQueries">
+
+                                    <i class="bi bi-life-preserver"></i>
+
+                                    <span>Support</span>
+
+                                </a>
+
+                            </li>
+
+
+                            <li class="scx-sidebar-divider"></li>
+
+
+                            <li class="scx-nav-item"
+                                data-tooltip="My Activity">
+
+                                <a class="scx-nav-link"
+                                       asp-controller="ActivityLogs"
+                                       asp-action="MyActivityLogs">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                    <span>My Activity</span>
+
+                                </a>
+
+                            </li>
+
+                        }
 
                         @* =================================================
                            DOCTOR

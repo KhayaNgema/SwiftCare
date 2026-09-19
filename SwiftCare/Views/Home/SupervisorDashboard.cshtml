@@ -1,0 +1,291 @@
+﻿@{
+    ViewData["Title"] = "Supervisor";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var volunteerCount = ViewBag.VolunteerCount ?? 0;
+    var todayTaskCount = ViewBag.TodayTaskCount ?? 0;
+    var activeRosterCount = ViewBag.ActiveRosterCount ?? 0;
+}
+
+<br />
+
+<div class="nurse-dashboard-container">
+
+    <!-- =====================================================
+         WELCOME
+         ===================================================== -->
+
+    <section class="nurse-welcome">
+
+        <div class="nurse-welcome-content">
+
+            <h1>
+                Supervisor Dashboard
+            </h1>
+
+            <p>
+                Manage your assigned volunteers, weekly rosters,
+                daily tasks, schedules, and volunteer progress.
+            </p>
+
+            <div class="nurse-status">
+
+                <span class="nurse-status-dot"></span>
+
+                Supervisor
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         MAIN ACTIONS
+         ===================================================== -->
+
+    <section class="nurse-actions">
+
+        <!-- MY VOLUNTEERS -->
+
+        <a asp-controller="Supervisor"
+               asp-action="Volunteers"
+               class="nurse-action-card">
+
+            <div class="nurse-action-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    My Volunteers
+                </div>
+
+                <div class="nurse-action-description">
+                    View and manage volunteers assigned to your supervision.
+                </div>
+
+            </div>
+
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
+
+
+        <!-- WEEKLY ROSTERS -->
+
+        <a asp-controller="Supervisor"
+               asp-action="Rosters"
+               class="nurse-action-card">
+
+            <div class="nurse-action-icon">
+                <i class="bi bi-calendar-week-fill"></i>
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    Weekly Rosters
+                </div>
+
+                <div class="nurse-action-description">
+                    Create weekly rosters, add volunteer tasks,
+                    and publish schedules.
+                </div>
+
+            </div>
+
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
+
+
+        <!-- VOLUNTEER TASKS -->
+
+        <a asp-controller="Supervisor"
+               asp-action="Tasks"
+               class="nurse-action-card">
+
+            <div class="nurse-action-icon">
+                <i class="bi bi-list-task"></i>
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    Volunteer Tasks
+                </div>
+
+                <div class="nurse-action-description">
+                    View assigned tasks, priorities, completion status,
+                    and volunteer activity.
+                </div>
+
+            </div>
+
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
+
+
+        <!-- VOLUNTEER SCHEDULE -->
+
+        <a asp-controller="Supervisor"
+               asp-action="Schedule"
+               class="nurse-action-card">
+
+            <div class="nurse-action-icon">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    Volunteer Schedule
+                </div>
+
+                <div class="nurse-action-description">
+                    View your volunteers' upcoming schedules
+                    and assigned activities.
+                </div>
+
+            </div>
+
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
+
+    </section>
+
+
+    <!-- =====================================================
+         TODAY'S VOLUNTEER ACTIVITIES
+         ===================================================== -->
+
+    <section class="nurse-section">
+
+        <div class="nurse-section-header">
+
+            <div class="nurse-section-title">
+
+                <i class="bi bi-calendar-check-fill"></i>
+
+                Today's Volunteer Activities
+
+            </div>
+
+            <div class="nurse-date">
+
+                @DateTime.Now.ToString("dd MMM yyyy")
+
+            </div>
+
+        </div>
+
+
+        @if (todayTaskCount > 0)
+        {
+            <div class="nurse-empty-state">
+
+                <div class="nurse-empty-icon">
+
+                    <i class="bi bi-list-task"></i>
+
+                </div>
+
+                <h3>
+                    @todayTaskCount volunteer
+                    @(todayTaskCount == 1 ? "task" : "tasks")
+                    scheduled today
+                </h3>
+
+                <p>
+                    View today's volunteer activities and task
+                    schedules from the Volunteer Schedule.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="nurse-empty-state">
+
+                <div class="nurse-empty-icon">
+
+                    <i class="bi bi-calendar-x"></i>
+
+                </div>
+
+                <h3>
+                    No volunteer activities scheduled
+                </h3>
+
+                <p>
+                    Volunteer tasks and activities scheduled for today
+                    will appear here.
+                </p>
+
+            </div>
+        }
+
+
+        <!-- =================================================
+             QUICK INFORMATION
+             ================================================= -->
+
+        <div class="nurse-info">
+
+            <!-- VOLUNTEERS -->
+
+            <div class="nurse-info-item">
+
+                <div class="nurse-info-label">
+                    Volunteers
+                </div>
+
+                <div class="nurse-info-value">
+                    @volunteerCount
+                    @(volunteerCount == 1 ? "assigned" : "assigned")
+                </div>
+
+            </div>
+
+
+            <!-- TODAY'S TASKS -->
+
+            <div class="nurse-info-item">
+
+                <div class="nurse-info-label">
+                    Today's Tasks
+                </div>
+
+                <div class="nurse-info-value">
+                    @todayTaskCount
+                    @(todayTaskCount == 1 ? "scheduled" : "scheduled")
+                </div>
+
+            </div>
+
+
+            <!-- ACTIVE ROSTERS -->
+
+            <div class="nurse-info-item">
+
+                <div class="nurse-info-label">
+                    Rosters
+                </div>
+
+                <div class="nurse-info-value">
+                    @activeRosterCount
+                    @(activeRosterCount == 1 ? "active" : "active")
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>

@@ -31,7 +31,8 @@ public static class SeedData
                 "Supplier Admin",
                 "Driver",
                 "Maintainance Person",
-                "Applicant"};
+                "Applicant",
+                "Supervisor"};
 
             foreach (var roleName in roleNames)
             {

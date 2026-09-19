@@ -116,9 +116,62 @@ namespace SwiftCare.Controllers
 
                 return View("CleanerDashboard");
             }
+            else if (roles.Contains("Supervisor"))
+            {
+                var supervisorId = _userManager.GetUserId(User);
+
+                if (string.IsNullOrWhiteSpace(supervisorId))
+                    return Unauthorized();
+
+                var supervisor = await _context.Supervisors
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        s => s.Id == supervisorId);
+
+                if (supervisor == null || !supervisor.IsActive)
+                    return Forbid();
+
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+
+                // ============================================================
+                // SUPERVISOR VOLUNTEER COUNT
+                // ============================================================
+
+                ViewBag.VolunteerCount = await _context.Volunteers
+                    .CountAsync(
+                        v => v.SupervisorId == supervisorId);
+
+                // ============================================================
+                // TODAY'S TASK COUNT
+                // ============================================================
+
+                ViewBag.TodayTaskCount = await _context.VolunteerTasks
+                    .CountAsync(
+                        t =>
+                            t.TaskDate >= today &&
+                            t.TaskDate < tomorrow &&
+                            t.Volunteer != null &&
+                            t.Volunteer.SupervisorId == supervisorId);
+
+                // ============================================================
+                // ACTIVE ROSTER COUNT
+                // ============================================================
+
+                ViewBag.ActiveRosterCount = await _context.VolunteerRosters
+                    .CountAsync(
+                        r =>
+                            r.SupervisorId == supervisorId &&
+                            (
+                                r.Status == VolunteerRosterStatus.Published ||
+                                r.Status == VolunteerRosterStatus.Active
+                            ));
+
+                return View("SupervisorDashboard");
+            }
             else if (roles.Contains("Chef"))
             {
-
+               
                 return View("ChefDashboard");
             }
             else if (roles.Contains("Applicant"))

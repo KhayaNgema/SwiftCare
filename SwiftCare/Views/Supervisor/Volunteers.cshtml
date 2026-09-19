@@ -1,0 +1,708 @@
+﻿@using System.Linq
+@using SwiftCare.Helpers
+@using SwiftCare.Models
+
+@model IEnumerable<SwiftCare.Models.Volunteer>
+
+@{
+    ViewData["Title"] = "My Volunteers";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var volunteers = Model?.ToList()
+        ?? new List<SwiftCare.Models.Volunteer>();
+
+    var totalVolunteers = volunteers.Count;
+
+    var activeCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.Active);
+
+    var pendingCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.PendingActivation);
+
+    var inactiveCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.Inactive);
+
+    var suspendedCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.Suspended);
+
+    var completedCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.Completed);
+
+    var terminatedCount = volunteers.Count(x =>
+        x.Status == VolunteerStatus.Terminated);
+
+
+    string GetInitials(
+        SwiftCare.Models.Volunteer volunteer)
+    {
+        if (volunteer == null)
+            return "?";
+
+        var first =
+            volunteer.FirstName?
+                .Trim()
+                .FirstOrDefault();
+
+        var last =
+            volunteer.LastName?
+                .Trim()
+                .FirstOrDefault();
+
+        if (first.HasValue && last.HasValue)
+            return $"{first}{last}".ToUpper();
+
+        if (first.HasValue)
+            return first.Value.ToString().ToUpper();
+
+        if (last.HasValue)
+            return last.Value.ToString().ToUpper();
+
+        return "?";
+    }
+
+
+    string GetStatusClass(
+        VolunteerStatus status)
+    {
+        return status switch
+        {
+            VolunteerStatus.Active
+                => "status-completed",
+
+            VolunteerStatus.PendingActivation
+                => "status-pending",
+
+            VolunteerStatus.Inactive
+                => "status-neutral",
+
+            VolunteerStatus.Suspended
+                => "status-rejected",
+
+            VolunteerStatus.Completed
+                => "status-ready",
+
+            VolunteerStatus.Terminated
+                => "status-rejected",
+
+            _ => "status-neutral"
+        };
+    }
+
+
+    string GetStatusIcon(
+        VolunteerStatus status)
+    {
+        return status switch
+        {
+            VolunteerStatus.Active
+                => "bi-person-check-fill",
+
+            VolunteerStatus.PendingActivation
+                => "bi-hourglass-split",
+
+            VolunteerStatus.Inactive
+                => "bi-person-dash-fill",
+
+            VolunteerStatus.Suspended
+                => "bi-person-x-fill",
+
+            VolunteerStatus.Completed
+                => "bi-check2-circle",
+
+            VolunteerStatus.Terminated
+                => "bi-x-circle-fill",
+
+            _ => "bi-person-fill"
+        };
+    }
+
+
+    string GetStatusText(
+        VolunteerStatus status)
+    {
+        return status switch
+        {
+            VolunteerStatus.Active
+                => "Active",
+
+            VolunteerStatus.PendingActivation
+                => "Pending Activation",
+
+            VolunteerStatus.Inactive
+                => "Inactive",
+
+            VolunteerStatus.Suspended
+                => "Suspended",
+
+            VolunteerStatus.Completed
+                => "Completed",
+
+            VolunteerStatus.Terminated
+                => "Terminated",
+
+            _ => "Unknown"
+        };
+    }
+
+
+    string GetAreaText(
+        VolunteerArea? area)
+    {
+        if (!area.HasValue)
+            return "Not Assigned";
+
+        return area.Value.GetDisplayName();
+    }
+}
+
+<div class="sc-admin-onboarding-page">
+
+    <div class="sc-admin-onboarding-container">
+
+
+        <!-- =====================================================
+             PAGE HEADER
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-header">
+
+            <div class="sc-admin-onboarding-heading">
+
+                <div class="sc-admin-onboarding-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <div>
+
+                    <div class="sc-admin-onboarding-eyebrow">
+                        SwiftCare Volunteer Management
+                    </div>
+
+                    <h1 class="sc-admin-onboarding-title">
+                        My Volunteers
+                    </h1>
+
+                    <p class="sc-admin-onboarding-subtitle">
+                        View and manage volunteers assigned to your supervision,
+                        their current status, volunteer area, and activity.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-onboarding-actions">
+
+                <a asp-controller="Supervisor"
+                       asp-action="Index"
+                       class="sc-admin-onboarding-back">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                    <span>
+                        Dashboard
+                    </span>
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             SUMMARY CARDS
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-summary">
+
+
+            <!-- TOTAL -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Total Volunteers
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @totalVolunteers
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACTIVE -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Active
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @activeCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Pending Activation
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @pendingCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SUSPENDED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Suspended
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @suspendedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPLETED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Completed
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @completedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             VOLUNTEERS TABLE
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-card">
+
+
+            <!-- TABLE HEADER -->
+
+            <div class="sc-admin-onboarding-card-header">
+
+                <div>
+
+                    <div class="sc-admin-onboarding-card-eyebrow">
+                        Supervisor Volunteer Management
+                    </div>
+
+                    <h2 class="sc-admin-onboarding-card-title">
+                        Assigned Volunteers
+                    </h2>
+
+                </div>
+
+
+                <div class="sc-admin-onboarding-count">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <span>
+                        @totalVolunteers Volunteers
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            @if (volunteers.Any())
+            {
+
+                <div class="sc-admin-onboarding-table-wrapper">
+
+                    <table class="sc-admin-onboarding-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Volunteer
+                                </th>
+
+                                <th>
+                                    Volunteer Number
+                                </th>
+
+                                <th>
+                                    Area
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Start Date
+                                </th>
+
+                                <th>
+                                    Roster
+                                </th>
+
+                                <th>
+                                    Tasks
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var volunteer in volunteers)
+                            {
+
+                                var volunteerName =
+                                    $"{volunteer.FirstName} {volunteer.LastName}"
+                                        .Trim();
+
+                                if (string.IsNullOrWhiteSpace(volunteerName))
+                                {
+                                    volunteerName =
+                                        volunteer.Email
+                                        ?? "Unknown Volunteer";
+                                }
+
+
+                                var rosterCount =
+                                    volunteer.Rosters?.Count ?? 0;
+
+                                var taskCount =
+                                    volunteer.Tasks?.Count ?? 0;
+
+
+                                <tr>
+
+
+                                    <!-- =================================
+                                         VOLUNTEER
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-applicant">
+
+                                            <div class="sc-onboarding-avatar">
+
+                                                @GetInitials(volunteer)
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <p class="sc-onboarding-applicant-name">
+                                                    @volunteerName
+                                                </p>
+
+                                                <p class="sc-onboarding-applicant-email">
+
+                                                    @(volunteer.Email
+                                                        ?? "No email available")
+
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         VOLUNTEER NUMBER
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-reference">
+
+                                            <span class="sc-onboarding-reference-icon">
+                                                #
+                                            </span>
+
+                                            <span>
+
+                                                @(volunteer.VolunteerNumber
+                                                    ?? "Not Assigned")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         AREA
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-opportunity">
+
+                                            <div class="sc-onboarding-opportunity-icon">
+
+                                                <i class="bi bi-diagram-3-fill"></i>
+
+                                            </div>
+
+
+                                            <span class="sc-onboarding-opportunity-title">
+
+                                                @GetAreaText(
+                                                    volunteer.PreferredArea)
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         STATUS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-status @GetStatusClass(volunteer.Status)">
+
+                                            <i class="bi @GetStatusIcon(volunteer.Status)"></i>
+
+                                            @GetStatusText(volunteer.Status)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         START DATE
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-date">
+
+                                            <i class="bi bi-calendar3"></i>
+
+                                            <span>
+
+                                                @(volunteer.StartDate.HasValue
+                                                    ? volunteer.StartDate.Value.ToString("dd MMM yyyy")
+                                                    : "Not Started")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         ROSTERS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document @(rosterCount > 0
+                                                                                                                                     ? "document-verified"
+                                                                                                                                     : "document-empty")">
+
+                                            <i class="bi @(rosterCount > 0
+                                                                                                                                           ? "bi-calendar-week-fill"
+                                                                                                                                           : "bi-calendar-x")"></i>
+
+                                            @(rosterCount == 1
+                                                ? "1 Roster"
+                                                : $"{rosterCount} Rosters")
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         TASKS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document @(taskCount > 0
+                                                                                                                                     ? "document-uploaded"
+                                                                                                                                     : "document-empty")">
+
+                                            <i class="bi @(taskCount > 0
+                                                                                                                                           ? "bi-list-task"
+                                                                                                                                           : "bi-list")"></i>
+
+                                            @(taskCount == 1
+                                                ? "1 Task"
+                                                : $"{taskCount} Tasks")
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         ACTION
+                                         ================================= -->
+
+                                    <td>
+
+                                        <a asp-controller="Supervisor"
+                                               asp-action="VolunteerDetails"
+                                               asp-route-id="@volunteer.Id"
+                                               class="sc-onboarding-review-button">
+
+                                            <i class="bi bi-eye-fill"></i>
+
+                                            <span>
+                                                View
+                                            </span>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+            else
+            {
+
+                <!-- =============================================
+                     EMPTY STATE
+                     ============================================= -->
+
+                <div class="sc-admin-onboarding-empty">
+
+                    <div class="sc-admin-onboarding-empty-icon">
+
+                        <i class="bi bi-people"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Volunteers Assigned
+                    </h3>
+
+
+                    <p>
+                        There are currently no volunteers assigned
+                        to your supervision.
+                    </p>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>

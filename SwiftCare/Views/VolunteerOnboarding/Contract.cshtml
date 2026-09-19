@@ -8,15 +8,30 @@
         ViewBag.Contract
         as SwiftCare.Models.VolunteerOnboarding.VolunteerContract;
 
-    var uploadedContract =
-        Model.Documents
-            .Where(x =>
-                x.DocumentType ==
-                SwiftCare.Models.VolunteerOnboarding.VolunteerOnboardingDocumentType.VolunteerContract)
-            .OrderByDescending(x => x.UploadedDate)
-            .FirstOrDefault();
-
     var hasGeneratedContract = contract != null;
+
+    var contractStatus =
+        contract?.Status;
+
+    var isAwaitingApplicant =
+        contractStatus ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.AwaitingApplicant;
+
+    var isSubmitted =
+        contractStatus ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.Submitted;
+
+    var isUnderReview =
+        contractStatus ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.UnderReview;
+
+    var isCorrectionRequired =
+        contractStatus ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.CorrectionRequired;
+
+    var isApproved =
+        contractStatus ==
+        SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.Approved;
 }
 
 <div class="container contract-page">
@@ -42,15 +57,54 @@
                     </h1>
 
                     <p class="contract-description">
-                        Your SwiftCare volunteer agreement is ready.
-                        Please review the contract carefully, sign it,
-                        and upload the completed document to continue
-                        your onboarding.
+                        Your SwiftCare volunteer service agreement is managed
+                        here. Download your agreement, sign it, and submit the
+                        completed document for administrator review.
                     </p>
 
                 </div>
 
-                @if (hasGeneratedContract)
+                @if (isApproved)
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-check-circle-fill"></i>
+
+                        Contract Approved
+
+                    </div>
+                }
+                else if (isCorrectionRequired)
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-exclamation-circle-fill"></i>
+
+                        Correction Required
+
+                    </div>
+                }
+                else if (isSubmitted || isUnderReview)
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-hourglass-split"></i>
+
+                        Awaiting Review
+
+                    </div>
+                }
+                else if (isAwaitingApplicant)
+                {
+                    <div class="contract-status-pill">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                        Action Required
+
+                    </div>
+                }
+                else if (hasGeneratedContract)
                 {
                     <div class="contract-status-pill">
 
@@ -201,7 +255,22 @@
 
                             <span class="contract-status-value">
 
-                                <i class="bi bi-check-circle-fill"></i>
+                                @if (isApproved)
+                                {
+                                    <i class="bi bi-check-circle-fill"></i>
+                                }
+                                else if (isCorrectionRequired)
+                                {
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                }
+                                else if (isSubmitted || isUnderReview)
+                                {
+                                    <i class="bi bi-hourglass-split"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-clock"></i>
+                                }
 
                                 @contract.Status.GetDisplayName()
 
@@ -215,91 +284,512 @@
 
 
                 <!-- =================================================
-                     INSTRUCTIONS
+                     APPROVED STATE
                      ================================================= -->
+                @if (isApproved)
+                {
+                    <div class="uploaded-contract">
 
-                <div class="instructions">
+                        <div class="uploaded-contract-inner">
 
-                    <div class="instructions-heading">
+                            <div class="uploaded-contract-icon">
 
-                        <div class="instructions-heading-icon">
+                                <i class="bi bi-check-circle-fill"></i>
 
-                            <i class="bi bi-list-check"></i>
+                            </div>
+
+                            <div class="flex-grow-1">
+
+                                <div class="uploaded-contract-title">
+
+                                    Volunteer Contract Approved
+
+                                </div>
+
+                                <div class="uploaded-contract-file">
+
+                                    Your signed volunteer service agreement
+                                    has been reviewed and approved by
+                                    SwiftCare.
+
+                                </div>
+
+                                <div class="uploaded-contract-status">
+
+                                    <i class="bi bi-shield-check"></i>
+
+                                    <span>
+                                        Status:
+                                    </span>
+
+                                    <strong>
+                                        @contract.Status.GetDisplayName()
+                                    </strong>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
-                        <h5>
-                            What you need to do
-                        </h5>
+                    </div>
+                }
+
+
+                <!-- =================================================
+                     CORRECTION REQUIRED
+                     ================================================= -->
+                @if (isCorrectionRequired)
+                {
+                    <div class="contract-correction">
+
+                        <div class="contract-correction-header">
+
+                            <div class="contract-correction-icon">
+
+                                <i class="bi bi-exclamation-triangle"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h5>
+                                    Correction Required
+                                </h5>
+
+                                <p>
+                                    SwiftCare has reviewed your submitted
+                                    contract and requires you to make a
+                                    correction before it can be approved.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        @if (!string.IsNullOrWhiteSpace(
+                            contract.RejectionReason))
+                        {
+                            <div class="contract-correction-reason">
+
+                                <div class="contract-correction-reason-title">
+
+                                    <i class="bi bi-chat-left-text"></i>
+
+                                    Administrator feedback
+
+                                </div>
+
+                                <div class="contract-correction-reason-text">
+
+                                    @contract.RejectionReason
+
+                                </div>
+
+                            </div>
+                        }
 
                     </div>
 
 
-                    <ol class="instructions-list">
+                    <!-- =================================================
+                         RESUBMIT CONTRACT
+                         ================================================= -->
 
-                        <li>
-                            Download your generated volunteer contract.
-                        </li>
+                    <div class="contract-upload-section">
 
-                        <li>
-                            Review the contract carefully and make sure
-                            your personal and volunteer information is
-                            correct.
-                        </li>
+                        <div class="section-heading">
 
-                        <li>
-                            Complete any information or sections that
-                            require your input.
-                        </li>
+                            <div class="section-heading-icon">
 
-                        <li>
-                            Sign the contract where indicated.
-                        </li>
+                                <i class="bi bi-arrow-repeat"></i>
 
-                        <li>
-                            Upload the completed and signed contract
-                            through the Documents section.
-                        </li>
+                            </div>
 
-                    </ol>
+                            <h5>
+                                Upload Corrected Contract
+                            </h5>
 
-                </div>
+                        </div>
+
+
+                        <p class="contract-upload-description">
+
+                            Make the requested corrections, sign the
+                            agreement again if necessary, and upload the
+                            corrected PDF below.
+
+                        </p>
+
+
+                        <form asp-action="ResubmitSignedContract"
+                              asp-controller="VolunteerOnboarding"
+                              method="post"
+                              enctype="multipart/form-data"
+                              class="contract-upload-form"
+                              id="resubmitContractForm">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="onboardingId"
+                                   value="@Model.VolunteerOnboardingId" />
+
+
+                            <div class="contract-file-upload">
+
+                                <input type="file"
+                                       id="resubmitSignedContract"
+                                       name="signedContract"
+                                       accept=".pdf,application/pdf"
+                                       class="contract-file-input"
+                                       required />
+
+                                <label for="resubmitSignedContract"
+                                       class="contract-file-label">
+
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                    <span>
+                                        Select corrected signed PDF
+                                    </span>
+
+                                    <small>
+                                        PDF files only
+                                    </small>
+
+                                </label>
+
+                            </div>
+
+
+                            <div class="contract-selected-file"
+                                 id="resubmitSelectedFile">
+
+                                <i class="bi bi-file-earmark-pdf"></i>
+
+                                <span>
+                                    No file selected
+                                </span>
+
+                            </div>
+
+
+                            <button type="submit"
+                                    class="btn-contract btn-upload">
+
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+
+                                Resubmit Corrected Contract
+
+                            </button>
+
+                        </form>
+
+                    </div>
+                }
 
 
                 <!-- =================================================
-                     ACTIONS
+                     AWAITING APPLICANT
                      ================================================= -->
+                @if (isAwaitingApplicant)
+                {
+                    <div class="instructions">
 
-                <div class="contract-actions">
+                        <div class="instructions-heading">
 
-                    <a href="@Url.Action(
-                                                      "DownloadContract",
-                                                      "VolunteerOnboarding",
-                                                      new
-                                                      {
-                                                          id = Model.VolunteerOnboardingId
-                                                      })"
-                           class="btn-contract btn-download">
+                            <div class="instructions-heading-icon">
 
-                        <i class="bi bi-download"></i>
+                                <i class="bi bi-list-check"></i>
 
-                        Download Contract
+                            </div>
 
-                    </a>
+                            <h5>
+                                What you need to do
+                            </h5>
+
+                        </div>
 
 
-                    <a asp-action="Documents"
-                           asp-controller="VolunteerOnboarding"
-                           asp-route-id="@Model.VolunteerOnboardingId"
-                           class="btn-contract btn-upload">
+                        <ol class="instructions-list">
 
-                        <i class="bi bi-upload"></i>
+                            <li>
+                                Download your generated volunteer
+                                service agreement.
+                            </li>
 
-                        Upload Signed Contract
+                            <li>
+                                Review the agreement carefully and make
+                                sure your personal and volunteer information
+                                is correct.
+                            </li>
 
-                    </a>
+                            <li>
+                                Complete any sections that require your
+                                input.
+                            </li>
 
-                </div>
+                            <li>
+                                Sign the agreement where indicated.
+                            </li>
+
+                            <li>
+                                Upload the completed and signed PDF
+                                directly below.
+                            </li>
+
+                        </ol>
+
+                    </div>
+                }
+
+
+                <!-- =================================================
+                     DOWNLOAD + FIRST UPLOAD
+                     ================================================= -->
+                @if (isAwaitingApplicant)
+                {
+                    <div class="contract-actions">
+
+                        <a href="@Url.Action(
+                                                                                   "DownloadContract",
+                                                                                   "VolunteerOnboarding",
+                                                                                   new
+                                                                                   {
+                                                                                       id = Model.VolunteerOnboardingId
+                                                                                   })"
+                               class="btn-contract btn-download">
+
+                            <i class="bi bi-download"></i>
+
+                            Download Contract
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="contract-upload-section">
+
+                        <div class="section-heading">
+
+                            <div class="section-heading-icon">
+
+                                <i class="bi bi-cloud-arrow-up"></i>
+
+                            </div>
+
+                            <h5>
+                                Upload Signed Contract
+                            </h5>
+
+                        </div>
+
+
+                        <p class="contract-upload-description">
+
+                            Once you have signed the agreement, upload the
+                            completed PDF here. Your contract will then be
+                            submitted directly to SwiftCare for review.
+
+                        </p>
+
+
+                        <form asp-action="UploadSignedContract"
+                              asp-controller="VolunteerOnboarding"
+                              method="post"
+                              enctype="multipart/form-data"
+                              class="contract-upload-form"
+                              id="uploadContractForm">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="onboardingId"
+                                   value="@Model.VolunteerOnboardingId" />
+
+
+                            <div class="contract-file-upload">
+
+                                <input type="file"
+                                       id="signedContract"
+                                       name="signedContract"
+                                       accept=".pdf,application/pdf"
+                                       class="contract-file-input"
+                                       required />
+
+                                <label for="signedContract"
+                                       class="contract-file-label">
+
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                    <span>
+                                        Select signed PDF
+                                    </span>
+
+                                    <small>
+                                        PDF files only
+                                    </small>
+
+                                </label>
+
+                            </div>
+
+
+                            <div class="contract-selected-file"
+                                 id="selectedContractFile">
+
+                                <i class="bi bi-file-earmark-pdf"></i>
+
+                                <span>
+                                    No file selected
+                                </span>
+
+                            </div>
+
+
+                            <button type="submit"
+                                    class="btn-contract btn-upload">
+
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+
+                                Submit Signed Contract
+
+                            </button>
+
+                        </form>
+
+                    </div>
+                }
+
+
+                <!-- =================================================
+                     SUBMITTED / UNDER REVIEW
+                     ================================================= -->
+                @if (isSubmitted || isUnderReview)
+                {
+                    <div class="uploaded-contract">
+
+                        <div class="uploaded-contract-inner">
+
+                            <div class="uploaded-contract-icon">
+
+                                <i class="bi bi-hourglass-split"></i>
+
+                            </div>
+
+                            <div class="flex-grow-1">
+
+                                <div class="uploaded-contract-title">
+
+                                    Signed Contract Submitted
+
+                                </div>
+
+                                <div class="uploaded-contract-file">
+
+                                    Your signed contract has been
+                                    successfully submitted to SwiftCare.
+
+                                </div>
+
+                                <div class="uploaded-contract-status">
+
+                                    <i class="bi bi-info-circle"></i>
+
+                                    <span>
+                                        Status:
+                                    </span>
+
+                                    <strong>
+                                        @contract.Status.GetDisplayName()
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="contract-review-message">
+
+                        <i class="bi bi-shield-check"></i>
+
+                        <div>
+
+                            <strong>
+                                Awaiting administrator review
+                            </strong>
+
+                            <span>
+                                SwiftCare will review your signed agreement.
+                                If a correction is required, you will be
+                                notified here and will be able to resubmit
+                                the corrected contract.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         SUBMITTED CONTRACT DOWNLOAD
+                         ================================================= -->
+
+                    <div class="contract-actions">
+
+                        <a href="@Url.Action(
+                                                                                   "DownloadContract",
+                                                                                   "VolunteerOnboarding",
+                                                                                   new
+                                                                                   {
+                                                                                       id = Model.VolunteerOnboardingId
+                                                                                   })"
+                               class="btn-contract btn-download">
+
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+
+                            Download Submitted Contract
+
+                        </a>
+
+                    </div>
+                }
+
+
+                <!-- =================================================
+                     CONTRACT ACTIONS
+                     ================================================= -->
+                @if (!isApproved && !isSubmitted && !isUnderReview)
+                {
+                    @if (!isAwaitingApplicant && !isCorrectionRequired)
+                    {
+                        <div class="contract-actions">
+
+                            <a href="@Url.Action(
+                                                                                               "DownloadContract",
+                                                                                               "VolunteerOnboarding",
+                                                                                               new
+                                                                                               {
+                                                                                                   id = Model.VolunteerOnboardingId
+                                                                                               })"
+                                   class="btn-contract btn-download">
+
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+
+                                Download Generated Contract
+
+                            </a>
+
+                        </div>
+                    }
+                }
 
 
                 <!-- =================================================
@@ -311,9 +801,9 @@
                     <i class="bi bi-shield-check"></i>
 
                     <span>
-                        Your contract download is protected and can only
-                        be accessed through your authorised SwiftCare
-                        volunteer onboarding account.
+                        Your contract is securely managed by SwiftCare.
+                        Only your authorised onboarding account can access
+                        and submit your volunteer agreement.
                     </span>
 
                 </div>
@@ -322,65 +812,9 @@
 
 
             <!-- =====================================================
-                 SIGNED CONTRACT UPLOADED
+                 FOOTER
                  ===================================================== -->
-            @if (uploadedContract != null)
-            {
-                <div class="uploaded-contract">
 
-                    <div class="uploaded-contract-inner">
-
-                        <div class="uploaded-contract-icon">
-
-                            <i class="bi bi-check-circle-fill"></i>
-
-                        </div>
-
-
-                        <div class="flex-grow-1">
-
-                            <div class="uploaded-contract-title">
-
-                                Signed Contract Uploaded
-
-                            </div>
-
-
-                            <div class="uploaded-contract-file">
-
-                                @uploadedContract.FileName
-
-                            </div>
-
-
-                            <div class="uploaded-contract-status">
-
-                                <i class="bi bi-info-circle"></i>
-
-                                <span>
-                                    Status:
-                                </span>
-
-                                <strong>
-                                    @uploadedContract.Status.GetDisplayName()
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-            }
-        }
-
-
-        <!-- =========================================================
-             FOOTER
-             ========================================================= -->
-        @if (hasGeneratedContract)
-        {
             <div class="contract-footer">
 
                 <i class="bi bi-lock-fill"></i>
@@ -396,3 +830,200 @@
     </div>
 
 </div>
+
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // ========================================================
+            // FIRST CONTRACT UPLOAD
+            // ========================================================
+
+            const uploadInput =
+                document.getElementById("signedContract");
+
+            const selectedFile =
+                document.getElementById("selectedContractFile");
+
+            const uploadForm =
+                document.getElementById("uploadContractForm");
+
+
+            if (uploadInput && selectedFile) {
+
+                uploadInput.addEventListener("change", function () {
+
+                    if (!this.files || this.files.length === 0) {
+
+                        selectedFile.innerHTML = `
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span>No file selected</span>
+                        `;
+
+                        return;
+                    }
+
+                    const file = this.files[0];
+
+                    selectedFile.innerHTML = `
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        <span>${escapeHtml(file.name)}</span>
+                    `;
+                });
+            }
+
+
+            if (uploadForm) {
+
+                uploadForm.addEventListener("submit", function (event) {
+
+                    if (!uploadInput ||
+                        !uploadInput.files ||
+                        uploadInput.files.length === 0) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Please select your signed contract PDF."
+                        );
+
+                        return;
+                    }
+
+                    const file =
+                        uploadInput.files[0];
+
+                    const extension =
+                        file.name
+                            .split(".")
+                            .pop()
+                            .toLowerCase();
+
+                    if (extension !== "pdf") {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Only PDF files can be uploaded."
+                        );
+
+                        uploadInput.value = "";
+
+                        return;
+                    }
+                });
+            }
+
+
+            // ========================================================
+            // RESUBMIT CONTRACT
+            // ========================================================
+
+            const resubmitInput =
+                document.getElementById(
+                    "resubmitSignedContract"
+                );
+
+            const resubmitSelectedFile =
+                document.getElementById(
+                    "resubmitSelectedFile"
+                );
+
+            const resubmitForm =
+                document.getElementById(
+                    "resubmitContractForm"
+                );
+
+
+            if (resubmitInput && resubmitSelectedFile) {
+
+                resubmitInput.addEventListener(
+                    "change",
+                    function () {
+
+                        if (!this.files ||
+                            this.files.length === 0) {
+
+                            resubmitSelectedFile.innerHTML = `
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                <span>No file selected</span>
+                            `;
+
+                            return;
+                        }
+
+                        const file = this.files[0];
+
+                        resubmitSelectedFile.innerHTML = `
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span>${escapeHtml(file.name)}</span>
+                        `;
+                    }
+                );
+            }
+
+
+            if (resubmitForm) {
+
+                resubmitForm.addEventListener(
+                    "submit",
+                    function (event) {
+
+                        if (!resubmitInput ||
+                            !resubmitInput.files ||
+                            resubmitInput.files.length === 0) {
+
+                            event.preventDefault();
+
+                            alert(
+                                "Please select the corrected signed contract PDF."
+                            );
+
+                            return;
+                        }
+
+                        const file =
+                            resubmitInput.files[0];
+
+                        const extension =
+                            file.name
+                                .split(".")
+                                .pop()
+                                .toLowerCase();
+
+                        if (extension !== "pdf") {
+
+                            event.preventDefault();
+
+                            alert(
+                                "Only PDF files can be uploaded."
+                            );
+
+                            resubmitInput.value = "";
+
+                            return;
+                        }
+                    }
+                );
+            }
+
+
+            // ========================================================
+            // SIMPLE HTML ESCAPE
+            // ========================================================
+
+            function escapeHtml(value) {
+
+                return value
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+        });
+    </script>
+}

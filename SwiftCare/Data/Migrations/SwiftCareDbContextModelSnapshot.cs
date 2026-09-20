@@ -2795,6 +2795,46 @@ namespace SwiftCare.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerTaskId"));
 
+                    b.Property<int>("Area")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("VolunteerOpportunityId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VolunteerTaskId");
+
+                    b.HasIndex("VolunteerOpportunityId");
+
+                    b.ToTable("VolunteerTasks");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerTaskAssignment", b =>
+                {
+                    b.Property<int>("VolunteerTaskAssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolunteerTaskAssignmentId"));
+
                     b.Property<string>("AssignedById")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -2806,19 +2846,14 @@ namespace SwiftCare.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
 
-                    b.Property<string>("Location")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("int");
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -2832,32 +2867,33 @@ namespace SwiftCare.Data.Migrations
                     b.Property<DateTime>("TaskDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<string>("VolunteerId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("VolunteerOpportunityId")
+                    b.Property<string>("VolunteerId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("VolunteerRosterId")
                         .HasColumnType("int");
 
-                    b.Property<int>("VolunteerRosterId")
+                    b.Property<int>("VolunteerTaskId")
                         .HasColumnType("int");
 
-                    b.HasKey("VolunteerTaskId");
+                    b.HasKey("VolunteerTaskAssignmentId");
 
                     b.HasIndex("AssignedById");
 
                     b.HasIndex("VolunteerId");
 
-                    b.HasIndex("VolunteerOpportunityId");
+                    b.HasIndex("VolunteerId1");
 
                     b.HasIndex("VolunteerRosterId");
 
-                    b.ToTable("VolunteerTasks");
+                    b.HasIndex("VolunteerTaskId");
+
+                    b.ToTable("VolunteerTaskAssignments");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerVoiceInterviewSession", b =>
@@ -3950,34 +3986,48 @@ namespace SwiftCare.Data.Migrations
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerTask", b =>
                 {
-                    b.HasOne("SwiftCare.Models.UserBaseModel", "AssignedBy")
-                        .WithMany()
-                        .HasForeignKey("AssignedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SwiftCare.Models.Volunteer", "Volunteer")
-                        .WithMany("Tasks")
-                        .HasForeignKey("VolunteerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("SwiftCare.Models.VolunteerOpportunity", "VolunteerOpportunity")
                         .WithMany()
                         .HasForeignKey("VolunteerOpportunityId");
 
+                    b.Navigation("VolunteerOpportunity");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerTaskAssignment", b =>
+                {
+                    b.HasOne("SwiftCare.Models.UserBaseModel", "AssignedBy")
+                        .WithMany()
+                        .HasForeignKey("AssignedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SwiftCare.Models.Volunteer", "Volunteer")
+                        .WithMany()
+                        .HasForeignKey("VolunteerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SwiftCare.Models.Volunteer", null)
+                        .WithMany("TaskAssignments")
+                        .HasForeignKey("VolunteerId1");
+
                     b.HasOne("SwiftCare.Models.VolunteerRoster", "VolunteerRoster")
-                        .WithMany("Tasks")
+                        .WithMany("TaskAssignments")
                         .HasForeignKey("VolunteerRosterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SwiftCare.Models.VolunteerTask", "VolunteerTask")
+                        .WithMany("Assignments")
+                        .HasForeignKey("VolunteerTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AssignedBy");
 
                     b.Navigation("Volunteer");
 
-                    b.Navigation("VolunteerOpportunity");
-
                     b.Navigation("VolunteerRoster");
+
+                    b.Navigation("VolunteerTask");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerVoiceInterviewSession", b =>
@@ -4096,7 +4146,12 @@ namespace SwiftCare.Data.Migrations
 
             modelBuilder.Entity("SwiftCare.Models.VolunteerRoster", b =>
                 {
-                    b.Navigation("Tasks");
+                    b.Navigation("TaskAssignments");
+                });
+
+            modelBuilder.Entity("SwiftCare.Models.VolunteerTask", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("SwiftCare.Models.Applicant", b =>
@@ -4123,7 +4178,7 @@ namespace SwiftCare.Data.Migrations
 
                     b.Navigation("Skills");
 
-                    b.Navigation("Tasks");
+                    b.Navigation("TaskAssignments");
                 });
 #pragma warning restore 612, 618
         }

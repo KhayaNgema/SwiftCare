@@ -153,14 +153,14 @@
             return "0%";
 
         var totalTasks =
-            roster.Tasks?.Count ?? 0;
+            roster.TaskAssignments?.Count ?? 0;
 
         if (totalTasks == 0)
             return "0%";
 
         var completedTasks =
-            roster.Tasks.Count(x =>
-                x.Status == VolunteerTaskStatus.Completed);
+            roster.TaskAssignments.Count(x =>
+                x.Status == VolunteerTaskAssignmentStatus.Completed);
 
         var progress =
             (int)Math.Round(
@@ -476,12 +476,12 @@
                                     GetVolunteerName(volunteer);
 
                                 var taskCount =
-                                    roster.Tasks?.Count ?? 0;
+                                    roster.TaskAssignments?.Count ?? 0;
 
                                 var completedTasks =
-                                    roster.Tasks?.Count(x =>
+                                    roster.TaskAssignments?.Count(x =>
                                         x.Status ==
-                                        VolunteerTaskStatus.Completed)
+                                        VolunteerTaskAssignmentStatus.Completed)
                                     ?? 0;
 
                                 var progress =

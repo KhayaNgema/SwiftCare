@@ -1,257 +1,253 @@
 ﻿@{
-    ViewData["Title"] = "Nurse";
+    ViewData["Title"] = "Supervisor";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 }
 
-<div class="nurse-dashboard">
+<div class="nurse-dashboard-container">
 
-    <div class="nurse-dashboard-container">
+    <!-- =====================================================
+         WELCOME
+         ===================================================== -->
 
-        <!-- =====================================================
-             WELCOME
-             ===================================================== -->
+    <section class="nurse-welcome">
 
-        <section class="nurse-welcome">
+        <div class="nurse-welcome-content">
 
-            <div class="nurse-welcome-content">
+            <h1>
+                Supervisor Dashboard
+            </h1>
 
-                <h1>
-                    Nurse Dashboard
-                </h1>
+            <p>
+                Manage your assigned volunteers, weekly rosters, and daily volunteer activities.
+            </p>
 
-                <p>
-                    Manage resident care and your daily nursing tasks.
-                </p>
+            <div class="nurse-status">
 
-                <div class="nurse-status">
+                <span class="nurse-status-dot"></span>
 
-                    <span class="nurse-status-dot"></span>
+                Supervisor
 
-                    On duty
+            </div>
 
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         MAIN ACTIONS
+         ===================================================== -->
+
+    <section class="nurse-actions">
+
+        <!-- MY VOLUNTEERS -->
+
+        <a asp-controller="Supervisor"
+               asp-action="Volunteers"
+               class="nurse-action-card">
+
+            <div class="nurse-action-icon">
+
+                <i class="bi bi-people-fill"></i>
+
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    My Volunteers
+                </div>
+
+                <div class="nurse-action-description">
+                    View and manage volunteers assigned to your supervision.
                 </div>
 
             </div>
 
-        </section>
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
 
 
-        <!-- =====================================================
-             MAIN ACTIONS
-             ===================================================== -->
+        <!-- WEEKLY ROSTERS -->
 
-        <section class="nurse-actions">
+        <a asp-controller="Supervisor"
+               asp-action="Rosters"
+               class="nurse-action-card">
 
-            <!-- RESIDENTS -->
+            <div class="nurse-action-icon">
 
-            <a asp-controller="Residents"
-                   asp-action="Residents"
-                   class="nurse-action-card">
+                <i class="bi bi-calendar-week-fill"></i>
 
-                <div class="nurse-action-icon">
+            </div>
 
-                    <i class="bi bi-person-heart"></i>
+            <div class="nurse-action-content">
 
+                <div class="nurse-action-title">
+                    Weekly Rosters
                 </div>
 
-                <div class="nurse-action-content">
-
-                    <div class="nurse-action-title">
-                        Residents
-                    </div>
-
-                    <div class="nurse-action-description">
-                        View residents and access their care information.
-                    </div>
-
+                <div class="nurse-action-description">
+                    Create, manage, and publish weekly rosters for your volunteers.
                 </div>
 
-                <i class="bi bi-chevron-right nurse-action-arrow"></i>
+            </div>
 
-            </a>
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
 
 
-            <!-- DAILY CARE -->
+        <!-- VOLUNTEER TASKS -->
 
-            <a asp-controller="Home"
-                   asp-action="Index"
-                   class="nurse-action-card">
+        <a asp-controller="Supervisor"
+               asp-action="Tasks"
+               class="nurse-action-card">
 
-                <div class="nurse-action-icon">
+            <div class="nurse-action-icon">
 
-                    <i class="bi bi-heart-pulse-fill"></i>
+                <i class="bi bi-list-task"></i>
 
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    Volunteer Tasks
                 </div>
 
-                <div class="nurse-action-content">
-
-                    <div class="nurse-action-title">
-                        Daily Care
-                    </div>
-
-                    <div class="nurse-action-description">
-                        Record and manage today's resident care activities.
-                    </div>
-
+                <div class="nurse-action-description">
+                    Assign and manage volunteer tasks, schedules, priorities, and progress.
                 </div>
 
-                <i class="bi bi-chevron-right nurse-action-arrow"></i>
+            </div>
 
-            </a>
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
 
 
-            <!-- CARE RECORDS -->
+        <!-- VOLUNTEER SCHEDULE -->
 
-            <a asp-controller="Home"
-                   asp-action="Index"
-                   class="nurse-action-card">
+        <a asp-controller="Supervisor"
+               asp-action="Schedule"
+               class="nurse-action-card">
 
-                <div class="nurse-action-icon">
+            <div class="nurse-action-icon">
 
-                    <i class="bi bi-clipboard2-pulse-fill"></i>
+                <i class="bi bi-calendar-check-fill"></i>
 
+            </div>
+
+            <div class="nurse-action-content">
+
+                <div class="nurse-action-title">
+                    Volunteer Schedule
                 </div>
 
-                <div class="nurse-action-content">
-
-                    <div class="nurse-action-title">
-                        Care Records
-                    </div>
-
-                    <div class="nurse-action-description">
-                        Review resident care records and previous entries.
-                    </div>
-
+                <div class="nurse-action-description">
+                    View your volunteers' upcoming schedules and assigned activities.
                 </div>
 
-                <i class="bi bi-chevron-right nurse-action-arrow"></i>
+            </div>
 
-            </a>
+            <i class="bi bi-chevron-right nurse-action-arrow"></i>
+
+        </a>
+
+    </section>
 
 
-            <!-- EQUIPMENT -->
+    <!-- =====================================================
+         TODAY'S VOLUNTEER ACTIVITIES
+         ===================================================== -->
 
-            <a asp-controller="Equipment"
-                   asp-action="OurEquipment"
-                   class="nurse-action-card">
+    <section class="nurse-section">
 
-                <div class="nurse-action-icon">
+        <div class="nurse-section-header">
 
-                    <i class="bi bi-box-seam-fill"></i>
+            <div class="nurse-section-title">
 
+                <i class="bi bi-calendar-check-fill"></i>
+
+                Today's Volunteer Activities
+
+            </div>
+
+            <div class="nurse-date">
+
+                @DateTime.Now.ToString("dd MMM yyyy")
+
+            </div>
+
+        </div>
+
+
+        <div class="nurse-empty-state">
+
+            <div class="nurse-empty-icon">
+
+                <i class="bi bi-people"></i>
+
+            </div>
+
+            <h3>
+                No volunteer activities scheduled
+            </h3>
+
+            <p>
+                Volunteer tasks and activities scheduled for today will appear here.
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             QUICK INFORMATION
+             ================================================= -->
+
+        <div class="nurse-info">
+
+            <div class="nurse-info-item">
+
+                <div class="nurse-info-label">
+                    Volunteers
                 </div>
 
-                <div class="nurse-action-content">
-
-                    <div class="nurse-action-title">
-                        Equipment
-                    </div>
-
-                    <div class="nurse-action-description">
-                        View equipment available for resident care.
-                    </div>
-
-                </div>
-
-                <i class="bi bi-chevron-right nurse-action-arrow"></i>
-
-            </a>
-
-        </section>
-
-
-        <!-- =====================================================
-             TODAY'S CARE
-             ===================================================== -->
-
-        <section class="nurse-section">
-
-            <div class="nurse-section-header">
-
-                <div class="nurse-section-title">
-
-                    <i class="bi bi-calendar-check-fill"></i>
-
-                    Today's Care
-
-                </div>
-
-                <div class="nurse-date">
-
-                    @DateTime.Now.ToString("dd MMM yyyy")
-
+                <div class="nurse-info-value">
+                    0 assigned
                 </div>
 
             </div>
 
 
-            <div class="nurse-empty-state">
+            <div class="nurse-info-item">
 
-                <div class="nurse-empty-icon">
-
-                    <i class="bi bi-heart-pulse"></i>
-
+                <div class="nurse-info-label">
+                    Today's Tasks
                 </div>
 
-                <h3>
-                    No care tasks assigned
-                </h3>
-
-                <p>
-                    Your assigned care activities for today will appear here.
-                </p>
-
-            </div>
-
-
-            <!-- =================================================
-                 QUICK INFORMATION
-                 ================================================= -->
-
-            <div class="nurse-info">
-
-                <div class="nurse-info-item">
-
-                    <div class="nurse-info-label">
-                        Residents
-                    </div>
-
-                    <div class="nurse-info-value">
-                        0 assigned
-                    </div>
-
-                </div>
-
-
-                <div class="nurse-info-item">
-
-                    <div class="nurse-info-label">
-                        Care Tasks
-                    </div>
-
-                    <div class="nurse-info-value">
-                        0 pending
-                    </div>
-
-                </div>
-
-
-                <div class="nurse-info-item">
-
-                    <div class="nurse-info-label">
-                        Status
-                    </div>
-
-                    <div class="nurse-info-value">
-                        On duty
-                    </div>
-
+                <div class="nurse-info-value">
+                    0 pending
                 </div>
 
             </div>
 
-        </section>
 
-    </div>
+            <div class="nurse-info-item">
+
+                <div class="nurse-info-label">
+                    Rosters
+                </div>
+
+                <div class="nurse-info-value">
+                    0 active
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
 
 </div>

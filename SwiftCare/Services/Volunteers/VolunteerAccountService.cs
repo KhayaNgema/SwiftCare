@@ -18,30 +18,33 @@ namespace SwiftCare.Services.Volunteers
             _logger = logger;
         }
 
-
         // ============================================================
         // CREATE VOLUNTEER ACCOUNT FROM ONBOARDING
         //
-        // IMPORTANT:
-        // This creates the Volunteer profile only.
+        // Creates the Volunteer profile from the Applicant.
         //
-        // It does NOT activate the Volunteer.
+        // Copies:
+        //     FirstName
+        //     LastName
+        //     Email
+        //     PhoneNumber
+        //     DateOfBirth
+        //     ProfilePicture
+        //     ProfessionalSummary -> Bio
+        //     CareerObjective -> Motivation
+        //     ProfessionalTitle -> Department
+        //
+        // Also:
+        //     Generates a unique 6-digit Volunteer Number.
+        //     Assigns Supervisor automatically when available.
+        //     Links the Volunteer to the onboarding.
+        //     Links the completed Didit verification.
+        //
+        // IMPORTANT:
+        //     This does NOT activate the Volunteer.
         //
         // Status:
         //     PendingActivation
-        //
-        // ActivatedDate:
-        //     null
-        //
-        // VolunteerNumber:
-        //     null
-        //
-        // Supervisor:
-        //     Automatically assigned from the VolunteerOpportunity Area
-        //     when an active Supervisor exists for that Area.
-        //
-        // Final activation remains the responsibility of the
-        // VolunteerActivationService.
         // ============================================================
 
         public async Task<Volunteer> CreateFromOnboardingAsync(
@@ -69,7 +72,6 @@ namespace SwiftCare.Services.Volunteers
                 volunteerOnboardingId,
                 adminId);
 
-
             // ========================================================
             // LOAD ONBOARDING
             // ========================================================
@@ -90,25 +92,23 @@ namespace SwiftCare.Services.Volunteers
                     "The volunteer onboarding record could not be found.");
             }
 
-
             // ========================================================
             // IDEMPOTENCY
-            //
-            // If the navigation property already contains the
-            // Volunteer, return it.
             // ========================================================
 
             if (onboarding.Volunteer != null)
             {
                 _logger.LogInformation(
                     "[VolunteerAccountService] Volunteer already exists. " +
-                    "VolunteerId={VolunteerId}, OnboardingId={OnboardingId}",
+                    "VolunteerId={VolunteerId}, " +
+                    "VolunteerNumber={VolunteerNumber}, " +
+                    "OnboardingId={OnboardingId}",
                     onboarding.Volunteer.Id,
+                    onboarding.Volunteer.VolunteerNumber,
                     volunteerOnboardingId);
 
                 return onboarding.Volunteer;
             }
-
 
             // ========================================================
             // EXTRA DATABASE CHECK
@@ -126,12 +126,14 @@ namespace SwiftCare.Services.Volunteers
             {
                 _logger.LogInformation(
                     "[VolunteerAccountService] Existing Volunteer found " +
-                    "by onboarding ID. VolunteerId={VolunteerId}",
-                    existingVolunteer.Id);
+                    "by onboarding ID. " +
+                    "VolunteerId={VolunteerId}, " +
+                    "VolunteerNumber={VolunteerNumber}",
+                    existingVolunteer.Id,
+                    existingVolunteer.VolunteerNumber);
 
                 return existingVolunteer;
             }
-
 
             // ========================================================
             // APPLICANT REQUIRED
@@ -140,11 +142,11 @@ namespace SwiftCare.Services.Volunteers
             if (onboarding.Applicant == null)
             {
                 throw new InvalidOperationException(
-                    "The applicant associated with this onboarding record could not be found.");
+                    "The applicant associated with this onboarding record " +
+                    "could not be found.");
             }
 
             var applicant = onboarding.Applicant;
-
 
             // ========================================================
             // APPLICATION REQUIRED
@@ -162,63 +164,33 @@ namespace SwiftCare.Services.Volunteers
             if (application == null)
             {
                 throw new InvalidOperationException(
-                    "The volunteer application associated with this onboarding record could not be found.");
+                    "The volunteer application associated with this " +
+                    "onboarding record could not be found.");
             }
-
 
             // ========================================================
             // OPPORTUNITY REQUIRED
-            //
-            // The VolunteerOpportunity supplies the Area used for
-            // automatic Supervisor assignment.
             // ========================================================
 
             if (application.VolunteerOpportunity == null)
             {
                 throw new InvalidOperationException(
-                    "The volunteer opportunity associated with this application could not be found.");
+                    "The volunteer opportunity associated with this " +
+                    "application could not be found.");
             }
 
             var opportunity =
                 application.VolunteerOpportunity;
 
-
             // ========================================================
             // AREA
-            // ========================================================
-            //
-            // The opportunity determines the volunteer's initial
-            // PreferredArea.
-            //
-            // Example:
-            //
-            // Opportunity Area:
-            //     ResidentCare
-            //
-            // Volunteer PreferredArea:
-            //     ResidentCare
-            //
-            // Supervisor Area:
-            //     ResidentCare
-            //
-            // Supervisor:
-            //     Thandi Mokoena
             // ========================================================
 
             var volunteerArea =
                 opportunity.Area;
 
-
             // ========================================================
             // FIND ACTIVE SUPERVISOR
-            // ========================================================
-            //
-            // We only automatically assign an active Supervisor
-            // responsible for the same VolunteerArea.
-            //
-            // If no Supervisor exists for that Area, the Volunteer
-            // will remain without a Supervisor and the required
-            // SupervisorAssignment step can be handled by Admin.
             // ========================================================
 
             var supervisor =
@@ -231,12 +203,12 @@ namespace SwiftCare.Services.Volunteers
                     .FirstOrDefaultAsync(
                         cancellationToken);
 
-
             if (supervisor != null)
             {
                 _logger.LogInformation(
                     "[VolunteerAccountService] Matching Supervisor found. " +
-                    "SupervisorId={SupervisorId}, SupervisorName={FirstName} {LastName}, " +
+                    "SupervisorId={SupervisorId}, " +
+                    "SupervisorName={FirstName} {LastName}, " +
                     "Area={Area}",
                     supervisor.Id,
                     supervisor.FirstName,
@@ -252,39 +224,120 @@ namespace SwiftCare.Services.Volunteers
                     volunteerArea);
             }
 
+            // ========================================================
+            // VALIDATE APPLICANT EMAIL
+            // ========================================================
+
+            if (string.IsNullOrWhiteSpace(applicant.Email))
+            {
+                throw new InvalidOperationException(
+                    "The applicant does not have an email address. " +
+                    "A Volunteer account cannot be created without an email address.");
+            }
+
+            // ========================================================
+            // GENERATE UNIQUE 6-DIGIT VOLUNTEER NUMBER
+            //
+            // Example:
+            //
+            // 482731
+            //
+            // Exactly 6 digits.
+            // No date is included.
+            // ========================================================
+
+            var volunteerNumber =
+                await GenerateUniqueVolunteerNumberAsync(
+                    cancellationToken);
+
+            _logger.LogInformation(
+                "[VolunteerAccountService] Generated Volunteer Number. " +
+                "VolunteerNumber={VolunteerNumber}, " +
+                "OnboardingId={OnboardingId}",
+                volunteerNumber,
+                volunteerOnboardingId);
+
+            // ========================================================
+            // GENERATE UNIQUE IDENTITY USERNAME
+            //
+            // We deliberately do NOT copy Applicant.UserName because
+            // Identity normally requires UserName to be unique.
+            //
+            // The Volunteer still receives the Applicant's email.
+            // ========================================================
+
+            var volunteerUserName =
+                await GenerateUniqueVolunteerUserNameAsync(
+                    volunteerNumber,
+                    cancellationToken);
 
             // ========================================================
             // CREATE VOLUNTEER
             // ========================================================
 
-            var now = DateTime.Now;
+            var now =
+                DateTime.Now;
 
             var volunteer = new Volunteer
             {
-                // ----------------------------------------------------
+                // ====================================================
+                // IDENTITY INFORMATION
+                // ====================================================
+
+                Email =
+                    applicant.Email,
+
+                UserName =
+                    volunteerUserName,
+
+                PhoneNumber =
+                    applicant.PhoneNumber,
+
+                EmailConfirmed =
+                    applicant.EmailConfirmed,
+
+                PhoneNumberConfirmed =
+                    applicant.PhoneNumberConfirmed,
+
+                // ====================================================
                 // BASIC PROFILE
-                // ----------------------------------------------------
+                // ====================================================
 
-                FirstName = applicant.FirstName,
-                LastName = applicant.LastName,
-                DateOfBirth = applicant.DateOfBirth,
-                ProfilePicture = applicant.ProfilePicture,
+                FirstName =
+                    applicant.FirstName,
 
+                LastName =
+                    applicant.LastName,
 
-                // ----------------------------------------------------
+                DateOfBirth =
+                    applicant.DateOfBirth,
+
+                ProfilePicture =
+                    applicant.ProfilePicture,
+
+                // ====================================================
                 // VOLUNTEER PROFILE
-                // ----------------------------------------------------
+                // ====================================================
 
-                Bio = applicant.ProfessionalSummary,
-                Motivation = applicant.CareerObjective,
+                Bio =
+                    applicant.ProfessionalSummary,
 
-                // Area comes from the approved opportunity.
-                PreferredArea = volunteerArea,
+                Motivation =
+                    applicant.CareerObjective,
 
+                PreferredArea =
+                    volunteerArea,
 
-                // ----------------------------------------------------
-                // APPLICATION / ONBOARDING LINK
-                // ----------------------------------------------------
+                // ====================================================
+                // VOLUNTEER IDENTIFICATION
+                // ====================================================
+
+                VolunteerNumber =
+                    volunteerNumber,
+
+                // ====================================================
+                // APPLICATION / ONBOARDING
+                // ====================================================
 
                 VolunteerApplicationId =
                     onboarding.VolunteerApplicationId,
@@ -292,50 +345,39 @@ namespace SwiftCare.Services.Volunteers
                 VolunteerOnboardingId =
                     onboarding.VolunteerOnboardingId,
 
-
-                // ----------------------------------------------------
+                // ====================================================
                 // STATUS
-                // ----------------------------------------------------
+                // ====================================================
 
                 Status =
                     VolunteerStatus.PendingActivation,
 
-                ActivatedDate = null,
+                ActivatedDate =
+                    null,
 
-                OnboardingCompletedDate = null,
+                OnboardingCompletedDate =
+                    null,
 
-
-                // ----------------------------------------------------
-                // VOLUNTEER NUMBER
-                //
-                // Assigned later by activation.
-                // ----------------------------------------------------
-
-                VolunteerNumber = null,
-
-
-                // ----------------------------------------------------
+                // ====================================================
                 // DATES
-                // ----------------------------------------------------
+                // ====================================================
 
-                StartDate = null,
-                EndDate = null,
+                StartDate =
+                    null,
 
+                EndDate =
+                    null,
 
-                // ----------------------------------------------------
+                // ====================================================
                 // ORGANISATION
-                // ----------------------------------------------------
+                // ====================================================
 
                 Department =
                     applicant.ProfessionalTitle,
 
-
-                // ----------------------------------------------------
+                // ====================================================
                 // SUPERVISOR
-                //
-                // Automatically assigned when a matching active
-                // Supervisor exists.
-                // ----------------------------------------------------
+                // ====================================================
 
                 SupervisorId =
                     supervisor?.Id,
@@ -343,18 +385,22 @@ namespace SwiftCare.Services.Volunteers
                 Supervisor =
                     supervisor,
 
-
-                // ----------------------------------------------------
+                // ====================================================
                 // AUDIT
-                // ----------------------------------------------------
+                // ====================================================
 
-                CreatedDateTime = now,
-                CreatedBy = adminId,
+                CreatedDateTime =
+                    now,
 
-                ModifiedDateTime = now,
-                ModifiedBy = adminId
+                CreatedBy =
+                    adminId,
+
+                ModifiedDateTime =
+                    now,
+
+                ModifiedBy =
+                    adminId
             };
-
 
             // ========================================================
             // ADD VOLUNTEER
@@ -362,18 +408,21 @@ namespace SwiftCare.Services.Volunteers
 
             _context.Volunteers.Add(volunteer);
 
-
             // ========================================================
             // LINK ONBOARDING
             // ========================================================
 
-            onboarding.Volunteer = volunteer;
+            onboarding.Volunteer =
+                volunteer;
 
-            onboarding.VolunteerCreatedDate = now;
+            onboarding.VolunteerCreatedDate =
+                now;
 
-            onboarding.ModifiedDate = now;
-            onboarding.ModifiedBy = adminId;
+            onboarding.ModifiedDate =
+                now;
 
+            onboarding.ModifiedBy =
+                adminId;
 
             // ========================================================
             // SAVE VOLUNTEER
@@ -382,25 +431,32 @@ namespace SwiftCare.Services.Volunteers
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-
             // ========================================================
             // LOG VOLUNTEER CREATION
             // ========================================================
 
             _logger.LogInformation(
-                "[VolunteerAccountService] Volunteer created. " +
-                "VolunteerId={VolunteerId}, ApplicantId={ApplicantId}, " +
-                "ApplicationId={ApplicationId}, OnboardingId={OnboardingId}, " +
-                "Area={Area}, SupervisorId={SupervisorId}, " +
+                "[VolunteerAccountService] Volunteer created successfully. " +
+                "VolunteerId={VolunteerId}, " +
+                "VolunteerNumber={VolunteerNumber}, " +
+                "ApplicantId={ApplicantId}, " +
+                "ApplicationId={ApplicationId}, " +
+                "OnboardingId={OnboardingId}, " +
+                "Email={Email}, " +
+                "UserName={UserName}, " +
+                "Area={Area}, " +
+                "SupervisorId={SupervisorId}, " +
                 "Status={Status}",
                 volunteer.Id,
+                volunteer.VolunteerNumber,
                 applicant.Id,
                 application.VolunteerApplicationId,
                 volunteerOnboardingId,
+                volunteer.Email,
+                volunteer.UserName,
                 volunteer.PreferredArea,
                 volunteer.SupervisorId,
                 volunteer.Status);
-
 
             // ========================================================
             // LOG SUPERVISOR ASSIGNMENT
@@ -412,10 +468,12 @@ namespace SwiftCare.Services.Volunteers
                     "[VolunteerAccountService] Supervisor automatically " +
                     "assigned to Volunteer. " +
                     "VolunteerId={VolunteerId}, " +
+                    "VolunteerNumber={VolunteerNumber}, " +
                     "SupervisorId={SupervisorId}, " +
                     "SupervisorName={FirstName} {LastName}, " +
                     "Area={Area}",
                     volunteer.Id,
+                    volunteer.VolunteerNumber,
                     supervisor.Id,
                     supervisor.FirstName,
                     supervisor.LastName,
@@ -426,11 +484,13 @@ namespace SwiftCare.Services.Volunteers
                 _logger.LogWarning(
                     "[VolunteerAccountService] Volunteer created without " +
                     "a Supervisor assignment. " +
-                    "VolunteerId={VolunteerId}, Area={Area}",
+                    "VolunteerId={VolunteerId}, " +
+                    "VolunteerNumber={VolunteerNumber}, " +
+                    "Area={Area}",
                     volunteer.Id,
+                    volunteer.VolunteerNumber,
                     volunteer.PreferredArea);
             }
-
 
             // ========================================================
             // LINK EXISTING DIDIT VERIFICATION
@@ -464,10 +524,13 @@ namespace SwiftCare.Services.Volunteers
 
                 _logger.LogInformation(
                     "[VolunteerAccountService] Didit verification linked " +
-                    "to Volunteer. VolunteerId={VolunteerId}, " +
+                    "to Volunteer. " +
+                    "VolunteerId={VolunteerId}, " +
+                    "VolunteerNumber={VolunteerNumber}, " +
                     "VerificationId={VerificationId}, " +
                     "ProviderPersonId={ProviderPersonId}",
                     volunteer.Id,
+                    volunteer.VolunteerNumber,
                     identityVerification.Id,
                     identityVerification.ProviderPersonId);
             }
@@ -479,7 +542,6 @@ namespace SwiftCare.Services.Volunteers
                     volunteerOnboardingId);
             }
 
-
             // ========================================================
             // FINAL LOG
             // ========================================================
@@ -488,14 +550,133 @@ namespace SwiftCare.Services.Volunteers
                 "[VolunteerAccountService] Volunteer account preparation " +
                 "completed successfully. " +
                 "VolunteerId={VolunteerId}, " +
-                "SupervisorId={SupervisorId}",
+                "VolunteerNumber={VolunteerNumber}, " +
+                "Email={Email}, " +
+                "SupervisorId={SupervisorId}, " +
+                "Status={Status}",
                 volunteer.Id,
-                volunteer.SupervisorId);
-
+                volunteer.VolunteerNumber,
+                volunteer.Email,
+                volunteer.SupervisorId,
+                volunteer.Status);
 
             return volunteer;
         }
 
+        // ============================================================
+        // GENERATE UNIQUE 6-DIGIT VOLUNTEER NUMBER
+        //
+        // Format:
+        //
+        //     XXXXXX
+        //
+        // Example:
+        //
+        //     482731
+        //
+        // The number is completely random.
+        // It does NOT contain the date.
+        //
+        // The database is checked before returning the number.
+        // ============================================================
+
+        private async Task<string> GenerateUniqueVolunteerNumberAsync(
+            CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                // Generates a number from 100000 to 999999.
+                // Therefore it will always contain exactly 6 digits.
+                var volunteerNumber =
+                    Random.Shared
+                        .Next(100000, 1000000)
+                        .ToString();
+
+                var exists =
+                    await _context.Volunteers
+                        .AsNoTracking()
+                        .AnyAsync(
+                            x =>
+                                x.VolunteerNumber ==
+                                volunteerNumber,
+                            cancellationToken);
+
+                if (!exists)
+                {
+                    return volunteerNumber;
+                }
+
+                _logger.LogWarning(
+                    "[VolunteerAccountService] Generated Volunteer Number " +
+                    "already exists. Regenerating. " +
+                    "VolunteerNumber={VolunteerNumber}",
+                    volunteerNumber);
+            }
+        }
+
+        // ============================================================
+        // GENERATE UNIQUE IDENTITY USERNAME
+        //
+        // Because Applicant and Volunteer are both Identity users,
+        // the Volunteer cannot normally reuse the Applicant's
+        // UserName.
+        //
+        // We therefore generate a unique username for the Volunteer.
+        //
+        // Email remains the applicant's real email address.
+        // ============================================================
+
+        private async Task<string> GenerateUniqueVolunteerUserNameAsync(
+            string volunteerNumber,
+            CancellationToken cancellationToken)
+        {
+            var baseUserName =
+                volunteerNumber
+                    .Replace("-", "")
+                    .ToLowerInvariant();
+
+            var userName =
+                $"volunteer.{baseUserName}";
+
+            var exists =
+                await _context.Users
+                    .AsNoTracking()
+                    .AnyAsync(
+                        x =>
+                            x.NormalizedUserName ==
+                            userName.ToUpperInvariant(),
+                        cancellationToken);
+
+            if (!exists)
+            {
+                return userName;
+            }
+
+            var suffix =
+                1;
+
+            while (true)
+            {
+                var candidate =
+                    $"{userName}.{suffix}";
+
+                var candidateExists =
+                    await _context.Users
+                        .AsNoTracking()
+                        .AnyAsync(
+                            x =>
+                                x.NormalizedUserName ==
+                                candidate.ToUpperInvariant(),
+                            cancellationToken);
+
+                if (!candidateExists)
+                {
+                    return candidate;
+                }
+
+                suffix++;
+            }
+        }
 
         // ============================================================
         // GET VOLUNTEER BY ONBOARDING
@@ -513,7 +694,6 @@ namespace SwiftCare.Services.Volunteers
                         volunteerOnboardingId,
                     cancellationToken);
         }
-
 
         // ============================================================
         // CHECK IF VOLUNTEER EXISTS

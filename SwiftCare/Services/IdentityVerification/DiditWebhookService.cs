@@ -1,6 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
+using SwiftCare.Services.VolunteerContracts;
+using System.Diagnostics.Contracts;
+using System.Runtime.Intrinsics.Arm;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -10,6 +14,7 @@ namespace SwiftCare.Services.IdentityVerification
     {
         private readonly SwiftCareDbContext _context;
         private readonly ILogger<DiditWebhookService> _logger;
+        private readonly IVolunteerContractService _volunteerContractService;
 
         private static readonly JsonSerializerOptions JsonOptions =
             new()
@@ -19,15 +24,21 @@ namespace SwiftCare.Services.IdentityVerification
 
         public DiditWebhookService(
             SwiftCareDbContext context,
-            ILogger<DiditWebhookService> logger)
+            ILogger<DiditWebhookService> logger,
+            IVolunteerContractService volunteerContractService)
         {
             _context = context;
             _logger = logger;
+            _volunteerContractService = volunteerContractService;
         }
 
-        public async Task ProcessWebhookAsync(
-            int webhookLogId,
-            CancellationToken cancellationToken = default)
+// ================================================================
+// PROCESS DIDIT WEBHOOK
+// ================================================================
+
+public async Task ProcessWebhookAsync(
+    int webhookLogId,
+    CancellationToken cancellationToken = default)
         {
             _logger.LogInformation(
                 "========== DIDIT WEBHOOK PROCESSING STARTED ==========");
@@ -62,6 +73,10 @@ namespace SwiftCare.Services.IdentityVerification
 
             try
             {
+                // ============================================================
+                // RAW BODY
+                // ============================================================
+
                 if (string.IsNullOrWhiteSpace(
                         webhook.RawBody))
                 {
@@ -72,6 +87,11 @@ namespace SwiftCare.Services.IdentityVerification
                 _logger.LogInformation(
                     "Raw Didit webhook body: {RawBody}",
                     webhook.RawBody);
+
+
+                // ============================================================
+                // DESERIALIZE
+                // ============================================================
 
                 var envelope =
                     JsonSerializer.Deserialize<DiditWebhookEnvelope>(
@@ -97,6 +117,11 @@ namespace SwiftCare.Services.IdentityVerification
                     envelope.VendorData,
                     envelope.Status);
 
+
+                // ============================================================
+                // PROCESS EVENT
+                // ============================================================
+
                 switch (envelope.WebhookType)
                 {
                     case "status.updated":
@@ -109,6 +134,7 @@ namespace SwiftCare.Services.IdentityVerification
 
                         break;
 
+
                     case "user.status.updated":
 
                         await ProcessUserStatusEventAsync(
@@ -117,6 +143,7 @@ namespace SwiftCare.Services.IdentityVerification
 
                         break;
 
+
                     case "user.data.updated":
 
                         await ProcessUserDataEventAsync(
@@ -124,6 +151,7 @@ namespace SwiftCare.Services.IdentityVerification
                             cancellationToken);
 
                         break;
+
 
                     case "business.status.updated":
 
@@ -135,6 +163,7 @@ namespace SwiftCare.Services.IdentityVerification
 
                         break;
 
+
                     case "activity.created":
 
                         await ProcessActivityEventAsync(
@@ -142,6 +171,7 @@ namespace SwiftCare.Services.IdentityVerification
                             cancellationToken);
 
                         break;
+
 
                     case "transaction.created":
 
@@ -152,6 +182,7 @@ namespace SwiftCare.Services.IdentityVerification
                             cancellationToken);
 
                         break;
+
 
                     default:
 
@@ -164,14 +195,26 @@ namespace SwiftCare.Services.IdentityVerification
                         break;
                 }
 
-                webhook.Processed = true;
-                webhook.ProcessingFailed = false;
+
+                // ============================================================
+                // MARK WEBHOOK AS PROCESSED
+                // ============================================================
+
+                webhook.Processed =
+                    true;
+
+                webhook.ProcessingFailed =
+                    false;
+
                 webhook.ProcessedDate =
                     DateTime.Now;
-                webhook.ProcessingError = null;
+
+                webhook.ProcessingError =
+                    null;
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
+
 
                 _logger.LogInformation(
                     "Didit webhook log {WebhookLogId} processed successfully.",
@@ -180,10 +223,23 @@ namespace SwiftCare.Services.IdentityVerification
                 _logger.LogInformation(
                     "========== DIDIT WEBHOOK PROCESSING FINISHED ==========");
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning(
+                    "Didit webhook processing cancelled. " +
+                    "WebhookLogId={WebhookLogId}.",
+                    webhookLogId);
+
+                throw;
+            }
             catch (Exception ex)
             {
-                webhook.ProcessingFailed = true;
-                webhook.Processed = false;
+                webhook.ProcessingFailed =
+                    true;
+
+                webhook.Processed =
+                    false;
+
                 webhook.ProcessingError =
                     ex.Message.Length > 4000
                         ? ex.Message[..4000]
@@ -201,6 +257,11 @@ namespace SwiftCare.Services.IdentityVerification
             }
         }
 
+
+        // ================================================================
+        // PROCESS SESSION EVENT
+        // ================================================================
+
         private async Task ProcessSessionEventAsync(
             DiditWebhookEnvelope envelope,
             CancellationToken cancellationToken)
@@ -214,6 +275,11 @@ namespace SwiftCare.Services.IdentityVerification
                 envelope.Status,
                 envelope.VendorData);
 
+
+            // ============================================================
+            // VENDOR DATA
+            // ============================================================
+
             if (string.IsNullOrWhiteSpace(
                     envelope.VendorData))
             {
@@ -223,6 +289,11 @@ namespace SwiftCare.Services.IdentityVerification
 
                 return;
             }
+
+
+            // ============================================================
+            // RESOLVE VERIFICATION ID
+            // ============================================================
 
             var verificationId =
                 ExtractVerificationId(
@@ -238,15 +309,23 @@ namespace SwiftCare.Services.IdentityVerification
             }
 
             _logger.LogInformation(
-                "Resolved Didit vendor_data {VendorData} to SwiftCare verification ID {VerificationId}.",
+                "Resolved Didit vendor_data {VendorData} to SwiftCare " +
+                "verification ID {VerificationId}.",
                 envelope.VendorData,
                 verificationId.Value);
+
+
+            // ============================================================
+            // LOAD VERIFICATION
+            // ============================================================
 
             var verification =
                 await _context
                     .VolunteerIdentityVerifications
                     .FirstOrDefaultAsync(
-                        x => x.Id == verificationId.Value,
+                        x =>
+                            x.Id ==
+                            verificationId.Value,
                         cancellationToken);
 
             if (verification == null)
@@ -266,6 +345,11 @@ namespace SwiftCare.Services.IdentityVerification
                 verification.Status,
                 verification.ProviderSessionId);
 
+
+            // ============================================================
+            // IGNORE LATE IN-PROGRESS EVENT
+            // ============================================================
+
             if (
                 verification.Status ==
                 VolunteerIdentityVerificationStatus.Verified &&
@@ -275,21 +359,42 @@ namespace SwiftCare.Services.IdentityVerification
                     StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation(
-                    "Ignoring late In Progress event for already verified verification {VerificationId}.",
+                    "Ignoring late In Progress event for already verified " +
+                    "verification {VerificationId}.",
                     verification.Id);
 
                 return;
             }
 
-            verification.ProviderSessionId =
-                string.IsNullOrWhiteSpace(
-                    verification.ProviderSessionId)
-                    ? envelope.SessionId
-                    : verification.ProviderSessionId;
+
+            // ============================================================
+            // SESSION ID
+            // ============================================================
+
+            if (string.IsNullOrWhiteSpace(
+                    verification.ProviderSessionId))
+            {
+                verification.ProviderSessionId =
+                    envelope.SessionId;
+            }
+
+
+            // ============================================================
+            // HANDLE DIDIT STATUS
+            // ============================================================
 
             switch (envelope.Status)
             {
+                // ========================================================
+                // APPROVED
+                // ========================================================
+
                 case "Approved":
+
+                    _logger.LogInformation(
+                        "Didit verification {VerificationId} received APPROVED status.",
+                        verification.Id);
+
 
                     verification.Status =
                         VolunteerIdentityVerificationStatus.Verified;
@@ -298,22 +403,59 @@ namespace SwiftCare.Services.IdentityVerification
                         true;
 
                     verification.VerifiedDate =
+                        DateTime.UtcNow;
+
+                    verification.FailureReason =
+                        null;
+
+                    verification.ModifiedDate =
                         DateTime.Now;
 
-                    verification.FailureReason = null;
 
                     ApplyDecisionData(
                         verification,
                         envelope.Decision);
 
-                    verification.ModifiedDate =
-                        DateTime.Now;
+
+                    // ----------------------------------------------------
+                    // SAVE VERIFIED DIDIT STATE FIRST
+                    // ----------------------------------------------------
+
+                    await _context.SaveChangesAsync(
+                        cancellationToken);
+
 
                     _logger.LogInformation(
-                        "Didit verification {VerificationId} marked VERIFIED.",
-                        verification.Id);
+                        "Didit verification {VerificationId} saved as VERIFIED. " +
+                        "Document={DocumentVerified}, " +
+                        "Liveness={LivenessVerified}, " +
+                        "FaceMatch={FaceMatchVerified}.",
+                        verification.Id,
+                        verification.DocumentVerified,
+                        verification.LivenessVerified,
+                        verification.FaceMatchVerified);
+
+
+                    // ----------------------------------------------------
+                    // GENERATE / REUSE CONTRACT
+                    //
+                    // IMPORTANT:
+                    // Do NOT perform a duplicate contract check here.
+                    //
+                    // TryGenerateVolunteerContractAsync delegates that
+                    // responsibility to CreateAndGenerateContractAsync().
+                    // ----------------------------------------------------
+
+                    await TryGenerateVolunteerContractAsync(
+                        verification,
+                        cancellationToken);
 
                     break;
+
+
+                // ========================================================
+                // DECLINED
+                // ========================================================
 
                 case "Declined":
 
@@ -340,11 +482,17 @@ namespace SwiftCare.Services.IdentityVerification
                         DateTime.Now;
 
                     _logger.LogWarning(
-                        "Didit verification {VerificationId} marked REJECTED. Reason={Reason}.",
+                        "Didit verification {VerificationId} marked REJECTED. " +
+                        "Reason={Reason}.",
                         verification.Id,
                         verification.FailureReason);
 
                     break;
+
+
+                // ========================================================
+                // IN REVIEW
+                // ========================================================
 
                 case "In Review":
 
@@ -364,6 +512,11 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
+
+                // ========================================================
+                // IN PROGRESS
+                // ========================================================
+
                 case "In Progress":
 
                     verification.Status =
@@ -377,6 +530,11 @@ namespace SwiftCare.Services.IdentityVerification
                         verification.Id);
 
                     break;
+
+
+                // ========================================================
+                // RESUBMITTED
+                // ========================================================
 
                 case "Resubmitted":
 
@@ -400,6 +558,11 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
+
+                // ========================================================
+                // ABANDONED
+                // ========================================================
+
                 case "Abandoned":
 
                     verification.Status =
@@ -409,6 +572,11 @@ namespace SwiftCare.Services.IdentityVerification
                         DateTime.Now;
 
                     break;
+
+
+                // ========================================================
+                // EXPIRED
+                // ========================================================
 
                 case "Expired":
 
@@ -422,10 +590,16 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
+
+                // ========================================================
+                // UNKNOWN
+                // ========================================================
+
                 default:
 
                     _logger.LogWarning(
-                        "Unhandled Didit session status '{Status}' for verification {VerificationId}.",
+                        "Unhandled Didit session status '{Status}' " +
+                        "for verification {VerificationId}.",
                         envelope.Status,
                         verification.Id);
 
@@ -435,8 +609,17 @@ namespace SwiftCare.Services.IdentityVerification
                     break;
             }
 
+
+            // ============================================================
+            // SAVE STATUS CHANGES
+            //
+            // For Approved this is technically already saved above,
+            // but keeping this here handles all other statuses.
+            // ============================================================
+
             await _context.SaveChangesAsync(
                 cancellationToken);
+
 
             _logger.LogInformation(
                 "VolunteerIdentityVerification {VerificationId} saved. " +
@@ -449,6 +632,138 @@ namespace SwiftCare.Services.IdentityVerification
                 verification.DocumentVerified,
                 verification.LivenessVerified,
                 verification.FaceMatchVerified);
+        }
+
+
+        // ================================================================
+        // TRY GENERATE VOLUNTEER CONTRACT
+        // ================================================================
+
+        private async Task TryGenerateVolunteerContractAsync(
+            VolunteerIdentityVerification verification,
+            CancellationToken cancellationToken)
+        {
+            // ============================================================
+            // DIDIT MUST BE VERIFIED
+            // ============================================================
+
+            if (verification.Status !=
+                VolunteerIdentityVerificationStatus.Verified)
+            {
+                _logger.LogInformation(
+                    "CONTRACT GENERATION SKIPPED: Identity verification " +
+                    "{VerificationId} is not Verified. Status={Status}.",
+                    verification.Id,
+                    verification.Status);
+
+                return;
+            }
+
+
+            // ============================================================
+            // LOAD ONBOARDING
+            // ============================================================
+
+            var onboarding =
+                await _context.VolunteerOnboardings
+                    .Include(x => x.Applicant)
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                            verification.VolunteerOnboardingId,
+                        cancellationToken);
+
+            if (onboarding == null)
+            {
+                _logger.LogWarning(
+                    "CONTRACT GENERATION SKIPPED: " +
+                    "Onboarding {OnboardingId} not found.",
+                    verification.VolunteerOnboardingId);
+
+                return;
+            }
+
+
+            // ============================================================
+            // IMPORTANT
+            //
+            // DO NOT CHECK VolunteerContracts HERE.
+            //
+            // CreateAndGenerateContractAsync() already handles:
+            //
+            // - no existing contract
+            //      -> creates and generates it
+            //
+            // - existing generated contract
+            //      -> reuses it
+            //
+            // - existing contract with missing GeneratedFilePath
+            //      -> regenerates the PDF
+            //
+            // This method should simply delegate to that service.
+            // ============================================================
+
+            _logger.LogInformation(
+                "CONTRACT GENERATION STARTING: " +
+                "Didit verification succeeded. " +
+                "OnboardingId={OnboardingId}, " +
+                "VerificationId={VerificationId}.",
+                onboarding.VolunteerOnboardingId,
+                verification.Id);
+
+
+            try
+            {
+                var contract =
+                    await _volunteerContractService
+                        .CreateAndGenerateContractAsync(
+                            onboarding.VolunteerOnboardingId,
+                            cancellationToken);
+
+
+                // ========================================================
+                // VERIFY RESULT
+                // ========================================================
+
+                if (contract == null)
+                {
+                    _logger.LogError(
+                        "CONTRACT GENERATION FAILED: " +
+                        "CreateAndGenerateContractAsync returned null. " +
+                        "OnboardingId={OnboardingId}.",
+                        onboarding.VolunteerOnboardingId);
+
+                    return;
+                }
+
+
+                _logger.LogInformation(
+                    "CONTRACT GENERATION COMPLETED: " +
+                    "OnboardingId={OnboardingId}, " +
+                    "ContractId={ContractId}, " +
+                    "ContractReference={ContractReference}, " +
+                    "GeneratedFileName={GeneratedFileName}, " +
+                    "GeneratedFilePath={GeneratedFilePath}, " +
+                    "Status={Status}.",
+                    onboarding.VolunteerOnboardingId,
+                    contract.VolunteerContractId,
+                    contract.ContractReference,
+                    contract.GeneratedFileName,
+                    contract.GeneratedFilePath,
+                    contract.Status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "CONTRACT GENERATION FAILED: " +
+                    "OnboardingId={OnboardingId}, " +
+                    "VerificationId={VerificationId}.",
+                    onboarding.VolunteerOnboardingId,
+                    verification.Id);
+
+                throw;
+            }
         }
 
         private static void ApplyDecisionData(

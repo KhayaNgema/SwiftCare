@@ -34,6 +34,7 @@
         SwiftCare.Models.VolunteerOnboarding.VolunteerContractStatus.Approved;
 }
 
+
 <div class="container contract-page">
 
     <!-- =========================================================
@@ -63,6 +64,7 @@
                     </p>
 
                 </div>
+
 
                 @if (isApproved)
                 {
@@ -553,13 +555,9 @@
                 {
                     <div class="contract-actions">
 
-                        <a href="@Url.Action(
-                                                                                   "DownloadContract",
-                                                                                   "VolunteerOnboarding",
-                                                                                   new
-                                                                                   {
-                                                                                       id = Model.VolunteerOnboardingId
-                                                                                   })"
+                        <a asp-controller="VolunteerOnboarding"
+                               asp-action="DownloadContract"
+                               asp-route-id="@Model.VolunteerOnboardingId"
                                class="btn-contract btn-download">
 
                             <i class="bi bi-download"></i>
@@ -744,13 +742,9 @@
 
                     <div class="contract-actions">
 
-                        <a href="@Url.Action(
-                                                                                   "DownloadContract",
-                                                                                   "VolunteerOnboarding",
-                                                                                   new
-                                                                                   {
-                                                                                       id = Model.VolunteerOnboardingId
-                                                                                   })"
+                        <a asp-controller="VolunteerOnboarding"
+                               asp-action="DownloadContract"
+                               asp-route-id="@Model.VolunteerOnboardingId"
                                class="btn-contract btn-download">
 
                             <i class="bi bi-file-earmark-arrow-down"></i>
@@ -772,13 +766,9 @@
                     {
                         <div class="contract-actions">
 
-                            <a href="@Url.Action(
-                                                                                               "DownloadContract",
-                                                                                               "VolunteerOnboarding",
-                                                                                               new
-                                                                                               {
-                                                                                                   id = Model.VolunteerOnboardingId
-                                                                                               })"
+                            <a asp-controller="VolunteerOnboarding"
+                                   asp-action="DownloadContract"
+                                   asp-route-id="@Model.VolunteerOnboardingId"
                                    class="btn-contract btn-download">
 
                                 <i class="bi bi-file-earmark-arrow-down"></i>
@@ -835,6 +825,7 @@
 @section Scripts
 {
     <script>
+
         document.addEventListener("DOMContentLoaded", function () {
 
             // ========================================================
@@ -1025,5 +1016,6 @@
             }
 
         });
+
     </script>
 }

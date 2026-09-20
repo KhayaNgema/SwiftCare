@@ -73,11 +73,11 @@ namespace SwiftCare.Models
             = DateTime.Now;
 
         // ============================================================
-        // TASKS
+        // TASK ASSIGNMENTS
         // ============================================================
 
-        public ICollection<VolunteerTask> Tasks { get; set; }
-            = new List<VolunteerTask>();
+        public ICollection<VolunteerTaskAssignment> TaskAssignments { get; set; }
+            = new List<VolunteerTaskAssignment>();
     }
 
     public enum VolunteerRosterStatus

@@ -131,8 +131,8 @@ namespace SwiftCare.Models
         public ICollection<VolunteerApplication> Applications { get; set; }
             = new List<VolunteerApplication>();
 
-        public ICollection<VolunteerTask> Tasks { get; set; }
-            = new List<VolunteerTask>();
+        public ICollection<VolunteerTaskAssignment> TaskAssignments { get; set; }
+            = new List<VolunteerTaskAssignment>();
 
 
         // ============================================================

@@ -146,7 +146,7 @@ namespace SwiftCare.Controllers
                 // TODAY'S TASK COUNT
                 // ============================================================
 
-                ViewBag.TodayTaskCount = await _context.VolunteerTasks
+                ViewBag.TodayTaskCount = await _context.VolunteerTaskAssignments
                     .CountAsync(
                         t =>
                             t.TaskDate >= today &&

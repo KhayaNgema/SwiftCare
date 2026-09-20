@@ -652,36 +652,103 @@ namespace SwiftCare.Controllers
 
         [HttpGet]
         public async Task<IActionResult> DownloadContract(
-            int onboardingId,
+            int id,
             CancellationToken cancellationToken = default)
         {
-            var userId =
-                _userManager.GetUserId(User);
+            Console.WriteLine("============================================================");
+            Console.WriteLine("DOWNLOAD CONTRACT ACTION STARTED");
+            Console.WriteLine($"Received route id: {id}");
+            Console.WriteLine($"Request URL: {Request.Path}");
+            Console.WriteLine($"Request Method: {Request.Method}");
+            Console.WriteLine("============================================================");
+
+            // ------------------------------------------------------------
+            // CONVERT ROUTE ID
+            // ------------------------------------------------------------
+
+            var onboardingId = id;
+
+            Console.WriteLine(
+                $"[1] OnboardingId after route binding: {onboardingId}");
+
+            // ------------------------------------------------------------
+            // AUTHENTICATED USER
+            // ------------------------------------------------------------
+
+            var userId = _userManager.GetUserId(User);
+
+            Console.WriteLine(
+                $"[2] Authenticated UserId: {userId}");
 
             if (string.IsNullOrWhiteSpace(userId))
             {
+                Console.WriteLine(
+                    "[ERROR] No authenticated user was found.");
+
                 return Challenge();
             }
 
+            // ------------------------------------------------------------
+            // VALIDATE ONBOARDING ID
+            // ------------------------------------------------------------
+
             if (onboardingId <= 0)
             {
+                Console.WriteLine(
+                    $"[ERROR] Invalid onboarding ID: {onboardingId}");
+
                 return BadRequest();
             }
+
+            Console.WriteLine(
+                $"[3] Onboarding ID is valid: {onboardingId}");
+
+            // ------------------------------------------------------------
+            // VERIFY ONBOARDING
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                "[4] Looking for onboarding belonging to current user...");
 
             var onboarding =
                 await _context.VolunteerOnboardings
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
                         x =>
-                            x.VolunteerOnboardingId ==
-                            onboardingId &&
+                            x.VolunteerOnboardingId == onboardingId &&
                             x.ApplicantId == userId,
                         cancellationToken);
 
             if (onboarding == null)
             {
+                Console.WriteLine(
+                    "[ERROR] Onboarding was NOT found.");
+
+                Console.WriteLine(
+                    $"[ERROR] OnboardingId: {onboardingId}");
+
+                Console.WriteLine(
+                    $"[ERROR] Applicant/UserId: {userId}");
+
                 return NotFound();
             }
+
+            Console.WriteLine(
+                "[5] Onboarding FOUND.");
+
+            Console.WriteLine(
+                $"[5] VolunteerOnboardingId: " +
+                $"{onboarding.VolunteerOnboardingId}");
+
+            Console.WriteLine(
+                $"[5] ApplicantId: {onboarding.ApplicantId}");
+
+            // ------------------------------------------------------------
+            // GET CONTRACT
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                "[6] Looking for generated contract...");
 
             var contract =
                 await _contractService
@@ -689,28 +756,105 @@ namespace SwiftCare.Controllers
                         onboardingId,
                         cancellationToken);
 
-            if (contract == null ||
-                string.IsNullOrWhiteSpace(
-                    contract.GeneratedFilePath))
+            if (contract == null)
             {
+                Console.WriteLine(
+                    "[ERROR] CONTRACT IS NULL.");
+
+                Console.WriteLine(
+                    $"[ERROR] No contract found for OnboardingId: " +
+                    $"{onboardingId}");
+
                 return NotFound();
             }
+
+            Console.WriteLine(
+                "[7] Contract FOUND.");
+
+            Console.WriteLine(
+                $"[7] ContractReference: " +
+                $"{contract.ContractReference}");
+
+            Console.WriteLine(
+                $"[7] GeneratedFileName: " +
+                $"{contract.GeneratedFileName}");
+
+            Console.WriteLine(
+                $"[7] GeneratedFilePath: " +
+                $"{contract.GeneratedFilePath}");
+
+            // ------------------------------------------------------------
+            // CHECK GENERATED FILE PATH
+            // ------------------------------------------------------------
+
+            if (string.IsNullOrWhiteSpace(
+                contract.GeneratedFilePath))
+            {
+                Console.WriteLine(
+                    "[ERROR] GeneratedFilePath IS EMPTY.");
+
+                return NotFound();
+            }
+
+            Console.WriteLine(
+                "[8] GeneratedFilePath exists.");
+
+            // ------------------------------------------------------------
+            // RESOLVE SAFE PHYSICAL PATH
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                "[9] Resolving physical file path...");
 
             var fullPath =
                 GetSafeWebRootFilePath(
                     contract.GeneratedFilePath);
 
-            if (fullPath == null ||
-                !System.IO.File.Exists(fullPath))
+            if (fullPath == null)
             {
-                _logger.LogWarning(
-                    "Generated volunteer contract file not found. " +
-                    "OnboardingId={OnboardingId}, Path={Path}",
-                    onboardingId,
-                    contract.GeneratedFilePath);
+                Console.WriteLine(
+                    "[ERROR] GetSafeWebRootFilePath returned NULL.");
+
+                Console.WriteLine(
+                    $"[ERROR] Relative path was: " +
+                    $"{contract.GeneratedFilePath}");
 
                 return NotFound();
             }
+
+            Console.WriteLine(
+                "[10] Physical path resolved.");
+
+            Console.WriteLine(
+                $"[10] Full physical path: {fullPath}");
+
+            // ------------------------------------------------------------
+            // CHECK FILE EXISTS
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                "[11] Checking whether PDF exists on disk...");
+
+            bool fileExists =
+                System.IO.File.Exists(fullPath);
+
+            Console.WriteLine(
+                $"[11] File exists: {fileExists}");
+
+            if (!fileExists)
+            {
+                Console.WriteLine(
+                    "[ERROR] PDF DOES NOT EXIST ON DISK.");
+
+                Console.WriteLine(
+                    $"[ERROR] Expected file: {fullPath}");
+
+                return NotFound();
+            }
+
+            // ------------------------------------------------------------
+            // DOWNLOAD FILE NAME
+            // ------------------------------------------------------------
 
             var fileName =
                 string.IsNullOrWhiteSpace(
@@ -718,12 +862,24 @@ namespace SwiftCare.Controllers
                     ? $"{contract.ContractReference}.pdf"
                     : contract.GeneratedFileName;
 
+            Console.WriteLine(
+                $"[12] Download file name: {fileName}");
+
+            // ------------------------------------------------------------
+            // FINAL DOWNLOAD
+            // ------------------------------------------------------------
+
+            Console.WriteLine(
+                "[13] RETURNING PDF FILE TO BROWSER.");
+
+            Console.WriteLine(
+                "============================================================");
+
             return PhysicalFile(
                 fullPath,
                 "application/pdf",
                 fileName);
         }
-
         // ============================================================
         // UPLOAD SIGNED CONTRACT
         // ============================================================

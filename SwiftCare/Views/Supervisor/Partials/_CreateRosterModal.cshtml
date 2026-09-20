@@ -1,0 +1,206 @@
+﻿@using SwiftCare.Models
+@model SwiftCare.Models.VolunteerRoster
+
+<div class="vp-modal"
+     id="vpRosterModal"
+     aria-hidden="true">
+
+    <div class="vp-modal-backdrop js-close-roster-modal"></div>
+
+    <div class="vp-modal-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="vpRosterModalTitle">
+
+        <div class="vp-modal-header">
+
+            <div class="vp-modal-icon">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+
+            <button type="button"
+                    class="vp-modal-close js-close-roster-modal"
+                    aria-label="Close">
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="vp-modal-body">
+
+            <span class="vp-modal-kicker">
+                WEEKLY SCHEDULE
+            </span>
+
+            <h2 id="vpRosterModalTitle">
+                Create Roster
+            </h2>
+
+
+            <div class="vp-modal-task-description">
+
+                <span>
+                    Volunteer
+                </span>
+
+                <p>
+                    @Model.Volunteer?.FirstName
+                    @Model.Volunteer?.LastName
+                </p>
+
+            </div>
+
+
+            <form id="vpCreateRosterForm"
+                  asp-controller="Supervisor"
+                  asp-action="CreateRoster"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <input type="hidden"
+                       name="VolunteerId"
+                       value="@Model.VolunteerId" />
+
+
+                <input type="hidden"
+                       name="SupervisorId"
+                       value="@Model.SupervisorId" />
+
+
+                <input type="hidden"
+                       id="vpRosterWeekType"
+                       name="weekType"
+                       value="current" />
+
+
+                <div class="vp-form-group">
+
+                    <label for="vpRosterName"
+                           class="vp-form-label">
+
+                        Roster Name
+
+                    </label>
+
+                    <input type="text"
+                           id="vpRosterName"
+                           name="RosterName"
+                           class="vp-form-input"
+                           maxlength="200"
+                           required />
+
+                </div>
+
+
+                <div class="vp-form-group">
+
+                    <label for="vpRosterDescription"
+                           class="vp-form-label">
+
+                        Description
+
+                    </label>
+
+                    <textarea id="vpRosterDescription"
+                              name="Description"
+                              class="vp-form-input"
+                              rows="3"
+                              maxlength="2000"></textarea>
+
+                </div>
+
+
+                <div class="vp-time-grid">
+
+                    <div class="vp-form-group">
+
+                        <label for="vpRosterStartDate"
+                               class="vp-form-label">
+
+                            Start Date
+
+                        </label>
+
+                        <input type="date"
+                               id="vpRosterStartDate"
+                               name="StartDate"
+                               class="vp-form-input"
+                               required />
+
+                    </div>
+
+
+                    <div class="vp-form-group">
+
+                        <label for="vpRosterEndDate"
+                               class="vp-form-label">
+
+                            End Date
+
+                        </label>
+
+                        <input type="date"
+                               id="vpRosterEndDate"
+                               name="EndDate"
+                               class="vp-form-input"
+                               required />
+
+                    </div>
+
+                </div>
+
+
+                <div class="vp-form-group">
+
+                    <label for="vpRosterNotes"
+                           class="vp-form-label">
+
+                        Notes
+
+                    </label>
+
+                    <textarea id="vpRosterNotes"
+                              name="Notes"
+                              class="vp-form-input"
+                              rows="3"
+                              maxlength="2000"></textarea>
+
+                </div>
+
+
+                <div class="vp-modal-actions">
+
+                    <button type="button"
+                            class="vp-modal-cancel js-close-roster-modal">
+
+                        Cancel
+
+                    </button>
+
+
+                    <button type="submit"
+                            class="vp-modal-submit"
+                            id="vpCreateRosterButton">
+
+                        <i class="bi bi-calendar-check"></i>
+
+                        <span>
+                            Create Roster
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

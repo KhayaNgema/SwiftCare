@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Builder;
@@ -12,8 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Serilog;
 using SwiftCare.Configuration;
 using SwiftCare.Data;
 using SwiftCare.Helpers;
@@ -40,39 +37,6 @@ public class Startup
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration;
-
-        Console.WriteLine(
-            "============================================================");
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Startup constructor called.");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Environment: " +
-            $"{Configuration["ASPNETCORE_ENVIRONMENT"] ?? "Unknown"}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Database configured: " +
-            $"{!string.IsNullOrWhiteSpace(
-                Configuration.GetConnectionString("DefaultConnection"))}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Azure DI Endpoint configured: " +
-            $"{!string.IsNullOrWhiteSpace(
-                Configuration["AzureDocumentIntelligence:Endpoint"])}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Azure DI API Key configured: " +
-            $"{!string.IsNullOrWhiteSpace(
-                Configuration["AzureDocumentIntelligence:ApiKey"])}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Azure DI Model ID configured: " +
-            $"{!string.IsNullOrWhiteSpace(
-                Configuration["AzureDocumentIntelligence:ModelId"])}");
-
-        Console.WriteLine(
-            "============================================================");
     }
 
     public IConfiguration Configuration { get; }
@@ -84,35 +48,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        Console.WriteLine(
-            "============================================================");
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] ConfigureServices STARTED");
-
-        Console.WriteLine(
-            "============================================================");
-
-
-        // ============================================================
-        // LOGGING
-        // Register this early.
-        // ============================================================
-
-        services.AddLogging(
-            logging =>
-            {
-                logging.ClearProviders();
-
-                logging.AddConsole();
-
-                logging.AddDebug();
-
-                logging.SetMinimumLevel(
-                    LogLevel.Information);
-            });
-
-
         // ============================================================
         // CONNECTION STRING
         // ============================================================
@@ -123,13 +58,8 @@ public class Startup
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] ERROR: DefaultConnection is missing.");
-        }
-        else
-        {
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] Database connection configured: TRUE");
+            throw new InvalidOperationException(
+                "DefaultConnection is missing.");
         }
 
 
@@ -143,11 +73,8 @@ public class Startup
         var iv =
             Configuration["AES_IV"];
 
-
         byte[] keyBytes;
-
         byte[] ivBytes;
-
 
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -155,13 +82,11 @@ public class Startup
                 "AES_KEY is not configured.");
         }
 
-
         if (string.IsNullOrWhiteSpace(iv))
         {
             throw new InvalidOperationException(
                 "AES_IV is not configured.");
         }
-
 
         try
         {
@@ -177,10 +102,6 @@ public class Startup
                 "AES_KEY or AES_IV is not valid Base64.",
                 ex);
         }
-
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] AES configuration loaded successfully.");
 
 
         // ============================================================
@@ -335,19 +256,27 @@ public class Startup
         // ============================================================
 
         services.AddScoped<FileUploadService>();
-        services.Configure<DiditOptions>(Configuration.GetSection(DiditOptions.SectionName));
-        services.AddScoped<IDiditService, DiditService>();
+
+        services.Configure<DiditOptions>(
+            Configuration.GetSection(
+                DiditOptions.SectionName));
+
+        services.AddScoped<
+            IDiditService,
+            DiditService>();
 
         services.AddScoped<
             IVolunteerIdentityVerificationService,
             VolunteerIdentityVerificationService>();
+
         services.AddScoped<
-    IDiditWebhookSignatureValidator,
-    DiditWebhookSignatureValidator>();
+            IDiditWebhookSignatureValidator,
+            DiditWebhookSignatureValidator>();
 
         services.AddScoped<
             IDiditWebhookService,
             DiditWebhookService>();
+
         services.AddScoped<
             RandomPasswordGeneratorService>();
 
@@ -359,8 +288,6 @@ public class Startup
 
         services.AddScoped<SmsService>();
 
-        services.AddScoped<VolunteerContractReferenceGenerator>();
-
         services.AddScoped<
             VolunteerContractReferenceGenerator>();
 
@@ -368,9 +295,9 @@ public class Startup
             IVolunteerContractService,
             VolunteerContractService>();
 
-        services.AddScoped<IVolunteerAccountService, VolunteerAccountService>();
-
-        services.AddScoped<VolunteerContractReferenceGenerator>();
+        services.AddScoped<
+            IVolunteerAccountService,
+            VolunteerAccountService>();
 
         services.AddScoped<
             IVolunteerContractContentBuilder,
@@ -380,21 +307,29 @@ public class Startup
             IVolunteerContractPdfGenerator,
             VolunteerContractPdfGenerator>();
 
-        services.AddScoped<IVolunteerContractService,VolunteerContractService>();
-
         services.AddScoped<BarcodeService>();
 
         services.AddScoped<QrCodeService>();
 
-        services.AddScoped<IVolunteerActivationService, VolunteerActivationService>();
+        services.AddScoped<
+            IVolunteerActivationService,
+            VolunteerActivationService>();
 
-        services.AddScoped<IVolunteerOnboardingService, VolunteerOnboardingService>();
+        services.AddScoped<
+            IVolunteerOnboardingService,
+            VolunteerOnboardingService>();
 
-        services.AddScoped<IVolunteerInterviewEvaluationEngine,VolunteerInterviewEvaluationEngine>();
+        services.AddScoped<
+            IVolunteerInterviewEvaluationEngine,
+            VolunteerInterviewEvaluationEngine>();
+
         services.Configure<SwiftCareLlmOptions>(
-            Configuration.GetSection(SwiftCareLlmOptions.SectionName));
+            Configuration.GetSection(
+                SwiftCareLlmOptions.SectionName));
 
-        services.AddSingleton<ISwiftCareLlmService, SwiftCareLlmService>();
+        services.AddSingleton<
+            ISwiftCareLlmService,
+            SwiftCareLlmService>();
 
         services.AddHttpClient();
 
@@ -402,10 +337,6 @@ public class Startup
         // ============================================================
         // VOLUNTEER ATS
         // ============================================================
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Registering Volunteer ATS services...");
-
 
         services.AddScoped<
             VolunteerEligibilityEngine>();
@@ -444,7 +375,7 @@ public class Startup
             IVolunteerCVExtractionEngine,
             VolunteerCVExtractionEngine>();
 
-        services.AddSignalR();
+
         // ============================================================
         // CV PARSING ENGINE
         // ============================================================
@@ -463,8 +394,11 @@ public class Startup
             VolunteerCVProcessingEngine>();
 
 
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Volunteer ATS services registered.");
+        // ============================================================
+        // SIGNALR
+        // ============================================================
+
+        services.AddSignalR();
 
 
         // ============================================================
@@ -483,46 +417,21 @@ public class Startup
         services.AddSingleton<DocumentIntelligenceClient>(
             serviceProvider =>
             {
-                Console.WriteLine(
-                    "============================================================");
-
-                Console.WriteLine(
-                    "[SWIFTCARE AZURE DI] Creating DocumentIntelligenceClient");
-
-
                 var configuration =
                     serviceProvider.GetRequiredService<
                         IConfiguration>();
-
 
                 var endpoint =
                     configuration[
                         "AzureDocumentIntelligence:Endpoint"];
 
-
                 var apiKey =
                     configuration[
                         "AzureDocumentIntelligence:ApiKey"];
 
-
                 var modelId =
                     configuration[
                         "AzureDocumentIntelligence:ModelId"];
-
-
-                Console.WriteLine(
-                    $"[SWIFTCARE AZURE DI] Endpoint configured: " +
-                    $"{!string.IsNullOrWhiteSpace(endpoint)}");
-
-
-                Console.WriteLine(
-                    $"[SWIFTCARE AZURE DI] API Key configured: " +
-                    $"{!string.IsNullOrWhiteSpace(apiKey)}");
-
-
-                Console.WriteLine(
-                    $"[SWIFTCARE AZURE DI] Model ID configured: " +
-                    $"{!string.IsNullOrWhiteSpace(modelId)}");
 
 
                 // ----------------------------------------------------
@@ -576,43 +485,16 @@ public class Startup
                 // CREATE CLIENT
                 // ----------------------------------------------------
 
-                var client =
-                    new DocumentIntelligenceClient(
-                        endpointUri,
-                        new AzureKeyCredential(
-                            apiKey.Trim()));
-
-
-                Console.WriteLine(
-                    "[SWIFTCARE AZURE DI] DocumentIntelligenceClient created successfully.");
-
-                Console.WriteLine(
-                    "============================================================");
-
-
-                return client;
-            });
-
-
-        // ============================================================
-        // SIGNALR
-        // ============================================================
-
-        services.AddSignalR(
-            options =>
-            {
-                options.EnableDetailedErrors =
-                    false;
+                return new DocumentIntelligenceClient(
+                    endpointUri,
+                    new AzureKeyCredential(
+                        apiKey.Trim()));
             });
 
 
         // ============================================================
         // HANGFIRE
         // ============================================================
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Configuring Hangfire...");
-
 
         services.AddHangfire(
             config =>
@@ -652,7 +534,6 @@ public class Startup
                         });
             });
 
-
         services.AddHangfireServer();
 
 
@@ -667,16 +548,6 @@ public class Startup
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
             });
-
-
-        Console.WriteLine(
-            "============================================================");
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] ConfigureServices COMPLETED");
-
-        Console.WriteLine(
-            "============================================================");
     }
 
 
@@ -688,48 +559,6 @@ public class Startup
         IApplicationBuilder app,
         IWebHostEnvironment env)
     {
-        Console.WriteLine(
-            "============================================================");
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Configure STARTED");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Environment: " +
-            $"{env.EnvironmentName}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] WebRootPath: " +
-            $"{env.WebRootPath}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] ContentRootPath: " +
-            $"{env.ContentRootPath}");
-
-        Console.WriteLine(
-            "============================================================");
-
-
-        // ============================================================
-        // SERILOG
-        // ============================================================
-
-        Log.Logger =
-            new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.Console()
-                .WriteTo.Debug()
-                .WriteTo.File(
-                    "Logs/myapp-.txt",
-                    rollingInterval:
-                        RollingInterval.Day)
-                .CreateLogger();
-
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Serilog configured.");
-
-
         // ============================================================
         // DEVELOPMENT / PRODUCTION
         // ============================================================
@@ -839,13 +668,6 @@ public class Startup
 
 
         // ============================================================
-        // SERILOG REQUEST LOGGING
-        // ============================================================
-
-        app.UseSerilogRequestLogging();
-
-
-        // ============================================================
         // ENDPOINTS
         // ============================================================
 
@@ -858,203 +680,70 @@ public class Startup
                         "{controller=Home}/{action=Index}/{id?}");
 
                 endpoints.MapRazorPages();
-                endpoints.MapHub<VolunteerInterviewHub>("/volunteerInterviewHub");
+
+                endpoints.MapHub<VolunteerInterviewHub>(
+                    "/volunteerInterviewHub");
             });
-
-
-        // ============================================================
-        // AZURE CONFIGURATION CHECK
-        // ============================================================
-
-        Console.WriteLine(
-            "============================================================");
-
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] FINAL AZURE DOCUMENT INTELLIGENCE CHECK");
-
-        var azureEndpoint =
-            Configuration[
-                "AzureDocumentIntelligence:Endpoint"];
-
-        var azureApiKey =
-            Configuration[
-                "AzureDocumentIntelligence:ApiKey"];
-
-        var azureModelId =
-            Configuration[
-                "AzureDocumentIntelligence:ModelId"];
-
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Endpoint configured: " +
-            $"{!string.IsNullOrWhiteSpace(azureEndpoint)}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] API Key configured: " +
-            $"{!string.IsNullOrWhiteSpace(azureApiKey)}");
-
-        Console.WriteLine(
-            $"[SWIFTCARE STARTUP] Model ID configured: " +
-            $"{!string.IsNullOrWhiteSpace(azureModelId)}");
-
-
-        if (!string.IsNullOrWhiteSpace(
-            azureEndpoint))
-        {
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Endpoint: " +
-                $"{azureEndpoint}");
-        }
-
-
-        if (!string.IsNullOrWhiteSpace(
-            azureModelId))
-        {
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Model ID: " +
-                $"{azureModelId}");
-        }
-
-
-        Console.WriteLine(
-            "============================================================");
 
 
         // ============================================================
         // CREATE ROLES / DEFAULT USER
         // ============================================================
 
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Creating roles/default user...");
+        app.ApplicationServices
+            .CreateRolesAndDefaultUser()
+            .GetAwaiter()
+            .GetResult();
 
 
-        try
-        {
-            app.ApplicationServices
-                .CreateRolesAndDefaultUser()
-                .Wait();
-
-
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] Roles/default user completed.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                "============================================================");
-
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] FAILED TO CREATE ROLES/DEFAULT USER");
-
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Exception Type: " +
-                $"{ex.GetType().FullName}");
-
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Exception Message: " +
-                $"{ex.Message}");
-
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Full Exception: " +
-                $"{ex}");
-
-            Console.WriteLine(
-                "============================================================");
-
-            throw;
-        }
         // ============================================================
         // SEED VOLUNTEER POLICIES
         // ============================================================
 
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] Seeding volunteer onboarding policies...");
-
-        try
+        using (var scope =
+            app.ApplicationServices.CreateScope())
         {
-            using (var scope =
-                app.ApplicationServices.CreateScope())
-            {
-                var context =
-                    scope.ServiceProvider
-                        .GetRequiredService<SwiftCareDbContext>();
+            var context =
+                scope.ServiceProvider
+                    .GetRequiredService<SwiftCareDbContext>();
 
-                VolunteerPolicySeedData
-                    .SeedAsync(context)
-                    .GetAwaiter()
-                    .GetResult();
-            }
-
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] Volunteer onboarding policies seeded successfully.");
+            VolunteerPolicySeedData
+                .SeedAsync(context)
+                .GetAwaiter()
+                .GetResult();
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                "============================================================");
 
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] FAILED TO SEED VOLUNTEER POLICIES");
 
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Exception Type: " +
-                $"{ex.GetType().FullName}");
-
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Exception Message: " +
-                $"{ex.Message}");
-
-            Console.WriteLine(
-                $"[SWIFTCARE STARTUP] Full Exception: " +
-                $"{ex}");
-
-            Console.WriteLine(
-                "============================================================");
-
-            throw;
-        }
         // ============================================================
         // SEED SUPERVISORS
         // ============================================================
 
-        Console.WriteLine("[SWIFTCARE STARTUP] Seeding supervisor accounts...");
-
-        try
+        using (var scope =
+            app.ApplicationServices.CreateScope())
         {
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                SupervisorSeedData
-                    .SeedAsync(scope.ServiceProvider)
-                    .GetAwaiter()
-                    .GetResult();
-            }
-
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] Supervisor accounts seeded successfully.");
+            SupervisorSeedData
+                .SeedAsync(scope.ServiceProvider)
+                .GetAwaiter()
+                .GetResult();
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                "[SWIFTCARE STARTUP] Supervisor seeding failed.");
 
-            Console.WriteLine(ex);
 
-            throw;
-        }
         // ============================================================
-        // APPLICATION READY
+        // SEED VOLUNTEER TASK LIBRARY
         // ============================================================
 
-        Console.WriteLine(
-            "============================================================");
+        using (var scope =
+            app.ApplicationServices.CreateScope())
+        {
+            var context =
+                scope.ServiceProvider
+                    .GetRequiredService<SwiftCareDbContext>();
 
-        Console.WriteLine(
-            "[SWIFTCARE STARTUP] APPLICATION STARTUP COMPLETE");
-
-        Console.WriteLine(
-            "============================================================");
-
-
+            TaskSeeder
+                .SeedAsync(context)
+                .GetAwaiter()
+                .GetResult();
+        }
     }
 
 

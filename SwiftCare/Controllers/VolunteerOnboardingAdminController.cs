@@ -12,6 +12,7 @@ using SwiftCare.Services.IdentityVerification;
 using SwiftCare.Services.VolunteerActivation;
 using SwiftCare.Services.VolunteerContracts;
 using SwiftCare.Services.VolunteerOnboarding;
+using SwiftCare.Services.Volunteers;
 using SwiftCare.ViewModels;
 using System;
 using System.Linq;
@@ -32,6 +33,7 @@ namespace SwiftCare.Controllers
         private readonly IConfiguration _configuration;
         private readonly IVolunteerIdentityVerificationService _identityVerificationService;
         private readonly IVolunteerContractService _contractService;
+        private readonly IVolunteerAccountService _volunteerAccountService;
 
         public VolunteerOnboardingAdminController(
             ILogger<VolunteerOnboardingAdminController> logger,
@@ -39,6 +41,7 @@ namespace SwiftCare.Controllers
             UserManager<UserBaseModel> userManager,
             IVolunteerOnboardingService onboardingService,
             IVolunteerActivationService activationService,
+            IVolunteerAccountService volunteerAccountService,
             EmailService emailService,
             IConfiguration configuration,
             IVolunteerIdentityVerificationService identityVerificationService,
@@ -49,6 +52,7 @@ namespace SwiftCare.Controllers
             _userManager = userManager;
             _onboardingService = onboardingService;
             _activationService = activationService;
+            _volunteerAccountService = volunteerAccountService;
             _emailService = emailService;
             _configuration = configuration;
             _contractService = contractService;
@@ -172,22 +176,47 @@ namespace SwiftCare.Controllers
         // APPROVE VOLUNTEER CONTRACT
         // ============================================================
 
+        // ============================================================
+        // APPROVE VOLUNTEER CONTRACT
+        // ============================================================
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveContract(
-    int onboardingId,
-    string? reviewNotes,
-    CancellationToken cancellationToken)
+            int onboardingId,
+            string? reviewNotes,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var admin = await _userManager.GetUserAsync(User);
+                // ========================================================
+                // GET ADMIN
+                // ========================================================
+
+                var admin =
+                    await _userManager.GetUserAsync(User);
 
                 if (admin == null)
                 {
-                    TempData["Error"] = "Administrator account could not be found.";
-                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                    TempData["Error"] =
+                        "Administrator account could not be found.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
                 }
+
+
+                _logger.LogInformation(
+                    "[VOLUNTEER ONBOARDING] Contract approval started. " +
+                    "OnboardingId={OnboardingId}, AdminId={AdminId}",
+                    onboardingId,
+                    admin.Id);
+
+
+                // ========================================================
+                // GET CONTRACT
+                // ========================================================
 
                 var contract =
                     await _contractService.GetContractByOnboardingAsync(
@@ -196,47 +225,150 @@ namespace SwiftCare.Controllers
 
                 if (contract == null)
                 {
-                    TempData["Error"] = "No volunteer service agreement was found.";
-                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                    TempData["Error"] =
+                        "No volunteer service agreement was found.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
                 }
 
-                // Approve the signed contract.
+
+                // ========================================================
+                // APPROVE SIGNED CONTRACT
+                // ========================================================
+
                 await _contractService.ApproveContractAsync(
                     onboardingId,
                     admin.Id,
                     reviewNotes,
                     cancellationToken);
 
-                // Reload onboarding after contract approval.
+
+                _logger.LogInformation(
+                    "[VOLUNTEER ONBOARDING] Contract approved. " +
+                    "ContractId={ContractId}, OnboardingId={OnboardingId}",
+                    contract.VolunteerContractId,
+                    onboardingId);
+
+
+                // ========================================================
+                // LOAD ONBOARDING
+                // ========================================================
+
                 var onboarding =
                     await _context.VolunteerOnboardings
                         .FirstOrDefaultAsync(
-                            x => x.VolunteerOnboardingId == onboardingId,
+                            x =>
+                                x.VolunteerOnboardingId ==
+                                onboardingId,
                             cancellationToken);
 
                 if (onboarding == null)
                 {
-                    TempData["Error"] = "Volunteer onboarding record could not be found.";
-                    return RedirectToAction(nameof(Review), new { id = onboardingId });
+                    TempData["Error"] =
+                        "Volunteer onboarding record could not be found.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
                 }
 
-                // ------------------------------------------------------------
-                // CONTRACT APPROVED
-                // Move onboarding to FINAL ADMINISTRATIVE VERIFICATION.
-                // ------------------------------------------------------------
-                if (onboarding.Status == VolunteerOnboardingStatus.ContractPending)
+
+                // ========================================================
+                // CREATE VOLUNTEER ACCOUNT / PROFILE
+                //
+                // This creates the Volunteer record but does NOT activate
+                // the Volunteer.
+                //
+                // Volunteer status:
+                //     PendingActivation
+                //
+                // Activation remains a separate step.
+                // ========================================================
+
+                Volunteer volunteer;
+
+                try
                 {
-                    onboarding.Status = VolunteerOnboardingStatus.AdminVerification;
-                    onboarding.CurrentStep = 4;
-                    onboarding.ModifiedDate = DateTime.Now;
-                    onboarding.ModifiedBy = admin.Id;
+                    volunteer =
+                        await _volunteerAccountService
+                            .CreateFromOnboardingAsync(
+                                onboardingId,
+                                admin.Id,
+                                cancellationToken);
 
-                    await _context.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation(
+                        "[VOLUNTEER ONBOARDING] Volunteer account/profile " +
+                        "created successfully after contract approval. " +
+                        "VolunteerId={VolunteerId}, " +
+                        "OnboardingId={OnboardingId}, " +
+                        "Status={Status}, " +
+                        "SupervisorId={SupervisorId}",
+                        volunteer.Id,
+                        onboardingId,
+                        volunteer.Status,
+                        volunteer.SupervisorId);
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "[VOLUNTEER ONBOARDING] Contract was approved, " +
+                        "but Volunteer account/profile creation failed. " +
+                        "OnboardingId={OnboardingId}, AdminId={AdminId}",
+                        onboardingId,
+                        admin.Id);
+
+                    TempData["Error"] =
+                        "The contract was approved, but the Volunteer account " +
+                        "could not be created. Please review the onboarding record.";
+
+                    return RedirectToAction(
+                        nameof(Review),
+                        new { id = onboardingId });
+                }
+
+
+                // ========================================================
+                // MOVE ONBOARDING TO FINAL ADMINISTRATIVE VERIFICATION
+                // ========================================================
+
+                if (onboarding.Status ==
+                    VolunteerOnboardingStatus.ContractPending)
+                {
+                    onboarding.Status =
+                        VolunteerOnboardingStatus.AdminVerification;
+
+                    onboarding.CurrentStep = 4;
+
+                    onboarding.ModifiedDate =
+                        DateTime.Now;
+
+                    onboarding.ModifiedBy =
+                        admin.Id;
+
+                    await _context.SaveChangesAsync(
+                        cancellationToken);
+
+                    _logger.LogInformation(
+                        "[VOLUNTEER ONBOARDING] Onboarding moved to " +
+                        "AdminVerification after contract approval. " +
+                        "OnboardingId={OnboardingId}, VolunteerId={VolunteerId}",
+                        onboardingId,
+                        volunteer.Id);
+                }
+
+
+                // ========================================================
+                // SUCCESS
+                // ========================================================
 
                 TempData["Success"] =
-                    "The Volunteer Service Agreement has been approved. " +
-                    "The onboarding record is now ready for final administrative verification.";
+                    "The Volunteer Service Agreement has been approved " +
+                    "and the Volunteer account has been created. " +
+                    "The Volunteer remains pending activation until final " +
+                    "administrative verification is completed.";
 
                 return RedirectToAction(
                     nameof(Review),
@@ -246,7 +378,8 @@ namespace SwiftCare.Controllers
             {
                 _logger.LogError(
                     ex,
-                    "Error approving volunteer contract for onboarding {OnboardingId}.",
+                    "[VOLUNTEER ONBOARDING] Error approving volunteer contract. " +
+                    "OnboardingId={OnboardingId}",
                     onboardingId);
 
                 TempData["Error"] =
@@ -257,8 +390,6 @@ namespace SwiftCare.Controllers
                     new { id = onboardingId });
             }
         }
-
-
         // ============================================================
         // REQUEST CONTRACT CORRECTION
         // ============================================================

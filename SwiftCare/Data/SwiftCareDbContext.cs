@@ -16,12 +16,17 @@ namespace SwiftCare.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
-    // ============================================================
-    // TRANSPORT REQUEST -> NURSE
-    // ============================================================
 
-    modelBuilder.Entity<TransportRequest>()
+            modelBuilder.Entity<VolunteerTaskAssignment>()
+                .HasOne(a => a.VolunteerRoster)
+                .WithMany(r => r.TaskAssignments)
+                .HasForeignKey(a => a.VolunteerRosterId)
+                .OnDelete(DeleteBehavior.SetNull);
+            // ============================================================
+            // TRANSPORT REQUEST -> NURSE
+            // ============================================================
+
+            modelBuilder.Entity<TransportRequest>()
         .HasOne(r => r.Nurse)
         .WithMany()
         .HasForeignKey(r => r.RequestedById)
@@ -694,26 +699,48 @@ namespace SwiftCare.Data
                 .HasForeignKey(r => r.VolunteerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // VolunteerTask -> VolunteerRoster
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(t => t.VolunteerRoster)
-                .WithMany(r => r.Tasks)
-                .HasForeignKey(t => t.VolunteerRosterId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // ============================================================
+            // VOLUNTEER TASK -> TASK ASSIGNMENTS
+            // ============================================================
 
-            // VolunteerTask -> Volunteer
             modelBuilder.Entity<VolunteerTask>()
-                .HasOne(t => t.Volunteer)
-                .WithMany(v => v.Tasks)
-                .HasForeignKey(t => t.VolunteerId)
+                .HasMany(t => t.Assignments)
+                .WithOne(a => a.VolunteerTask)
+                .HasForeignKey(a => a.VolunteerTaskId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // VolunteerTask -> AssignedBy
-            modelBuilder.Entity<VolunteerTask>()
-                .HasOne(t => t.AssignedBy)
+
+            // ============================================================
+            // VOLUNTEER TASK ASSIGNMENT -> VOLUNTEER
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerTaskAssignment>()
+                .HasOne(a => a.Volunteer)
                 .WithMany()
-                .HasForeignKey(t => t.AssignedById)
+                .HasForeignKey(a => a.VolunteerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
+            // ============================================================
+            // VOLUNTEER TASK ASSIGNMENT -> ROSTER
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerTaskAssignment>()
+                .HasOne(a => a.VolunteerRoster)
+                .WithMany(r => r.TaskAssignments)
+                .HasForeignKey(a => a.VolunteerRosterId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+
+            // ============================================================
+            // VOLUNTEER TASK ASSIGNMENT -> ASSIGNED BY
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerTaskAssignment>()
+                .HasOne(a => a.AssignedBy)
+                .WithMany()
+                .HasForeignKey(a => a.AssignedById)
+                .OnDelete(DeleteBehavior.SetNull);
 
         }
 
@@ -809,6 +836,8 @@ namespace SwiftCare.Data
         public DbSet<SwiftCare.Models.VolunteerAvailability> VolunteerAvailabilities { get; set; }
 
         public DbSet<SwiftCare.Models.VolunteerTask> VolunteerTasks { get; set; }
+
+        public DbSet<SwiftCare.Models.VolunteerTaskAssignment> VolunteerTaskAssignments { get; set; }
 
         public DbSet<SwiftCare.Models.VolunteerDocument> VolunteerDocuments { get; set; }
 

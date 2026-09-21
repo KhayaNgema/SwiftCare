@@ -56,6 +56,7 @@
             Start = Model.CurrentWeekStart,
             End = Model.CurrentWeekEnd,
             Roster = Model.CurrentRoster,
+            Shifts = Model.CurrentWeekShifts,
             Assignments = Model.CurrentWeekAssignments
         },
         new
@@ -66,6 +67,7 @@
             Start = Model.UpcomingWeekStart,
             End = Model.UpcomingWeekEnd,
             Roster = Model.UpcomingRoster,
+            Shifts = Model.UpcomingWeekShifts,
             Assignments = Model.UpcomingWeekAssignments
         }
     };
@@ -79,9 +81,13 @@
     <section class="vp-page-header">
 
         <div>
-            <span class="vp-eyebrow">VOLUNTEER MANAGEMENT</span>
+            <span class="vp-eyebrow">
+                VOLUNTEER MANAGEMENT
+            </span>
 
-            <h1>Volunteer Profile</h1>
+            <h1>
+                Volunteer Profile
+            </h1>
 
             <p>
                 Manage volunteer information, weekly schedules and assigned tasks.
@@ -140,9 +146,12 @@
 
                         <p class="vp-profile-subtitle">
                             Volunteer
+
                             @if (!string.IsNullOrWhiteSpace(Model.AreaName))
                             {
-                                <span>• @Model.AreaName</span>
+                                <span>
+                                    • @Model.AreaName
+                                </span>
                             }
                         </p>
 
@@ -158,46 +167,62 @@
                 <div class="vp-profile-details">
 
                     <div class="vp-detail-item">
-                        <span class="vp-detail-label">Email</span>
+
+                        <span class="vp-detail-label">
+                            Email
+                        </span>
 
                         <strong>
                             @(string.IsNullOrWhiteSpace(Model.Volunteer.Email)
                                 ? "Not provided"
                                 : Model.Volunteer.Email)
                         </strong>
+
                     </div>
 
 
                     <div class="vp-detail-item">
-                        <span class="vp-detail-label">Phone</span>
+
+                        <span class="vp-detail-label">
+                            Phone
+                        </span>
 
                         <strong>
                             @(string.IsNullOrWhiteSpace(Model.Volunteer.PhoneNumber)
                                 ? "Not provided"
                                 : Model.Volunteer.PhoneNumber)
                         </strong>
+
                     </div>
 
 
                     <div class="vp-detail-item">
-                        <span class="vp-detail-label">Area</span>
+
+                        <span class="vp-detail-label">
+                            Area
+                        </span>
 
                         <strong>
                             @(string.IsNullOrWhiteSpace(Model.AreaName)
                                 ? "Not assigned"
                                 : Model.AreaName)
                         </strong>
+
                     </div>
 
 
                     <div class="vp-detail-item">
-                        <span class="vp-detail-label">Supervisor</span>
+
+                        <span class="vp-detail-label">
+                            Supervisor
+                        </span>
 
                         <strong>
                             @(Model.Volunteer.Supervisor == null
                                 ? "Not assigned"
                                 : $"{Model.Volunteer.Supervisor.FirstName} {Model.Volunteer.Supervisor.LastName}")
                         </strong>
+
                     </div>
 
                 </div>
@@ -221,6 +246,7 @@
             </div>
 
             <div>
+
                 <span class="vp-stat-label">
                     Current Week Tasks
                 </span>
@@ -228,6 +254,7 @@
                 <strong>
                     @Model.CurrentWeekAssignments.Count
                 </strong>
+
             </div>
 
         </div>
@@ -240,6 +267,7 @@
             </div>
 
             <div>
+
                 <span class="vp-stat-label">
                     Next Week Tasks
                 </span>
@@ -247,6 +275,7 @@
                 <strong>
                     @Model.UpcomingWeekAssignments.Count
                 </strong>
+
             </div>
 
         </div>
@@ -259,6 +288,7 @@
             </div>
 
             <div>
+
                 <span class="vp-stat-label">
                     Completed
                 </span>
@@ -266,6 +296,7 @@
                 <strong id="vpCompletedCount">
                     @completedCount
                 </strong>
+
             </div>
 
         </div>
@@ -278,6 +309,7 @@
             </div>
 
             <div>
+
                 <span class="vp-stat-label">
                     In Progress
                 </span>
@@ -285,6 +317,7 @@
                 <strong id="vpInProgressCount">
                     @inProgressCount
                 </strong>
+
             </div>
 
         </div>
@@ -299,7 +332,6 @@
 
         <div class="vp-section-card vp-calendar-card">
 
-            <!-- Calendar Header -->
             <div class="vp-section-header">
 
                 <div>
@@ -313,7 +345,7 @@
                     </h3>
 
                     <p>
-                        View rosters and assigned volunteer tasks by day.
+                        View rosters, shifts and assigned volunteer tasks by day.
                     </p>
 
                 </div>
@@ -322,13 +354,20 @@
                 <div class="vp-calendar-legend">
 
                     <span class="vp-calendar-legend-item">
+
                         <span class="vp-calendar-legend-dot vp-calendar-legend-task"></span>
+
                         Assigned task
+
                     </span>
 
+
                     <span class="vp-calendar-legend-item">
+
                         <span class="vp-calendar-legend-dot vp-calendar-legend-weekend"></span>
+
                         Weekend
+
                     </span>
 
                 </div>
@@ -336,7 +375,9 @@
             </div>
 
 
-            <!-- Calendar -->
+            <!-- =================================================
+                 CALENDAR
+                 ================================================= -->
             <div class="vp-calendar-wrapper">
 
                 @foreach (var calendarWeek in calendarWeeks)
@@ -346,10 +387,17 @@
                         .ThenBy(x => x.StartTime)
                         .ToList();
 
+                    var weekShifts = calendarWeek.Shifts
+                        .OrderBy(x => x.ShiftDate)
+                        .ThenBy(x => x.StartTime)
+                        .ToList();
+
                     <div class="vp-calendar-week"
                          data-calendar-week="@calendarWeek.Start.ToString("yyyy-MM-dd")">
 
-                        <!-- Week Header -->
+                        <!-- =====================================
+                             WEEK HEADER
+                             ===================================== -->
                         <div class="vp-calendar-week-header">
 
                             <div>
@@ -363,9 +411,11 @@
                                 </h4>
 
                                 <p class="vp-calendar-week-dates">
+
                                     @calendarWeek.Start.ToString("dd MMM yyyy")
                                     -
                                     @calendarWeek.End.ToString("dd MMM yyyy")
+
                                 </p>
 
                             </div>
@@ -425,11 +475,15 @@
 
                                         @if (calendarWeek.WeekType == "current")
                                         {
-                                            <span>Create Roster</span>
+                                            <span>
+                                                Create Roster
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span>Create Next Roster</span>
+                                            <span>
+                                                Create Next Roster
+                                            </span>
                                         }
 
                                     </button>
@@ -440,7 +494,9 @@
                         </div>
 
 
-                        <!-- Days -->
+                        <!-- =====================================
+                             DAYS
+                             ===================================== -->
                         <div class="vp-calendar-grid">
 
                             @for (var dayOffset = 0; dayOffset < 7; dayOffset++)
@@ -449,26 +505,55 @@
                                     calendarWeek.Start.AddDays(dayOffset);
 
                                 var dayAssignments = weekAssignments
-                                    .Where(x => x.TaskDate.Date == calendarDate.Date)
+                                    .Where(x =>
+                                        x.TaskDate.Date ==
+                                        calendarDate.Date)
                                     .OrderBy(x => x.StartTime)
+                                    .ThenBy(x => x.EndTime)
+                                    .ToList();
+
+                                var dayShifts = weekShifts
+                                    .Where(x =>
+                                        x.ShiftDate.Date ==
+                                        calendarDate.Date)
+                                    .OrderBy(x => x.StartTime)
+                                    .ThenBy(x => x.EndTime)
                                     .ToList();
 
                                 var isToday =
-                                    calendarDate.Date == DateTime.Today;
+                                    calendarDate.Date ==
+                                    DateTime.Today;
 
                                 var isWeekend =
-                                    calendarDate.DayOfWeek == DayOfWeek.Saturday ||
-                                    calendarDate.DayOfWeek == DayOfWeek.Sunday;
+                                    calendarDate.DayOfWeek ==
+                                        DayOfWeek.Saturday ||
+                                    calendarDate.DayOfWeek ==
+                                        DayOfWeek.Sunday;
+
+                                var hasTasks =
+                                    dayAssignments.Any();
+
+                                var hasShifts =
+                                    dayShifts.Any();
 
                                 var dayClasses =
                                     "vp-calendar-day" +
-                                    (isWeekend ? " vp-calendar-day-weekend" : "") +
-                                    (isToday ? " vp-calendar-day-today" : "") +
-                                    (dayAssignments.Any() ? " vp-calendar-day-has-tasks" : "");
+                                    (isWeekend
+                                        ? " vp-calendar-day-weekend"
+                                        : "") +
+                                    (isToday
+                                        ? " vp-calendar-day-today"
+                                        : "") +
+                                    (hasTasks
+                                        ? " vp-calendar-day-has-tasks"
+                                        : "");
 
                                 <div class="@dayClasses"
                                      data-calendar-date="@calendarDate.ToString("yyyy-MM-dd")">
 
+                                    <!-- =================================
+                                         DAY HEADER
+                                         ================================= -->
                                     <div class="vp-calendar-day-header">
 
                                         <div>
@@ -487,25 +572,106 @@
                                         @if (isToday)
                                         {
                                             <span class="vp-calendar-day-indicator">
+
                                                 <i class="bi bi-star-fill"></i>
+
                                             </span>
                                         }
 
                                     </div>
 
-
+                                    <!-- =================================
+     DAY BODY
+     ================================= -->
                                     <div class="vp-calendar-day-body">
 
-                                        @if (dayAssignments.Any())
+                                        <!-- =================================
+         SHIFT
+         ================================= -->
+                                        @if (hasShifts)
                                         {
-                                            @foreach (var assignment in dayAssignments
-    .OrderBy(x => x.StartTime)
-    .ThenBy(x => x.EndTime))
+                                            foreach (var shift in dayShifts)
                                             {
-                                                var taskStatusClass = assignment.Status
-                                                    .ToString()
-                                                    .ToLower()
-                                                    .Replace(" ", "");
+                                                var isDayOff =
+                                                    shift.Status.GetDisplayName()
+                                                        .Equals("Day Off", StringComparison.OrdinalIgnoreCase);
+
+                                                if (isDayOff)
+                                                {
+                                                    <!-- DAY OFF -->
+                                                    <div class="vp-calendar-shift vp-calendar-shift-day-off">
+
+                                                        <div class="vp-calendar-shift-label">
+
+                                                            <i class="bi bi-calendar-x"></i>
+
+                                                            <span>
+                                                                DAY OFF
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <!-- SCHEDULED SHIFT -->
+                                                    <div class="vp-calendar-shift vp-calendar-shift-scheduled">
+
+                                                        <div class="vp-calendar-shift-label">
+
+                                                            <i class="bi bi-clock"></i>
+                                                        </div>
+
+                                                        <div class="vp-calendar-shift-time">
+
+                                                            @shift.StartTime.ToString(@"hh\:mm")
+                                                            -
+                                                            @shift.EndTime.ToString(@"hh\:mm")
+
+                                                        </div>
+
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <!-- NO SHIFT -->
+                                            <div class="vp-calendar-shift vp-calendar-shift-none">
+
+                                                <i class="bi bi-calendar-x"></i>
+
+                                                <span>
+                                                    NO SHIFT
+                                                </span>
+
+                                            </div>
+                                        }
+
+
+                                        <!-- =================================
+         TASKS
+         ================================= -->
+                                        @if (hasTasks)
+                                        {
+                                            foreach (var assignment in dayAssignments)
+                                            {
+                                                var taskStatusClass =
+                                                    assignment.Status
+                                                        .ToString()
+                                                        .ToLowerInvariant()
+                                                        .Replace(" ", "");
+
+                                                var taskArea =
+                                                    assignment.VolunteerTask == null
+                                                        ? ""
+                                                        : assignment.VolunteerTask.Area.GetDisplayName();
+
+                                                var taskPriority =
+                                                    assignment.VolunteerTask == null
+                                                        ? ""
+                                                        : assignment.VolunteerTask.Priority.GetDisplayName();
 
                                                 <button type="button"
                                                         class="vp-calendar-task vp-calendar-task-@taskStatusClass"
@@ -514,30 +680,28 @@
                                                         data-task-title="@assignment.VolunteerTask?.Title"
                                                         data-task-description="@assignment.VolunteerTask?.Description"
                                                         data-task-date="@assignment.TaskDate.ToString("yyyy-MM-dd")"
-                                                        data-task-area="@assignment.VolunteerTask?.Area.GetDisplayName()"
-                                                        data-task-priority="@assignment.VolunteerTask?.Priority.GetDisplayName()"
+                                                        data-task-area="@taskArea"
+                                                        data-task-priority="@taskPriority"
                                                         data-task-status="@assignment.Status.GetDisplayName()"
                                                         data-task-start="@assignment.StartTime.ToString(@"hh\:mm")"
                                                         data-task-end="@assignment.EndTime.ToString(@"hh\:mm")">
 
                                                     <span class="vp-calendar-task-time">
+
                                                         @assignment.StartTime.ToString(@"hh\:mm")
                                                         -
                                                         @assignment.EndTime.ToString(@"hh\:mm")
+
                                                     </span>
 
                                                     <span class="vp-calendar-task-title">
+
                                                         @assignment.VolunteerTask?.Title
+
                                                     </span>
 
                                                 </button>
                                             }
-                                        }
-                                        else
-                                        {
-                                            <div class="vp-calendar-day-empty">
-                                                No tasks
-                                            </div>
                                         }
 
                                     </div>
@@ -548,7 +712,9 @@
                         </div>
 
 
-                        <!-- Empty / Status Message -->
+                        <!-- =====================================
+                             WEEK EMPTY / STATUS
+                             ===================================== -->
                         @if (calendarWeek.Roster == null)
                         {
                             <div class="vp-calendar-week-empty">
@@ -569,7 +735,7 @@
 
                             </div>
                         }
-                        else if (!weekAssignments.Any())
+                        else if (!weekAssignments.Any() && !weekShifts.Any())
                         {
                             <div class="vp-calendar-week-empty">
 
@@ -578,11 +744,11 @@
                                 <div>
 
                                     <strong>
-                                        Roster created — no tasks yet
+                                        Roster created — no shifts or tasks yet
                                     </strong>
 
                                     <span>
-                                        Use the task library below to assign tasks to this volunteer.
+                                        The volunteer's shifts and assigned tasks will appear here.
                                     </span>
 
                                 </div>
@@ -886,9 +1052,7 @@
 
                     <button type="button"
                             class="vp-modal-cancel js-close-assign-modal">
-
                         Cancel
-
                     </button>
 
                     <button type="submit"
@@ -1034,9 +1198,6 @@
             </div>
 
 
-            <!-- =================================================
-                 TASK ACTIONS
-                 ================================================= -->
             <div class="vp-task-details-actions">
 
                 <button type="button"
@@ -1072,1830 +1233,1737 @@
 
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-    /* =========================================================
-       ELEMENTS
-       ========================================================= */
+        /* =========================================================
+           ELEMENTS
+           ========================================================= */
 
-    const assignModal =
-        document.getElementById("vpAssignModal");
+        const assignModal =
+            document.getElementById("vpAssignModal");
 
-    const taskDetailsModal =
-        document.getElementById("vpTaskDetailsModal");
+        const taskDetailsModal =
+            document.getElementById("vpTaskDetailsModal");
 
-    const rosterModal =
-        document.getElementById("vpRosterModal");
+        const rosterModal =
+            document.getElementById("vpRosterModal");
 
-    const assignForm =
-        document.getElementById("vpAssignForm");
+        const assignForm =
+            document.getElementById("vpAssignForm");
 
-    const rosterForm =
-        document.getElementById("vpCreateRosterForm");
+        const rosterForm =
+            document.getElementById("vpCreateRosterForm");
 
-    const ajaxMessage =
-        document.getElementById("vpAjaxMessage");
+        const ajaxMessage =
+            document.getElementById("vpAjaxMessage");
 
-    const modalTaskId =
-        document.getElementById("vpModalTaskId");
+        const modalTaskId =
+            document.getElementById("vpModalTaskId");
 
-    const modalTaskTitle =
-        document.getElementById("vpModalTaskTitle");
+        const modalTaskTitle =
+            document.getElementById("vpModalTaskTitle");
 
-    const modalTaskDescription =
-        document.getElementById("vpModalTaskDescription");
+        const modalTaskDescription =
+            document.getElementById("vpModalTaskDescription");
 
-    const taskDate =
-        document.getElementById("vpTaskDate");
+        const taskDate =
+            document.getElementById("vpTaskDate");
 
-    const taskDetailsTitle =
-        document.getElementById("vpTaskDetailsTitle");
+        const taskDetailsTitle =
+            document.getElementById("vpTaskDetailsTitle");
 
-    const taskDetailsDescription =
-        document.getElementById("vpTaskDetailsDescription");
+        const taskDetailsDescription =
+            document.getElementById("vpTaskDetailsDescription");
 
-    const taskDetailsDate =
-        document.getElementById("vpTaskDetailsDate");
+        const taskDetailsDate =
+            document.getElementById("vpTaskDetailsDate");
 
-    const taskDetailsArea =
-        document.getElementById("vpTaskDetailsArea");
+        const taskDetailsArea =
+            document.getElementById("vpTaskDetailsArea");
 
-    const taskDetailsPriority =
-        document.getElementById("vpTaskDetailsPriority");
+        const taskDetailsPriority =
+            document.getElementById("vpTaskDetailsPriority");
 
-    const taskDetailsStatus =
-        document.getElementById("vpTaskDetailsStatus");
+        const taskDetailsStatus =
+            document.getElementById("vpTaskDetailsStatus");
 
-    const taskDetailsTime =
-        document.getElementById("vpTaskDetailsTime");
+        const taskDetailsTime =
+            document.getElementById("vpTaskDetailsTime");
 
-    const rosterWeekType =
-        document.getElementById("vpRosterWeekType");
+        const rosterWeekType =
+            document.getElementById("vpRosterWeekType");
 
-    const rosterStartDate =
-        document.getElementById("vpRosterStartDate");
+        const rosterStartDate =
+            document.getElementById("vpRosterStartDate");
 
-    const rosterEndDate =
-        document.getElementById("vpRosterEndDate");
+        const rosterEndDate =
+            document.getElementById("vpRosterEndDate");
 
-    const rosterName =
-        document.getElementById("vpRosterName");
-
-
-    const currentWeekStart =
-        "@Model.CurrentWeekStart.ToString("yyyy-MM-dd")";
-
-    const currentWeekEnd =
-        "@Model.CurrentWeekEnd.ToString("yyyy-MM-dd")";
-
-    const upcomingWeekStart =
-        "@Model.UpcomingWeekStart.ToString("yyyy-MM-dd")";
-
-    const upcomingWeekEnd =
-        "@Model.UpcomingWeekEnd.ToString("yyyy-MM-dd")";
+        const rosterName =
+            document.getElementById("vpRosterName");
 
 
-    /* =========================================================
-       MESSAGE
-       ========================================================= */
+        const currentWeekStart =
+            "@Model.CurrentWeekStart.ToString("yyyy-MM-dd")";
 
-    function showMessage(message, type = "success") {
+        const currentWeekEnd =
+            "@Model.CurrentWeekEnd.ToString("yyyy-MM-dd")";
 
-        if (!ajaxMessage) {
-            return;
+        const upcomingWeekStart =
+            "@Model.UpcomingWeekStart.ToString("yyyy-MM-dd")";
+
+        const upcomingWeekEnd =
+            "@Model.UpcomingWeekEnd.ToString("yyyy-MM-dd")";
+
+
+        /* =========================================================
+           MESSAGE
+           ========================================================= */
+
+        function showMessage(message, type = "success") {
+
+            if (!ajaxMessage) {
+                return;
+            }
+
+            ajaxMessage.textContent = message;
+
+            ajaxMessage.className =
+                "vp-ajax-message vp-ajax-message-visible " +
+                (
+                    type === "success"
+                        ? "vp-ajax-message-success"
+                        : "vp-ajax-message-error"
+                );
+
+            window.setTimeout(function () {
+
+                ajaxMessage.classList.remove(
+                    "vp-ajax-message-visible"
+                );
+
+            }, 4500);
         }
 
-        ajaxMessage.textContent = message;
 
-        ajaxMessage.className =
-            "vp-ajax-message vp-ajax-message-visible " +
-            (
-                type === "success"
-                    ? "vp-ajax-message-success"
-                    : "vp-ajax-message-error"
+        /* =========================================================
+           MODALS
+           ========================================================= */
+
+        function openModal(modal) {
+
+            if (!modal) {
+                console.error("Modal element not found.");
+                return;
+            }
+
+            modal.classList.add(
+                "vp-modal-visible"
             );
 
-        window.setTimeout(function () {
-
-            ajaxMessage.classList.remove(
-                "vp-ajax-message-visible"
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
             );
 
-        }, 4500);
-    }
-
-
-    /* =========================================================
-       MODALS
-       ========================================================= */
-
-    function openModal(modal) {
-
-        if (!modal) {
-            console.error("Modal element not found.");
-            return;
-        }
-
-        modal.classList.add(
-            "vp-modal-visible"
-        );
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-        document.body.classList.add(
-            "vp-modal-body-lock"
-        );
-    }
-
-
-    function closeModal(modal) {
-
-        if (!modal) {
-            return;
-        }
-
-        modal.classList.remove(
-            "vp-modal-visible"
-        );
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-        if (!document.querySelector(
-            ".vp-modal-visible"
-        )) {
-
-            document.body.classList.remove(
+            document.body.classList.add(
                 "vp-modal-body-lock"
             );
         }
-    }
 
 
-    /* =========================================================
-       DATE
-       ========================================================= */
+        function closeModal(modal) {
 
-    function formatReadableDate(dateValue) {
-
-        if (!dateValue) {
-            return "—";
-        }
-
-        const date =
-            new Date(
-                dateValue + "T00:00:00"
-            );
-
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-            return dateValue;
-        }
-
-        return date.toLocaleDateString(
-            undefined,
-            {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric"
+            if (!modal) {
+                return;
             }
-        );
-    }
 
+            modal.classList.remove(
+                "vp-modal-visible"
+            );
 
-    /* =========================================================
-       HTML ESCAPE
-       ========================================================= */
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
 
-    function escapeHtml(value) {
+            if (!document.querySelector(
+                ".vp-modal-visible"
+            )) {
 
-        if (
-            value === null ||
-            value === undefined
-        ) {
-            return "";
+                document.body.classList.remove(
+                    "vp-modal-body-lock"
+                );
+            }
         }
 
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 
+        /* =========================================================
+           DATE
+           ========================================================= */
 
-    /* =========================================================
-       RESPONSE
-       ========================================================= */
+        function formatReadableDate(dateValue) {
 
-    function readJsonResponse(response) {
+            if (!dateValue) {
+                return "—";
+            }
 
-        return response.text()
-            .then(function (text) {
+            const date =
+                new Date(
+                    dateValue + "T00:00:00"
+                );
 
-                let data = null;
+            if (
+                Number.isNaN(
+                    date.getTime()
+                )
+            ) {
+                return dateValue;
+            }
 
-                try {
-
-                    data =
-                        text
-                            ? JSON.parse(text)
-                            : null;
-
-                }
-                catch (error) {
-
-                    console.error(
-                        "Invalid JSON:",
-                        text
-                    );
-
-                    throw new Error(
-                        "The server returned an invalid response."
-                    );
-                }
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        data?.message ||
-                        data?.error ||
-                        "The request could not be completed."
-                    );
-                }
-
-                return data;
-            });
-    }
-
-
-    /* =========================================================
-       CREATE ROSTER
-       ========================================================= */
-
-    document
-        .querySelectorAll(
-            ".vp-create-roster-trigger"
-        )
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    if (!rosterModal) {
-                        return;
-                    }
-
-                    const week =
-                        button.dataset.week;
-
-                    if (week === "current") {
-
-                        if (rosterWeekType) {
-                            rosterWeekType.value =
-                                "current";
-                        }
-
-                        if (rosterStartDate) {
-                            rosterStartDate.value =
-                                currentWeekStart;
-                        }
-
-                        if (rosterEndDate) {
-                            rosterEndDate.value =
-                                currentWeekEnd;
-                        }
-
-                        if (rosterName) {
-                            rosterName.value =
-                                "Current Week Roster";
-                        }
-
-                    }
-                    else {
-
-                        if (rosterWeekType) {
-                            rosterWeekType.value =
-                                "upcoming";
-                        }
-
-                        if (rosterStartDate) {
-                            rosterStartDate.value =
-                                upcomingWeekStart;
-                        }
-
-                        if (rosterEndDate) {
-                            rosterEndDate.value =
-                                upcomingWeekEnd;
-                        }
-
-                        if (rosterName) {
-                            rosterName.value =
-                                "Upcoming Week Roster";
-                        }
-                    }
-
-                    openModal(
-                        rosterModal
-                    );
+            return date.toLocaleDateString(
+                undefined,
+                {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
                 }
             );
-        });
+        }
 
 
-    document
-        .querySelectorAll(
-            ".js-close-roster-modal"
-        )
-        .forEach(function (button) {
+        /* =========================================================
+           HTML ESCAPE
+           ========================================================= */
 
-            button.addEventListener(
-                "click",
-                function () {
+        function escapeHtml(value) {
 
-                    closeModal(
-                        rosterModal
-                    );
+            if (
+                value === null ||
+                value === undefined
+            ) {
+                return "";
+            }
 
-                }
-            );
-        });
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
 
-    /* =========================================================
-       CREATE ROSTER FORM
-       ========================================================= */
+        /* =========================================================
+           RESPONSE
+           ========================================================= */
 
-    if (rosterForm) {
+        function readJsonResponse(response) {
 
-        rosterForm.addEventListener(
-            "submit",
-            function (event) {
+            return response.text()
+                .then(function (text) {
 
-                event.preventDefault();
+                    let data = null;
 
-                const submitButton =
-                    rosterForm.querySelector(
-                        "[type='submit']"
-                    );
+                    try {
 
-                const originalHtml =
-                    submitButton
-                        ? submitButton.innerHTML
-                        : "";
+                        data =
+                            text
+                                ? JSON.parse(text)
+                                : null;
 
-                if (submitButton) {
-
-                    submitButton.disabled =
-                        true;
-
-                    submitButton.innerHTML =
-                        '<i class="bi bi-arrow-repeat vp-spin"></i> Creating...';
-                }
-
-                fetch(
-                    rosterForm.action,
-                    {
-                        method: "POST",
-
-                        body:
-                            new FormData(
-                                rosterForm
-                            ),
-
-                        headers: {
-                            "X-Requested-With":
-                                "XMLHttpRequest"
-                        }
                     }
-                )
-                .then(
-                    readJsonResponse
-                )
-                .then(function (result) {
+                    catch (error) {
 
-                    if (
-                        !result ||
-                        result.success !== true
-                    ) {
+                        console.error(
+                            "Invalid JSON:",
+                            text
+                        );
 
                         throw new Error(
-                            result?.message ||
-                            "Roster could not be created."
+                            "The server returned an invalid response."
                         );
                     }
 
-                    updateRosterUI(
-                        result
-                    );
+                    if (!response.ok) {
 
-                    closeModal(
-                        rosterModal
-                    );
+                        throw new Error(
+                            data?.message ||
+                            data?.error ||
+                            "The request could not be completed."
+                        );
+                    }
 
-                    showMessage(
-                        result.message ||
-                        "Roster created successfully.",
-                        "success"
-                    );
+                    return data;
+                });
+        }
 
-                })
-                .catch(function (error) {
 
-                    console.error(
-                        "Create roster error:",
-                        error
-                    );
+        /* =========================================================
+           CREATE ROSTER
+           ========================================================= */
 
-                    showMessage(
-                        error.message ||
-                        "Unable to create roster.",
-                        "error"
-                    );
+        document
+            .querySelectorAll(
+                ".vp-create-roster-trigger"
+            )
+            .forEach(function (button) {
 
-                })
-                .finally(function () {
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        if (!rosterModal) {
+                            return;
+                        }
+
+                        const week =
+                            button.dataset.week;
+
+                        if (week === "current") {
+
+                            if (rosterWeekType) {
+                                rosterWeekType.value =
+                                    "current";
+                            }
+
+                            if (rosterStartDate) {
+                                rosterStartDate.value =
+                                    currentWeekStart;
+                            }
+
+                            if (rosterEndDate) {
+                                rosterEndDate.value =
+                                    currentWeekEnd;
+                            }
+
+                            if (rosterName) {
+                                rosterName.value =
+                                    "Current Week Roster";
+                            }
+
+                        }
+                        else {
+
+                            if (rosterWeekType) {
+                                rosterWeekType.value =
+                                    "upcoming";
+                            }
+
+                            if (rosterStartDate) {
+                                rosterStartDate.value =
+                                    upcomingWeekStart;
+                            }
+
+                            if (rosterEndDate) {
+                                rosterEndDate.value =
+                                    upcomingWeekEnd;
+                            }
+
+                            if (rosterName) {
+                                rosterName.value =
+                                    "Upcoming Week Roster";
+                            }
+                        }
+
+                        openModal(
+                            rosterModal
+                        );
+                    }
+                );
+            });
+
+
+        document
+            .querySelectorAll(
+                ".js-close-roster-modal"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeModal(
+                            rosterModal
+                        );
+
+                    }
+                );
+            });
+
+
+        /* =========================================================
+           CREATE ROSTER FORM
+           ========================================================= */
+
+        if (rosterForm) {
+
+            rosterForm.addEventListener(
+                "submit",
+                function (event) {
+
+                    event.preventDefault();
+
+                    const submitButton =
+                        rosterForm.querySelector(
+                            "[type='submit']"
+                        );
+
+                    const originalHtml =
+                        submitButton
+                            ? submitButton.innerHTML
+                            : "";
 
                     if (submitButton) {
 
                         submitButton.disabled =
-                            false;
+                            true;
 
                         submitButton.innerHTML =
-                            originalHtml;
+                            '<i class="bi bi-arrow-repeat vp-spin"></i> Creating...';
                     }
 
-                });
+                    fetch(
+                        rosterForm.action,
+                        {
+                            method: "POST",
+
+                            body:
+                                new FormData(
+                                    rosterForm
+                                ),
+
+                            headers: {
+                                "X-Requested-With":
+                                    "XMLHttpRequest"
+                            }
+                        }
+                    )
+                    .then(
+                        readJsonResponse
+                    )
+                    .then(function (result) {
+
+                        if (
+                            !result ||
+                            result.success !== true
+                        ) {
+
+                            throw new Error(
+                                result?.message ||
+                                "Roster could not be created."
+                            );
+                        }
+
+                        updateRosterUI(
+                            result
+                        );
+
+                        closeModal(
+                            rosterModal
+                        );
+
+                        showMessage(
+                            result.message ||
+                            "Roster created successfully.",
+                            "success"
+                        );
+
+                    })
+                    .catch(function (error) {
+
+                        console.error(
+                            "Create roster error:",
+                            error
+                        );
+
+                        showMessage(
+                            error.message ||
+                            "Unable to create roster.",
+                            "error"
+                        );
+
+                    })
+                    .finally(function () {
+
+                        if (submitButton) {
+
+                            submitButton.disabled =
+                                false;
+
+                            submitButton.innerHTML =
+                                originalHtml;
+                        }
+
+                    });
+                }
+            );
+        }
+
+
+        /* =========================================================
+           ROSTER UI
+           ========================================================= */
+
+        function updateRosterUI(result) {
+
+            updateCalendarRosterState(
+                result
+            );
+        }
+
+
+        function updateCalendarRosterState(result) {
+
+            if (!result) {
+                return;
             }
-        );
-    }
 
+            const weekStart =
+                String(
+                    result.startDate ||
+                    result.StartDate ||
+                    ""
+                ).substring(0, 10);
 
-    /* =========================================================
-       ROSTER UI
-       ========================================================= */
+            if (!weekStart) {
+                return;
+            }
 
-    function updateRosterUI(result) {
+            const weekElement =
+                document.querySelector(
+                    '.vp-calendar-week[data-calendar-week="' +
+                    weekStart +
+                    '"]'
+                );
 
-        updateCalendarRosterState(
-            result
-        );
-    }
+            if (!weekElement) {
+                return;
+            }
 
+            const createButton =
+                weekElement.querySelector(
+                    ".vp-create-roster-trigger"
+                );
 
-    function updateCalendarRosterState(result) {
+            if (createButton) {
+                createButton.remove();
+            }
 
-        if (!result) {
-            return;
+            const oldRosterBadge =
+                weekElement.querySelector(
+                    ".vp-calendar-roster-badge"
+                );
+
+            if (oldRosterBadge) {
+
+                const status =
+                    result.status ||
+                    result.Status ||
+                    "Published";
+
+                const statusClass =
+                    String(status)
+                        .toLowerCase();
+
+                oldRosterBadge.className =
+                    "vp-calendar-roster-badge " +
+                    "vp-calendar-roster-" +
+                    statusClass;
+
+                oldRosterBadge.innerHTML =
+                    '<i class="bi bi-calendar-check"></i>' +
+                    '<span class="vp-calendar-roster-status-text">' +
+                    escapeHtml(status) +
+                    "</span>";
+            }
+
+            const emptyMessage =
+                weekElement.querySelector(
+                    ".vp-calendar-week-empty"
+                );
+
+            if (emptyMessage) {
+
+                emptyMessage.innerHTML = `
+                    <i class="bi bi-calendar-check"></i>
+
+                    <div>
+                        <strong>
+                            Roster created — no tasks yet
+                        </strong>
+
+                        <span>
+                            Use the task library below to assign tasks to this volunteer.
+                        </span>
+                    </div>
+                `;
+            }
         }
 
-        const weekStart =
-            String(
-                result.startDate ||
-                result.StartDate ||
-                ""
-            ).substring(0, 10);
 
-        if (!weekStart) {
-            return;
+        /* =========================================================
+           ASSIGN TASK MODAL
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                ".js-open-assign"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        if (modalTaskId) {
+
+                            modalTaskId.value =
+                                button.dataset.taskId ||
+                                "";
+                        }
+
+                        if (modalTaskTitle) {
+
+                            modalTaskTitle.textContent =
+                                button.dataset.taskTitle ||
+                                "Task";
+                        }
+
+                        if (modalTaskDescription) {
+
+                            modalTaskDescription.textContent =
+                                button.dataset.taskDescription ||
+                                "";
+                        }
+
+                        openModal(
+                            assignModal
+                        );
+                    }
+                );
+            });
+
+
+        /* =========================================================
+           CLOSE ASSIGN MODAL
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                ".js-close-assign-modal"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeModal(
+                            assignModal
+                        );
+
+                    }
+                );
+            });
+
+
+        /* =========================================================
+           ASSIGN TASK
+           ========================================================= */
+
+        if (assignForm) {
+
+            assignForm.addEventListener(
+                "submit",
+                function (event) {
+
+                    event.preventDefault();
+
+                    if (
+                        !taskDate ||
+                        !taskDate.value
+                    ) {
+
+                        showMessage(
+                            "Please select a task date.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    const selectedDate =
+                        new Date(
+                            taskDate.value +
+                            "T00:00:00"
+                        );
+
+                    if (
+                        selectedDate.getDay() === 0 ||
+                        selectedDate.getDay() === 6
+                    ) {
+
+                        showMessage(
+                            "Tasks cannot be assigned on weekends.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    const submitButton =
+                        document.getElementById(
+                            "vpAssignButton"
+                        );
+
+                    const originalHtml =
+                        submitButton
+                            ? submitButton.innerHTML
+                            : "";
+
+                    if (submitButton) {
+
+                        submitButton.disabled =
+                            true;
+
+                        submitButton.innerHTML =
+                            '<i class="bi bi-arrow-repeat vp-spin"></i> Assigning...';
+                    }
+
+                    fetch(
+                        assignForm.action,
+                        {
+                            method: "POST",
+
+                            body:
+                                new FormData(
+                                    assignForm
+                                ),
+
+                            headers: {
+                                "X-Requested-With":
+                                    "XMLHttpRequest"
+                            }
+                        }
+                    )
+                    .then(readJsonResponse)
+                    .then(function (result) {
+
+                        console.log(
+                            "ASSIGN TASK RESPONSE:",
+                            result
+                        );
+
+                        if (
+                            !result ||
+                            result.success !== true
+                        ) {
+
+                            throw new Error(
+                                result?.message ||
+                                "Task could not be assigned."
+                            );
+                        }
+
+                        updateStatistics(
+                            result
+                        );
+
+                        addAssignmentToCalendar(
+                            result
+                        );
+
+                        closeModal(
+                            assignModal
+                        );
+
+                        assignForm.reset();
+
+                        if (taskDate) {
+                            taskDate.value =
+                                currentWeekStart;
+                        }
+
+                        showMessage(
+                            result.message ||
+                            "Task assigned successfully.",
+                            "success"
+                        );
+                    })
+                    .catch(function (error) {
+
+                        console.error(
+                            "Assign task error:",
+                            error
+                        );
+
+                        showMessage(
+                            error.message ||
+                            "Unable to assign task.",
+                            "error"
+                        );
+
+                        closeModal(
+                            assignModal
+                        );
+                    })
+                    .finally(function () {
+
+                        if (submitButton) {
+
+                            submitButton.disabled =
+                                false;
+
+                            submitButton.innerHTML =
+                                originalHtml;
+                        }
+
+                    });
+                }
+            );
         }
 
-        const weekElement =
-            document.querySelector(
-                '.vp-calendar-week[data-calendar-week="' +
-                weekStart +
-                '"]'
+
+        /* =========================================================
+           TIME TO MINUTES
+           ========================================================= */
+
+        function timeToMinutes(time) {
+
+            if (!time) {
+                return 9999;
+            }
+
+            const parts =
+                time.split(":");
+
+            const hours =
+                parseInt(parts[0], 10);
+
+            const minutes =
+                parseInt(parts[1], 10);
+
+            if (
+                Number.isNaN(hours) ||
+                Number.isNaN(minutes)
+            ) {
+                return 9999;
+            }
+
+            return (
+                hours * 60
+            ) + minutes;
+        }
+
+
+        /* =========================================================
+           ADD ASSIGNMENT TO CALENDAR
+           ========================================================= */
+
+        function addAssignmentToCalendar(result) {
+
+            if (!result) {
+                console.error(
+                    "No assignment result received."
+                );
+                return;
+            }
+
+            console.log(
+                "ADDING NEW TASK TO CALENDAR:",
+                result
             );
 
-        if (!weekElement) {
-            return;
-        }
+            const dateValue =
+                String(
+                    result.taskDate ||
+                    result.TaskDate ||
+                    ""
+                ).substring(0, 10);
 
-        const createButton =
-            weekElement.querySelector(
-                ".vp-create-roster-trigger"
-            );
+            if (!dateValue) {
 
-        if (createButton) {
-            createButton.remove();
-        }
+                console.error(
+                    "No task date returned.",
+                    result
+                );
 
-        const oldRosterBadge =
-            weekElement.querySelector(
-                ".vp-calendar-roster-badge"
-            );
+                return;
+            }
 
-        if (oldRosterBadge) {
+            const dayElement =
+                document.querySelector(
+                    '.vp-calendar-day[data-calendar-date="' +
+                    dateValue +
+                    '"]'
+                );
+
+            if (!dayElement) {
+
+                console.error(
+                    "Calendar day not found for:",
+                    dateValue
+                );
+
+                return;
+            }
+
+            const dayBody =
+                dayElement.querySelector(
+                    ".vp-calendar-day-body"
+                );
+
+            if (!dayBody) {
+                console.error(
+                    "Calendar day body not found."
+                );
+                return;
+            }
+
+            const empty =
+                dayBody.querySelector(
+                    ".vp-calendar-day-empty"
+                );
+
+            if (empty) {
+                empty.remove();
+            }
+
+            const title =
+                result.title ||
+                result.taskTitle ||
+                result.Title ||
+                result.TaskTitle ||
+                "Assigned Task";
+
+            const description =
+                result.description ||
+                result.taskDescription ||
+                result.Description ||
+                result.TaskDescription ||
+                "";
+
+            const area =
+                result.area ||
+                result.taskArea ||
+                result.Area ||
+                result.TaskArea ||
+                "";
+
+            const priority =
+                result.priority ||
+                result.taskPriority ||
+                result.Priority ||
+                result.TaskPriority ||
+                "";
 
             const status =
                 result.status ||
                 result.Status ||
-                "Published";
-
-            const statusClass =
-                String(status)
-                    .toLowerCase();
-
-            oldRosterBadge.className =
-                "vp-calendar-roster-badge " +
-                "vp-calendar-roster-" +
-                statusClass;
-
-            oldRosterBadge.innerHTML =
-                '<i class="bi bi-calendar-check"></i>' +
-                '<span class="vp-calendar-roster-status-text">' +
-                escapeHtml(status) +
-                "</span>";
-        }
-
-        const emptyMessage =
-            weekElement.querySelector(
-                ".vp-calendar-week-empty"
-            );
-
-        if (emptyMessage) {
-
-            emptyMessage.innerHTML = `
-                <i class="bi bi-calendar-check"></i>
-
-                <div>
-                    <strong>
-                        Roster created — no tasks yet
-                    </strong>
-
-                    <span>
-                        Use the task library below to assign tasks to this volunteer.
-                    </span>
-                </div>
-            `;
-        }
-    }
-
-
-    /* =========================================================
-       ASSIGN TASK MODAL
-       ========================================================= */
-
-    document
-        .querySelectorAll(
-            ".js-open-assign"
-        )
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    if (modalTaskId) {
-
-                        modalTaskId.value =
-                            button.dataset.taskId ||
-                            "";
-                    }
-
-                    if (modalTaskTitle) {
-
-                        modalTaskTitle.textContent =
-                            button.dataset.taskTitle ||
-                            "Task";
-                    }
-
-                    if (modalTaskDescription) {
-
-                        modalTaskDescription.textContent =
-                            button.dataset.taskDescription ||
-                            "";
-                    }
-
-                    openModal(
-                        assignModal
-                    );
-                }
-            );
-        });
-
-
-    /* =========================================================
-       CLOSE ASSIGN MODAL
-       ========================================================= */
-
-    document
-        .querySelectorAll(
-            ".js-close-assign-modal"
-        )
-        .forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    closeModal(
-                        assignModal
-                    );
-
-                }
-            );
-        });
-
-
-    /* =========================================================
-       ASSIGN TASK
-       ========================================================= */
-
-    if (assignForm) {
-
-        assignForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                if (
-                    !taskDate ||
-                    !taskDate.value
-                ) {
-
-                    showMessage(
-                        "Please select a task date.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                const selectedDate =
-                    new Date(
-                        taskDate.value +
-                        "T00:00:00"
-                    );
-
-                if (
-                    selectedDate.getDay() === 0 ||
-                    selectedDate.getDay() === 6
-                ) {
-
-                    showMessage(
-                        "Tasks cannot be assigned on weekends.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                const submitButton =
-                    document.getElementById(
-                        "vpAssignButton"
-                    );
-
-                const originalHtml =
-                    submitButton
-                        ? submitButton.innerHTML
-                        : "";
-
-                if (submitButton) {
-
-                    submitButton.disabled =
-                        true;
-
-                    submitButton.innerHTML =
-                        '<i class="bi bi-arrow-repeat vp-spin"></i> Assigning...';
-                }
-
-                fetch(
-                    assignForm.action,
-                    {
-                        method: "POST",
-
-                        body:
-                            new FormData(
-                                assignForm
-                            ),
-
-                        headers: {
-                            "X-Requested-With":
-                                "XMLHttpRequest"
-                        }
-                    }
-                )
-                   .then(readJsonResponse)
-    .then(function (result) {
-
-        console.log("ASSIGN TASK RESPONSE:", result);
-
-        if (!result || result.success !== true) {
-            throw new Error(
-                result?.message ||
-                "Task could not be assigned."
-            );
-        }
-
-        // Update statistics
-        updateStatistics(result);
-
-        // IMPORTANT:
-        // Immediately add the newly assigned task
-        // to the calendar without reloading the page.
-        addAssignmentToCalendar(result);
-
-        // Close modal
-        closeModal(assignModal);
-
-        // Reset form
-        assignForm.reset();
-
-        // Restore default date
-        if (taskDate) {
-            taskDate.value = currentWeekStart;
-        }
-
-        showMessage(
-            result.message ||
-            "Task assigned successfully.",
-            "success"
-        );
-    })
-                .catch(function (error) {
-
-                    console.error(
-                        "Assign task error:",
-                        error
-                    );
-
-                    showMessage(
-                        error.message ||
-                        "Unable to assign task.",
-                        "error"
-                    );
-
-                     closeModal(assignModal);
-                })
-                .finally(function () {
-
-                    if (submitButton) {
-
-                        submitButton.disabled =
-                            false;
-
-                        submitButton.innerHTML =
-                            originalHtml;
-                    }
-
-                });
-            }
-        );
-    }
-
-        function timeToMinutes(time) {
-        if (!time) return 9999;
-
-        const parts = time.split(":");
-
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-
-        if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-            return 9999;
-        }
-
-        return (hours * 60) + minutes;
-    }
-
-        /* =========================================================
-       ADD ASSIGNMENT TO CALENDAR
-       ========================================================= */
-
-    function addAssignmentToCalendar(result) {
-
-        if (!result) {
-            console.error("No assignment result received.");
-            return;
-        }
-
-        console.log(
-            "ADDING NEW TASK TO CALENDAR:",
-            result
-        );
-
-        // ---------------------------------------------------------
-        // DATE
-        // ---------------------------------------------------------
-
-        const dateValue =
-            String(
-                result.taskDate ||
-                result.TaskDate ||
-                ""
-            ).substring(0, 10);
-
-        if (!dateValue) {
-            console.error(
-                "No task date returned.",
-                result
-            );
-            return;
-        }
-
-        // ---------------------------------------------------------
-        // FIND CALENDAR DAY
-        // ---------------------------------------------------------
-
-        const dayElement =
-            document.querySelector(
-                '.vp-calendar-day[data-calendar-date="' +
-                dateValue +
-                '"]'
-            );
-
-        if (!dayElement) {
-            console.error(
-                "Calendar day not found for:",
-                dateValue
-            );
-
-            return;
-        }
-
-        const dayBody =
-            dayElement.querySelector(
-                ".vp-calendar-day-body"
-            );
-
-        if (!dayBody) {
-            console.error(
-                "Calendar day body not found."
-            );
-
-            return;
-        }
-
-        // ---------------------------------------------------------
-        // REMOVE EMPTY MESSAGE
-        // ---------------------------------------------------------
-
-        const empty =
-            dayBody.querySelector(
-                ".vp-calendar-day-empty"
-            );
-
-        if (empty) {
-            empty.remove();
-        }
-
-        // ---------------------------------------------------------
-        // GET DATA FROM CONTROLLER RESPONSE
-        // ---------------------------------------------------------
-
-        const title =
-            result.title ||
-            result.taskTitle ||
-            result.Title ||
-            result.TaskTitle ||
-            "Assigned Task";
-
-        const description =
-            result.description ||
-            result.taskDescription ||
-            result.Description ||
-            result.TaskDescription ||
-            "";
-
-        const area =
-            result.area ||
-            result.taskArea ||
-            result.Area ||
-            result.TaskArea ||
-            "";
-
-        const priority =
-            result.priority ||
-            result.taskPriority ||
-            result.Priority ||
-            result.TaskPriority ||
-            "";
-
-        const status =
-            result.status ||
-            result.Status ||
-            "Assigned";
-
-        const start =
-            result.startTime ||
-            result.StartTime ||
-            "08:00";
-
-        const end =
-            result.endTime ||
-            result.EndTime ||
-            "09:00";
-
-        // ---------------------------------------------------------
-        // VOLUNTEER TASK ID
-        // ---------------------------------------------------------
-
-        const volunteerTaskId =
-            result.volunteerTaskId ||
-            result.VolunteerTaskId ||
-            "";
-
-        if (!volunteerTaskId) {
-
-            console.error(
-                "No VolunteerTaskId returned from server.",
-                result
-            );
-
-            showMessage(
-                "The task was created, but its calendar ID was not returned.",
-                "error"
-            );
-
-            return;
-        }
-
-        // ---------------------------------------------------------
-        // CREATE CALENDAR TASK BUTTON
-        // ---------------------------------------------------------
-
-        const task =
-            document.createElement("button");
-
-        task.type = "button";
-
-        // ---------------------------------------------------------
-        // STATUS CLASS
-        // ---------------------------------------------------------
-
-        const statusClass =
-            String(status)
-                .toLowerCase()
-                .replace(/\s+/g, "");
-
-        task.className =
-            "vp-calendar-task " +
-            "vp-calendar-task-" +
-            statusClass;
-
-        // ---------------------------------------------------------
-        // DATA ATTRIBUTES
-        // ---------------------------------------------------------
-
-        task.dataset.calendarTask =
-            "true";
-
-        task.dataset.volunteerTaskId =
-            String(volunteerTaskId);
-
-        task.dataset.taskTitle =
-            title;
-
-        task.dataset.taskDescription =
-            description;
-
-        task.dataset.taskDate =
-            dateValue;
-
-        task.dataset.taskArea =
-            area;
-
-        task.dataset.taskPriority =
-            priority;
-
-        task.dataset.taskStatus =
-            status;
-
-        task.dataset.taskStart =
-            start;
-
-        task.dataset.taskEnd =
-            end;
-
-        // ---------------------------------------------------------
-        // HTML
-        // ---------------------------------------------------------
-
-        task.innerHTML = `
-            <span class="vp-calendar-task-time">
-                ${escapeHtml(start)} - ${escapeHtml(end)}
-            </span>
-
-            <span class="vp-calendar-task-title">
-                ${escapeHtml(title)}
-            </span>
-        `;
-
-        // ---------------------------------------------------------
-        // INSERT IN CHRONOLOGICAL ORDER
-        // ---------------------------------------------------------
-
-        const existingTasks =
-            Array.from(
-                dayBody.querySelectorAll(
-                    '[data-calendar-task="true"]'
-                )
-            );
-
-        const newStartMinutes =
-            timeToMinutes(start);
-
-        let inserted = false;
-
-        for (const existingTask of existingTasks) {
-
-            const existingStart =
-                existingTask.getAttribute(
-                    "data-task-start"
-                ) || "23:59";
-
-            const existingStartMinutes =
-                timeToMinutes(existingStart);
-
-            if (
-                newStartMinutes <
-                existingStartMinutes
-            ) {
-
-                dayBody.insertBefore(
-                    task,
-                    existingTask
-                );
-
-                inserted = true;
-
-                break;
-            }
-        }
-
-        // If it starts later than all existing tasks,
-        // put it at the bottom.
-
-        if (!inserted) {
-            dayBody.appendChild(task);
-        }
-
-        // ---------------------------------------------------------
-        // MARK DAY AS HAVING TASKS
-        // ---------------------------------------------------------
-
-        dayElement.classList.add(
-            "vp-calendar-day-has-tasks"
-        );
-
-        // ---------------------------------------------------------
-        // MAKE NEW TASK CLICKABLE
-        // ---------------------------------------------------------
-
-        bindCalendarTask(task);
-
-        // ---------------------------------------------------------
-        // UPDATE WEEK TASK COUNT
-        // ---------------------------------------------------------
-
-        updateCalendarCount(
-            dayElement.closest(
-                ".vp-calendar-week"
-            )
-        );
-
-        console.log(
-            "TASK ADDED TO CALENDAR WITHOUT PAGE RELOAD:",
-            {
-                volunteerTaskId,
-                dateValue,
-                start,
-                end,
-                title
-            }
-        );
-    }
-
-    /* =========================================================
-       CALENDAR TASK DETAILS
-       ========================================================= */
-
-        function bindCalendarTask(button) {
-        if (!button) return;
-
-        button.addEventListener("click", function () {
-
-            console.log("=================================");
-            console.log("CALENDAR TASK CLICKED");
-            console.log("Element:", button);
-            console.log("VolunteerTaskId:", button.getAttribute("data-volunteer-task-id"));
-            console.log("Dataset:", button.dataset);
-            console.log("=================================");
+                "Assigned";
+
+            const start =
+                result.startTime ||
+                result.StartTime ||
+                "08:00";
+
+            const end =
+                result.endTime ||
+                result.EndTime ||
+                "09:00";
 
             const volunteerTaskId =
-                button.getAttribute("data-volunteer-task-id");
+                result.volunteerTaskId ||
+                result.VolunteerTaskId ||
+                "";
 
-            const assignmentDate =
-                button.getAttribute("data-task-date") || "";
+            if (!volunteerTaskId) {
 
-            if (!volunteerTaskId || volunteerTaskId === "0") {
                 console.error(
-                    "VolunteerTaskId is missing from calendar button.",
-                    button.outerHTML
+                    "No VolunteerTaskId returned from server.",
+                    result
                 );
 
                 showMessage(
-                    "Unable to identify this task.",
+                    "The task was created, but its calendar ID was not returned.",
                     "error"
                 );
 
                 return;
             }
 
-            // Store ID on modal
-            if (taskDetailsModal) {
-                taskDetailsModal.dataset.volunteerTaskId =
-                    volunteerTaskId;
+            const task =
+                document.createElement("button");
 
-                taskDetailsModal.dataset.taskDate =
-                    assignmentDate;
+            task.type =
+                "button";
+
+            const statusClass =
+                String(status)
+                    .toLowerCase()
+                    .replace(/\s+/g, "");
+
+            task.className =
+                "vp-calendar-task " +
+                "vp-calendar-task-" +
+                statusClass;
+
+            task.dataset.calendarTask =
+                "true";
+
+            task.dataset.volunteerTaskId =
+                String(volunteerTaskId);
+
+            task.dataset.taskTitle =
+                title;
+
+            task.dataset.taskDescription =
+                description;
+
+            task.dataset.taskDate =
+                dateValue;
+
+            task.dataset.taskArea =
+                area;
+
+            task.dataset.taskPriority =
+                priority;
+
+            task.dataset.taskStatus =
+                status;
+
+            task.dataset.taskStart =
+                start;
+
+            task.dataset.taskEnd =
+                end;
+
+            task.innerHTML = `
+                <span class="vp-calendar-task-time">
+                    ${escapeHtml(start)} - ${escapeHtml(end)}
+                </span>
+
+                <span class="vp-calendar-task-title">
+                    ${escapeHtml(title)}
+                </span>
+            `;
+
+            const existingTasks =
+                Array.from(
+                    dayBody.querySelectorAll(
+                        '[data-calendar-task="true"]'
+                    )
+                );
+
+            const newStartMinutes =
+                timeToMinutes(start);
+
+            let inserted =
+                false;
+
+            for (
+                const existingTask
+                of existingTasks
+            ) {
+
+                const existingStart =
+                    existingTask.getAttribute(
+                        "data-task-start"
+                    ) ||
+                    "23:59";
+
+                const existingStartMinutes =
+                    timeToMinutes(
+                        existingStart
+                    );
+
+                if (
+                    newStartMinutes <
+                    existingStartMinutes
+                ) {
+
+                    dayBody.insertBefore(
+                        task,
+                        existingTask
+                    );
+
+                    inserted =
+                        true;
+
+                    break;
+                }
             }
 
-            // Populate modal
-            if (taskDetailsTitle) {
-                taskDetailsTitle.textContent =
-                    button.getAttribute("data-task-title") ||
-                    "Task";
+            if (!inserted) {
+                dayBody.appendChild(
+                    task
+                );
             }
 
-            if (taskDetailsDescription) {
-                taskDetailsDescription.textContent =
-                    button.getAttribute("data-task-description") ||
-                    "No description provided.";
-            }
-
-            if (taskDetailsDate) {
-                taskDetailsDate.textContent =
-                    formatReadableDate(assignmentDate);
-            }
-
-            if (taskDetailsArea) {
-                taskDetailsArea.textContent =
-                    button.getAttribute("data-task-area") ||
-                    "—";
-            }
-
-            if (taskDetailsPriority) {
-                taskDetailsPriority.textContent =
-                    button.getAttribute("data-task-priority") ||
-                    "—";
-            }
-
-            if (taskDetailsStatus) {
-                taskDetailsStatus.textContent =
-                    button.getAttribute("data-task-status") ||
-                    "—";
-            }
-
-            const start =
-                button.getAttribute("data-task-start") || "—";
-
-            const end =
-                button.getAttribute("data-task-end") || "—";
-
-            if (taskDetailsTime) {
-                taskDetailsTime.textContent =
-                    start + " - " + end;
-            }
-
-            console.log(
-                "Opening details modal for VolunteerTaskId:",
-                volunteerTaskId
+            dayElement.classList.add(
+                "vp-calendar-day-has-tasks"
             );
-
-            openModal(taskDetailsModal);
-        });
-    }
-
-
-    /* =========================================================
-       BIND EXISTING CALENDAR TASKS
-       ========================================================= */
-
-    document
-        .querySelectorAll(
-            '[data-calendar-task="true"]'
-        )
-        .forEach(function (button) {
 
             bindCalendarTask(
-                button
+                task
             );
 
-        });
+            updateCalendarCount(
+                dayElement.closest(
+                    ".vp-calendar-week"
+                )
+            );
+
+            console.log(
+                "TASK ADDED TO CALENDAR WITHOUT PAGE RELOAD:",
+                {
+                    volunteerTaskId,
+                    dateValue,
+                    start,
+                    end,
+                    title
+                }
+            );
+        }
 
 
-    /* =========================================================
-       CLOSE TASK DETAILS MODAL
-       ========================================================= */
+        /* =========================================================
+           CALENDAR TASK DETAILS
+           ========================================================= */
 
-    document
-        .querySelectorAll(
-            ".js-close-task-details-modal"
-        )
-        .forEach(function (button) {
+        function bindCalendarTask(button) {
+
+            if (!button) {
+                return;
+            }
 
             button.addEventListener(
                 "click",
                 function () {
 
-                    closeModal(
-                        taskDetailsModal
+                    console.log(
+                        "CALENDAR TASK CLICKED",
+                        button
                     );
 
-                }
-            );
-
-        });
-
-
-    /* =========================================================
-       CALENDAR COUNT
-       ========================================================= */
-
-    function updateCalendarCount(
-        weekElement
-    ) {
-
-        if (!weekElement) {
-            return;
-        }
-
-        const count =
-            weekElement.querySelectorAll(
-                '[data-calendar-task="true"]'
-            ).length;
-
-
-        const countElement =
-            weekElement.querySelector(
-                ".vp-calendar-task-count-value"
-            );
-
-
-        if (countElement) {
-
-            countElement.textContent =
-                count;
-        }
-
-
-        const emptyMessage =
-            weekElement.querySelector(
-                ".vp-calendar-week-empty"
-            );
-
-
-        if (
-            count > 0 &&
-            emptyMessage
-        ) {
-
-            emptyMessage.remove();
-        }
-    }
-
-
-    /* =========================================================
-       REMOVE TASK ASSIGNMENT
-       ========================================================= */
-
-    const removeTaskButton =
-        document.getElementById(
-            "vpRemoveTaskButton"
-        );
-
-
-    if (removeTaskButton) {
-
-        removeTaskButton.addEventListener(
-            "click",
-            async function () {
-
-                const modal =
-                    document.getElementById(
-                        "vpTaskDetailsModal"
-                    );
-
-
-                if (!modal) {
-                    return;
-                }
-
-
-                /*
-                 * =================================================
-                 * CRITICAL:
-                 *
-                 * Get VolunteerTaskId from modal.
-                 *
-                 * NOT assignmentId.
-                 * =================================================
-                 */
-
-                const volunteerTaskId =
-                    modal.dataset.volunteerTaskId ||
-                    "";
-
-
-                const assignmentDate =
-                    modal.dataset.taskDate ||
-                    "";
-
-
-                console.log(
-                    "REMOVE VolunteerTaskId:",
-                    volunteerTaskId
-                );
-
-
-                if (!volunteerTaskId) {
-
-                    showMessage(
-                        "Unable to identify this task.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                const confirmed =
-                    window.confirm(
-                        "Are you sure you want to remove this task from the volunteer's roster?"
-                    );
-
-
-                if (!confirmed) {
-                    return;
-                }
-
-
-                removeTaskButton.disabled =
-                    true;
-
-
-                removeTaskButton.classList.add(
-                    "is-loading"
-                );
-
-
-                const originalContent =
-                    removeTaskButton.innerHTML;
-
-
-                removeTaskButton.innerHTML = `
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Removing...</span>
-                `;
-
-
-                try {
-
-                    /*
-                     * =================================================
-                     * ANTI-FORGERY TOKEN
-                     * =================================================
-                     */
-
-                    const tokenElement =
-                        assignForm?.querySelector(
-                            'input[name="__RequestVerificationToken"]'
-                        ) ||
-                        document.querySelector(
-                            'input[name="__RequestVerificationToken"]'
+                    const volunteerTaskId =
+                        button.getAttribute(
+                            "data-volunteer-task-id"
                         );
 
-
-                    const token =
-                        tokenElement?.value ||
+                    const assignmentDate =
+                        button.getAttribute(
+                            "data-task-date"
+                        ) ||
                         "";
 
+                    if (
+                        !volunteerTaskId ||
+                        volunteerTaskId === "0"
+                    ) {
 
-                    /*
-                     * =================================================
-                     * SEND volunteerTaskId
-                     *
-                     * We use URL encoded form data because the
-                     * controller parameter is expected to be:
-                     *
-                     * int volunteerTaskId
-                     *
-                     * =================================================
-                     */
+                        console.error(
+                            "VolunteerTaskId is missing.",
+                            button.outerHTML
+                        );
 
-                    const requestBody =
-                        new URLSearchParams();
+                        showMessage(
+                            "Unable to identify this task.",
+                            "error"
+                        );
 
+                        return;
+                    }
 
-                    requestBody.append(
-                        "volunteerTaskId",
-                        String(
-                            volunteerTaskId
-                        )
+                    if (taskDetailsModal) {
+
+                        taskDetailsModal.dataset.volunteerTaskId =
+                            volunteerTaskId;
+
+                        taskDetailsModal.dataset.taskDate =
+                            assignmentDate;
+                    }
+
+                    if (taskDetailsTitle) {
+
+                        taskDetailsTitle.textContent =
+                            button.getAttribute(
+                                "data-task-title"
+                            ) ||
+                            "Task";
+                    }
+
+                    if (taskDetailsDescription) {
+
+                        taskDetailsDescription.textContent =
+                            button.getAttribute(
+                                "data-task-description"
+                            ) ||
+                            "No description provided.";
+                    }
+
+                    if (taskDetailsDate) {
+
+                        taskDetailsDate.textContent =
+                            formatReadableDate(
+                                assignmentDate
+                            );
+                    }
+
+                    if (taskDetailsArea) {
+
+                        taskDetailsArea.textContent =
+                            button.getAttribute(
+                                "data-task-area"
+                            ) ||
+                            "—";
+                    }
+
+                    if (taskDetailsPriority) {
+
+                        taskDetailsPriority.textContent =
+                            button.getAttribute(
+                                "data-task-priority"
+                            ) ||
+                            "—";
+                    }
+
+                    if (taskDetailsStatus) {
+
+                        taskDetailsStatus.textContent =
+                            button.getAttribute(
+                                "data-task-status"
+                            ) ||
+                            "—";
+                    }
+
+                    const start =
+                        button.getAttribute(
+                            "data-task-start"
+                        ) ||
+                        "—";
+
+                    const end =
+                        button.getAttribute(
+                            "data-task-end"
+                        ) ||
+                        "—";
+
+                    if (taskDetailsTime) {
+
+                        taskDetailsTime.textContent =
+                            start +
+                            " - " +
+                            end;
+                    }
+
+                    openModal(
+                        taskDetailsModal
                     );
+                }
+            );
+        }
 
+
+        /* =========================================================
+           EXISTING CALENDAR TASKS
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                '[data-calendar-task="true"]'
+            )
+            .forEach(function (button) {
+
+                bindCalendarTask(
+                    button
+                );
+
+            });
+
+
+        /* =========================================================
+           CLOSE TASK DETAILS MODAL
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                ".js-close-task-details-modal"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeModal(
+                            taskDetailsModal
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /* =========================================================
+           CALENDAR COUNT
+           ========================================================= */
+
+        function updateCalendarCount(
+            weekElement
+        ) {
+
+            if (!weekElement) {
+                return;
+            }
+
+            const count =
+                weekElement.querySelectorAll(
+                    '[data-calendar-task="true"]'
+                ).length;
+
+            const countElement =
+                weekElement.querySelector(
+                    ".vp-calendar-task-count-value"
+                );
+
+            if (countElement) {
+
+                countElement.textContent =
+                    count;
+            }
+
+            const emptyMessage =
+                weekElement.querySelector(
+                    ".vp-calendar-week-empty"
+                );
+
+            if (
+                count > 0 &&
+                emptyMessage
+            ) {
+
+                emptyMessage.remove();
+            }
+        }
+
+
+        /* =========================================================
+           REMOVE TASK ASSIGNMENT
+           ========================================================= */
+
+        const removeTaskButton =
+            document.getElementById(
+                "vpRemoveTaskButton"
+            );
+
+        if (removeTaskButton) {
+
+            removeTaskButton.addEventListener(
+                "click",
+                async function () {
+
+                    const modal =
+                        document.getElementById(
+                            "vpTaskDetailsModal"
+                        );
+
+                    if (!modal) {
+                        return;
+                    }
+
+                    const volunteerTaskId =
+                        modal.dataset.volunteerTaskId ||
+                        "";
+
+                    const assignmentDate =
+                        modal.dataset.taskDate ||
+                        "";
 
                     console.log(
-                        "POST volunteerTaskId:",
+                        "REMOVE VolunteerTaskId:",
                         volunteerTaskId
                     );
 
+                    if (!volunteerTaskId) {
 
-                    const response =
-                        await fetch(
-                            "/Supervisor/RemoveTaskAssignment",
-                            {
-                                method: "POST",
-
-                                headers: {
-
-                                    "Content-Type":
-                                        "application/x-www-form-urlencoded; charset=UTF-8",
-
-                                    "RequestVerificationToken":
-                                        token,
-
-                                    "X-Requested-With":
-                                        "XMLHttpRequest"
-                                },
-
-                                body:
-                                    requestBody.toString()
-                            }
+                        showMessage(
+                            "Unable to identify this task.",
+                            "error"
                         );
 
-
-                    const result =
-                        await readJsonResponse(
-                            response
-                        );
-
-
-                    console.log(
-                        "REMOVE RESPONSE:",
-                        result
-                    );
-
-
-                    if (
-                        !result ||
-                        result.success !== true
-                    ) {
-
-                        throw new Error(
-                            result?.message ||
-                            "Unable to remove the task."
-                        );
+                        return;
                     }
 
+                    const confirmed =
+                        window.confirm(
+                            "Are you sure you want to remove this task from the volunteer's roster?"
+                        );
 
-                    /* =================================================
-                       FIND TASK IN CALENDAR
-                       ================================================= */
+                    if (!confirmed) {
+                        return;
+                    }
 
-                    let taskElement =
-                        null;
+                    removeTaskButton.disabled =
+                        true;
 
+                    removeTaskButton.classList.add(
+                        "is-loading"
+                    );
 
-                    /*
-                     * First search inside the exact day.
-                     */
+                    const originalContent =
+                        removeTaskButton.innerHTML;
 
-                    if (assignmentDate) {
+                    removeTaskButton.innerHTML = `
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Removing...</span>
+                    `;
 
-                        const dayElement =
+                    try {
+
+                        const tokenElement =
+                            assignForm?.querySelector(
+                                'input[name="__RequestVerificationToken"]'
+                            ) ||
                             document.querySelector(
-                                '.vp-calendar-day[data-calendar-date="' +
-                                assignmentDate +
-                                '"]'
+                                'input[name="__RequestVerificationToken"]'
                             );
 
+                        const token =
+                            tokenElement?.value ||
+                            "";
 
-                        if (dayElement) {
+                        const requestBody =
+                            new URLSearchParams();
+
+                        requestBody.append(
+                            "volunteerTaskId",
+                            String(
+                                volunteerTaskId
+                            )
+                        );
+
+                        const response =
+                            await fetch(
+                                "/Supervisor/RemoveTaskAssignment",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+
+                                        "Content-Type":
+                                            "application/x-www-form-urlencoded; charset=UTF-8",
+
+                                        "RequestVerificationToken":
+                                            token,
+
+                                        "X-Requested-With":
+                                            "XMLHttpRequest"
+                                    },
+
+                                    body:
+                                        requestBody.toString()
+                                }
+                            );
+
+                        const result =
+                            await readJsonResponse(
+                                response
+                            );
+
+                        console.log(
+                            "REMOVE RESPONSE:",
+                            result
+                        );
+
+                        if (
+                            !result ||
+                            result.success !== true
+                        ) {
+
+                            throw new Error(
+                                result?.message ||
+                                "Unable to remove the task."
+                            );
+                        }
+
+                        let taskElement =
+                            null;
+
+                        if (assignmentDate) {
+
+                            const dayElement =
+                                document.querySelector(
+                                    '.vp-calendar-day[data-calendar-date="' +
+                                    assignmentDate +
+                                    '"]'
+                                );
+
+                            if (dayElement) {
+
+                                taskElement =
+                                    dayElement.querySelector(
+                                        '[data-calendar-task="true"][data-volunteer-task-id="' +
+                                        volunteerTaskId +
+                                        '"]'
+                                    );
+                            }
+                        }
+
+                        if (!taskElement) {
 
                             taskElement =
-                                dayElement.querySelector(
+                                document.querySelector(
                                     '[data-calendar-task="true"][data-volunteer-task-id="' +
                                     volunteerTaskId +
                                     '"]'
                                 );
                         }
-                    }
 
+                        if (taskElement) {
 
-                    /*
-                     * Fallback search through whole calendar.
-                     */
-
-                    if (!taskElement) {
-
-                        taskElement =
-                            document.querySelector(
-                                '[data-calendar-task="true"][data-volunteer-task-id="' +
-                                volunteerTaskId +
-                                '"]'
-                            );
-                    }
-
-
-                    /*
-                     * =================================================
-                       REMOVE FROM CALENDAR
-                       =================================================
-                     */
-
-                    if (taskElement) {
-
-                        const dayElement =
-                            taskElement.closest(
-                                ".vp-calendar-day"
-                            );
-
-
-                        const weekElement =
-                            taskElement.closest(
-                                ".vp-calendar-week"
-                            );
-
-
-                        /*
-                         * Remove button.
-                         */
-
-                        taskElement.remove();
-
-
-                        /*
-                         * Check whether day is now empty.
-                         */
-
-                        if (dayElement) {
-
-                            const remainingTasks =
-                                dayElement.querySelectorAll(
-                                    '[data-calendar-task="true"]'
+                            const dayElement =
+                                taskElement.closest(
+                                    ".vp-calendar-day"
                                 );
 
-
-                            if (
-                                remainingTasks.length === 0
-                            ) {
-
-                                dayElement.classList.remove(
-                                    "vp-calendar-day-has-tasks"
+                            const weekElement =
+                                taskElement.closest(
+                                    ".vp-calendar-week"
                                 );
 
+                            taskElement.remove();
 
-                                const bodyElement =
-                                    dayElement.querySelector(
-                                        ".vp-calendar-day-body"
+                            if (dayElement) {
+
+                                const remainingTasks =
+                                    dayElement.querySelectorAll(
+                                        '[data-calendar-task="true"]'
                                     );
 
+                                if (
+                                    remainingTasks.length === 0
+                                ) {
 
-                                if (bodyElement) {
+                                    dayElement.classList.remove(
+                                        "vp-calendar-day-has-tasks"
+                                    );
 
-                                    bodyElement.innerHTML = `
-                                        <div class="vp-calendar-day-empty">
-                                            No tasks
-                                        </div>
-                                    `;
+                                    const bodyElement =
+                                        dayElement.querySelector(
+                                            ".vp-calendar-day-body"
+                                        );
+
+                                    if (bodyElement) {
+
+                                        const hasShift =
+                                            bodyElement.querySelector(
+                                                ".vp-calendar-shift"
+                                            );
+
+                                        if (!hasShift) {
+
+                                            bodyElement.innerHTML = `
+                                                <div class="vp-calendar-day-empty">
+                                                    No shift or tasks
+                                                </div>
+                                            `;
+                                        }
+                                    }
                                 }
+                            }
+
+                            if (weekElement) {
+
+                                updateCalendarCount(
+                                    weekElement
+                                );
                             }
                         }
 
-
-                        /*
-                         * Update week task count.
-                         */
-
-                        if (weekElement) {
-
-                            updateCalendarCount(
-                                weekElement
-                            );
-                        }
-
-                    }
-                    else {
-
-                        console.warn(
-                            "Task successfully removed from server, but calendar element was not found.",
-                            volunteerTaskId
+                        updateStatistics(
+                            result.statistics ||
+                            result
                         );
+
+                        closeModal(
+                            modal
+                        );
+
+                        delete modal.dataset.volunteerTaskId;
+                        delete modal.dataset.taskDate;
+
+                        showMessage(
+                            result.message ||
+                            "Task removed successfully.",
+                            "success"
+                        );
+
                     }
+                    catch (error) {
 
+                        console.error(
+                            "Remove task error:",
+                            error
+                        );
 
-                    /* =================================================
-                       UPDATE STATISTICS
-                       ================================================= */
-
-                    updateStatistics(
-                        result.statistics ||
-                        result
-                    );
-
-
-                    /* =================================================
-                       CLOSE MODAL
-                       ================================================= */
-
-                    closeModal(
-                        modal
-                    );
-
-
-                    /*
-                     * Clear modal data.
-                     */
-
-                    delete modal.dataset.volunteerTaskId;
-
-                    delete modal.dataset.taskDate;
-
-
-                    showMessage(
-                        result.message ||
-                        "Task removed successfully.",
-                        "success"
-                    );
-
-                }
-                catch (error) {
-
-                    console.error(
-                        "Remove task error:",
-                        error
-                    );
-
-
-                    showMessage(
-                        error.message ||
-                        "An error occurred while removing the task.",
-                        "error"
-                    );
-
-
-                    removeTaskButton.innerHTML =
-                        originalContent;
-                }
-                finally {
-
-                    removeTaskButton.disabled =
-                        false;
-
-
-                    removeTaskButton.classList.remove(
-                        "is-loading"
-                    );
-
-
-                    if (
-                        removeTaskButton.innerHTML.includes(
-                            "Removing..."
-                        )
-                    ) {
+                        showMessage(
+                            error.message ||
+                            "An error occurred while removing the task.",
+                            "error"
+                        );
 
                         removeTaskButton.innerHTML =
                             originalContent;
                     }
+                    finally {
+
+                        removeTaskButton.disabled =
+                            false;
+
+                        removeTaskButton.classList.remove(
+                            "is-loading"
+                        );
+
+                        if (
+                            removeTaskButton.innerHTML.includes(
+                                "Removing..."
+                            )
+                        ) {
+
+                            removeTaskButton.innerHTML =
+                                originalContent;
+                        }
+                    }
                 }
-
-            }
-        );
-    }
-
-
-    /* =========================================================
-       STATISTICS
-       ========================================================= */
-
-    function updateStatistics(result) {
-
-        if (!result) {
-            return;
+            );
         }
 
 
-        const completed =
-            result.completedCount ??
-            result.CompletedCount;
+        /* =========================================================
+           STATISTICS
+           ========================================================= */
 
+        function updateStatistics(result) {
 
-        const inProgress =
-            result.inProgressCount ??
-            result.InProgressCount;
-
-
-        if (
-            completed !== undefined
-        ) {
-
-            const completedElement =
-                document.getElementById(
-                    "vpCompletedCount"
-                );
-
-
-            if (completedElement) {
-
-                completedElement.textContent =
-                    completed;
-            }
-        }
-
-
-        if (
-            inProgress !== undefined
-        ) {
-
-            const progressElement =
-                document.getElementById(
-                    "vpInProgressCount"
-                );
-
-
-            if (progressElement) {
-
-                progressElement.textContent =
-                    inProgress;
-            }
-        }
-    }
-
-
-    /* =========================================================
-       ESCAPE KEY
-       ========================================================= */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (
-                event.key !== "Escape"
-            ) {
+            if (!result) {
                 return;
             }
 
-            closeModal(
-                assignModal
-            );
+            const completed =
+                result.completedCount ??
+                result.CompletedCount;
 
-            closeModal(
-                taskDetailsModal
-            );
+            const inProgress =
+                result.inProgressCount ??
+                result.InProgressCount;
 
-            closeModal(
-                rosterModal
-            );
+            if (
+                completed !== undefined
+            ) {
+
+                const completedElement =
+                    document.getElementById(
+                        "vpCompletedCount"
+                    );
+
+                if (completedElement) {
+
+                    completedElement.textContent =
+                        completed;
+                }
+            }
+
+            if (
+                inProgress !== undefined
+            ) {
+
+                const progressElement =
+                    document.getElementById(
+                        "vpInProgressCount"
+                    );
+
+                if (progressElement) {
+
+                    progressElement.textContent =
+                        inProgress;
+                }
+            }
         }
-    );
 
 
-    /* =========================================================
-       DEBUG
-       ========================================================= */
+        /* =========================================================
+           ESCAPE KEY
+           ========================================================= */
 
-    console.log(
-        "Volunteer Profile JavaScript loaded."
-    );
+        document.addEventListener(
+            "keydown",
+            function (event) {
 
-    console.log(
-        "Assign modal:",
-        assignModal
-    );
+                if (
+                    event.key !== "Escape"
+                ) {
+                    return;
+                }
 
-    console.log(
-        "Task details modal:",
-        taskDetailsModal
-    );
+                closeModal(
+                    assignModal
+                );
 
-    console.log(
-        "Roster modal:",
-        rosterModal
-    );
+                closeModal(
+                    taskDetailsModal
+                );
 
-    console.log(
-        "Calendar tasks:",
-        document.querySelectorAll(
-            '[data-calendar-task="true"]'
-        ).length
-    );
+                closeModal(
+                    rosterModal
+                );
+            }
+        );
 
-});
+
+        /* =========================================================
+           DEBUG
+           ========================================================= */
+
+        console.log(
+            "Volunteer Profile JavaScript loaded."
+        );
+
+        console.log(
+            "Assign modal:",
+            assignModal
+        );
+
+        console.log(
+            "Task details modal:",
+            taskDetailsModal
+        );
+
+        console.log(
+            "Roster modal:",
+            rosterModal
+        );
+
+        console.log(
+            "Calendar tasks:",
+            document.querySelectorAll(
+                '[data-calendar-task="true"]'
+            ).length
+        );
+
+        console.log(
+            "Current week shifts:",
+            @Model.CurrentWeekShifts.Count
+        );
+
+        console.log(
+            "Upcoming week shifts:",
+            @Model.UpcomingWeekShifts.Count
+        );
+
+    });
 </script>
-

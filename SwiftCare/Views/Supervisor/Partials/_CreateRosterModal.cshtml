@@ -12,6 +12,10 @@
          aria-modal="true"
          aria-labelledby="vpRosterModalTitle">
 
+        <!-- =========================================================
+             HEADER
+             ========================================================= -->
+
         <div class="vp-modal-header">
 
             <div class="vp-modal-icon">
@@ -29,6 +33,10 @@
         </div>
 
 
+        <!-- =========================================================
+             BODY
+             ========================================================= -->
+
         <div class="vp-modal-body">
 
             <span class="vp-modal-kicker">
@@ -40,19 +48,9 @@
             </h2>
 
 
-            <div class="vp-modal-task-description">
-
-                <span>
-                    Volunteer
-                </span>
-
-                <p>
-                    @Model.Volunteer?.FirstName
-                    @Model.Volunteer?.LastName
-                </p>
-
-            </div>
-
+            <!-- =====================================================
+                 FORM
+                 ===================================================== -->
 
             <form id="vpCreateRosterForm"
                   asp-controller="Supervisor"
@@ -62,15 +60,17 @@
                 @Html.AntiForgeryToken()
 
 
+                <!-- =================================================
+                     HIDDEN VALUES
+                     ================================================= -->
+
                 <input type="hidden"
                        name="VolunteerId"
                        value="@Model.VolunteerId" />
 
-
                 <input type="hidden"
                        name="SupervisorId"
                        value="@Model.SupervisorId" />
-
 
                 <input type="hidden"
                        id="vpRosterWeekType"
@@ -78,46 +78,66 @@
                        value="current" />
 
 
-                <div class="vp-form-group">
+                <!-- =================================================
+                     ROSTER INFORMATION
+                     VOLUNTEER / NAME / START / END
+                     ================================================= -->
 
-                    <label for="vpRosterName"
-                           class="vp-form-label">
-
-                        Roster Name
-
-                    </label>
-
-                    <input type="text"
-                           id="vpRosterName"
-                           name="RosterName"
-                           class="vp-form-input"
-                           maxlength="200"
-                           required />
-
-                </div>
+                <div class="vp-roster-info-row">
 
 
-                <div class="vp-form-group">
+                    <!-- =================================================
+                         VOLUNTEER
+                         ================================================= -->
 
-                    <label for="vpRosterDescription"
-                           class="vp-form-label">
+                    <div class="vp-roster-info-field">
 
-                        Description
+                        <label class="vp-form-label">
+                            Volunteer
+                        </label>
 
-                    </label>
+                        <div class="vp-roster-volunteer">
 
-                    <textarea id="vpRosterDescription"
-                              name="Description"
-                              class="vp-form-input"
-                              rows="3"
-                              maxlength="2000"></textarea>
+                            <i class="bi bi-person"></i>
 
-                </div>
+                            <span>
+                                @Model.Volunteer?.FirstName
+                                @Model.Volunteer?.LastName
+                            </span>
+
+                        </div>
+
+                    </div>
 
 
-                <div class="vp-time-grid">
+                    <!-- =================================================
+                         ROSTER NAME
+                         ================================================= -->
 
-                    <div class="vp-form-group">
+                    <div class="vp-roster-info-field">
+
+                        <label for="vpRosterName"
+                               class="vp-form-label">
+
+                            Roster Name
+
+                        </label>
+
+                        <input type="text"
+                               id="vpRosterName"
+                               name="RosterName"
+                               class="vp-form-input"
+                               maxlength="200"
+                               required />
+
+                    </div>
+
+
+                    <!-- =================================================
+                         START DATE
+                         ================================================= -->
+
+                    <div class="vp-roster-info-field">
 
                         <label for="vpRosterStartDate"
                                class="vp-form-label">
@@ -130,12 +150,17 @@
                                id="vpRosterStartDate"
                                name="StartDate"
                                class="vp-form-input"
-                               required />
+                               required
+                               readonly />
 
                     </div>
 
 
-                    <div class="vp-form-group">
+                    <!-- =================================================
+                         END DATE
+                         ================================================= -->
+
+                    <div class="vp-roster-info-field">
 
                         <label for="vpRosterEndDate"
                                class="vp-form-label">
@@ -148,30 +173,450 @@
                                id="vpRosterEndDate"
                                name="EndDate"
                                class="vp-form-input"
-                               required />
+                               required
+                               readonly />
 
                     </div>
 
                 </div>
 
 
-                <div class="vp-form-group">
+                <!-- =================================================
+                     DAILY SHIFTS TITLE
+                     ================================================= -->
 
-                    <label for="vpRosterNotes"
-                           class="vp-form-label">
+                <div class="vp-roster-section-heading">
 
-                        Notes
+                    <div>
 
-                    </label>
+                        <label class="vp-form-label">
+                            Daily Shift Schedule
+                        </label>
 
-                    <textarea id="vpRosterNotes"
-                              name="Notes"
-                              class="vp-form-input"
-                              rows="3"
-                              maxlength="2000"></textarea>
+                        <small>
+                            Set the volunteer's scheduled hours for
+                            Monday to Friday.
+                        </small>
+
+                    </div>
 
                 </div>
 
+
+                <!-- =================================================
+                     SHIFT CONTAINER
+                     ================================================= -->
+
+                <div id="vpRosterShiftContainer"
+                     class="vp-roster-shift-container">
+
+
+                    <!-- =================================================
+                         MONDAY
+                         ================================================= -->
+
+                    <div class="vp-roster-shift-row"
+                         data-shift-day="0">
+
+                        <input type="hidden"
+                               class="vp-shift-date"
+                               name="shiftDates[0]" />
+
+
+                        <div class="vp-roster-shift-day">
+
+                            <span class="vp-roster-shift-day-name">
+                                Monday
+                            </span>
+
+                            <span class="vp-roster-shift-date"
+                                  data-shift-date-label="0">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStart0">
+                                Start
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftStart0"
+                                   name="shiftStartTimes[0]"
+                                   class="vp-form-input vp-shift-start"
+                                   value="08:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftEnd0">
+                                End
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftEnd0"
+                                   name="shiftEndTimes[0]"
+                                   class="vp-form-input vp-shift-end"
+                                   value="12:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStatus0">
+                                Status
+                            </label>
+
+                            <select id="vpShiftStatus0"
+                                    name="shiftStatuses[0]"
+                                    class="vp-form-input vp-shift-status">
+
+                                <option value="1">
+                                    Scheduled
+                                </option>
+
+                                <option value="4">
+                                    Day Off
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         TUESDAY
+                         ================================================= -->
+
+                    <div class="vp-roster-shift-row"
+                         data-shift-day="1">
+
+                        <input type="hidden"
+                               class="vp-shift-date"
+                               name="shiftDates[1]" />
+
+                        <div class="vp-roster-shift-day">
+
+                            <span class="vp-roster-shift-day-name">
+                                Tuesday
+                            </span>
+
+                            <span class="vp-roster-shift-date"
+                                  data-shift-date-label="1">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStart1">
+                                Start
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftStart1"
+                                   name="shiftStartTimes[1]"
+                                   class="vp-form-input vp-shift-start"
+                                   value="08:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftEnd1">
+                                End
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftEnd1"
+                                   name="shiftEndTimes[1]"
+                                   class="vp-form-input vp-shift-end"
+                                   value="12:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStatus1">
+                                Status
+                            </label>
+
+                            <select id="vpShiftStatus1"
+                                    name="shiftStatuses[1]"
+                                    class="vp-form-input vp-shift-status">
+
+                                <option value="1">
+                                    Scheduled
+                                </option>
+
+                                <option value="4">
+                                    Day Off
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         WEDNESDAY
+                         ================================================= -->
+
+                    <div class="vp-roster-shift-row"
+                         data-shift-day="2">
+
+                        <input type="hidden"
+                               class="vp-shift-date"
+                               name="shiftDates[2]" />
+
+                        <div class="vp-roster-shift-day">
+
+                            <span class="vp-roster-shift-day-name">
+                                Wednesday
+                            </span>
+
+                            <span class="vp-roster-shift-date"
+                                  data-shift-date-label="2">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStart2">
+                                Start
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftStart2"
+                                   name="shiftStartTimes[2]"
+                                   class="vp-form-input vp-shift-start"
+                                   value="08:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftEnd2">
+                                End
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftEnd2"
+                                   name="shiftEndTimes[2]"
+                                   class="vp-form-input vp-shift-end"
+                                   value="12:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStatus2">
+                                Status
+                            </label>
+
+                            <select id="vpShiftStatus2"
+                                    name="shiftStatuses[2]"
+                                    class="vp-form-input vp-shift-status">
+
+                                <option value="1">
+                                    Scheduled
+                                </option>
+
+                                <option value="4">
+                                    Day Off
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         THURSDAY
+                         ================================================= -->
+
+                    <div class="vp-roster-shift-row"
+                         data-shift-day="3">
+
+                        <input type="hidden"
+                               class="vp-shift-date"
+                               name="shiftDates[3]" />
+
+                        <div class="vp-roster-shift-day">
+
+                            <span class="vp-roster-shift-day-name">
+                                Thursday
+                            </span>
+
+                            <span class="vp-roster-shift-date"
+                                  data-shift-date-label="3">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStart3">
+                                Start
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftStart3"
+                                   name="shiftStartTimes[3]"
+                                   class="vp-form-input vp-shift-start"
+                                   value="08:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftEnd3">
+                                End
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftEnd3"
+                                   name="shiftEndTimes[3]"
+                                   class="vp-form-input vp-shift-end"
+                                   value="12:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStatus3">
+                                Status
+                            </label>
+
+                            <select id="vpShiftStatus3"
+                                    name="shiftStatuses[3]"
+                                    class="vp-form-input vp-shift-status">
+
+                                <option value="1">
+                                    Scheduled
+                                </option>
+
+                                <option value="4">
+                                    Day Off
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         FRIDAY
+                         ================================================= -->
+
+                    <div class="vp-roster-shift-row"
+                         data-shift-day="4">
+
+                        <input type="hidden"
+                               class="vp-shift-date"
+                               name="shiftDates[4]" />
+
+                        <div class="vp-roster-shift-day">
+
+                            <span class="vp-roster-shift-day-name">
+                                Friday
+                            </span>
+
+                            <span class="vp-roster-shift-date"
+                                  data-shift-date-label="4">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStart4">
+                                Start
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftStart4"
+                                   name="shiftStartTimes[4]"
+                                   class="vp-form-input vp-shift-start"
+                                   value="08:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftEnd4">
+                                End
+                            </label>
+
+                            <input type="time"
+                                   id="vpShiftEnd4"
+                                   name="shiftEndTimes[4]"
+                                   class="vp-form-input vp-shift-end"
+                                   value="12:00" />
+
+                        </div>
+
+
+                        <div class="vp-roster-shift-field">
+
+                            <label for="vpShiftStatus4">
+                                Status
+                            </label>
+
+                            <select id="vpShiftStatus4"
+                                    name="shiftStatuses[4]"
+                                    class="vp-form-input vp-shift-status">
+
+                                <option value="1">
+                                    Scheduled
+                                </option>
+
+                                <option value="4">
+                                    Day Off
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     ACTIONS
+                     ================================================= -->
 
                 <div class="vp-modal-actions">
 
@@ -181,7 +626,6 @@
                         Cancel
 
                     </button>
-
 
                     <button type="submit"
                             class="vp-modal-submit"
@@ -204,3 +648,844 @@
     </div>
 
 </div>
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        /* =========================================================
+           ELEMENTS
+           ========================================================= */
+
+        const rosterStartDate =
+            document.getElementById("vpRosterStartDate");
+
+        const rosterEndDate =
+            document.getElementById("vpRosterEndDate");
+
+        const rosterForm =
+            document.getElementById("vpCreateRosterForm");
+
+        const createRosterButton =
+            document.getElementById("vpCreateRosterButton");
+
+        const shiftRows =
+            document.querySelectorAll(
+                "#vpRosterShiftContainer .vp-roster-shift-row"
+            );
+
+
+        /* =========================================================
+           FORMAT DATE
+           YYYY-MM-DD
+           ========================================================= */
+
+        function formatShiftDate(date) {
+
+            const year =
+                date.getFullYear();
+
+            const month =
+                String(
+                    date.getMonth() + 1
+                ).padStart(2, "0");
+
+            const day =
+                String(
+                    date.getDate()
+                ).padStart(2, "0");
+
+            return (
+                year +
+                "-" +
+                month +
+                "-" +
+                day
+            );
+        }
+
+
+        /* =========================================================
+           FORMAT DISPLAY DATE
+           ========================================================= */
+
+        function formatShiftDateLabel(date) {
+
+            return date.toLocaleDateString(
+                undefined,
+                {
+                    day: "2-digit",
+                    month: "short"
+                }
+            );
+        }
+
+
+        /* =========================================================
+           PARSE LOCAL DATE
+           ========================================================= */
+
+        function parseLocalDate(value) {
+
+            if (!value) {
+                return null;
+            }
+
+            const parts =
+                value.split("-");
+
+            if (parts.length !== 3) {
+                return null;
+            }
+
+            const year =
+                parseInt(parts[0], 10);
+
+            const month =
+                parseInt(parts[1], 10);
+
+            const day =
+                parseInt(parts[2], 10);
+
+            if (
+                Number.isNaN(year) ||
+                Number.isNaN(month) ||
+                Number.isNaN(day)
+            ) {
+                return null;
+            }
+
+            return new Date(
+                year,
+                month - 1,
+                day
+            );
+        }
+
+
+        /* =========================================================
+           UPDATE SHIFT DATES
+           MONDAY - FRIDAY ONLY
+           ========================================================= */
+
+        function updateShiftDates() {
+
+            if (!rosterStartDate) {
+                return;
+            }
+
+            const startDate =
+                parseLocalDate(
+                    rosterStartDate.value
+                );
+
+            if (!startDate) {
+                return;
+            }
+
+
+            /*
+             * UPDATE ALL 5 SHIFT DATES
+             *
+             * 0 = Monday
+             * 1 = Tuesday
+             * 2 = Wednesday
+             * 3 = Thursday
+             * 4 = Friday
+             */
+
+            shiftRows.forEach(
+                function (row) {
+
+                    const dayIndex =
+                        parseInt(
+                            row.dataset.shiftDay,
+                            10
+                        );
+
+                    if (
+                        Number.isNaN(dayIndex)
+                    ) {
+                        return;
+                    }
+
+
+                    const shiftDate =
+                        new Date(startDate);
+
+                    shiftDate.setDate(
+                        startDate.getDate() +
+                        dayIndex
+                    );
+
+
+                    /* -----------------------------------------
+                       HIDDEN SHIFT DATE
+                       ----------------------------------------- */
+
+                    const dateInput =
+                        row.querySelector(
+                            ".vp-shift-date"
+                        );
+
+                    if (dateInput) {
+
+                        dateInput.value =
+                            formatShiftDate(
+                                shiftDate
+                            );
+
+                    }
+
+
+                    /* -----------------------------------------
+                       VISIBLE SHIFT DATE
+                       ----------------------------------------- */
+
+                    const dateLabel =
+                        row.querySelector(
+                            "[data-shift-date-label]"
+                        );
+
+                    if (dateLabel) {
+
+                        dateLabel.textContent =
+                            formatShiftDateLabel(
+                                shiftDate
+                            );
+
+                    }
+
+                }
+            );
+
+
+            /*
+             * END DATE
+             *
+             * Monday + 4 days = Friday
+             */
+
+            if (rosterEndDate) {
+
+                const endDate =
+                    new Date(startDate);
+
+                endDate.setDate(
+                    startDate.getDate() + 4
+                );
+
+                rosterEndDate.value =
+                    formatShiftDate(
+                        endDate
+                    );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           UPDATE SHIFT STATUS
+       
+           IMPORTANT:
+           DO NOT DISABLE TIME INPUTS.
+
+           Disabled inputs are NOT submitted by the browser.
+
+           readonly inputs ARE submitted.
+
+           Therefore Day Off uses readonly.
+           ========================================================= */
+
+        function updateShiftStatus(row) {
+
+            if (!row) {
+                return;
+            }
+
+            const status =
+                row.querySelector(
+                    ".vp-shift-status"
+                );
+
+            const start =
+                row.querySelector(
+                    ".vp-shift-start"
+                );
+
+            const end =
+                row.querySelector(
+                    ".vp-shift-end"
+                );
+
+            if (!status) {
+                return;
+            }
+
+
+            const isDayOff =
+                String(status.value) === "4";
+
+
+            /* =====================================================
+               DAY OFF
+               ===================================================== */
+
+            if (isDayOff) {
+
+                /*
+                 * Keep the values in the POST request.
+                 *
+                 * readonly = submitted
+                 * disabled = NOT submitted
+                 */
+
+                if (start) {
+
+                    start.readOnly = true;
+
+                }
+
+                if (end) {
+
+                    end.readOnly = true;
+
+                }
+
+                row.classList.add(
+                    "vp-roster-day-off"
+                );
+
+            }
+
+
+            /* =====================================================
+               SCHEDULED
+               ===================================================== */
+
+            else {
+
+                if (start) {
+
+                    start.readOnly = false;
+
+                }
+
+                if (end) {
+
+                    end.readOnly = false;
+
+                }
+
+                row.classList.remove(
+                    "vp-roster-day-off"
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           INITIALISE SHIFT STATUS
+           ========================================================= */
+
+        shiftRows.forEach(
+            function (row) {
+
+                const status =
+                    row.querySelector(
+                        ".vp-shift-status"
+                    );
+
+                if (status) {
+
+                    status.addEventListener(
+                        "change",
+                        function () {
+
+                            updateShiftStatus(
+                                row
+                            );
+
+                        }
+                    );
+
+                }
+
+                updateShiftStatus(
+                    row
+                );
+
+            }
+        );
+
+
+        /* =========================================================
+           VALIDATE INDIVIDUAL SHIFT
+           ========================================================= */
+
+        function validateShift(row) {
+
+            if (!row) {
+                return true;
+            }
+
+            const status =
+                row.querySelector(
+                    ".vp-shift-status"
+                );
+
+            const start =
+                row.querySelector(
+                    ".vp-shift-start"
+                );
+
+            const end =
+                row.querySelector(
+                    ".vp-shift-end"
+                );
+
+
+            if (!status) {
+                return true;
+            }
+
+
+            /* =====================================================
+               DAY OFF
+           
+               No time validation required.
+               ===================================================== */
+
+            if (
+                String(status.value) === "4"
+            ) {
+
+                return true;
+
+            }
+
+
+            /* =====================================================
+               SCHEDULED SHIFT
+               ===================================================== */
+
+            if (!start || !end) {
+
+                return false;
+
+            }
+
+
+            if (
+                !start.value ||
+                !end.value
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                start.value >= end.value
+            ) {
+
+                return false;
+
+            }
+
+
+            return true;
+
+        }
+
+
+        /* =========================================================
+           VALIDATE ALL FIVE SHIFTS
+           ========================================================= */
+
+        function validateAllShifts() {
+
+            let valid = true;
+
+            let invalidDay = "";
+
+
+            shiftRows.forEach(
+                function (row) {
+
+                    if (
+                        !validateShift(row)
+                    ) {
+
+                        valid = false;
+
+
+                        const dayName =
+                            row.querySelector(
+                                ".vp-roster-shift-day-name"
+                            );
+
+
+                        invalidDay =
+                            dayName
+                                ? dayName.textContent.trim()
+                                : "shift";
+
+                    }
+
+                }
+            );
+
+
+            if (!valid) {
+
+                alert(
+                    "Please check the " +
+                    invalidDay +
+                    " shift. The start time must be before the end time."
+                );
+
+                return false;
+
+            }
+
+
+            return true;
+
+        }
+
+
+        /* =========================================================
+           DEBUG FORM DATA
+           ========================================================= */
+
+        function debugRosterData() {
+
+            console.log(
+                "===================================="
+            );
+
+            console.log(
+                "ROSTER SHIFT DATA"
+            );
+
+            console.log(
+                "===================================="
+            );
+
+
+            shiftRows.forEach(
+                function (row, index) {
+
+                    const date =
+                        row.querySelector(
+                            ".vp-shift-date"
+                        )?.value || "";
+
+
+                    const start =
+                        row.querySelector(
+                            ".vp-shift-start"
+                        )?.value || "";
+
+
+                    const end =
+                        row.querySelector(
+                            ".vp-shift-end"
+                        )?.value || "";
+
+
+                    const status =
+                        row.querySelector(
+                            ".vp-shift-status"
+                        )?.value || "";
+
+
+                    console.log(
+                        "Shift " + index,
+                        {
+                            date: date,
+                            start: start,
+                            end: end,
+                            status: status
+                        }
+                    );
+
+                }
+            );
+
+
+            console.log(
+                "===================================="
+            );
+
+        }
+
+
+        /* =========================================================
+           DEBUG ACTUAL FORM DATA
+       
+           This lets us confirm what the browser is actually
+           sending to ASP.NET.
+           ========================================================= */
+
+        function debugFormData() {
+
+            if (!rosterForm) {
+                return;
+            }
+
+            const formData =
+                new FormData(
+                    rosterForm
+                );
+
+
+            console.log(
+                "===================================="
+            );
+
+            console.log(
+                "ACTUAL FORM DATA BEING SUBMITTED"
+            );
+
+            console.log(
+                "===================================="
+            );
+
+
+            for (
+                const [key, value]
+                of formData.entries()
+            ) {
+
+                console.log(
+                    key + ":",
+                    value
+                );
+
+            }
+
+
+            console.log(
+                "===================================="
+            );
+
+        }
+
+
+        /* =========================================================
+           FORM SUBMIT
+           ========================================================= */
+
+        if (rosterForm) {
+
+            rosterForm.addEventListener(
+                "submit",
+                function (event) {
+
+                    /*
+                     * Make absolutely sure the five dates
+                     * are populated before submission.
+                     */
+
+                    updateShiftDates();
+
+
+                    /* -----------------------------------------
+                       VALIDATE FIVE SHIFTS
+                       ----------------------------------------- */
+
+                    const shiftsAreValid =
+                        validateAllShifts();
+
+
+                    if (!shiftsAreValid) {
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+
+                    /* -----------------------------------------
+                       CONFIRM WE HAVE EXACTLY 5 ROWS
+                       ----------------------------------------- */
+
+                    if (shiftRows.length !== 5) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "The roster form must contain exactly 5 weekday shifts."
+                        );
+
+                        console.error(
+                            "Expected 5 shift rows but found:",
+                            shiftRows.length
+                        );
+
+                        return;
+
+                    }
+
+
+                    /* -----------------------------------------
+                       DEBUG
+                       ----------------------------------------- */
+
+                    debugRosterData();
+
+                    debugFormData();
+
+
+                    /* -----------------------------------------
+                       PREVENT DOUBLE SUBMISSION
+                       ----------------------------------------- */
+
+                    if (createRosterButton) {
+
+                        createRosterButton.disabled = true;
+
+                        const buttonText =
+                            createRosterButton.querySelector(
+                                "span"
+                            );
+
+                        if (buttonText) {
+
+                            buttonText.textContent =
+                                "Creating Roster...";
+
+                        }
+
+                    }
+
+
+                    /*
+                     * IMPORTANT:
+                     *
+                     * DO NOT event.preventDefault()
+                     * here.
+                     *
+                     * The normal form POST will submit:
+                     *
+                     * VolunteerId
+                     * RosterName
+                     * StartDate
+                     * EndDate
+                     *
+                     * shiftDates[0..4]
+                     * shiftStartTimes[0..4]
+                     * shiftEndTimes[0..4]
+                     * shiftStatuses[0..4]
+                     *
+                     * directly to CreateRoster.
+                     */
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           INITIALISE DATES
+           ========================================================= */
+
+        updateShiftDates();
+
+
+        /* =========================================================
+           START DATE CHANGE
+           ========================================================= */
+
+        if (rosterStartDate) {
+
+            rosterStartDate.addEventListener(
+                "change",
+                function () {
+
+                    updateShiftDates();
+
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           CUSTOM DATE EVENT
+           ========================================================= */
+
+        document.addEventListener(
+            "vpRosterDatesChanged",
+            function () {
+
+                updateShiftDates();
+
+            }
+        );
+
+
+        /* =========================================================
+           MODAL OPEN EVENT
+       
+           Useful if your modal is opened dynamically.
+           ========================================================= */
+
+        document.addEventListener(
+            "vpRosterModalOpened",
+            function () {
+
+                updateShiftDates();
+
+                shiftRows.forEach(
+                    function (row) {
+
+                        updateShiftStatus(
+                            row
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* =========================================================
+           FINAL
+           ========================================================= */
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            "Volunteer roster shift logic loaded."
+        );
+
+        console.log(
+            "Weekdays:",
+            shiftRows.length
+        );
+
+        console.log(
+            "Expected:",
+            5
+        );
+
+        console.log(
+            "===================================="
+        );
+
+    });
+
+</script>

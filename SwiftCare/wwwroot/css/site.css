@@ -63370,3 +63370,1153 @@ body.vp-modal-body-lock {
         width: 0;
         height: 0;
     }
+
+        /* =========================================================
+           DAILY SHIFT DISPLAY
+           ========================================================= */
+
+    .vp-calendar-day-shift {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 8px 10px 10px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(27, 94, 32, 0.06);
+        border: 1px solid rgba(46, 125, 50, 0.12);
+    }
+
+    .vp-calendar-shift-time {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1B5E20;
+        white-space: nowrap;
+    }
+
+        .vp-calendar-shift-time i {
+            font-size: 0.8rem;
+        }
+
+    .vp-calendar-shift-status {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #5f6f62;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .vp-calendar-shift-none,
+    .vp-calendar-shift-dayoff,
+    .vp-calendar-shift-cancelled {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .vp-calendar-shift-none {
+        color: #7a857d;
+    }
+
+    .vp-calendar-shift-dayoff {
+        color: #6b7280;
+    }
+
+    .vp-calendar-shift-cancelled {
+        color: #b42318;
+    }
+
+
+    /* =========================================================
+           DAY OFF / CANCELLED DAY
+           ========================================================= */
+
+    .vp-calendar-day-off .vp-calendar-day-shift {
+        background: rgba(107, 114, 128, 0.07);
+        border-color: rgba(107, 114, 128, 0.14);
+    }
+
+    .vp-calendar-day-cancelled .vp-calendar-day-shift {
+        background: rgba(180, 35, 24, 0.06);
+        border-color: rgba(180, 35, 24, 0.13);
+    }
+
+
+    /* =========================================================
+           SELECTED SHIFT INFORMATION
+           ========================================================= */
+
+    .vp-selected-shift-info {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 4px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(220, 237, 200, 0.65);
+        border: 1px solid rgba(46, 125, 50, 0.16);
+        color: #1B5E20;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+
+        .vp-selected-shift-info i {
+            flex: 0 0 auto;
+        }
+
+        .vp-selected-shift-info strong {
+            font-weight: 800;
+        }
+
+    .vp-selected-shift-invalid {
+        background: rgba(180, 35, 24, 0.06);
+        border-color: rgba(180, 35, 24, 0.16);
+        color: #b42318;
+    }
+
+
+    /* =========================================================
+           RESPONSIVE SHIFT DISPLAY
+           ========================================================= */
+
+    @media (max-width: 768px) {
+
+        .vp-calendar-day-shift {
+            margin-left: 6px;
+            margin-right: 6px;
+            padding: 7px 8px;
+        }
+
+        .vp-calendar-shift-time {
+            font-size: 0.72rem;
+        }
+
+        .vp-calendar-shift-status {
+            font-size: 0.62rem;
+        }
+    }
+/* =========================================================
+   COMPACT CREATE ROSTER MODAL
+   ========================================================= */
+
+#vpRosterModal {
+    overflow: hidden;
+}
+
+    #vpRosterModal .vp-modal-dialog {
+        width: min(1050px, 94vw);
+        max-width: 1050px;
+        /*
+       Keep the whole modal inside the screen.
+    */
+        max-height: 94vh;
+        height: auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+
+    /* =========================================================
+   MODAL BODY
+   ========================================================= */
+
+    #vpRosterModal .vp-modal-body {
+        padding: 18px 22px 16px;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+
+    /* =========================================================
+   HEADER
+   ========================================================= */
+
+    #vpRosterModal .vp-modal-header {
+        padding: 12px 18px;
+        min-height: 48px;
+    }
+
+
+    /* =========================================================
+   TITLE
+   ========================================================= */
+
+    #vpRosterModal .vp-modal-kicker {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+    }
+
+    #vpRosterModal h2 {
+        margin-top: 3px;
+        margin-bottom: 8px;
+        font-size: 22px;
+        line-height: 1.2;
+    }
+
+
+    /* =========================================================
+   VOLUNTEER
+   ========================================================= */
+
+    #vpRosterModal .vp-modal-task-description {
+        margin-bottom: 12px;
+        padding: 8px 11px;
+    }
+
+        #vpRosterModal .vp-modal-task-description span {
+            font-size: 10px;
+        }
+
+        #vpRosterModal .vp-modal-task-description p {
+            margin: 2px 0 0;
+            font-size: 13px;
+        }
+
+
+    /* =========================================================
+   FORM GROUP
+   ========================================================= */
+
+    #vpRosterModal .vp-form-group {
+        margin-bottom: 9px;
+    }
+
+
+    /* =========================================================
+   LABELS
+   ========================================================= */
+
+    #vpRosterModal .vp-form-label {
+        margin-bottom: 3px;
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+
+    /* =========================================================
+   ALL INPUTS
+   ========================================================= */
+
+    #vpRosterModal .vp-form-input {
+        width: 100%;
+        min-height: 36px;
+        height: 36px;
+        padding: 6px 9px;
+        font-size: 12px;
+        box-sizing: border-box;
+    }
+
+
+    /* =========================================================
+   TEXTAREAS
+   ========================================================= */
+
+    #vpRosterModal textarea.vp-form-input {
+        height: auto;
+        min-height: 58px;
+        padding: 7px 9px;
+        resize: none;
+    }
+
+
+/* =========================================================
+   ROSTER NAME
+   ========================================================= */
+
+#vpRosterName {
+    height: 36px;
+}
+
+
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
+
+#vpRosterDescription {
+    min-height: 55px;
+}
+
+
+/* =========================================================
+   START / END DATE
+   ========================================================= */
+
+#vpRosterModal .vp-time-grid {
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+#vpRosterStartDate,
+#vpRosterEndDate {
+    height: 35px;
+    min-height: 35px;
+}
+
+
+/* =========================================================
+   DAILY SCHEDULE HEADING
+   ========================================================= */
+
+.vp-roster-section-heading {
+    margin-top: 10px;
+    margin-bottom: 7px;
+}
+
+    .vp-roster-section-heading .vp-form-label {
+        margin-bottom: 2px;
+        font-size: 12px;
+    }
+
+    .vp-roster-section-heading small {
+        font-size: 10px;
+        line-height: 1.3;
+    }
+
+
+/* =========================================================
+   SHIFT CONTAINER
+   ========================================================= */
+
+#vpRosterShiftContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+
+    /* =========================================================
+   DAILY SHIFT ROW
+   ========================================================= */
+
+    #vpRosterShiftContainer .vp-roster-shift-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(125px, 1.35fr) minmax(70px, .7fr) minmax(105px, 1fr) minmax(105px, 1fr) minmax(125px, 1.1fr);
+        gap: 7px;
+        align-items: end;
+        padding: 6px 8px;
+        min-height: 50px;
+        box-sizing: border-box;
+        border-radius: 8px;
+    }
+
+
+    /* =========================================================
+   DAY
+   ========================================================= */
+
+    #vpRosterShiftContainer .vp-roster-shift-day {
+        min-width: 0;
+        min-height: 36px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1px;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-day-name {
+        font-size: 12px;
+        line-height: 1.1;
+        font-weight: 700;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-date {
+        font-size: 10px;
+        line-height: 1.1;
+        opacity: .6;
+    }
+
+
+    /* =========================================================
+   SHIFT FIELDS
+   ========================================================= */
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-field {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+
+        /* =========================================================
+   SHIFT LABELS
+   ========================================================= */
+
+        #vpRosterShiftContainer
+        .vp-roster-shift-field label {
+            display: block;
+            margin: 0;
+            font-size: 9px;
+            line-height: 1.1;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            opacity: .6;
+        }
+
+
+        /* =========================================================
+   SHIFT INPUTS
+   ========================================================= */
+
+        #vpRosterShiftContainer
+        .vp-roster-shift-field .vp-form-input {
+            height: 32px;
+            min-height: 32px;
+            padding: 4px 7px;
+            font-size: 11px;
+            border-radius: 6px;
+        }
+
+
+    /* =========================================================
+   TIME INPUTS
+   ========================================================= */
+
+    #vpRosterShiftContainer
+    input[type="time"] {
+        height: 32px;
+        min-height: 32px;
+    }
+
+
+    /* =========================================================
+   STATUS SELECT
+   ========================================================= */
+
+    #vpRosterShiftContainer
+    select.vp-form-input {
+        height: 32px;
+        min-height: 32px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+
+
+    /* =========================================================
+   DAY OFF
+   ========================================================= */
+
+    #vpRosterShiftContainer
+    .vp-roster-day-off {
+        opacity: .75;
+    }
+
+
+/* =========================================================
+   NOTES
+   ========================================================= */
+
+#vpRosterModal .vp-roster-notes {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+#vpRosterNotes {
+    min-height: 48px;
+    height: 48px;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+#vpRosterModal .vp-modal-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+    gap: 8px;
+}
+
+    #vpRosterModal .vp-modal-actions button {
+        min-height: 34px;
+        height: 34px;
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
+
+/* =========================================================
+   DESKTOP
+   ========================================================= */
+
+@media (min-width: 901px) {
+
+    #vpRosterModal .vp-modal-dialog {
+        max-height: 94vh;
+    }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    #vpRosterModal .vp-modal-dialog {
+        width: 95vw;
+        max-height: 94vh;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-row {
+        grid-template-columns: minmax(110px, 1.2fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.2fr);
+        gap: 6px;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-day {
+        grid-column: 1;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    #vpRosterModal .vp-modal-dialog {
+        width: 96vw;
+        max-height: 96vh;
+    }
+
+    #vpRosterModal .vp-modal-body {
+        padding: 14px;
+    }
+
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 7px;
+    }
+
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-day {
+        grid-column: 1 / -1;
+        min-height: 28px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-field:last-child {
+        grid-column: 1 / -1;
+    }
+
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-field .vp-form-input {
+        height: 34px;
+        min-height: 34px;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+    #vpRosterModal h2 {
+        font-size: 19px;
+    }
+
+    #vpRosterModal .vp-modal-body {
+        padding: 12px;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-row {
+        grid-template-columns: 1fr;
+    }
+
+    #vpRosterShiftContainer
+    .vp-roster-shift-day,
+    #vpRosterShiftContainer
+    .vp-roster-shift-field,
+    #vpRosterShiftContainer
+    .vp-roster-shift-field:last-child {
+        grid-column: 1;
+    }
+}
+
+/* =========================================================
+   CREATE ROSTER - FORCE TOP FIELDS INTO ONE ROW
+   ========================================================= */
+
+#vpRosterModal .vp-roster-info-row {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.4fr) minmax(150px, 1fr) minmax(150px, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    align-items: end !important;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+}
+
+    #vpRosterModal .vp-roster-info-row > div {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+/* Volunteer */
+#vpRosterModal .vp-modal-task-description {
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 5px 8px !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+    #vpRosterModal .vp-modal-task-description span {
+        display: block !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+        margin: 0 0 2px 0 !important;
+    }
+
+    #vpRosterModal .vp-modal-task-description p {
+        display: block !important;
+        margin: 0 !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+/* Form groups */
+#vpRosterModal .vp-roster-info-row .vp-form-group {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Labels */
+#vpRosterModal .vp-roster-info-row .vp-form-label {
+    display: block !important;
+    margin: 0 0 4px 0 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+
+/* Inputs */
+#vpRosterModal .vp-roster-info-row .vp-form-input {
+    display: block !important;
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    margin: 0 !important;
+    padding: 5px 8px !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   DAILY SHIFTS
+   ========================================================= */
+
+#vpRosterModal .vp-roster-shift-row {
+    display: grid !important;
+    grid-template-columns: minmax(140px, 1.3fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(130px, 1fr) !important;
+    gap: 8px !important;
+    align-items: end !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 6px 8px !important;
+}
+
+#vpRosterModal .vp-roster-shift-day,
+#vpRosterModal .vp-roster-shift-field {
+    min-width: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+#vpRosterModal .vp-roster-shift-day {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    height: 34px !important;
+}
+
+#vpRosterModal .vp-roster-shift-day-name {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+}
+
+#vpRosterModal .vp-roster-shift-date {
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    margin-top: 2px !important;
+}
+
+#vpRosterModal .vp-roster-shift-field label {
+    display: block !important;
+    margin: 0 0 4px 0 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+
+#vpRosterModal .vp-roster-shift-field .vp-form-input {
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    box-sizing: border-box !important;
+}
+
+/* =========================================================
+   MODAL HEIGHT
+   ========================================================= */
+
+#vpRosterModal .vp-modal-dialog {
+    width: min(1050px, calc(100vw - 24px)) !important;
+    max-width: 1050px !important;
+    max-height: calc(100vh - 24px) !important;
+    margin: 12px auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#vpRosterModal .vp-modal-body {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding: 14px 18px !important;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 850px) {
+
+    #vpRosterModal .vp-roster-info-row {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 600px) {
+
+    #vpRosterModal .vp-roster-info-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    #vpRosterModal .vp-roster-shift-row {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #vpRosterModal .vp-roster-shift-day {
+        grid-column: 1 / -1 !important;
+    }
+}
+
+/* =========================================================
+   VOLUNTEER FIELD
+   ========================================================= */
+
+#vpRosterModal .vp-roster-info-field {
+    width: 100%;
+    min-width: 0;
+}
+
+    /* Volunteer label */
+    #vpRosterModal .vp-roster-info-field .vp-form-label {
+        display: block;
+        margin-bottom: 4px;
+        color: #166534;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+/* Volunteer name container */
+#vpRosterModal .vp-roster-volunteer {
+    width: 100%;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    box-sizing: border-box;
+    background: #f3f8f3;
+    /* Forest-green left line */
+    border-left: 4px solid #228b22;
+    border-radius: 4px;
+}
+
+    /* Person icon */
+    #vpRosterModal .vp-roster-volunteer i {
+        color: #228b22;
+        font-size: 14px;
+        margin-right: 7px;
+        flex-shrink: 0;
+    }
+
+    #vpRosterModal .vp-roster-volunteer span {
+        color: #14532d;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+/* =========================================================
+   HIDE ROSTER MODAL SCROLLBAR
+   ========================================================= */
+
+#vpRosterModal .vp-modal-body {
+    overflow-y: auto !important;
+
+    scrollbar-width: none !important;
+
+    -ms-overflow-style: none !important;
+}
+
+
+    #vpRosterModal .vp-modal-body::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+/* =========================================================
+   CALENDAR SHIFT
+   Shift always appears above tasks
+   ========================================================= */
+
+.vp-calendar-day-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
+/* =========================================================
+   BASE SHIFT CARD
+   ========================================================= */
+
+.vp-calendar-shift {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border-left: 4px solid #228b22;
+    background: #f3f8f3;
+    transition: all 0.2s ease;
+}
+
+
+/* =========================================================
+   SHIFT HEADER
+   ========================================================= */
+
+.vp-calendar-shift-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+
+.vp-calendar-shift-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #166534;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+
+    .vp-calendar-shift-label i {
+        font-size: 12px;
+    }
+
+
+.vp-calendar-shift-status {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(34, 139, 34, 0.10);
+    color: #166534;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   SHIFT TIME
+   ========================================================= */
+
+.vp-calendar-shift-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    color: #14532d;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+
+    .vp-calendar-shift-time i {
+        color: #228b22;
+        font-size: 12px;
+    }
+
+
+/* =========================================================
+   DAY OFF
+   ========================================================= */
+
+.vp-calendar-shift-day-off {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+    .vp-calendar-shift-day-off i {
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+
+/* =========================================================
+   DAY OFF CARD
+   ========================================================= */
+
+.vp-calendar-shift-day-off {
+    color: #6b7280;
+}
+
+
+.vp-calendar-shift-day-off {
+    border-color: #9ca3af;
+}
+
+
+/* =========================================================
+   NO SHIFT
+   ========================================================= */
+
+.vp-calendar-shift-none {
+    background: #f8f9fa;
+    border-left-color: #cbd5e1;
+}
+
+
+    .vp-calendar-shift-none .vp-calendar-shift-label {
+        color: #64748b;
+    }
+
+
+        .vp-calendar-shift-none .vp-calendar-shift-label i {
+            color: #94a3b8;
+        }
+
+
+    .vp-calendar-shift-none .vp-calendar-shift-status {
+        background: #e2e8f0;
+        color: #64748b;
+    }
+
+
+.vp-calendar-shift-none-message {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+
+    .vp-calendar-shift-none-message i {
+        font-size: 11px;
+    }
+
+
+/* =========================================================
+   DAY OFF STATUS
+   ========================================================= */
+
+.vp-calendar-shift-day-off {
+    color: #6b7280;
+}
+
+
+/* =========================================================
+   TASKS ALWAYS COME AFTER SHIFT
+   ========================================================= */
+
+.vp-calendar-task {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   EMPTY DAY
+   ========================================================= */
+
+.vp-calendar-day-empty {
+    padding: 10px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   CALENDAR DAY BODY
+   ========================================================= */
+
+.vp-calendar-day-body {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+
+/* =========================================================
+   BASE SHIFT
+   ========================================================= */
+
+.vp-calendar-shift {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   SCHEDULED SHIFT
+   ========================================================= */
+
+.vp-calendar-shift-scheduled {
+    justify-content: space-between;
+    background: #f0f8f0;
+    border-left: 4px solid #228b22;
+    color: #166534;
+}
+
+    .vp-calendar-shift-scheduled .vp-calendar-shift-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #166534;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+        .vp-calendar-shift-scheduled .vp-calendar-shift-label i {
+            color: #228b22;
+        }
+
+.vp-calendar-shift-time {
+    color: #14532d;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   DAY OFF
+   ========================================================= */
+
+.vp-calendar-shift-day-off {
+    background: #f5f5f5;
+    border-left: 4px solid #9ca3af;
+    color: #6b7280;
+    gap: 6px;
+}
+
+    .vp-calendar-shift-day-off i {
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .vp-calendar-shift-day-off span {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .04em;
+    }
+
+
+/* =========================================================
+   NO SHIFT
+   ========================================================= */
+
+.vp-calendar-shift-none {
+    background: #f8fafc;
+    border-left: 4px solid #cbd5e1;
+    color: #94a3b8;
+    gap: 6px;
+}
+
+    .vp-calendar-shift-none i {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .vp-calendar-shift-none span {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .04em;
+    }
+
+
+/* =========================================================
+   TASKS
+   ========================================================= */
+
+.vp-calendar-task {
+    width: 100%;
+    box-sizing: border-box;
+}

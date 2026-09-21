@@ -742,6 +742,138 @@ namespace SwiftCare.Data
                 .HasForeignKey(a => a.AssignedById)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // ============================================================
+            // VOLUNTEER ROSTER
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerRoster>(entity =>
+            {
+                entity.HasKey(r => r.VolunteerRosterId);
+
+                entity.Property(r => r.RosterName)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(r => r.Description)
+                    .HasMaxLength(2000);
+
+                entity.Property(r => r.Notes)
+                    .HasMaxLength(2000);
+
+                // --------------------------------------------------------
+                // Volunteer
+                // --------------------------------------------------------
+
+                entity.HasOne(r => r.Volunteer)
+                    .WithMany(v => v.Rosters)
+                    .HasForeignKey(r => r.VolunteerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // --------------------------------------------------------
+                // Supervisor
+                // --------------------------------------------------------
+
+                entity.HasOne(r => r.Supervisor)
+                    .WithMany()
+                    .HasForeignKey(r => r.SupervisorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // --------------------------------------------------------
+                // Roster -> Daily Shifts
+                // --------------------------------------------------------
+
+                entity.HasMany(r => r.Shifts)
+                    .WithOne(s => s.VolunteerRoster)
+                    .HasForeignKey(s => s.VolunteerRosterId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            // ============================================================
+            // VOLUNTEER ROSTER SHIFT
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerRosterShift>(entity =>
+            {
+                entity.HasKey(s => s.VolunteerRosterShiftId);
+
+                entity.Property(s => s.Notes)
+                    .HasMaxLength(1000);
+
+                // --------------------------------------------------------
+                // Roster -> Shift
+                // --------------------------------------------------------
+
+                entity.HasOne(s => s.VolunteerRoster)
+                    .WithMany(r => r.Shifts)
+                    .HasForeignKey(s => s.VolunteerRosterId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // --------------------------------------------------------
+                // One shift can have one attendance record
+                // --------------------------------------------------------
+
+                entity.HasOne(s => s.Attendance)
+                    .WithOne(a => a.VolunteerRosterShift)
+                    .HasForeignKey<VolunteerAttendance>(
+                        a => a.VolunteerRosterShiftId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            // ============================================================
+            // VOLUNTEER ATTENDANCE
+            // ============================================================
+
+            modelBuilder.Entity<VolunteerAttendance>(entity =>
+            {
+                entity.HasKey(a => a.AttendanceId);
+
+                entity.Property(a => a.Status)
+                    .IsRequired();
+
+                entity.Property(a => a.VerificationProvider)
+                    .HasMaxLength(50);
+
+                entity.Property(a => a.VerificationReference)
+                    .HasMaxLength(500);
+
+                entity.Property(a => a.Notes)
+                    .HasMaxLength(2000);
+
+                entity.Property(a => a.CreatedBy)
+                    .HasMaxLength(450);
+
+                entity.Property(a => a.ModifiedBy)
+                    .HasMaxLength(450);
+
+                // --------------------------------------------------------
+                // Volunteer -> Attendance
+                // --------------------------------------------------------
+
+                entity.HasOne(a => a.Volunteer)
+                    .WithMany()
+                    .HasForeignKey(a => a.VolunteerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // --------------------------------------------------------
+                // Shift -> Attendance
+                // --------------------------------------------------------
+
+                entity.HasOne(a => a.VolunteerRosterShift)
+                    .WithOne(s => s.Attendance)
+                    .HasForeignKey<VolunteerAttendance>(
+                        a => a.VolunteerRosterShiftId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // --------------------------------------------------------
+                // Prevent duplicate attendance for the same shift
+                // --------------------------------------------------------
+
+                entity.HasIndex(a => a.VolunteerRosterShiftId)
+                    .IsUnique();
+            });
+
         }
 
         public DbSet<Supervisor> Supervisors { get; set; }
@@ -765,6 +897,11 @@ namespace SwiftCare.Data
             get;
             set;
         }
+
+
+        public DbSet<VolunteerRosterShift> VolunteerRosterShifts { get; set; }
+
+        public DbSet<VolunteerAttendance> VolunteerAttendances { get; set; }
 
         public DbSet<SwiftCare.Models.VolunteerOnboarding.VolunteerPolicy> VolunteerPolicies
         {

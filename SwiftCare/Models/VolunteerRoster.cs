@@ -11,6 +11,7 @@ namespace SwiftCare.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int VolunteerRosterId { get; set; }
 
+
         // ============================================================
         // ROSTER INFORMATION
         // ============================================================
@@ -23,13 +24,13 @@ namespace SwiftCare.Models
         public string? Description { get; set; }
 
         /// <summary>
-        /// The first day of the seven-day roster.
+        /// The first day of the seven-day roster period.
         /// </summary>
         [Required]
         public DateTime StartDate { get; set; }
 
         /// <summary>
-        /// The last day of the seven-day roster.
+        /// The last day of the seven-day roster period.
         /// </summary>
         [Required]
         public DateTime EndDate { get; set; }
@@ -39,6 +40,7 @@ namespace SwiftCare.Models
 
         [StringLength(2000)]
         public string? Notes { get; set; }
+
 
         // ============================================================
         // VOLUNTEER
@@ -51,6 +53,7 @@ namespace SwiftCare.Models
         [ForeignKey(nameof(VolunteerId))]
         public Volunteer? Volunteer { get; set; }
 
+
         // ============================================================
         // SUPERVISOR
         // ============================================================
@@ -62,6 +65,7 @@ namespace SwiftCare.Models
         [ForeignKey(nameof(SupervisorId))]
         public Supervisor? Supervisor { get; set; }
 
+
         // ============================================================
         // AUDIT
         // ============================================================
@@ -72,13 +76,32 @@ namespace SwiftCare.Models
         public DateTime ModifiedDate { get; set; }
             = DateTime.Now;
 
+
         // ============================================================
         // TASK ASSIGNMENTS
         // ============================================================
 
         public ICollection<VolunteerTaskAssignment> TaskAssignments { get; set; }
             = new List<VolunteerTaskAssignment>();
+
+
+        // ============================================================
+        // DAILY SHIFTS
+        // ============================================================
+
+        /// <summary>
+        /// Individual scheduled shifts belonging to this roster.
+        ///
+        /// A roster can contain different times for different days.
+        /// </summary>
+        public ICollection<VolunteerRosterShift> Shifts { get; set; }
+            = new List<VolunteerRosterShift>();
     }
+
+
+    // ================================================================
+    // ROSTER STATUS
+    // ================================================================
 
     public enum VolunteerRosterStatus
     {

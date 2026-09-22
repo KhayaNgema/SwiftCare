@@ -64520,3 +64520,1110 @@ body.vp-modal-body-lock {
     width: 100%;
     box-sizing: border-box;
 }
+
+/* ============================================================
+   VOLUNTEER ROSTER PAGE
+   ============================================================ */
+
+.sc-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.8rem;
+    color: #2E7D32;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+    .sc-back-link:hover {
+        color: #1B5E20;
+    }
+
+.sc-page-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.sc-roster-profile-avatar {
+    width: 54px;
+    height: 54px;
+}
+
+.sc-header-separator {
+    margin: 0 0.4rem;
+    color: #9ca3af;
+}
+
+.sc-page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ============================================================
+   ROSTER INFORMATION
+   ============================================================ */
+
+.sc-roster-info-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.sc-roster-info-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.sc-roster-large-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #DCEDC8;
+    color: #1B5E20;
+    font-size: 1.35rem;
+}
+
+.sc-roster-date-range {
+    margin: 0.35rem 0 0;
+    color: #6b7280;
+    font-size: 0.82rem;
+}
+
+    .sc-roster-date-range i {
+        margin-right: 0.3rem;
+        color: #2E7D32;
+    }
+
+.sc-roster-description {
+    margin: 0.45rem 0 0;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.sc-roster-info-status {
+    min-width: 130px;
+    text-align: right;
+}
+
+.sc-roster-status-large {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: #DCEDC8;
+    color: #1B5E20;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.sc-no-roster-card {
+    margin-bottom: 1.25rem;
+}
+
+/* ============================================================
+   WEEK NAVIGATION
+   ============================================================ */
+
+.sc-week-card {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+}
+
+.sc-week-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.sc-week-navigation-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #D5E7D6;
+    border-radius: 10px;
+    background: #F0FDF4;
+    color: #1B5E20;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+    .sc-week-navigation-button:hover {
+        background: #DCEDC8;
+        color: #124116;
+    }
+
+.sc-week-navigation-info {
+    text-align: center;
+}
+
+    .sc-week-navigation-info span {
+        display: block;
+        color: #6b7280;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+    }
+
+    .sc-week-navigation-info strong {
+        display: block;
+        margin-top: 0.15rem;
+        color: #124116;
+        font-size: 1rem;
+    }
+
+/* ============================================================
+   WEEK GRID
+   ============================================================ */
+
+.sc-roster-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(190px, 1fr));
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+}
+
+.sc-roster-day {
+    min-width: 190px;
+    overflow: hidden;
+    border: 1px solid #D5E7D6;
+    border-radius: 15px;
+    background: #ffffff;
+}
+
+.sc-roster-day-today {
+    border: 2px solid #8BC34A;
+    box-shadow: 0 5px 18px rgba(27, 94, 32, 0.08);
+}
+
+.sc-roster-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.9rem;
+    background: #F0FDF4;
+    border-bottom: 1px solid #D5E7D6;
+}
+
+.sc-roster-day-name {
+    display: block;
+    color: #1B5E20;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.sc-roster-day-date {
+    display: block;
+    margin-top: 0.15rem;
+    color: #124116;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.sc-today-badge {
+    padding: 0.25rem 0.45rem;
+    border-radius: 999px;
+    background: #8BC34A;
+    color: #124116;
+    font-size: 0.55rem;
+    font-weight: 900;
+}
+
+/* ============================================================
+   EMPTY / DAY OFF
+   ============================================================ */
+
+.sc-roster-empty-state,
+.sc-roster-day-off {
+    min-height: 185px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.sc-roster-empty-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0.55rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F0FDF4;
+    color: #8BC34A;
+    font-size: 1rem;
+}
+
+.sc-roster-empty-state strong,
+.sc-roster-day-off strong {
+    color: #124116;
+    font-size: 0.8rem;
+}
+
+.sc-roster-empty-state span,
+.sc-roster-day-off span {
+    margin-top: 0.25rem;
+    color: #9ca3af;
+    font-size: 0.7rem;
+}
+
+.sc-roster-day-off .sc-roster-empty-icon {
+    background: #f8faf8;
+    color: #9ca3af;
+}
+
+/* ============================================================
+   SHIFT
+   ============================================================ */
+
+.sc-roster-shift {
+    padding: 0.85rem;
+}
+
+.sc-roster-shift-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #edf3ee;
+}
+
+.sc-roster-shift-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #DCEDC8;
+    color: #1B5E20;
+}
+
+.sc-shift-label {
+    display: block;
+    color: #9ca3af;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.sc-roster-shift-time {
+    display: block;
+    margin-top: 0.15rem;
+    color: #124116;
+    font-size: 0.85rem;
+}
+
+.sc-roster-shift-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.65rem 0;
+}
+
+.sc-shift-status-label {
+    color: #6b7280;
+    font-size: 0.68rem;
+}
+
+.sc-shift-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    background: #DCEDC8;
+    color: #1B5E20;
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.sc-roster-shift-notes {
+    display: flex;
+    gap: 0.45rem;
+    padding: 0.65rem;
+    margin-bottom: 0.75rem;
+    border-radius: 9px;
+    background: #F0FDF4;
+    color: #6b7280;
+    font-size: 0.68rem;
+}
+
+    .sc-roster-shift-notes i {
+        color: #2E7D32;
+    }
+
+/* ============================================================
+   TASKS
+   ============================================================ */
+
+.sc-roster-task-section {
+    border-top: 1px solid #edf3ee;
+    padding-top: 0.75rem;
+}
+
+.sc-roster-task-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #124116;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+    .sc-roster-task-section-header i {
+        margin-right: 0.25rem;
+        color: #2E7D32;
+    }
+
+.sc-task-count {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #DCEDC8;
+    color: #1B5E20;
+    font-size: 0.62rem;
+}
+
+.sc-roster-no-tasks {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.9rem 0.25rem;
+    color: #9ca3af;
+    font-size: 0.68rem;
+}
+
+    .sc-roster-no-tasks i {
+        color: #8BC34A;
+    }
+
+.sc-roster-task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.sc-roster-task {
+    padding: 0.65rem;
+    border: 1px solid #e5eee6;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.sc-roster-task-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.sc-task-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F0FDF4;
+    color: #2E7D32;
+    font-size: 0.75rem;
+}
+
+.sc-roster-task-content {
+    min-width: 0;
+}
+
+.sc-roster-task-title {
+    display: block;
+    color: #124116;
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+.sc-roster-task-description {
+    margin: 0.25rem 0 0;
+    color: #6b7280;
+    font-size: 0.65rem;
+    line-height: 1.4;
+}
+
+.sc-roster-task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+    color: #6b7280;
+    font-size: 0.62rem;
+}
+
+    .sc-roster-task-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .sc-roster-task-meta i {
+        color: #2E7D32;
+    }
+
+.sc-roster-task-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #edf3ee;
+}
+
+.sc-task-priority,
+.sc-task-status {
+    padding: 0.2rem 0.4rem;
+    border-radius: 999px;
+    background: #F0FDF4;
+    color: #1B5E20;
+    font-size: 0.58rem;
+    font-weight: 800;
+}
+
+/* ============================================================
+   ROSTER SUMMARY
+   ============================================================ */
+
+.sc-roster-summary-card {
+    margin-top: 1.25rem;
+}
+
+.sc-roster-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.sc-roster-summary-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.9rem;
+    border: 1px solid #D5E7D6;
+    border-radius: 13px;
+    background: #F0FDF4;
+}
+
+.sc-roster-summary-stat-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #DCEDC8;
+    color: #1B5E20;
+}
+
+.sc-roster-summary-stat strong {
+    display: block;
+    color: #124116;
+    font-size: 1.1rem;
+}
+
+.sc-roster-summary-stat span {
+    display: block;
+    margin-top: 0.1rem;
+    color: #6b7280;
+    font-size: 0.65rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+    .sc-roster-info-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .sc-roster-info-status {
+        text-align: left;
+    }
+
+    .sc-roster-week-grid {
+        grid-template-columns: repeat(7, 190px);
+    }
+
+    .sc-roster-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+
+    .sc-page-title-row {
+        align-items: flex-start;
+    }
+
+    .sc-week-navigation-button {
+        font-size: 0;
+    }
+
+        .sc-week-navigation-button i {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+    .sc-roster-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sc-roster-info-main {
+        align-items: flex-start;
+    }
+}
+/* ============================================================
+   VOLUNTEER SCHEDULE
+   ============================================================ */
+
+.sc-volunteer-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat( auto-fit, minmax(320px, 1fr) );
+    gap: 1.25rem;
+}
+
+.sc-volunteer-schedule-card {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(46, 125, 50, 0.12);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(27, 94, 32, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .sc-volunteer-schedule-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 30px rgba(27, 94, 32, 0.14);
+    }
+
+.sc-volunteer-schedule-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.15rem;
+    background: linear-gradient( 135deg, #f0fdf4, #dc edc8 );
+}
+
+.sc-volunteer-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1b5e20;
+    color: white;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.sc-volunteer-info {
+    min-width: 0;
+    flex: 1;
+}
+
+    .sc-volunteer-info h3 {
+        margin: 0;
+        color: #124116;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .sc-volunteer-info span {
+        display: block;
+        margin-top: 0.2rem;
+        color: #6b7280;
+        font-size: 0.78rem;
+    }
+
+.sc-status-badge,
+.sc-shift-status,
+.sc-roster-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem;
+    background: #dc edc8;
+    color: #1b5e20;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.sc-volunteer-schedule-body {
+    padding: 1.15rem;
+}
+
+.sc-schedule-section {
+    margin-bottom: 1rem;
+}
+
+.sc-schedule-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.sc-current-shift {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    background: #f0fdf4;
+    border: 1px solid #d5e7d6;
+}
+
+.sc-shift-time {
+    color: #124116;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+    .sc-shift-time i {
+        margin-right: 0.3rem;
+    }
+
+.sc-day-off {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    background: #f8faf8;
+    color: #6b7280;
+    font-size: 0.88rem;
+}
+
+.sc-schedule-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+    .sc-schedule-stats > div {
+        padding: 0.75rem;
+        border-radius: 12px;
+        background: #f8faf8;
+        text-align: center;
+    }
+
+    .sc-schedule-stats strong {
+        display: block;
+        color: #1b5e20;
+        font-size: 1.1rem;
+    }
+
+    .sc-schedule-stats span {
+        display: block;
+        margin-top: 0.15rem;
+        color: #6b7280;
+        font-size: 0.7rem;
+    }
+
+.sc-roster-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    border: 1px solid #d5e7d6;
+    border-radius: 12px;
+}
+
+.sc-roster-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc edc8;
+    color: #1b5e20;
+    flex-shrink: 0;
+}
+
+.sc-roster-summary > div:nth-child(2) {
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-roster-summary strong {
+    display: block;
+    color: #124116;
+    font-size: 0.84rem;
+}
+
+.sc-roster-summary span {
+    display: block;
+    color: #6b7280;
+    font-size: 0.72rem;
+    margin-top: 0.15rem;
+}
+
+.sc-volunteer-schedule-footer {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0 1.15rem 1.15rem;
+}
+
+    .sc-volunteer-schedule-footer .sc-onboarding-review-button {
+        flex: 1;
+        justify-content: center;
+    }
+
+/* ============================================================
+   WEEKLY ROSTER
+   ============================================================ */
+
+.sc-week-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.sc-week-navigation-info {
+    text-align: center;
+}
+
+    .sc-week-navigation-info strong {
+        display: block;
+        color: #124116;
+        font-size: 1.1rem;
+    }
+
+    .sc-week-navigation-info span {
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+.sc-roster-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    gap: 0.75rem;
+    overflow-x: auto;
+}
+
+.sc-roster-day {
+    min-width: 150px;
+    padding: 0.9rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #d5e7d6;
+    border-radius: 15px;
+}
+
+.sc-roster-day-header {
+    margin-bottom: 0.8rem;
+}
+
+.sc-roster-day-name {
+    display: block;
+    color: #1b5e20;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.sc-roster-day-date {
+    display: block;
+    margin-top: 0.15rem;
+    color: #124116;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sc-roster-shift {
+    padding: 0.8rem;
+    border-radius: 12px;
+    background: #f0fdf4;
+}
+
+.sc-roster-shift-time {
+    color: #124116;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.sc-roster-shift-status {
+    margin-top: 0.35rem;
+    color: #6b7280;
+    font-size: 0.7rem;
+}
+
+.sc-roster-task-list {
+    margin-top: 0.75rem;
+}
+
+.sc-roster-task {
+    padding: 0.65rem;
+    margin-top: 0.45rem;
+    border-radius: 9px;
+    background: white;
+    border: 1px solid #e5eee6;
+}
+
+.sc-roster-task-title {
+    color: #124116;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.sc-roster-task-time {
+    margin-top: 0.2rem;
+    color: #6b7280;
+    font-size: 0.67rem;
+}
+
+.sc-roster-task-priority {
+    display: inline-block;
+    margin-top: 0.3rem;
+    color: #1b5e20;
+    font-size: 0.64rem;
+    font-weight: 700;
+}
+
+.sc-roster-empty {
+    padding: 1rem 0.5rem;
+    color: #9ca3af;
+    text-align: center;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 900px) {
+    .sc-roster-week-grid {
+        grid-template-columns: repeat(7, 150px);
+    }
+}
+
+@media (max-width: 600px) {
+    .sc-volunteer-schedule-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sc-volunteer-schedule-footer {
+        flex-direction: column;
+    }
+
+    .sc-schedule-stats {
+        gap: 0.4rem;
+    }
+}
+
+/* ============================================================
+   TODAY'S VOLUNTEER ACTIVITIES
+   ============================================================ */
+
+.nurse-activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.nurse-activity-item {
+    display: flex;
+    align-items: stretch;
+    gap: 18px;
+    padding: 18px;
+    background: #F0FDF4;
+    border: 1px solid #D5E7D6;
+    border-radius: 14px;
+    transition: all 0.2s ease;
+}
+
+    .nurse-activity-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(27, 94, 32, 0.08);
+    }
+
+
+/* ============================================================
+   ACTIVITY TIME
+   ============================================================ */
+
+.nurse-activity-time {
+    min-width: 115px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 14px;
+    background: #DCEDC8;
+    border-radius: 10px;
+    color: #1B5E20;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+    .nurse-activity-time span {
+        line-height: 1.5;
+    }
+
+
+/* ============================================================
+   ACTIVITY MAIN CONTENT
+   ============================================================ */
+
+.nurse-activity-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.nurse-activity-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #124116;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+    .nurse-activity-title i {
+        color: #2E7D32;
+        font-size: 17px;
+    }
+
+.nurse-activity-description {
+    color: #607564;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+
+/* ============================================================
+   VOLUNTEER / LOCATION INFORMATION
+   ============================================================ */
+
+.nurse-activity-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    color: #607564;
+    font-size: 12px;
+}
+
+    .nurse-activity-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .nurse-activity-meta i {
+        color: #2E7D32;
+        font-size: 13px;
+    }
+
+
+/* ============================================================
+   STATUS / PRIORITY
+   ============================================================ */
+
+.nurse-activity-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    min-width: 105px;
+}
+
+.nurse-activity-priority,
+.nurse-activity-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.nurse-activity-priority {
+    background: #DCEDC8;
+    color: #1B5E20;
+}
+
+.nurse-activity-status {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+    .nurse-activity-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .nurse-activity-time {
+        min-width: 0;
+        width: fit-content;
+        flex-direction: row;
+        gap: 5px;
+    }
+
+    .nurse-activity-side {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+}

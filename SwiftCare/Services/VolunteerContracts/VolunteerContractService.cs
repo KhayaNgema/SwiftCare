@@ -848,7 +848,7 @@ namespace SwiftCare.Services.VolunteerContracts
             // Final verification must still be performed by the
             // administrator through CompleteVerificationAsync().
             // --------------------------------------------------------
-
+            onboarding.Status = VolunteerOnboardingStatus.Completed;
             onboarding.ModifiedDate =
                 now;
 

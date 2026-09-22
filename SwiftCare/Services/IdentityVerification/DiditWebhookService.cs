@@ -859,14 +859,11 @@ public async Task ProcessWebhookAsync(
             }
 
             if (
-                verification.DocumentVerified &&
-                verification.LivenessVerified &&
-                verification.FaceMatchVerified &&
-                !string.IsNullOrWhiteSpace(
-                    verification.ProviderPersonId))
+     verification.DocumentVerified &&
+     verification.LivenessVerified &&
+     verification.FaceMatchVerified)
             {
-                verification.FaceIdentityEnrolled =
-                    true;
+                verification.FaceIdentityEnrolled = true;
             }
         }
 

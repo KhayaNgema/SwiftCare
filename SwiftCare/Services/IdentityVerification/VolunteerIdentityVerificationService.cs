@@ -2,8 +2,6 @@
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services.IdentityVerification;
-using System.Net;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SwiftCare.Services.IdentityVerification
 {
@@ -121,10 +119,6 @@ namespace SwiftCare.Services.IdentityVerification
             // =========================================================
             // ALREADY VERIFIED
             // =========================================================
-            //
-            // Do NOT send another email.
-            //
-            // =========================================================
 
             if (verification != null &&
                 verification.Status ==
@@ -140,16 +134,6 @@ namespace SwiftCare.Services.IdentityVerification
 
             // =========================================================
             // EXISTING ACTIVE DIDIT SESSION
-            // =========================================================
-            //
-            // Reuse the existing Didit session.
-            //
-            // BUT:
-            //
-            // We now resend the SwiftCare email.
-            //
-            // This is the important fix.
-            //
             // =========================================================
 
             if (verification != null &&
@@ -283,19 +267,6 @@ namespace SwiftCare.Services.IdentityVerification
                 // =====================================================
                 // PREVIOUS SESSION IS NO LONGER ACTIVE
                 // =====================================================
-                //
-                // This includes:
-                //
-                // Failed
-                // Rejected
-                // Expired
-                // Cancelled
-                // RequiresReview
-                // Any other non-active status
-                //
-                // A fresh Didit session will now be created.
-                //
-                // =====================================================
 
                 _logger.LogInformation(
                     "Existing Didit verification {VerificationId} has status {Status}. " +
@@ -351,14 +322,6 @@ namespace SwiftCare.Services.IdentityVerification
 
             // =========================================================
             // SWIFTCARE CORRELATION REFERENCE
-            // =========================================================
-            //
-            // This is sent to Didit as vendor_data.
-            //
-            // Example:
-            //
-            // SWIFTCARE-ID-15
-            //
             // =========================================================
 
             var referenceId =
@@ -486,11 +449,6 @@ namespace SwiftCare.Services.IdentityVerification
             // =========================================================
             // EMAIL STATUS LOGGING
             // =========================================================
-            //
-            // The actual email is sent inside DiditService through
-            // the existing SwiftCare EmailService.
-            //
-            // =========================================================
 
             if (!string.IsNullOrWhiteSpace(
                     diditResult.ErrorMessage))
@@ -608,11 +566,10 @@ namespace SwiftCare.Services.IdentityVerification
             // STORE PROVIDER PERSON ID
             // =========================================================
             //
-            // IMPORTANT:
+            // If Didit supplies a persistent person ID, keep it.
             //
-            // Only store a real persistent Didit person identity.
-            //
-            // Never manufacture one locally.
+            // This is optional for determining the local
+            // FaceIdentityEnrolled flag.
             //
             // =========================================================
 
@@ -657,12 +614,46 @@ namespace SwiftCare.Services.IdentityVerification
                     verification.VerifiedDate =
                         DateTime.Now;
 
+                    // =================================================
+                    // FACE IDENTITY ENROLLMENT
+                    // =================================================
+                    //
+                    // The successful Didit identity verification
+                    // already establishes that:
+                    //
+                    // 1. The identity document was verified.
+                    // 2. The person passed liveness.
+                    // 3. The face matched successfully.
+                    //
+                    // Didit may not always expose/store a PersonId
+                    // through the webhook payload that SwiftCare
+                    // receives.
+                    //
+                    // Therefore ProviderPersonId is NOT used as a
+                    // requirement for FaceIdentityEnrolled.
+                    //
+                    // Didit's 1:N face search is already proving that
+                    // the biometric identity is enrolled.
+                    //
+                    // =================================================
+
                     verification.FaceIdentityEnrolled =
                         verification.DocumentVerified &&
                         verification.LivenessVerified &&
-                        verification.FaceMatchVerified &&
-                        !string.IsNullOrWhiteSpace(
-                            verification.ProviderPersonId);
+                        verification.FaceMatchVerified;
+
+                    _logger.LogInformation(
+                        "SwiftCare face identity enrollment completed for " +
+                        "verification {VerificationId}. " +
+                        "DocumentVerified={DocumentVerified}, " +
+                        "LivenessVerified={LivenessVerified}, " +
+                        "FaceMatchVerified={FaceMatchVerified}, " +
+                        "FaceIdentityEnrolled={FaceIdentityEnrolled}.",
+                        verification.Id,
+                        verification.DocumentVerified,
+                        verification.LivenessVerified,
+                        verification.FaceMatchVerified,
+                        verification.FaceIdentityEnrolled);
 
                     break;
 
@@ -803,12 +794,14 @@ namespace SwiftCare.Services.IdentityVerification
                 "updated to {Status}. " +
                 "DocumentVerified={DocumentVerified}, " +
                 "LivenessVerified={LivenessVerified}, " +
-                "FaceMatchVerified={FaceMatchVerified}.",
+                "FaceMatchVerified={FaceMatchVerified}, " +
+                "FaceIdentityEnrolled={FaceIdentityEnrolled}.",
                 verification.Id,
                 verification.Status,
                 verification.DocumentVerified,
                 verification.LivenessVerified,
-                verification.FaceMatchVerified);
+                verification.FaceMatchVerified,
+                verification.FaceIdentityEnrolled);
         }
     }
 }

@@ -5,6 +5,11 @@
     var volunteerCount = ViewBag.VolunteerCount ?? 0;
     var todayTaskCount = ViewBag.TodayTaskCount ?? 0;
     var activeRosterCount = ViewBag.ActiveRosterCount ?? 0;
+
+    var todayActivities =
+        ViewBag.TodayActivities
+        as IEnumerable<SwiftCare.Models.VolunteerTaskAssignment>
+        ?? Enumerable.Empty<SwiftCare.Models.VolunteerTaskAssignment>();
 }
 
 <br />
@@ -76,8 +81,8 @@
 
         <!-- WEEKLY ROSTERS -->
 
-        <a asp-controller="Supervisor"
-               asp-action="Rosters"
+        <a asp-controller="Home"
+               asp-action="Index"
                class="nurse-action-card">
 
             <div class="nurse-action-icon">
@@ -104,8 +109,8 @@
 
         <!-- VOLUNTEER TASKS -->
 
-        <a asp-controller="Supervisor"
-               asp-action="Tasks"
+        <a asp-controller="Home"
+               asp-action="Index"
                class="nurse-action-card">
 
             <div class="nurse-action-icon">
@@ -132,8 +137,8 @@
 
         <!-- VOLUNTEER SCHEDULE -->
 
-        <a asp-controller="Supervisor"
-               asp-action="Schedule"
+        <a asp-controller="Home"
+               asp-action="Index"
                class="nurse-action-card">
 
             <div class="nurse-action-icon">
@@ -161,49 +166,131 @@
 
 
     <!-- =====================================================
-         TODAY'S VOLUNTEER ACTIVITIES
-         ===================================================== -->
+     TODAY'S VOLUNTEER ACTIVITIES
+     ===================================================== -->
 
     <section class="nurse-section">
 
         <div class="nurse-section-header">
 
             <div class="nurse-section-title">
-
                 <i class="bi bi-calendar-check-fill"></i>
-
                 Today's Volunteer Activities
-
             </div>
 
             <div class="nurse-date">
-
-                @DateTime.Now.ToString("dd MMM yyyy")
-+            </div>
+                @DateTime.Now.ToString("dd MMM yyyy") +
+            </div>
 
         </div>
 
 
-        @if (todayTaskCount > 0)
+        @if (todayActivities.Any())
         {
-            <div class="nurse-empty-state">
+            <div class="nurse-activities-list">
 
-                <div class="nurse-empty-icon">
+                @foreach (var activity in todayActivities)
+                {
+                    <div class="nurse-activity-item">
 
-                    <i class="bi bi-list-task"></i>
+                        <!-- TIME -->
+                        <div class="nurse-activity-time">
 
-                </div>
+                            @if (activity.StartTime != null)
+                            {
+                                <span>
+                                    @DateTime.Today.Add(activity.StartTime).ToString("HH:mm")
+                                </span>
+                            }
 
-                <h3>
-                    @todayTaskCount volunteer
-                    @(todayTaskCount == 1 ? "task" : "tasks")
-                    scheduled today
-                </h3>
+                            @if (activity.EndTime != null)
+                            {
+                                <span>
+                                    -
+                                    @DateTime.Today.Add(activity.EndTime).ToString("HH:mm")
+                                </span>
+                            }
 
-                <p>
-                    View today's volunteer activities and task
-                    schedules from the Volunteer Schedule.
-                </p>
+                        </div>
+
+
+                        <!-- ACTIVITY -->
+                        <div class="nurse-activity-main">
+
+                            <div class="nurse-activity-title">
+
+                                <i class="bi bi-list-task"></i>
+
+                                @(activity.VolunteerTask?.Title
+                                    ?? "Volunteer Activity")
+
+                            </div>
+
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                activity.VolunteerTask?.Description))
+                            {
+                                <div class="nurse-activity-description">
+
+                                    @activity.VolunteerTask.Description
+
+                                </div>
+                            }
+
+
+                            <div class="nurse-activity-meta">
+
+                                <!-- VOLUNTEER -->
+
+                                <span>
+                                    <i class="bi bi-person-fill"></i>
+
+                                    @activity.Volunteer?.FirstName
+                                    @activity.Volunteer?.LastName
+                                </span>
+
+
+                                <!-- LOCATION -->
+                                @if (!string.IsNullOrWhiteSpace(
+                                                                activity.VolunteerTask?.Location))
+                                {
+                                    <span>
+
+                                        <i class="bi bi-geo-alt-fill"></i>
+
+                                        @activity.VolunteerTask.Location
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- STATUS / PRIORITY -->
+
+                        <div class="nurse-activity-side">
+
+                            @if (activity.VolunteerTask != null)
+                            {
+                                <span class="nurse-activity-priority">
+
+                                    @activity.VolunteerTask.Priority
+
+                                </span>
+                            }
+
+                            <span class="nurse-activity-status">
+
+                                @activity.Status
+
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
 
             </div>
         }
@@ -212,9 +299,7 @@
             <div class="nurse-empty-state">
 
                 <div class="nurse-empty-icon">
-
                     <i class="bi bi-calendar-x"></i>
-
                 </div>
 
                 <h3>
@@ -231,8 +316,8 @@
 
 
         <!-- =================================================
-             QUICK INFORMATION
-             ================================================= -->
+         QUICK INFORMATION
+         ================================================= -->
 
         <div class="nurse-info">
 
@@ -245,8 +330,10 @@
                 </div>
 
                 <div class="nurse-info-value">
+
                     @volunteerCount
-                    @(volunteerCount == 1 ? "assigned" : "assigned")
+                    assigned
+
                 </div>
 
             </div>
@@ -261,8 +348,10 @@
                 </div>
 
                 <div class="nurse-info-value">
+
                     @todayTaskCount
-                    @(todayTaskCount == 1 ? "scheduled" : "scheduled")
+                    scheduled
+
                 </div>
 
             </div>
@@ -277,8 +366,10 @@
                 </div>
 
                 <div class="nurse-info-value">
+
                     @activeRosterCount
-                    @(activeRosterCount == 1 ? "active" : "active")
+                    active
+
                 </div>
 
             </div>

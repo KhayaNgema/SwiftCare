@@ -77,7 +77,196 @@ namespace SwiftCare.Controllers
 
             return View(volunteers);
         }
+        // ============================================================
+        // VOLUNTEER ROSTER
+        // ============================================================
 
+        [HttpGet]
+        public async Task<IActionResult> VolunteerRoster(
+            string id,
+            DateTime? week,
+            CancellationToken cancellationToken)
+        {
+            var supervisorId =
+                await GetCurrentSupervisorIdAsync(cancellationToken);
+
+            if (supervisorId == null)
+                return Forbid();
+
+            var volunteer = await _context.Volunteers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    v =>
+                        v.Id == id &&
+                        v.SupervisorId == supervisorId,
+                    cancellationToken);
+
+            if (volunteer == null)
+                return NotFound();
+
+            var selectedDate = week?.Date ?? DateTime.Today;
+
+            var weekStart =
+                selectedDate.AddDays(
+                    -(int)selectedDate.DayOfWeek +
+                    (int)DayOfWeek.Monday);
+
+            if (selectedDate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                weekStart = selectedDate.AddDays(-6);
+            }
+
+            var weekEnd = weekStart.AddDays(6);
+
+            var roster = await _context.VolunteerRosters
+                .AsNoTracking()
+                .Where(r =>
+                    r.VolunteerId == volunteer.Id &&
+                    r.StartDate <= weekEnd &&
+                    r.EndDate >= weekStart)
+                .OrderByDescending(r => r.StartDate)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var shifts = new List<VolunteerRosterShift>();
+
+            if (roster != null)
+            {
+                shifts = await _context.VolunteerRosterShifts
+                    .AsNoTracking()
+                    .Where(s =>
+                        s.VolunteerRosterId ==
+                            roster.VolunteerRosterId &&
+                        s.ShiftDate >= weekStart &&
+                        s.ShiftDate <= weekEnd)
+                    .OrderBy(s => s.ShiftDate)
+                    .ThenBy(s => s.StartTime)
+                    .ToListAsync(cancellationToken);
+            }
+
+            var tasks = await _context.VolunteerTaskAssignments
+                .Where(t =>
+                    t.VolunteerId == volunteer.Id &&
+                    t.TaskDate >= weekStart &&
+                    t.TaskDate <= weekEnd)
+                .OrderBy(t => t.TaskDate)
+                .ThenBy(t => t.StartTime)
+                .ToListAsync(cancellationToken);
+
+            var model = new VolunteerScheduleViewModel
+            {
+                VolunteerId = volunteer.Id,
+
+                VolunteerName =
+                    $"{volunteer.FirstName} {volunteer.LastName}".Trim(),
+
+                VolunteerNumber =
+                    volunteer.VolunteerNumber ?? string.Empty,
+
+                VolunteerStatus =
+                    volunteer.Status.ToString(),
+
+                CurrentRoster = roster == null
+                    ? null
+                    : new VolunteerRosterScheduleViewModel
+                    {
+                        VolunteerRosterId =
+                            roster.VolunteerRosterId,
+
+                        RosterName =
+                            roster.RosterName,
+
+                        Description =
+                            roster.Description,
+
+                        StartDate =
+                            roster.StartDate,
+
+                        EndDate =
+                            roster.EndDate,
+
+                        Status =
+                            roster.Status.ToString(),
+
+                        Notes =
+                            roster.Notes
+                    },
+
+                UpcomingShifts =
+                    shifts.Select(s => new VolunteerRosterShiftScheduleViewModel
+                    {
+                        VolunteerRosterShiftId =
+                            s.VolunteerRosterShiftId,
+
+                        VolunteerRosterId =
+                            s.VolunteerRosterId,
+
+                        ShiftDate =
+                            s.ShiftDate,
+
+                        StartTime =
+                            s.StartTime,
+
+                        EndTime =
+                            s.EndTime,
+
+                        Status =
+                            s.Status.ToString(),
+
+                        Notes =
+                            s.Notes,
+
+                        TaskCount =
+                            tasks.Count(t =>
+                                t.TaskDate.Date ==
+                                s.ShiftDate.Date),
+
+                        Tasks =
+                            tasks
+                                .Where(t =>
+                                    t.TaskDate.Date ==
+                                    s.ShiftDate.Date)
+                                .Select(t => new VolunteerTaskScheduleViewModel
+                                {
+                                    VolunteerTaskId =
+                                        t.VolunteerTaskId,
+
+                                    Title =
+                                        t.VolunteerTask.Title,
+
+                                    Description =
+                                         t.VolunteerTask.Description,
+
+                                    TaskDate =
+                                        t.TaskDate,
+
+                                    StartTime =
+                                        t.StartTime,
+
+                                    EndTime =
+                                        t.EndTime,
+
+                                    Status =
+                                        t.Status.ToString(),
+
+                                    Priority =
+                                        t.VolunteerTask.Priority.ToString(),
+
+                                    Location =
+                                         t.VolunteerTask.Location,
+
+                                    CompletionNotes =
+                                        t.CompletionNotes
+                                })
+                                .ToList()
+
+                    }).ToList()
+            };
+
+            ViewBag.WeekStart = weekStart;
+            ViewBag.WeekEnd = weekEnd;
+
+            return View(model);
+        }
 
         // ============================================================
         // VOLUNTEER PROFILE
@@ -577,7 +766,7 @@ namespace SwiftCare.Controllers
                     endDate,
 
                 Status =
-                    VolunteerRosterStatus.Draft,
+                    VolunteerRosterStatus.Published,
 
                 Notes =
                     string.IsNullOrWhiteSpace(model.Notes)

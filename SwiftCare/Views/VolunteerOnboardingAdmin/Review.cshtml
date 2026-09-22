@@ -17,9 +17,6 @@
     var adminVerification =
         onboardingStatus == VolunteerOnboardingStatus.AdminVerification;
 
-    var contractPending =
-        onboardingStatus == VolunteerOnboardingStatus.ContractPending;
-
     var documentsPending =
         onboardingStatus == VolunteerOnboardingStatus.DocumentsPending;
 
@@ -211,12 +208,17 @@
 
     var identityRequirementComplete =
         identityRequirement?.IsCompleted == true;
+
+
+    var contractPending =
+        onboardingStatus == VolunteerOnboardingStatus.ContractPending &&
+        !contractComplete;
 }
 
 
 <div class="onboarding-review-page">
 
-
+   
     <!-- =========================================================
          HERO HEADER
          ========================================================= -->
@@ -419,17 +421,6 @@
                             This volunteer has completed the onboarding
                             process and has been activated.
                         </p>
-
-                        <a asp-controller="VolunteerOnboardingAdmin"
-                               asp-action="ActivatedVolunteer"
-                               asp-route-onboardingId="@Model.VolunteerOnboardingId"
-                               class="btn-swift">
-
-                            <i class="bi bi-person-vcard"></i>
-
-                            View Volunteer
-
-                        </a>
 
                     </div>
 
@@ -2740,171 +2731,6 @@
             </div>
 
         </div>
-
-
-        <!-- =====================================================
-             ACTIVATION
-             ===================================================== -->
-
-        <div class="col-12">
-
-            <div class="review-card">
-
-                <div class="review-card-header">
-
-                    <h4 class="review-card-title">
-
-                        <span class="review-card-title-icon">
-                            <i class="bi bi-person-check"></i>
-                        </span>
-
-                        Volunteer Activation
-
-                    </h4>
-
-                </div>
-
-
-                @if (readyForActivation)
-                {
-
-                    <div class="activation-panel">
-
-                        <div class="activation-content">
-
-                            <div class="activation-icon">
-
-                                <i class="bi bi-person-check-fill"></i>
-
-                            </div>
-
-                            <h5>
-                                Ready for Activation
-                            </h5>
-
-                            <p class="mb-3">
-
-                                All required onboarding stages have been
-                                completed. The volunteer can now be activated
-                                and their Volunteer account created.
-
-                            </p>
-
-
-                            <a asp-controller="VolunteerOnboardingAdmin"
-                                   asp-action="Activate"
-                                   asp-route-id="@Model.VolunteerOnboardingId"
-                                   class="btn-swift">
-
-                                <i class="bi bi-person-check"></i>
-
-                                Activate Volunteer
-
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                }
-                else if (onboardingCompleted)
-                {
-
-                    <div class="activation-panel">
-
-                        <div class="activation-content">
-
-                            <div class="activation-icon">
-
-                                <i class="bi bi-check-circle-fill"></i>
-
-                            </div>
-
-                            <h5>
-                                Volunteer Activated
-                            </h5>
-
-                            <p class="mb-3">
-
-                                This onboarding process has been completed
-                                and the Volunteer account has been activated.
-
-                            </p>
-
-
-                            <a asp-controller="VolunteerOnboardingAdmin"
-                                   asp-action="ActivatedVolunteer"
-                                   asp-route-onboardingId="@Model.VolunteerOnboardingId"
-                                   class="btn-swift">
-
-                                <i class="bi bi-person-vcard"></i>
-
-                                View Volunteer
-
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                }
-                else if (adminVerification)
-                {
-
-                    <div class="empty-state">
-
-                        <i class="bi bi-shield-check"></i>
-
-                        <span>
-
-                            Final verification must be completed before
-                            activation becomes available.
-
-                        </span>
-
-                    </div>
-
-                }
-                else if (contractPending)
-                {
-
-                    <div class="empty-state">
-
-                        <i class="bi bi-file-earmark-text"></i>
-
-                        <span>
-
-                            The Volunteer Service Agreement must be completed
-                            before final verification and activation.
-
-                        </span>
-
-                    </div>
-
-                }
-                else
-                {
-
-                    <div class="empty-state">
-
-                        <i class="bi bi-hourglass-split"></i>
-
-                        <span>
-
-                            This volunteer is not yet ready for activation.
-                            Complete the onboarding stages above first.
-
-                        </span>
-
-                    </div>
-
-                }
-
-            </div>
-
-        </div>
-
-
     </div>
 
 </div>
@@ -3976,65 +3802,6 @@
 
                 if (result.status !== "Verified") {
                     return;
-                }
-
-
-                // ---------------------------------------------------------
-                // Didit has passed.
-                //
-                // We intentionally DO NOT show Ready for Activation here.
-                //
-                // The next stage is CONTRACT.
-                // ---------------------------------------------------------
-
-                if (workflowStageBadge) {
-
-                    workflowStageBadge.textContent =
-                        "Contract Pending";
-
-                    workflowStageBadge.className =
-                        "status-badge pending";
-
-                }
-
-
-                if (workflowActionContent) {
-
-                    workflowActionContent.innerHTML =
-
-                        '<div class="activation-panel">' +
-
-                            '<div class="activation-content">' +
-
-                                '<div class="activation-icon">' +
-                                    '<i class="bi bi-file-earmark-text-fill"></i>' +
-                                '</div>' +
-
-                                '<h5>' +
-                                    'Volunteer Service Agreement Required' +
-                                '</h5>' +
-
-                                '<p class="mb-3">' +
-
-                                    'Identity verification has been completed successfully. ' +
-                                    'The next onboarding stage is the Volunteer Service Agreement. ' +
-                                    'The volunteer must complete and upload the contract before ' +
-                                    'final verification and activation can continue.' +
-
-                                '</p>' +
-
-                                '<span class="status-badge pending">' +
-
-                                    '<i class="bi bi-file-earmark-arrow-up"></i>' +
-
-                                    ' Contract Pending' +
-
-                                '</span>' +
-
-                            '</div>' +
-
-                        '</div>';
-
                 }
 
             }

@@ -167,6 +167,25 @@ namespace SwiftCare.Controllers
                                 r.Status == VolunteerRosterStatus.Active
                             ));
 
+                // ============================================================
+                // TODAY'S VOLUNTEER ACTIVITIES
+                // ============================================================
+
+                ViewBag.TodayActivities = await _context.VolunteerTaskAssignments
+                    .AsNoTracking()
+                    .Include(t => t.VolunteerRoster)
+                    .Include(t => t.Volunteer)
+                    .Include(t => t.VolunteerTask)
+                    .Where(t =>
+                        t.TaskDate >= today &&
+                        t.TaskDate < tomorrow &&
+                        t.Volunteer != null &&
+                        t.Volunteer.SupervisorId == supervisorId)
+                    .OrderBy(t => t.StartTime)
+                    .ThenBy(t => t.Volunteer!.LastName)
+                    .ThenBy(t => t.Volunteer!.FirstName)
+                    .ToListAsync();
+
                 return View("SupervisorDashboard");
             }
             else if (roles.Contains("Chef"))

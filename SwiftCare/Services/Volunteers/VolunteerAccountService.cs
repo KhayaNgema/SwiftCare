@@ -225,6 +225,57 @@ namespace SwiftCare.Services.Volunteers
             }
 
             // ========================================================
+            // COMPLETE SUPERVISOR ASSIGNMENT REQUIREMENT
+            //
+            // A Supervisor Assignment requirement is considered complete
+            // only when an active Supervisor has actually been assigned.
+            // ========================================================
+
+            if (supervisor != null)
+            {
+                var supervisorAssignmentRequirement =
+                    await _context.VolunteerOnboardingRequirements
+                        .FirstOrDefaultAsync(
+                            x =>
+                                x.VolunteerOnboardingId ==
+                                volunteerOnboardingId &&
+                                x.RequirementType ==
+                                VolunteerOnboardingRequirementType.SupervisorAssignment,
+                            cancellationToken);
+
+                if (supervisorAssignmentRequirement != null)
+                {
+                    supervisorAssignmentRequirement.IsCompleted = true;
+
+                    supervisorAssignmentRequirement.CompletedDate =
+                        DateTime.Now;
+
+                    supervisorAssignmentRequirement.ModifiedDate =
+                        DateTime.Now;
+
+
+                    _logger.LogInformation(
+                        "[VolunteerAccountService] Supervisor Assignment " +
+                        "requirement completed. " +
+                        "RequirementId={RequirementId}, " +
+                        "OnboardingId={OnboardingId}, " +
+                        "SupervisorId={SupervisorId}",
+                        supervisorAssignmentRequirement.VolunteerOnboardingRequirementId,
+                        volunteerOnboardingId,
+                        supervisor.Id);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "[VolunteerAccountService] Supervisor Assignment " +
+                        "requirement was not found. " +
+                        "OnboardingId={OnboardingId}, SupervisorId={SupervisorId}",
+                        volunteerOnboardingId,
+                        supervisor.Id);
+                }
+            }
+
+            // ========================================================
             // VALIDATE APPLICANT EMAIL
             // ========================================================
 
@@ -350,13 +401,13 @@ namespace SwiftCare.Services.Volunteers
                 // ====================================================
 
                 Status =
-                    VolunteerStatus.PendingActivation,
+                    VolunteerStatus.Active,
 
                 ActivatedDate =
-                    null,
+                    DateTime.Now,
 
                 OnboardingCompletedDate =
-                    null,
+                    DateTime.Now,
 
                 // ====================================================
                 // DATES

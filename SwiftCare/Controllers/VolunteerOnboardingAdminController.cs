@@ -60,6 +60,23 @@ namespace SwiftCare.Controllers
         }
 
         // ============================================================
+        // VOLUNTEERS
+        // ============================================================
+
+        [HttpGet]
+        public async Task<IActionResult> Volunteers(
+            CancellationToken cancellationToken)
+        {
+            var volunteers = await _context.Volunteers
+                .AsNoTracking()
+                .OrderBy(v => v.LastName)
+                .ThenBy(v => v.FirstName)
+                .ToListAsync(cancellationToken);
+
+            return View(volunteers);
+        }
+
+        // ============================================================
         // INDEX
         // ============================================================
 

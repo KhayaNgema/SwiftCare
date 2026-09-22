@@ -214,13 +214,13 @@
                     <div class="vp-detail-item">
 
                         <span class="vp-detail-label">
-                            Supervisor
+                            Volunteer number
                         </span>
 
                         <strong>
-                            @(Model.Volunteer.Supervisor == null
+                            @(Model.Volunteer == null
                                 ? "Not assigned"
-                                : $"{Model.Volunteer.Supervisor.FirstName} {Model.Volunteer.Supervisor.LastName}")
+                                : $"{Model.Volunteer.VolunteerNumber}")
                         </strong>
 
                     </div>

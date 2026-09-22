@@ -2269,7 +2269,7 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     DateTime.Now;
 
                 onboarding.Status =
-                    VolunteerOnboardingStatus.ReadyForActivation;
+                    VolunteerOnboardingStatus.Completed;
 
                 onboarding.CurrentStep =
                     6;

@@ -1,0 +1,673 @@
+﻿@model SwiftCare.ViewModels.VolunteerScheduleViewModel
+
+@{
+    ViewData["Title"] = "Volunteer Roster";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var weekStart =
+        ViewBag.WeekStart as DateTime?
+        ?? DateTime.Today;
+
+    var weekEnd =
+        ViewBag.WeekEnd as DateTime?
+        ?? weekStart.AddDays(6);
+
+    var shifts = Model.UpcomingShifts
+        .OrderBy(s => s.ShiftDate)
+        .ToList();
+
+    var previousWeek = weekStart.AddDays(-7);
+    var nextWeek = weekStart.AddDays(7);
+}
+
+<div class="sc-page-container">
+
+    <!-- ============================================================
+         PAGE HEADER
+         ============================================================ -->
+
+    <div class="sc-page-header">
+
+        <div>
+
+            <a asp-controller="Supervisor"
+                   asp-action="Volunteers"
+                   class="sc-back-link">
+
+                <i class="bi bi-arrow-left"></i>
+
+                Back to Volunteers
+
+            </a>
+
+            <div class="sc-page-title-row">
+
+                <div class="sc-volunteer-avatar sc-roster-profile-avatar">
+
+                    <i class="bi bi-person"></i>
+
+                </div>
+
+                <div>
+
+                    <h1 class="sc-page-title">
+                        @Model.VolunteerName
+                    </h1>
+
+                    <p class="sc-page-subtitle">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.VolunteerNumber))
+                        {
+                            <span>
+                                @Model.VolunteerNumber
+                            </span>
+
+                            <span class="sc-header-separator">
+                                •
+                            </span>
+                        }
+
+                        <span>
+                            Volunteer Roster
+                        </span>
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="sc-page-header-actions">
+
+            <span class="sc-status-badge">
+                @Model.VolunteerStatus
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         ROSTER INFORMATION
+         ============================================================ -->
+    @if (Model.CurrentRoster != null)
+    {
+        <div class="sc-card sc-roster-info-card">
+
+            <div class="sc-roster-info-main">
+
+                <div class="sc-roster-large-icon">
+
+                    <i class="bi bi-calendar-week"></i>
+
+                </div>
+
+                <div>
+
+                    <span class="sc-schedule-label">
+                        CURRENT ROSTER
+                    </span>
+
+                    <h2 class="sc-card-title">
+                        @Model.CurrentRoster.RosterName
+                    </h2>
+
+                    <p class="sc-roster-date-range">
+
+                        <i class="bi bi-calendar3"></i>
+
+                        @Model.CurrentRoster.StartDate.ToString("dd MMMM yyyy")
+                        -
+                        @Model.CurrentRoster.EndDate.ToString("dd MMMM yyyy")
+
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(
+                        Model.CurrentRoster.Description))
+                    {
+                        <p class="sc-roster-description">
+                            @Model.CurrentRoster.Description
+                        </p>
+                    }
+
+                </div>
+
+            </div>
+
+            <div class="sc-roster-info-status">
+
+                <span class="sc-schedule-label">
+                    STATUS
+                </span>
+
+                <span class="sc-roster-status-large">
+                    @Model.CurrentRoster.Status
+                </span>
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="sc-card sc-no-roster-card">
+
+            <div class="sc-empty-state">
+
+                <div class="sc-empty-icon">
+                    <i class="bi bi-calendar-x"></i>
+                </div>
+
+                <h3>
+                    No Roster Available
+                </h3>
+
+                <p>
+                    This volunteer does not currently have
+                    a roster for the selected week.
+                </p>
+
+            </div>
+
+        </div>
+    }
+
+
+    <!-- ============================================================
+         WEEK NAVIGATION
+         ============================================================ -->
+
+    <div class="sc-card sc-week-card">
+
+        <div class="sc-week-navigation">
+
+            <a asp-controller="Supervisor"
+                   asp-action="VolunteerRoster"
+                   asp-route-id="@Model.VolunteerId"
+                   asp-route-week="@previousWeek.ToString("yyyy-MM-dd")"
+                   class="sc-week-navigation-button">
+
+                <i class="bi bi-chevron-left"></i>
+
+                Previous Week
+
+            </a>
+
+
+            <div class="sc-week-navigation-info">
+
+                <span>
+                    WEEK
+                </span>
+
+                <strong>
+
+                    @weekStart.ToString("dd MMM")
+                    -
+                    @weekEnd.ToString("dd MMM yyyy")
+
+                </strong>
+
+            </div>
+
+
+            <a asp-controller="Supervisor"
+                   asp-action="VolunteerRoster"
+                   asp-route-id="@Model.VolunteerId"
+                   asp-route-week="@nextWeek.ToString("yyyy-MM-dd")"
+                   class="sc-week-navigation-button">
+
+                Next Week
+
+                <i class="bi bi-chevron-right"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         WEEKLY SCHEDULE
+         ============================================================ -->
+
+    <div class="sc-card">
+
+        <div class="sc-card-header">
+
+            <div>
+
+                <h2 class="sc-card-title">
+                    Weekly Schedule
+                </h2>
+
+                <p class="sc-card-subtitle">
+                    Daily shifts and assigned volunteer tasks
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sc-roster-week-grid">
+
+            @for (var i = 0; i < 7; i++)
+            {
+                var date = weekStart.AddDays(i);
+
+                var shift = shifts.FirstOrDefault(s =>
+                    s.ShiftDate.Date == date.Date);
+
+                var isToday =
+                    date.Date == DateTime.Today;
+
+                <div class="
+                    sc-roster-day
+                    @(isToday ? "sc-roster-day-today" : "")
+                    ">
+
+                    <!-- DAY HEADER -->
+
+                    <div class="sc-roster-day-header">
+
+                        <div>
+
+                            <span class="sc-roster-day-name">
+                                @date.ToString("dddd")
+                            </span>
+
+                            <span class="sc-roster-day-date">
+                                @date.ToString("dd MMM")
+                            </span>
+
+                        </div>
+
+                        @if (isToday)
+                        {
+                            <span class="sc-today-badge">
+                                TODAY
+                            </span>
+                        }
+
+                    </div>
+
+
+                    <!-- NO SHIFT -->
+                    @if (shift == null)
+                    {
+                        <div class="sc-roster-empty-state">
+
+                            <div class="sc-roster-empty-icon">
+                                <i class="bi bi-calendar-x"></i>
+                            </div>
+
+                            <strong>
+                                No Shift
+                            </strong>
+
+                            <span>
+                                No shift scheduled
+                            </span>
+
+                        </div>
+                    }
+
+                    <!-- DAY OFF -->
+                    else if (
+                    shift.Status.Equals(
+                    "DayOff",
+                    StringComparison.OrdinalIgnoreCase))
+                    {
+                    <div class="sc-roster-day-off">
+
+                        <div class="sc-roster-empty-icon">
+                            <i class="bi bi-calendar-minus"></i>
+                        </div>
+
+                        <strong>
+                            Day Off
+                        </strong>
+
+                        <span>
+                            Volunteer is not scheduled
+                        </span>
+
+                    </div>
+                    }
+
+                    <!-- SHIFT -->
+                    else
+                    {
+                    <div class="sc-roster-shift">
+
+                        <!-- SHIFT TIME -->
+
+                        <div class="sc-roster-shift-header">
+
+                            <div class="sc-roster-shift-icon">
+
+                                <i class="bi bi-clock"></i>
+
+                            </div>
+
+                            <div>
+
+                                <span class="sc-shift-label">
+                                    SHIFT
+                                </span>
+
+                                <strong class="sc-roster-shift-time">
+
+                                    @(
+                                        shift.StartTime
+                                            ?.ToString(@"hh\:mm")
+                                        ?? "--:--"
+                                    )
+
+                                    -
+
+                                    @(
+                                        shift.EndTime
+                                            ?.ToString(@"hh\:mm")
+                                        ?? "--:--"
+                                    )
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- SHIFT STATUS -->
+
+                        <div class="sc-roster-shift-status-row">
+
+                            <span class="sc-shift-status-label">
+                                Status
+                            </span>
+
+                            <span class="sc-shift-status">
+                                @shift.Status
+                            </span>
+
+                        </div>
+
+
+                        <!-- SHIFT NOTES -->
+                        @if (!string.IsNullOrWhiteSpace(
+                                                        shift.Notes))
+                        {
+                            <div class="sc-roster-shift-notes">
+
+                                <i class="bi bi-info-circle"></i>
+
+                                <span>
+                                    @shift.Notes
+                                </span>
+
+                            </div>
+                        }
+
+
+                        <!-- TASKS -->
+
+                        <div class="sc-roster-task-section">
+
+                            <div class="sc-roster-task-section-header">
+
+                                <span>
+                                    <i class="bi bi-list-check"></i>
+                                    Tasks
+                                </span>
+
+                                <span class="sc-task-count">
+                                    @shift.Tasks.Count
+                                </span>
+
+                            </div>
+
+
+                            @if (!shift.Tasks.Any())
+                            {
+                                <div class="sc-roster-no-tasks">
+
+                                    <i class="bi bi-check2-circle"></i>
+
+                                    <span>
+                                        No tasks assigned
+                                    </span>
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="sc-roster-task-list">
+
+                                    @foreach (var task in shift.Tasks)
+                                    {
+                                        <div class="sc-roster-task">
+
+                                            <div class="sc-roster-task-top">
+
+                                                <div class="sc-task-icon">
+
+                                                    <i class="bi bi-check2-square"></i>
+
+                                                </div>
+
+                                                <div class="sc-roster-task-content">
+
+                                                    <strong class="sc-roster-task-title">
+                                                        @task.Title
+                                                    </strong>
+
+                                                    @if (!string.IsNullOrWhiteSpace(
+                                                        task.Description))
+                                                    {
+                                                        <p class="sc-roster-task-description">
+                                                            @task.Description
+                                                        </p>
+                                                    }
+
+                                                </div>
+
+                                            </div>
+
+
+                                            <div class="sc-roster-task-meta">
+
+                                                @if (
+                                                    task.StartTime.HasValue ||
+                                                    task.EndTime.HasValue)
+                                                {
+                                                    <span>
+
+                                                        <i class="bi bi-clock"></i>
+
+                                                        @(
+                                                            task.StartTime
+                                                                ?.ToString(@"hh\:mm")
+                                                            ?? "--:--"
+                                                        )
+
+                                                        -
+
+                                                        @(
+                                                            task.EndTime
+                                                                ?.ToString(@"hh\:mm")
+                                                            ?? "--:--"
+                                                        )
+
+                                                    </span>
+                                                }
+
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                    task.Location))
+                                                {
+                                                    <span>
+
+                                                        <i class="bi bi-geo-alt"></i>
+
+                                                        @task.Location
+
+                                                    </span>
+                                                }
+
+                                            </div>
+
+
+                                            <div class="sc-roster-task-footer">
+
+                                                <span class="sc-task-priority">
+                                                    @task.Priority
+                                                </span>
+
+                                                <span class="sc-task-status">
+                                                    @task.Status
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+                                    }
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================
+         ROSTER SUMMARY
+         ============================================================ -->
+
+    <div class="sc-card sc-roster-summary-card">
+
+        <div class="sc-card-header">
+
+            <div>
+
+                <h2 class="sc-card-title">
+                    Roster Summary
+                </h2>
+
+                <p class="sc-card-subtitle">
+                    Overview of this volunteer's weekly schedule
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="sc-roster-summary-grid">
+
+            <div class="sc-roster-summary-stat">
+
+                <div class="sc-roster-summary-stat-icon">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        @shifts.Count
+                    </strong>
+
+                    <span>
+                        Scheduled Shifts
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-roster-summary-stat">
+
+                <div class="sc-roster-summary-stat-icon">
+                    <i class="bi bi-list-check"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        @shifts.Sum(s => s.Tasks.Count)
+                    </strong>
+
+                    <span>
+                        Assigned Tasks
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-roster-summary-stat">
+
+                <div class="sc-roster-summary-stat-icon">
+                    <i class="bi bi-clock"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        @shifts.Count(s =>
+                            s.StartTime.HasValue &&
+                            s.EndTime.HasValue)
+                    </strong>
+
+                    <span>
+                        Active Shifts
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-roster-summary-stat">
+
+                <div class="sc-roster-summary-stat-icon">
+                    <i class="bi bi-calendar-minus"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        @(
+                            7 -
+                            shifts.Count
+                        )
+                    </strong>
+
+                    <span>
+                        Days Without Shift
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

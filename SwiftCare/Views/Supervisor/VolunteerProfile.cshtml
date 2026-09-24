@@ -7,6 +7,70 @@
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
     ViewData["Title"] = "Volunteer Profile";
 
+var todaysStatus =
+        ViewBag.TodaysStatus?.ToString()
+        ?? "No Shift Today";
+
+    var statusClass = todaysStatus switch
+    {
+        "No Shift Today" =>
+            "vp-status-pending",
+
+        "Shift Not Started" =>
+            "vp-status-shift-not-started",
+
+        "Not Checked In" =>
+            "vp-status-not-checked-in",
+
+        "Checked In" =>
+            "vp-status-completed",
+
+        "Present" =>
+            "vp-status-completed",
+
+        "Late" =>
+            "vp-status-late",
+
+        "Checked Out" =>
+            "vp-status-checked-out",
+
+        "Absent" =>
+            "vp-status-absent",
+
+        _ =>
+            "vp-status-pending"
+    };
+
+    var statusIcon = todaysStatus switch
+    {
+        "No Shift Today" =>
+            "bi-calendar-x",
+
+        "Shift Not Started" =>
+            "bi-clock",
+
+        "Not Checked In" =>
+            "bi-box-arrow-in-right",
+
+        "Checked In" =>
+            "bi-check-circle-fill",
+
+        "Present" =>
+            "bi-check-circle-fill",
+
+        "Late" =>
+            "bi-clock-history",
+
+        "Checked Out" =>
+            "bi-box-arrow-right",
+
+        "Absent" =>
+            "bi-person-x-fill",
+
+        _ =>
+            "bi-info-circle"
+    };
+
     var completedCount =
         Model.CurrentWeekAssignments.Count(x =>
             x.Status == VolunteerTaskAssignmentStatus.Completed)
@@ -44,6 +108,16 @@
     else
     {
         defaultAssignmentDate = Model.UpcomingWeekStart;
+    }
+
+    TimeZoneInfo attendanceTimeZone;
+    try
+    {
+        attendanceTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Africa/Johannesburg");
+    }
+    catch (TimeZoneNotFoundException)
+    {
+        attendanceTimeZone = TimeZoneInfo.FindSystemTimeZoneById("South Africa Standard Time");
     }
 
     var calendarWeeks = new[]
@@ -157,8 +231,9 @@
 
                     </div>
 
-                    <span class="vp-status-pill vp-status-pending">
-                        @Model.Volunteer.Status.GetDisplayName()
+                    <span class="vp-status-pill @statusClass">
+                        <i class="bi @statusIcon"></i>
+                        @todaysStatus
                     </span>
 
                 </div>
@@ -683,6 +758,9 @@
                                                         data-task-area="@taskArea"
                                                         data-task-priority="@taskPriority"
                                                         data-task-status="@assignment.Status.GetDisplayName()"
+                                                        data-task-started-date="@(assignment.StartedDate?.ToString("o") ?? "")"
+                                                        data-task-completed-date="@(assignment.CompletedDate?.ToString("o") ?? "")"
+                                                        data-task-completion-notes="@assignment.CompletionNotes"
                                                         data-task-start="@assignment.StartTime.ToString(@"hh\:mm")"
                                                         data-task-end="@assignment.EndTime.ToString(@"hh\:mm")">
 
@@ -764,7 +842,322 @@
         </div>
 
     </section>
+    <br />
 
+    <!-- =========================================================
+     VOLUNTEER ATTENDANCE — CURRENT WEEK
+     ========================================================= -->
+    <section class="vp-attendance-section vp-library-card vp-library-card-full">
+
+        <div class="vp-library-header">
+            <div>
+                <span class="vp-section-kicker">THIS WEEK</span>
+
+                <h3>Volunteer Attendance</h3>
+
+                <p>
+                    Attendance for the current roster week,
+                    Monday @Model.CurrentWeekStart.ToString("dd MMM")
+                    -
+                    @Model.CurrentWeekEnd.ToString("dd MMM yyyy").
+                </p>
+            </div>
+
+            <div class="vp-library-count">
+                @Model.Attendances.Count
+            </div>
+        </div>
+
+        @if (Model.Attendances.Any())
+        {
+            <div class="vp-attendance-list">
+
+                <div class="vp-attendance-item">
+
+                    <div class="vp-attendance-table-wrapper">
+
+                        <table class="vp-attendance-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Shift</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Late</th>
+                                    <th>Early Departure</th>
+                                    <th>Status</th>
+                                    <th>Face</th>
+                                    <th>Liveness</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var attendance in Model.Attendances)
+                                {
+                                    var rosterShift = attendance.VolunteerRosterShift;
+
+                                    var statusName =
+                                        attendance.Status.GetDisplayName();
+
+                                    var attendanceStatusClass =
+                                        attendance.Status == VolunteerAttendanceStatus.Late
+                                            ? "vp-attendance-status-late"
+                                            : attendance.Status == VolunteerAttendanceStatus.Absent
+                                                ? "vp-attendance-status-absent"
+                                                : attendance.Status == VolunteerAttendanceStatus.CheckedOut
+                                                    ? "vp-attendance-status-checkedout"
+                                                    : "";
+
+                                    <tr>
+
+                                        <!-- =====================================================
+                                         DATE
+                                         ===================================================== -->
+                                        <td>
+                                            <span class="vp-attendance-date">
+                                                @(
+                                                    rosterShift != null
+                                                        ? rosterShift.ShiftDate.ToString("dd MMM yyyy")
+                                                        : attendance.AttendanceDate.ToString("dd MMM yyyy")
+                                                )
+                                            </span>
+
+                                            <span class="vp-attendance-day">
+                                                @(
+                                                    rosterShift != null
+                                                        ? rosterShift.ShiftDate.ToString("dddd")
+                                                        : attendance.AttendanceDate.ToString("dddd")
+                                                )
+                                            </span>
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         SHIFT
+                                         ===================================================== -->
+                                        <td>
+                                            @if (rosterShift != null)
+                                            {
+                                                <span class="vp-attendance-shift-time">
+                                                    @rosterShift.StartTime.ToString(@"hh\:mm")
+                                                    -
+                                                    @rosterShift.EndTime.ToString(@"hh\:mm")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    Shift unavailable
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         CHECK IN
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.CheckInTime.HasValue)
+                                            {
+                                                var checkIn =
+                                                    TimeZoneInfo.ConvertTimeFromUtc(
+                                                        DateTime.SpecifyKind(
+                                                            attendance.CheckInTime.Value,
+                                                            DateTimeKind.Utc),
+                                                        attendanceTimeZone);
+
+                                                <span class="vp-attendance-date">
+                                                    @checkIn.ToString("HH:mm")
+                                                </span>
+
+                                                <span class="vp-attendance-day">
+                                                    @checkIn.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    Not checked in
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         CHECK OUT
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.CheckOutTime.HasValue)
+                                            {
+                                                var checkOut =
+                                                    TimeZoneInfo.ConvertTimeFromUtc(
+                                                        DateTime.SpecifyKind(
+                                                            attendance.CheckOutTime.Value,
+                                                            DateTimeKind.Utc),
+                                                        attendanceTimeZone);
+
+                                                <span class="vp-attendance-date">
+                                                    @checkOut.ToString("HH:mm")
+                                                </span>
+
+                                                <span class="vp-attendance-day">
+                                                    @checkOut.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    Not checked out
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         LATE
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.LateMinutes > 0)
+                                            {
+                                                <span class="vp-attendance-status vp-attendance-status-late">
+                                                    @attendance.LateMinutes min
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-verified">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    On time
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         EARLY DEPARTURE
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.EarlyDepartureMinutes > 0)
+                                            {
+                                                <span class="vp-attendance-status vp-attendance-status-late">
+                                                    @attendance.EarlyDepartureMinutes min
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-verified">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    None
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         STATUS
+                                         ===================================================== -->
+                                        <td>
+                                            <span class="vp-attendance-status @attendanceStatusClass">
+                                                @statusName
+                                            </span>
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         FACE VERIFICATION
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.FaceVerified)
+                                            {
+                                                <span class="vp-attendance-verified">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Verified
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    Not verified
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         LIVENESS
+                                         ===================================================== -->
+                                        <td>
+                                            @if (attendance.LivenessVerified)
+                                            {
+                                                <span class="vp-attendance-verified">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Verified
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    Not verified
+                                                </span>
+                                            }
+                                        </td>
+
+
+                                        <!-- =====================================================
+                                         NOTES
+                                         ===================================================== -->
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(attendance.Notes))
+                                            {
+                                                @attendance.Notes
+                                            }
+                                            else
+                                            {
+                                                <span class="vp-attendance-not-verified">
+                                                    —
+                                                </span>
+                                            }
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="vp-library-empty">
+
+                <i class="bi bi-calendar-check"></i>
+
+                <h4>No attendance this week</h4>
+
+                <p>
+                    No attendance has been recorded for this volunteer
+                    during the current roster week.
+                </p>
+
+                <small>
+                    @Model.CurrentWeekStart.ToString("dd MMM yyyy")
+                    -
+                    @Model.CurrentWeekEnd.ToString("dd MMM yyyy")
+                </small>
+
+            </div>
+        }
+
+    </section>
 
     <!-- =========================================================
          TASK LIBRARY
@@ -1185,6 +1578,39 @@
             </div>
 
 
+            <!-- Actual task timestamps: shown according to task status. -->
+            <div class="vp-task-details-grid"
+                 id="vpTaskActualTimes"
+                 hidden
+                 style="display: none;">
+
+                <div class="vp-task-detail-box"
+                     id="vpTaskStartedBox"
+                     hidden
+                     style="display: none;">
+                    <span>Started Date &amp; Time</span>
+                    <strong id="vpTaskStartedDateTime">—</strong>
+                </div>
+
+                <div class="vp-task-detail-box"
+                     id="vpTaskCompletedBox"
+                     hidden
+                     style="display: none;">
+                    <span>Completed Date &amp; Time</span>
+                    <strong id="vpTaskCompletedDateTime">—</strong>
+                </div>
+
+            </div>
+
+            <div class="vp-task-details-description"
+                 id="vpTaskCompletionNotesBox"
+                 hidden
+                 style="display: none;">
+                <span>Completion Notes</span>
+                <p id="vpTaskCompletionNotes">—</p>
+            </div>
+
+
             <div class="vp-task-details-description">
 
                 <span>
@@ -1289,6 +1715,27 @@
 
         const taskDetailsTime =
             document.getElementById("vpTaskDetailsTime");
+
+        const taskActualTimes =
+            document.getElementById("vpTaskActualTimes");
+
+        const taskStartedBox =
+            document.getElementById("vpTaskStartedBox");
+
+        const taskStartedDateTime =
+            document.getElementById("vpTaskStartedDateTime");
+
+        const taskCompletedBox =
+            document.getElementById("vpTaskCompletedBox");
+
+        const taskCompletedDateTime =
+            document.getElementById("vpTaskCompletedDateTime");
+
+        const taskCompletionNotesBox =
+            document.getElementById("vpTaskCompletionNotesBox");
+
+        const taskCompletionNotes =
+            document.getElementById("vpTaskCompletionNotes");
 
         const rosterWeekType =
             document.getElementById("vpRosterWeekType");
@@ -1430,6 +1877,42 @@
                     year: "numeric"
                 }
             );
+        }
+
+
+        /* =========================================================
+           ACTUAL TASK TIMESTAMP
+           ISO timestamps with an offset or Z are displayed in the
+           browser's local time. Timestamps without an offset retain
+           their supplied local clock time.
+           ========================================================= */
+
+        function formatTaskDateTime(value) {
+            if (!value || !String(value).trim()) {
+                return "Not recorded";
+            }
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return String(value);
+            }
+
+            return date.toLocaleString(undefined, {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function setTaskDetailVisibility(element, visible) {
+            if (!element) {
+                return;
+            }
+
+            element.hidden = !visible;
+            element.style.display = visible ? "" : "none";
         }
 
 
@@ -2235,6 +2718,15 @@
             task.dataset.taskStatus =
                 status;
 
+            task.dataset.taskStartedDate =
+                result.startedDate || result.StartedDate || "";
+
+            task.dataset.taskCompletedDate =
+                result.completedDate || result.CompletedDate || "";
+
+            task.dataset.taskCompletionNotes =
+                result.completionNotes || result.CompletionNotes || "";
+
             task.dataset.taskStart =
                 start;
 
@@ -2458,6 +2950,44 @@
                             start +
                             " - " +
                             end;
+                    }
+
+                    const status = (
+                        button.getAttribute("data-task-status") || ""
+                    ).trim().toLowerCase().replace(/\s+/g, "");
+
+                    const isCompleted = status === "completed";
+                    const showStarted = isCompleted || status === "inprogress";
+
+                    const startedDate = button.getAttribute(
+                        "data-task-started-date"
+                    );
+                    const completedDate = button.getAttribute(
+                        "data-task-completed-date"
+                    );
+                    const completionNotes = button.getAttribute(
+                        "data-task-completion-notes"
+                    );
+
+                    setTaskDetailVisibility(taskActualTimes, showStarted);
+                    setTaskDetailVisibility(taskStartedBox, showStarted);
+                    setTaskDetailVisibility(taskCompletedBox, isCompleted);
+                    setTaskDetailVisibility(taskCompletionNotesBox, isCompleted);
+
+                    if (taskStartedDateTime) {
+                        taskStartedDateTime.textContent =
+                            showStarted ? formatTaskDateTime(startedDate) : "—";
+                    }
+
+                    if (taskCompletedDateTime) {
+                        taskCompletedDateTime.textContent =
+                            isCompleted ? formatTaskDateTime(completedDate) : "—";
+                    }
+
+                    if (taskCompletionNotes) {
+                        taskCompletionNotes.textContent = isCompleted
+                            ? (completionNotes?.trim() || "No completion notes provided.")
+                            : "—";
                     }
 
                     openModal(

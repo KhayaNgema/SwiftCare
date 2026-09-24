@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using SwiftCare.Configuration;
 using SwiftCare.Services;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -119,81 +120,139 @@ namespace SwiftCare.Services.IdentityVerification
             var endpoint =
                 $"{baseUrl}v3/session/";
 
-            // --------------------------------------------------------
+            // ========================================================
             // DIDIT SESSION PAYLOAD
-            // --------------------------------------------------------
+            //
+            // IMPORTANT:
+            //
+            // The WorkflowId configured here must be the onboarding
+            // Didit workflow containing:
+            //
+            // 1. ID Verification
+            // 2. Passive Liveness
+            // 3. Face Match
+            // 4. Face Search 1:N
+            //
+            // Face Search 1:N is what allows the verified face from
+            // this onboarding flow to participate in the biometric
+            // population used by later face-login searches.
+            // ========================================================
 
-            var payload = new
-            {
-                workflow_id = _options.WorkflowId,
-
-                /*
-                 * vendor_data is our own SwiftCare reference.
-                 * Didit uses this to identify/reuse unfinished
-                 * sessions for the same vendor reference.
-                 */
-                vendor_data = request.ReferenceId,
-
-                /*
-                 * Webhook callback will be configured once the
-                 * public SwiftCare webhook URL is available.
-                 *
-                 * Leaving this empty for now allows us to first
-                 * verify session creation and hosted verification.
-                 */
-                callback = _options.CallbackUrl,
-
-                callback_method = "both",
-
-                metadata = new
+            var payload =
+                new DiditCreateSessionRequest
                 {
-                    source = "SwiftCare",
-                    reference_id = request.ReferenceId
-                },
+                    WorkflowId =
+                        _options.WorkflowId,
 
-                language = "en",
+                    // ------------------------------------------------
+                    // IMPORTANT SWIFTCARE CORRELATION VALUE
+                    // ------------------------------------------------
+                    //
+                    // Example:
+                    //
+                    // SWIFTCARE-ID-123
+                    //
+                    // Face Search results must ultimately correlate
+                    // back to this value.
+                    //
+                    VendorData =
+                        request.ReferenceId,
 
-                /*
-                 * IMPORTANT:
-                 *
-                 * SwiftCare sends its own branded email.
-                 * Therefore Didit notification emails remain disabled.
-                 */
-                contact_details = new
-                {
-                    email = request.Email,
-                    send_notification_emails = false,
-                    email_lang = "en"
-                },
+                    // ------------------------------------------------
+                    // WEBHOOK CALLBACK
+                    // ------------------------------------------------
 
-                expected_details = new
-                {
-                    first_name = request.FirstName,
-                    last_name = request.LastName,
+                    Callback =
+                        _options.CallbackUrl,
 
-                    date_of_birth =
-                        request.DateOfBirth?
-                            .ToString("yyyy-MM-dd"),
+                    CallbackMethod =
+                        "both",
 
-                    id_country =
-                        request.CountryCode,
+                    // ------------------------------------------------
+                    // METADATA
+                    // ------------------------------------------------
 
-                    expected_document_types =
-                        new[]
+                    Metadata =
+                        new DiditSessionMetadata
                         {
-                            "ID",
-                            "P"
+                            Source =
+                                "SwiftCare",
+
+                            ReferenceId =
+                                request.ReferenceId,
+
+                            Purpose =
+                                "identity_verification",
+
+                            BiometricEnrollment =
+                                "face_search_1_to_n"
+                        },
+
+                    Language =
+                        "en",
+
+                    // ------------------------------------------------
+                    // SWIFTCARE SENDS ITS OWN EMAIL
+                    //
+                    // Do NOT enable Didit's notification emails.
+                    // ------------------------------------------------
+
+                    ContactDetails =
+                        new DiditContactDetails
+                        {
+                            Email =
+                                request.Email,
+
+                            SendNotificationEmails =
+                                false,
+
+                            EmailLanguage =
+                                "en"
+                        },
+
+                    // ------------------------------------------------
+                    // EXPECTED APPLICANT DETAILS
+                    // ------------------------------------------------
+
+                    ExpectedDetails =
+                        new DiditExpectedDetails
+                        {
+                            FirstName =
+                                request.FirstName,
+
+                            LastName =
+                                request.LastName,
+
+                            DateOfBirth =
+                                request.DateOfBirth?
+                                    .ToString("yyyy-MM-dd"),
+
+                            IdCountry =
+                                request.CountryCode,
+
+                            ExpectedDocumentTypes =
+                                new[]
+                                {
+                                    "ID",
+                                    "P"
+                                }
                         }
-                }
-            };
+                };
+
+            // ========================================================
+            // SERIALIZE REQUEST
+            //
+            // JsonPropertyName attributes on the DTOs below explicitly
+            // control the exact JSON names sent to Didit.
+            // ========================================================
 
             var json =
                 JsonSerializer.Serialize(
                     payload,
                     new JsonSerializerOptions
                     {
-                        PropertyNamingPolicy =
-                            JsonNamingPolicy.CamelCase
+                        DefaultIgnoreCondition =
+                            JsonIgnoreCondition.WhenWritingNull
                     });
 
             _logger.LogInformation(
@@ -225,6 +284,10 @@ namespace SwiftCare.Services.IdentityVerification
                     "application/json");
 
             HttpResponseMessage response;
+
+            // ========================================================
+            // CALL DIDIT
+            // ========================================================
 
             try
             {
@@ -261,9 +324,9 @@ namespace SwiftCare.Services.IdentityVerification
                     await response.Content.ReadAsStringAsync(
                         cancellationToken);
 
-                // ----------------------------------------------------
-                // VERY IMPORTANT DEBUG LOG
-                // ----------------------------------------------------
+                // ====================================================
+                // DEBUG RESPONSE LOG
+                // ====================================================
 
                 _logger.LogInformation(
                     "Didit Create Session response. " +
@@ -273,9 +336,9 @@ namespace SwiftCare.Services.IdentityVerification
                     response.ReasonPhrase,
                     responseBody);
 
-                // ----------------------------------------------------
+                // ====================================================
                 // DIDIT ERROR
-                // ----------------------------------------------------
+                // ====================================================
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -296,9 +359,9 @@ namespace SwiftCare.Services.IdentityVerification
                     };
                 }
 
-                // ----------------------------------------------------
+                // ====================================================
                 // DESERIALIZE DIDIT RESPONSE
-                // ----------------------------------------------------
+                // ====================================================
 
                 DiditSessionResponse? diditResponse;
 
@@ -339,9 +402,9 @@ namespace SwiftCare.Services.IdentityVerification
                     };
                 }
 
-                // ----------------------------------------------------
+                // ====================================================
                 // LOG PARSED RESPONSE
-                // ----------------------------------------------------
+                // ====================================================
 
                 _logger.LogInformation(
                     "Parsed Didit response. " +
@@ -356,9 +419,9 @@ namespace SwiftCare.Services.IdentityVerification
                     diditResponse.Status,
                     diditResponse.WorkflowId);
 
-                // ----------------------------------------------------
+                // ====================================================
                 // SESSION ID REQUIRED
-                // ----------------------------------------------------
+                // ====================================================
 
                 if (string.IsNullOrWhiteSpace(
                         diditResponse.SessionId))
@@ -379,9 +442,9 @@ namespace SwiftCare.Services.IdentityVerification
                     };
                 }
 
-                // ----------------------------------------------------
+                // ====================================================
                 // HOSTED VERIFICATION URL REQUIRED
-                // ----------------------------------------------------
+                // ====================================================
 
                 if (string.IsNullOrWhiteSpace(
                         diditResponse.Url))
@@ -402,9 +465,9 @@ namespace SwiftCare.Services.IdentityVerification
                     };
                 }
 
-                // ----------------------------------------------------
+                // ====================================================
                 // DIDIT SESSION SUCCESSFULLY CREATED
-                // ----------------------------------------------------
+                // ====================================================
 
                 var result =
                     new DiditVerificationSessionResult
@@ -414,11 +477,12 @@ namespace SwiftCare.Services.IdentityVerification
                         SessionId =
                             diditResponse.SessionId,
 
-                        /*
-                         * For now we use session_id as the provider
-                         * verification ID because the Create Session
-                         * response gives us the session identifier.
-                         */
+                        // ------------------------------------------------
+                        // For now the Create Session response gives us
+                        // the session identifier, so we use it as the
+                        // provider verification ID.
+                        // ------------------------------------------------
+
                         VerificationId =
                             diditResponse.SessionId,
 
@@ -433,14 +497,26 @@ namespace SwiftCare.Services.IdentityVerification
                     "Didit verification session created successfully. " +
                     "SessionId={SessionId}, " +
                     "VerificationUrl={VerificationUrl}, " +
-                    "ReferenceId={ReferenceId}",
+                    "ReferenceId={ReferenceId}, " +
+                    "BiometricEnrollment={BiometricEnrollment}",
                     diditResponse.SessionId,
                     diditResponse.Url,
-                    request.ReferenceId);
+                    request.ReferenceId,
+                    "face_search_1_to_n");
 
-                // ----------------------------------------------------
+                // ====================================================
                 // SEND SWIFTCARE EMAIL
-                // ----------------------------------------------------
+                //
+                // IMPORTANT:
+                //
+                // THIS IS YOUR ORIGINAL EMAIL LOGIC.
+                //
+                // We are NOT changing it to:
+                //
+                // SendIdentityVerificationEmailAsync(...)
+                //
+                // Your existing SendEmailAsync(...) remains intact.
+                // ====================================================
 
                 try
                 {
@@ -467,6 +543,10 @@ namespace SwiftCare.Services.IdentityVerification
                                 diditResponse.Url,
                                 request.ReferenceId);
 
+                        // =================================================
+                        // KEEPING YOUR ORIGINAL EMAIL LOGIC
+                        // =================================================
+
                         await _emailService.SendEmailAsync(
                             request.Email,
                             "SwiftCare Identity Verification Required",
@@ -492,14 +572,15 @@ namespace SwiftCare.Services.IdentityVerification
                 }
                 catch (Exception ex)
                 {
-                    /*
-                     * IMPORTANT:
-                     *
-                     * Didit session creation already succeeded.
-                     *
-                     * We therefore DO NOT mark the verification as
-                     * failed simply because the SwiftCare email failed.
-                     */
+                    // =================================================
+                    // IMPORTANT:
+                    //
+                    // Didit session creation succeeded.
+                    //
+                    // Email failure must NOT make the Didit session
+                    // fail.
+                    // =================================================
+
                     _logger.LogError(
                         ex,
                         "Didit session {SessionId} was created successfully, " +
@@ -584,6 +665,10 @@ namespace SwiftCare.Services.IdentityVerification
                     email,
                     verificationReference);
 
+                // =====================================================
+                // KEEPING YOUR ORIGINAL RESEND EMAIL LOGIC
+                // =====================================================
+
                 await _emailService.SendEmailAsync(
                     email,
                     emailSubject,
@@ -644,12 +729,13 @@ namespace SwiftCare.Services.IdentityVerification
              * Didit verification status will normally be processed
              * through the webhook.
              *
-             * The webhook service will update:
+             * The webhook service updates:
              *
              * - Status
              * - DocumentVerified
              * - LivenessVerified
              * - FaceMatchVerified
+             * - FaceIdentityEnrolled
              * - ProviderPersonId
              * - FailureReason
              */
@@ -978,6 +1064,97 @@ namespace SwiftCare.Services.IdentityVerification
 
 </body>
 </html>";
+        }
+
+        // ============================================================
+        // DIDIT CREATE SESSION REQUEST
+        // ============================================================
+
+        private sealed class DiditCreateSessionRequest
+        {
+            [JsonPropertyName("workflow_id")]
+            public string WorkflowId { get; set; } = string.Empty;
+
+            [JsonPropertyName("vendor_data")]
+            public string VendorData { get; set; } = string.Empty;
+
+            [JsonPropertyName("callback")]
+            public string? Callback { get; set; }
+
+            [JsonPropertyName("callback_method")]
+            public string CallbackMethod { get; set; } = "both";
+
+            [JsonPropertyName("metadata")]
+            public DiditSessionMetadata Metadata { get; set; } = new();
+
+            [JsonPropertyName("language")]
+            public string Language { get; set; } = "en";
+
+            [JsonPropertyName("contact_details")]
+            public DiditContactDetails ContactDetails { get; set; } = new();
+
+            [JsonPropertyName("expected_details")]
+            public DiditExpectedDetails ExpectedDetails { get; set; } = new();
+        }
+
+        // ============================================================
+        // DIDIT METADATA
+        // ============================================================
+
+        private sealed class DiditSessionMetadata
+        {
+            [JsonPropertyName("source")]
+            public string Source { get; set; } = "SwiftCare";
+
+            [JsonPropertyName("reference_id")]
+            public string ReferenceId { get; set; } = string.Empty;
+
+            [JsonPropertyName("purpose")]
+            public string Purpose { get; set; } =
+                "identity_verification";
+
+            [JsonPropertyName("biometric_enrollment")]
+            public string BiometricEnrollment { get; set; } =
+                "face_search_1_to_n";
+        }
+
+        // ============================================================
+        // DIDIT CONTACT DETAILS
+        // ============================================================
+
+        private sealed class DiditContactDetails
+        {
+            [JsonPropertyName("email")]
+            public string Email { get; set; } = string.Empty;
+
+            [JsonPropertyName("send_notification_emails")]
+            public bool SendNotificationEmails { get; set; }
+
+            [JsonPropertyName("email_lang")]
+            public string EmailLanguage { get; set; } = "en";
+        }
+
+        // ============================================================
+        // DIDIT EXPECTED DETAILS
+        // ============================================================
+
+        private sealed class DiditExpectedDetails
+        {
+            [JsonPropertyName("first_name")]
+            public string? FirstName { get; set; }
+
+            [JsonPropertyName("last_name")]
+            public string? LastName { get; set; }
+
+            [JsonPropertyName("date_of_birth")]
+            public string? DateOfBirth { get; set; }
+
+            [JsonPropertyName("id_country")]
+            public string? IdCountry { get; set; }
+
+            [JsonPropertyName("expected_document_types")]
+            public string[] ExpectedDocumentTypes { get; set; } =
+                Array.Empty<string>();
         }
 
         // ============================================================

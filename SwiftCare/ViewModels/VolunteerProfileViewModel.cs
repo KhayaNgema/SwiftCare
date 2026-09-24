@@ -101,6 +101,10 @@ namespace SwiftCare.ViewModels
             = new List<VolunteerTaskAssignment>();
 
 
+        public List<VolunteerAttendance> Attendances { get; set; }
+            = new();
+
+
         // =========================================================
         // UPCOMING WEEK ASSIGNMENTS
         // =========================================================

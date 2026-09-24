@@ -267,7 +267,6 @@ namespace SwiftCare.Controllers
 
             return View(model);
         }
-
         // ============================================================
         // VOLUNTEER PROFILE
         // ============================================================
@@ -413,6 +412,7 @@ namespace SwiftCare.Controllers
                     s.ShiftDate.Date >= currentWeekStart &&
                     s.ShiftDate.Date <= currentWeekEnd)
                 .OrderBy(s => s.ShiftDate)
+                .ThenBy(s => s.StartTime)
                 .ToList()
                 ?? new List<VolunteerRosterShift>();
 
@@ -425,6 +425,7 @@ namespace SwiftCare.Controllers
                     s.ShiftDate.Date >= upcomingWeekStart &&
                     s.ShiftDate.Date <= upcomingWeekEnd)
                 .OrderBy(s => s.ShiftDate)
+                .ThenBy(s => s.StartTime)
                 .ToList()
                 ?? new List<VolunteerRosterShift>();
 
@@ -486,6 +487,26 @@ namespace SwiftCare.Controllers
                 .ToList();
 
             // --------------------------------------------------------
+            // CURRENT WEEK ATTENDANCE
+            //
+            // Attendance belongs to a VolunteerRosterShift.
+            // Therefore the week is determined from the shift date,
+            // not independently from AttendanceDate.
+            // --------------------------------------------------------
+
+            var currentWeekAttendance = await _context.VolunteerAttendances
+                .AsNoTracking()
+                .Include(a => a.VolunteerRosterShift)
+                .Where(a =>
+                    a.VolunteerId == volunteer.Id &&
+                    a.VolunteerRosterShift != null &&
+                    a.VolunteerRosterShift.ShiftDate >= currentWeekStart &&
+                    a.VolunteerRosterShift.ShiftDate <= currentWeekEnd)
+                .OrderBy(a => a.VolunteerRosterShift!.ShiftDate)
+                .ThenBy(a => a.VolunteerRosterShift!.StartTime)
+                .ToListAsync(cancellationToken);
+
+            // --------------------------------------------------------
             // BUILD VIEW MODEL
             // --------------------------------------------------------
 
@@ -510,8 +531,148 @@ namespace SwiftCare.Controllers
                 CurrentWeekAssignments = currentAssignments,
                 UpcomingWeekAssignments = upcomingAssignments,
 
-                AreaTasks = areaTasks
+                AreaTasks = areaTasks,
+
+                Attendances = currentWeekAttendance
             };
+
+            // ============================================================
+            // TODAY'S SHIFT
+            // ============================================================
+
+            var todaysShift = currentWeekAttendance
+                .Where(a =>
+                    a.VolunteerRosterShift != null &&
+                    a.VolunteerRosterShift.ShiftDate.Date == today)
+                .Select(a => a.VolunteerRosterShift)
+                .FirstOrDefault();
+
+
+            // ============================================================
+            // TODAY'S ATTENDANCE
+            // ============================================================
+
+            var todaysAttendance = currentWeekAttendance
+                .FirstOrDefault(a =>
+                    a.VolunteerRosterShift != null &&
+                    a.VolunteerRosterShift.ShiftDate.Date == today);
+
+
+            // ============================================================
+            // TODAY'S STATUS
+            // ============================================================
+
+            string todaysStatus;
+
+
+            // ------------------------------------------------------------
+            // NO SHIFT TODAY
+            // ------------------------------------------------------------
+
+            if (todaysShift == null)
+            {
+                todaysStatus = "Day Off";
+            }
+
+
+            // ------------------------------------------------------------
+            // SHIFT EXISTS
+            // ------------------------------------------------------------
+
+            else
+            {
+                var shiftStart = todaysShift.StartTime;
+                var shiftEnd = todaysShift.EndTime;
+
+                var currentTime = DateTime.Now.TimeOfDay;
+
+
+                // ========================================================
+                // ATTENDANCE EXISTS
+                // ========================================================
+
+                if (todaysAttendance != null)
+                {
+                    todaysStatus =
+                        todaysAttendance.Status.GetDisplayName();
+
+                    // ----------------------------------------------------
+                    // CHECKED OUT
+                    // ----------------------------------------------------
+
+                    if (todaysAttendance.CheckOutTime.HasValue)
+                    {
+                        todaysStatus = "Checked Out";
+                    }
+
+                    // ----------------------------------------------------
+                    // CHECKED IN BUT STATUS IS NORMAL
+                    // ----------------------------------------------------
+
+                    else if (todaysAttendance.CheckInTime.HasValue &&
+                             todaysAttendance.LateMinutes <= 0)
+                    {
+                        todaysStatus = "Checked In";
+                    }
+
+                    // ----------------------------------------------------
+                    // CHECKED IN LATE
+                    // ----------------------------------------------------
+
+                    else if (todaysAttendance.CheckInTime.HasValue &&
+                             todaysAttendance.LateMinutes > 0)
+                    {
+                        todaysStatus = "Late";
+                    }
+                }
+
+
+                // ========================================================
+                // NO ATTENDANCE YET
+                // ========================================================
+
+                else
+                {
+                    // ----------------------------------------------------
+                    // BEFORE SHIFT
+                    // ----------------------------------------------------
+
+                    if (currentTime < shiftStart)
+                    {
+                        todaysStatus = "Shift Not Started";
+                    }
+
+                    // ----------------------------------------------------
+                    // DURING SHIFT
+                    // ----------------------------------------------------
+
+                    else if (currentTime >= shiftStart &&
+                             currentTime <= shiftEnd)
+                    {
+                        todaysStatus = "Not Checked In";
+                    }
+
+                    // ----------------------------------------------------
+                    // SHIFT HAS ENDED
+                    // ----------------------------------------------------
+
+                    else
+                    {
+                        todaysStatus = "Absent";
+                    }
+                }
+            }
+
+
+            // ============================================================
+            // VIEWBAGS
+            // ============================================================
+
+            ViewBag.TodaysStatus = todaysStatus;
+
+            ViewBag.TodaysAttendance = todaysAttendance;
+
+            ViewBag.TodaysShift = todaysShift;
 
             return View(model);
         }

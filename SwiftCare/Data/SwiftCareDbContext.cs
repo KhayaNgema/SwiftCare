@@ -43,6 +43,15 @@ namespace SwiftCare.Data
                 .HasForeignKey(r => r.RequestedForId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            //------------------------------------------------------------
+            //VOLUNTEER ATTENDANCE -> VOLUNTEER
+            //------------------------------------------------------------
+
+
+            modelBuilder.Entity<VolunteerAttendance>()
+                .HasIndex(a => a.VolunteerRosterShiftId)
+                .IsUnique();
+
 
             // ============================================================
             // TRANSPORT REQUEST -> DRIVER

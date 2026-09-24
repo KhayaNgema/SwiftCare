@@ -395,7 +395,6 @@ public async Task ProcessWebhookAsync(
                         "Didit verification {VerificationId} received APPROVED status.",
                         verification.Id);
 
-
                     verification.Status =
                         VolunteerIdentityVerificationStatus.Verified;
 
@@ -411,47 +410,30 @@ public async Task ProcessWebhookAsync(
                     verification.ModifiedDate =
                         DateTime.Now;
 
-
                     ApplyDecisionData(
                         verification,
                         envelope.Decision);
 
-
-                    // ----------------------------------------------------
-                    // SAVE VERIFIED DIDIT STATE FIRST
-                    // ----------------------------------------------------
-
                     await _context.SaveChangesAsync(
                         cancellationToken);
 
-
                     _logger.LogInformation(
-                        "Didit verification {VerificationId} saved as VERIFIED. " +
+                        "Didit verification {VerificationId} VERIFIED. " +
                         "Document={DocumentVerified}, " +
                         "Liveness={LivenessVerified}, " +
-                        "FaceMatch={FaceMatchVerified}.",
+                        "FaceMatch={FaceMatchVerified}, " +
+                        "DiditFaceSearchEnrollment={FaceIdentityEnrolled}.",
                         verification.Id,
                         verification.DocumentVerified,
                         verification.LivenessVerified,
-                        verification.FaceMatchVerified);
-
-
-                    // ----------------------------------------------------
-                    // GENERATE / REUSE CONTRACT
-                    //
-                    // IMPORTANT:
-                    // Do NOT perform a duplicate contract check here.
-                    //
-                    // TryGenerateVolunteerContractAsync delegates that
-                    // responsibility to CreateAndGenerateContractAsync().
-                    // ----------------------------------------------------
+                        verification.FaceMatchVerified,
+                        verification.FaceIdentityEnrolled);
 
                     await TryGenerateVolunteerContractAsync(
                         verification,
                         cancellationToken);
 
                     break;
-
 
                 // ========================================================
                 // DECLINED
@@ -767,8 +749,8 @@ public async Task ProcessWebhookAsync(
         }
 
         private static void ApplyDecisionData(
-            VolunteerIdentityVerification verification,
-            JsonElement? decision)
+     VolunteerIdentityVerification verification,
+     JsonElement? decision)
         {
             if (!decision.HasValue ||
                 decision.Value.ValueKind !=
@@ -780,12 +762,16 @@ public async Task ProcessWebhookAsync(
             var decisionValue =
                 decision.Value;
 
+            // ================================================================
+            // DOCUMENT VERIFICATION
+            // ================================================================
+
             if (
                 decisionValue.TryGetProperty(
                     "id_verifications",
                     out var idVerifications) &&
                 idVerifications.ValueKind ==
-                JsonValueKind.Array)
+                    JsonValueKind.Array)
             {
                 foreach (
                     var idVerification
@@ -806,12 +792,16 @@ public async Task ProcessWebhookAsync(
                 }
             }
 
+            // ================================================================
+            // LIVENESS
+            // ================================================================
+
             if (
                 decisionValue.TryGetProperty(
                     "liveness_checks",
                     out var livenessChecks) &&
                 livenessChecks.ValueKind ==
-                JsonValueKind.Array)
+                    JsonValueKind.Array)
             {
                 foreach (
                     var liveness
@@ -832,12 +822,16 @@ public async Task ProcessWebhookAsync(
                 }
             }
 
+            // ================================================================
+            // FACE MATCH 1:1
+            // ================================================================
+
             if (
                 decisionValue.TryGetProperty(
                     "face_matches",
                     out var faceMatches) &&
                 faceMatches.ValueKind ==
-                JsonValueKind.Array)
+                    JsonValueKind.Array)
             {
                 foreach (
                     var faceMatch
@@ -858,15 +852,70 @@ public async Task ProcessWebhookAsync(
                 }
             }
 
+            // ================================================================
+            // FACE SEARCH 1:N
+            // ================================================================
+            //
+            // This is the important part.
+            //
+            // The onboarding workflow must have Face Search 1:N enabled.
+            //
+            // Didit can return a face_search report containing matches against
+            // its biometric population.
+            //
+            // We record that the Didit biometric step completed successfully.
+            //
+            // ================================================================
+
             if (
-     verification.DocumentVerified &&
-     verification.LivenessVerified &&
-     verification.FaceMatchVerified)
+                decisionValue.TryGetProperty(
+                    "face_search",
+                    out var faceSearch) &&
+                faceSearch.ValueKind ==
+                    JsonValueKind.Object)
             {
-                verification.FaceIdentityEnrolled = true;
+                var faceSearchApproved =
+                    false;
+
+                if (
+                    faceSearch.TryGetProperty(
+                        "status",
+                        out var faceSearchStatus))
+                {
+                    faceSearchApproved =
+                        string.Equals(
+                            faceSearchStatus.GetString(),
+                            "Approved",
+                            StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (faceSearchApproved)
+                {
+                    verification.FaceIdentityEnrolled =
+                        true;
+                }
+            }
+
+            // ================================================================
+            // FALLBACK ENROLLMENT CONFIRMATION
+            // ================================================================
+            //
+            // If Didit doesn't return a face_search block but the workflow
+            // itself successfully completed document verification + liveness
+            // + face match, retain the existing SwiftCare behavior.
+            //
+            // ================================================================
+
+            if (
+                !verification.FaceIdentityEnrolled &&
+                verification.DocumentVerified &&
+                verification.LivenessVerified &&
+                verification.FaceMatchVerified)
+            {
+                verification.FaceIdentityEnrolled =
+                    true;
             }
         }
-
         private static string? ExtractDecisionWarning(
             JsonElement? decision)
         {

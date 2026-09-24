@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
-using SwiftCare.Services.IdentityVerification;
 
 namespace SwiftCare.Services.IdentityVerification
 {
@@ -32,16 +31,13 @@ namespace SwiftCare.Services.IdentityVerification
                 int identityDocumentId,
                 CancellationToken cancellationToken = default)
         {
-            // ---------------------------------------------------------
-            // LOAD ONBOARDING + APPLICANT
-            // ---------------------------------------------------------
-
             var onboarding =
                 await _context.VolunteerOnboardings
                     .Include(x => x.Applicant)
                     .FirstOrDefaultAsync(
                         x =>
-                            x.VolunteerOnboardingId == onboardingId,
+                            x.VolunteerOnboardingId ==
+                            onboardingId,
                         cancellationToken);
 
             if (onboarding == null)
@@ -50,28 +46,20 @@ namespace SwiftCare.Services.IdentityVerification
                     "Volunteer onboarding record could not be found.");
             }
 
-            // ---------------------------------------------------------
-            // VALIDATE APPLICANT
-            // ---------------------------------------------------------
-
             if (onboarding.Applicant == null)
             {
                 throw new InvalidOperationException(
                     "The applicant associated with this onboarding could not be found.");
             }
 
-            var applicant = onboarding.Applicant;
+            var applicant =
+                onboarding.Applicant;
 
             if (string.IsNullOrWhiteSpace(applicant.Email))
             {
                 throw new InvalidOperationException(
-                    "The applicant does not have a valid email address. " +
-                    "A Didit verification invitation cannot be sent.");
+                    "The applicant does not have a valid email address.");
             }
-
-            // ---------------------------------------------------------
-            // LOAD SELECTED DOCUMENT
-            // ---------------------------------------------------------
 
             var document =
                 await _context.VolunteerOnboardingDocuments
@@ -89,21 +77,12 @@ namespace SwiftCare.Services.IdentityVerification
                     "The selected identity document could not be found.");
             }
 
-            // ---------------------------------------------------------
-            // ONLY IDENTITY DOCUMENTS MAY BE USED
-            // ---------------------------------------------------------
-
             if (document.DocumentType !=
                 VolunteerOnboardingDocumentType.IdentityDocument)
             {
                 throw new InvalidOperationException(
-                    "The selected document is not an identity document. " +
-                    "Only documents marked as IdentityDocument can be used for Didit identity verification.");
+                    "The selected document is not an identity document.");
             }
-
-            // ---------------------------------------------------------
-            // FIND EXISTING DIDIT VERIFICATION
-            // ---------------------------------------------------------
 
             var verification =
                 await _context.VolunteerIdentityVerifications
@@ -126,14 +105,14 @@ namespace SwiftCare.Services.IdentityVerification
             {
                 _logger.LogInformation(
                     "Identity verification {VerificationId} is already verified. " +
-                    "No new Didit session or email will be sent.",
+                    "No new Didit session will be created.",
                     verification.Id);
 
                 return verification;
             }
 
             // =========================================================
-            // EXISTING ACTIVE DIDIT SESSION
+            // EXISTING ACTIVE SESSION
             // =========================================================
 
             if (verification != null &&
@@ -152,44 +131,17 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.FaceVerificationInProgress
                 ))
             {
-                _logger.LogInformation(
-                    "Existing active Didit session {SessionId} found for " +
-                    "SwiftCare verification {VerificationId}. " +
-                    "The existing session will be reused and the SwiftCare " +
-                    "verification email will be sent again.",
-                    verification.ProviderSessionId,
-                    verification.Id);
-
                 var applicantName =
                     $"{applicant.FirstName} {applicant.LastName}"
                         .Trim();
 
-                var emailSent =
-                    await _diditService.ResendVerificationEmailAsync(
+                await _diditService
+                    .ResendVerificationEmailAsync(
                         applicant.Email,
                         applicantName,
                         verification.VerificationUrl!,
                         verification.ProviderSessionId!,
                         cancellationToken);
-
-                if (!emailSent)
-                {
-                    _logger.LogWarning(
-                        "Existing Didit session {SessionId} was reused, " +
-                        "but SwiftCare could not resend the verification email " +
-                        "to applicant {Email}.",
-                        verification.ProviderSessionId,
-                        applicant.Email);
-                }
-                else
-                {
-                    _logger.LogInformation(
-                        "Existing Didit session {SessionId} reused and " +
-                        "SwiftCare verification email resent successfully " +
-                        "to {Email}.",
-                        verification.ProviderSessionId,
-                        applicant.Email);
-                }
 
                 verification.ModifiedDate =
                     DateTime.Now;
@@ -201,15 +153,11 @@ namespace SwiftCare.Services.IdentityVerification
             }
 
             // =========================================================
-            // CREATE OR RESET LOCAL VERIFICATION
+            // CREATE LOCAL VERIFICATION
             // =========================================================
 
             if (verification == null)
             {
-                // -----------------------------------------------------
-                // CREATE NEW LOCAL VERIFICATION
-                // -----------------------------------------------------
-
                 verification =
                     new VolunteerIdentityVerification
                     {
@@ -250,29 +198,17 @@ namespace SwiftCare.Services.IdentityVerification
                             DateTime.Now
                     };
 
-                _context.VolunteerIdentityVerifications
-                    .Add(verification);
+                _context.VolunteerIdentityVerifications.Add(
+                    verification);
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
-
-                _logger.LogInformation(
-                    "Created new SwiftCare identity verification record {VerificationId} " +
-                    "for onboarding {OnboardingId}.",
-                    verification.Id,
-                    onboardingId);
             }
             else
             {
                 // =====================================================
-                // PREVIOUS SESSION IS NO LONGER ACTIVE
+                // RESET PREVIOUS FAILED / EXPIRED SESSION
                 // =====================================================
-
-                _logger.LogInformation(
-                    "Existing Didit verification {VerificationId} has status {Status}. " +
-                    "A new Didit session will be created.",
-                    verification.Id,
-                    verification.Status);
 
                 verification.Status =
                     VolunteerIdentityVerificationStatus.InProgress;
@@ -321,15 +257,17 @@ namespace SwiftCare.Services.IdentityVerification
             }
 
             // =========================================================
-            // SWIFTCARE CORRELATION REFERENCE
+            // IMPORTANT
+            //
+            // This vendor_data identifies the SwiftCare identity.
+            //
+            // Didit Face Search uses the verified identity associated
+            // with this session. Do NOT use a temporary login vendor
+            // reference here.
             // =========================================================
 
             var referenceId =
                 $"SWIFTCARE-ID-{verification.Id}";
-
-            // =========================================================
-            // CREATE DIDIT REQUEST
-            // =========================================================
 
             var diditRequest =
                 new DiditVerificationSessionRequest
@@ -338,10 +276,12 @@ namespace SwiftCare.Services.IdentityVerification
                         referenceId,
 
                     FirstName =
-                        applicant.FirstName ?? string.Empty,
+                        applicant.FirstName ??
+                        string.Empty,
 
                     LastName =
-                        applicant.LastName ?? string.Empty,
+                        applicant.LastName ??
+                        string.Empty,
 
                     Email =
                         applicant.Email,
@@ -354,27 +294,17 @@ namespace SwiftCare.Services.IdentityVerification
                 };
 
             _logger.LogInformation(
-                "Starting NEW Didit identity verification session for " +
-                "onboarding {OnboardingId}, identity document {IdentityDocumentId}, " +
-                "verification {VerificationId}, applicant email {Email}.",
-                onboardingId,
-                identityDocumentId,
+                "Creating Didit biometric enrollment verification. " +
+                "VerificationId={VerificationId}, " +
+                "VendorData={VendorData}.",
                 verification.Id,
-                applicant.Email);
-
-            // =========================================================
-            // CREATE DIDIT SESSION
-            // =========================================================
+                referenceId);
 
             var diditResult =
                 await _diditService
                     .CreateVerificationSessionAsync(
                         diditRequest,
                         cancellationToken);
-
-            // =========================================================
-            // DIDIT SESSION CREATION FAILED
-            // =========================================================
 
             if (!diditResult.Success)
             {
@@ -391,18 +321,8 @@ namespace SwiftCare.Services.IdentityVerification
                 await _context.SaveChangesAsync(
                     cancellationToken);
 
-                _logger.LogError(
-                    "Didit verification session creation failed for " +
-                    "SwiftCare verification {VerificationId}. Reason: {Reason}",
-                    verification.Id,
-                    verification.FailureReason);
-
                 return verification;
             }
-
-            // =========================================================
-            // STORE DIDIT SESSION ID
-            // =========================================================
 
             if (!string.IsNullOrWhiteSpace(
                     diditResult.SessionId))
@@ -411,10 +331,6 @@ namespace SwiftCare.Services.IdentityVerification
                     diditResult.SessionId;
             }
 
-            // =========================================================
-            // STORE PROVIDER VERIFICATION ID
-            // =========================================================
-
             if (!string.IsNullOrWhiteSpace(
                     diditResult.VerificationId))
             {
@@ -422,16 +338,8 @@ namespace SwiftCare.Services.IdentityVerification
                     diditResult.VerificationId;
             }
 
-            // =========================================================
-            // STORE DIDIT HOSTED VERIFICATION URL
-            // =========================================================
-
             verification.VerificationUrl =
                 diditResult.VerificationUrl;
-
-            // =========================================================
-            // WAITING FOR APPLICANT
-            // =========================================================
 
             verification.Status =
                 VolunteerIdentityVerificationStatus.AwaitingUser;
@@ -445,32 +353,6 @@ namespace SwiftCare.Services.IdentityVerification
 
             await _context.SaveChangesAsync(
                 cancellationToken);
-
-            // =========================================================
-            // EMAIL STATUS LOGGING
-            // =========================================================
-
-            if (!string.IsNullOrWhiteSpace(
-                    diditResult.ErrorMessage))
-            {
-                _logger.LogWarning(
-                    "Didit session {SessionId} was created for " +
-                    "SwiftCare verification {VerificationId}, but DiditService " +
-                    "reported an email warning: {Message}",
-                    verification.ProviderSessionId,
-                    verification.Id,
-                    diditResult.ErrorMessage);
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "Didit verification session {SessionId} created successfully " +
-                    "for SwiftCare verification {VerificationId}. " +
-                    "SwiftCare sent the verification email to {Email}.",
-                    verification.ProviderSessionId,
-                    verification.Id,
-                    applicant.Email);
-            }
 
             return verification;
         }
@@ -522,16 +404,13 @@ namespace SwiftCare.Services.IdentityVerification
                     nameof(result));
             }
 
-            // ---------------------------------------------------------
-            // LOAD VERIFICATION
-            // ---------------------------------------------------------
-
             var verification =
                 await _context
                     .VolunteerIdentityVerifications
                     .FirstOrDefaultAsync(
                         x =>
-                            x.Id == verificationId,
+                            x.Id ==
+                            verificationId,
                         cancellationToken);
 
             if (verification == null)
@@ -540,20 +419,12 @@ namespace SwiftCare.Services.IdentityVerification
                     $"Identity verification {verificationId} was not found.");
             }
 
-            // =========================================================
-            // STORE DIDIT SESSION ID
-            // =========================================================
-
             if (!string.IsNullOrWhiteSpace(
                     result.SessionId))
             {
                 verification.ProviderSessionId =
                     result.SessionId;
             }
-
-            // =========================================================
-            // STORE PROVIDER VERIFICATION ID
-            // =========================================================
 
             if (!string.IsNullOrWhiteSpace(
                     result.VerificationId))
@@ -562,27 +433,12 @@ namespace SwiftCare.Services.IdentityVerification
                     result.VerificationId;
             }
 
-            // =========================================================
-            // STORE PROVIDER PERSON ID
-            // =========================================================
-            //
-            // If Didit supplies a persistent person ID, keep it.
-            //
-            // This is optional for determining the local
-            // FaceIdentityEnrolled flag.
-            //
-            // =========================================================
-
             if (!string.IsNullOrWhiteSpace(
                     result.PersonId))
             {
                 verification.ProviderPersonId =
                     result.PersonId;
             }
-
-            // =========================================================
-            // STORE VERIFICATION RESULTS
-            // =========================================================
 
             verification.DocumentVerified =
                 result.DocumentVerified;
@@ -596,70 +452,33 @@ namespace SwiftCare.Services.IdentityVerification
             verification.FailureReason =
                 result.FailureReason;
 
-            // =========================================================
-            // DETERMINE SWIFTCARE STATUS
-            // =========================================================
-
             switch (result.Status)
             {
-                // -----------------------------------------------------
-                // APPROVED
-                // -----------------------------------------------------
-
                 case "Approved":
 
                     verification.Status =
                         VolunteerIdentityVerificationStatus.Verified;
 
                     verification.VerifiedDate =
-                        DateTime.Now;
+                        DateTime.UtcNow;
 
-                    // =================================================
-                    // FACE IDENTITY ENROLLMENT
-                    // =================================================
-                    //
-                    // The successful Didit identity verification
-                    // already establishes that:
-                    //
-                    // 1. The identity document was verified.
-                    // 2. The person passed liveness.
-                    // 3. The face matched successfully.
-                    //
-                    // Didit may not always expose/store a PersonId
-                    // through the webhook payload that SwiftCare
-                    // receives.
-                    //
-                    // Therefore ProviderPersonId is NOT used as a
-                    // requirement for FaceIdentityEnrolled.
-                    //
-                    // Didit's 1:N face search is already proving that
-                    // the biometric identity is enrolled.
-                    //
-                    // =================================================
+                    /*
+                     * IMPORTANT:
+                     *
+                     * FaceIdentityEnrolled means that the successful
+                     * Didit workflow completed with the Face Search
+                     * module enabled.
+                     *
+                     * The actual biometric template is maintained
+                     * by Didit, not by SwiftCare.
+                     */
 
                     verification.FaceIdentityEnrolled =
                         verification.DocumentVerified &&
                         verification.LivenessVerified &&
                         verification.FaceMatchVerified;
 
-                    _logger.LogInformation(
-                        "SwiftCare face identity enrollment completed for " +
-                        "verification {VerificationId}. " +
-                        "DocumentVerified={DocumentVerified}, " +
-                        "LivenessVerified={LivenessVerified}, " +
-                        "FaceMatchVerified={FaceMatchVerified}, " +
-                        "FaceIdentityEnrolled={FaceIdentityEnrolled}.",
-                        verification.Id,
-                        verification.DocumentVerified,
-                        verification.LivenessVerified,
-                        verification.FaceMatchVerified,
-                        verification.FaceIdentityEnrolled);
-
                     break;
-
-                // -----------------------------------------------------
-                // DECLINED
-                // -----------------------------------------------------
 
                 case "Declined":
 
@@ -674,10 +493,6 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
-                // -----------------------------------------------------
-                // IN REVIEW
-                // -----------------------------------------------------
-
                 case "In Review":
 
                     verification.Status =
@@ -691,20 +506,12 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
-                // -----------------------------------------------------
-                // IN PROGRESS
-                // -----------------------------------------------------
-
                 case "In Progress":
 
                     verification.Status =
                         VolunteerIdentityVerificationStatus.InProgress;
 
                     break;
-
-                // -----------------------------------------------------
-                // RESUBMITTED
-                // -----------------------------------------------------
 
                 case "Resubmitted":
 
@@ -731,10 +538,6 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
-                // -----------------------------------------------------
-                // ABANDONED
-                // -----------------------------------------------------
-
                 case "Abandoned":
 
                     verification.Status =
@@ -747,10 +550,6 @@ namespace SwiftCare.Services.IdentityVerification
                         null;
 
                     break;
-
-                // -----------------------------------------------------
-                // EXPIRED
-                // -----------------------------------------------------
 
                 case "Expired":
 
@@ -767,10 +566,6 @@ namespace SwiftCare.Services.IdentityVerification
 
                     break;
 
-                // -----------------------------------------------------
-                // UNKNOWN STATUS
-                // -----------------------------------------------------
-
                 default:
 
                     verification.Status =
@@ -779,10 +574,6 @@ namespace SwiftCare.Services.IdentityVerification
                     break;
             }
 
-            // =========================================================
-            // UPDATE AUDIT DATE
-            // =========================================================
-
             verification.ModifiedDate =
                 DateTime.Now;
 
@@ -790,12 +581,12 @@ namespace SwiftCare.Services.IdentityVerification
                 cancellationToken);
 
             _logger.LogInformation(
-                "SwiftCare identity verification {VerificationId} " +
-                "updated to {Status}. " +
-                "DocumentVerified={DocumentVerified}, " +
-                "LivenessVerified={LivenessVerified}, " +
-                "FaceMatchVerified={FaceMatchVerified}, " +
-                "FaceIdentityEnrolled={FaceIdentityEnrolled}.",
+                "Identity verification {VerificationId} updated. " +
+                "Status={Status}, " +
+                "Document={Document}, " +
+                "Liveness={Liveness}, " +
+                "FaceMatch={FaceMatch}, " +
+                "DiditFaceSearchEnrollment={Enrolled}.",
                 verification.Id,
                 verification.Status,
                 verification.DocumentVerified,

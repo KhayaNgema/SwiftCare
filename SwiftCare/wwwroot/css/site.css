@@ -4335,13 +4335,13 @@ html {
 .swiftcare-facility-name {
     color: var(--forest) !important;
     font-size: 22px;
-    font-weight: 850;
+    font-weight: 1000;
 }
 
 
 .swiftcare-facility-subtitle {
     margin-top: 5px;
-    color: #496955 !important;
+    color: #ffffff !important;
     font-size: 14px;
 }
 
@@ -5611,12 +5611,6 @@ body {
 }
 
 
-.swiftcare-facility-subtitle {
-    margin-top: 4px;
-    color: rgba(255,255,255,0.68);
-    font-size: 12px;
-    line-height: 1;
-}
 
 
 /* =========================================================
@@ -62363,6 +62357,7 @@ body.modal-open .onboarding-review-page {
     border-radius: var(--vp-radius);
     background: linear-gradient( 180deg, rgba(255, 255, 255, .96), rgba(247, 254, 231, .82) );
     box-shadow: var(--vp-shadow);
+    margin-bottom: 10px;
 }
 
 .vp-library-card-full {
@@ -65626,4 +65621,283 @@ body.vp-modal-body-lock {
         justify-content: flex-start;
         min-width: 0;
     }
+}
+
+/* ============================================================
+   VOLUNTEER ATTENDANCE — FULL-WIDTH TABLE
+   ============================================================ */
+
+.vp-attendance-section,
+.vp-attendance-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.vp-attendance-list {
+    display: block;
+    width: 100%;
+}
+
+.vp-attendance-item {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Table container */
+.vp-attendance-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0 22px 24px;
+    box-sizing: border-box;
+}
+
+/* Main table */
+.vp-attendance-table {
+    width: 100%;
+    min-width: 950px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    text-align: left;
+}
+
+    .vp-attendance-table thead {
+        background: #f0fdf4;
+    }
+
+    .vp-attendance-table th {
+        padding: 17px 16px;
+        color: #1b5e20;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        border-top: 1px solid #d5e7d6;
+        border-bottom: 1px solid #d5e7d6;
+        white-space: nowrap;
+    }
+
+        .vp-attendance-table th:first-child {
+            border-left: 1px solid #d5e7d6;
+            border-top-left-radius: 12px;
+        }
+
+        .vp-attendance-table th:last-child {
+            border-right: 1px solid #d5e7d6;
+            border-top-right-radius: 12px;
+        }
+
+    .vp-attendance-table td {
+        padding: 18px 16px;
+        color: #124116;
+        font-weight: 600;
+        vertical-align: middle;
+        border-bottom: 1px solid #e5eee6;
+    }
+
+    .vp-attendance-table tbody tr {
+        transition: background 0.2s ease;
+    }
+
+        .vp-attendance-table tbody tr:hover {
+            background: #f6fcf4;
+        }
+
+        .vp-attendance-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+/* Date */
+.vp-attendance-date {
+    display: block;
+    font-weight: 800;
+    color: #124116;
+}
+
+.vp-attendance-day {
+    display: block;
+    margin-top: 4px;
+    color: #748675;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Shift time */
+.vp-attendance-shift-time {
+    white-space: nowrap;
+    font-weight: 750;
+}
+
+/* Status badges */
+.vp-attendance-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.vp-attendance-status-late {
+    background: #fff3cd;
+    color: #946200;
+}
+
+.vp-attendance-status-absent {
+    background: #ffebee;
+    color: #b71c1c;
+}
+
+.vp-attendance-status-checkedout {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* Verification indicators */
+.vp-attendance-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #2e7d32;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.vp-attendance-not-verified {
+    color: #87948a;
+    font-size: 12px;
+}
+
+/* Mobile horizontal scrolling */
+@media (max-width: 900px) {
+    .vp-attendance-table-wrapper {
+        padding: 0 14px 18px;
+    }
+
+    .vp-attendance-table {
+        min-width: 950px;
+    }
+}
+
+/* ============================================================
+   VOLUNTEER PROFILE — STATUS PILL
+   ============================================================ */
+
+.vp-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 8px 15px;
+
+    min-height: 32px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 0.35px;
+    line-height: 1;
+
+    white-space: nowrap;
+
+    border: 1px solid transparent;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   STATUS ICON
+   ============================================================ */
+
+.vp-status-pill i {
+    font-size: 13px;
+    line-height: 1;
+}
+
+
+/* ============================================================
+   NO SHIFT TODAY
+   ============================================================ */
+
+.vp-status-pending {
+    background: #f3f6f3;
+    color: #657568;
+    border-color: #dce5dd;
+}
+
+
+/* ============================================================
+   SHIFT NOT STARTED
+   ============================================================ */
+
+.vp-status-shift-not-started {
+    background: #e8f1ff;
+    color: #315f91;
+    border-color: #c9dcf5;
+}
+
+
+/* ============================================================
+   NOT CHECKED IN
+   ============================================================ */
+
+.vp-status-not-checked-in {
+    background: #fff8e1;
+    color: #8a6d1d;
+    border-color: #f5df9a;
+}
+
+
+/* ============================================================
+   CHECKED IN / PRESENT
+   ============================================================ */
+
+.vp-status-completed {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+
+/* ============================================================
+   LATE
+   ============================================================ */
+
+.vp-status-late {
+    background: #fff3cd;
+    color: #946200;
+    border-color: #ffe08a;
+}
+
+
+/* ============================================================
+   CHECKED OUT
+   ============================================================ */
+
+.vp-status-checked-out {
+    background: #e0f2f1;
+    color: #00695c;
+    border-color: #b2dfdb;
+}
+
+
+/* ============================================================
+   ABSENT
+   ============================================================ */
+
+.vp-status-absent {
+    background: #ffebee;
+    color: #b71c1c;
+    border-color: #ffcdd2;
 }

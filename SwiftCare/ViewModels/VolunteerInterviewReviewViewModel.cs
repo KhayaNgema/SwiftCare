@@ -184,7 +184,55 @@ namespace SwiftCare.ViewModels
 
         public List<VolunteerInterviewTranscriptItemViewModel> Transcript { get; set; }
             = new();
+        // ============================================================
+        // INTERVIEW VIDEO RECORDING
+        // ============================================================
 
+        public int? VolunteerVoiceInterviewSessionId { get; set; }
+
+        public bool HasInterviewVideo { get; set; }
+
+        public string VideoUrl { get; set; } = string.Empty;
+
+        public string VideoMimeType { get; set; } = "video/webm";
+
+        public int VideoDurationSeconds { get; set; }
+
+        public DateTime? VideoStartedDate { get; set; }
+
+        public DateTime? VideoCompletedDate { get; set; }
+        // ============================================================
+        // INTERVIEW PROCTORING / INTEGRITY
+        // ============================================================
+
+        public bool SuspiciousActivityDetected { get; set; }
+
+        public DateTime? SuspiciousActivityDate { get; set; }
+
+        public string LastProctoringEventType { get; set; } = string.Empty;
+
+        public int SuspiciousEventCount { get; set; }
+
+        public int TabSwitchCount { get; set; }
+
+        public int WindowBlurCount { get; set; }
+
+        public int FullScreenExitCount { get; set; }
+
+        public int PageLeaveCount { get; set; }
+
+        public int CameraStoppedCount { get; set; }
+
+        public int TotalUnfocusedSeconds { get; set; }
+
+        public string IncompleteReason { get; set; } = string.Empty;
+
+        public DateTime? LastActivityDate { get; set; }
+
+        public string LastActivityType { get; set; } = string.Empty;
+
+        public List<VolunteerInterviewProctoringEventViewModel> ProctoringEvents { get; set; }
+            = new();
 
         // ============================================================
         // DECISION
@@ -239,6 +287,27 @@ namespace SwiftCare.ViewModels
         public string Evidence { get; set; } = string.Empty;
 
         public string Reasoning { get; set; } = string.Empty;
+    }
+
+    public class VolunteerInterviewProctoringEventViewModel
+    {
+        public int Id { get; set; }
+
+        public string EventType { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+
+        public int QuestionNumber { get; set; }
+
+        public DateTime EventDate { get; set; }
+
+        public string PageVisibilityState { get; set; } = string.Empty;
+
+        public bool? PageHidden { get; set; }
+
+        public string UserAgent { get; set; } = string.Empty;
+
+        public int UnfocusedSeconds { get; set; }
     }
 
 
@@ -349,5 +418,9 @@ namespace SwiftCare.ViewModels
         public string Question { get; set; } = string.Empty;
 
         public string Answer { get; set; } = string.Empty;
+
+
     }
+
+
 }

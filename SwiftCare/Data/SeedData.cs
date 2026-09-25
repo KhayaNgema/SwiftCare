@@ -32,7 +32,8 @@ public static class SeedData
                 "Driver",
                 "Maintainance Person",
                 "Applicant",
-                "Supervisor"};
+                "Supervisor",
+                "Human Resources Manager"};
 
             foreach (var roleName in roleNames)
             {
@@ -175,7 +176,32 @@ public static class SeedData
                     await _context.SaveChangesAsync();
                 }
             }
+            var hrManager = await userManager.FindByEmailAsync("hr@gmail.com");
+            if (hrManager == null)
+            {
+                var defaultUser = new Nurse
+                {
+                    FirstName = "SwiftCare",
+                    LastName = "HR",
+                    UserName = "hr@gmail.com",
+                    Email = "hr@gmail.com",
+                    PhoneNumber = "0678987890",
+                    DateOfBirth = DateTime.Now,
+                    ProfilePicture = "Images/default_profile_image.jpg",
+                    EmailConfirmed = true,
+                    CreatedDateTime = DateTime.Now,
+                    ModifiedDateTime = DateTime.Now,
+                    CreatedBy = "default-user-id",
+                    ModifiedBy = "default-user-id"
+                };
 
+                var result = await userManager.CreateAsync(defaultUser, "Swift@123");
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(defaultUser, "Human Resources Manager");
+                }
+            }
 
             var nurse = await userManager.FindByEmailAsync("nurse@gmail.com");
             if (nurse == null)

@@ -84,29 +84,47 @@
 
             </div>
 
+            <div class="sc-admin-applications-header-actions">
 
-            <button type="button"
-                    class="sc-admin-applications-back-button"
-                    onclick="openShortlistingModal()">
+                <button type="button"
+                        class="sc-admin-applications-back-button"
+                        onclick="openShortlistingModal()">
 
-                <i class="bi bi-stars"></i>
+                    <i class="bi bi-stars"></i>
 
-                <span>
-                    Run Shortlisting Pipeline
-                </span>
+                    <span>
+                        Run Shortlisting Pipeline
+                    </span>
 
-            </button>
+                </button>
 
 
-            <a asp-controller="VolunteerApplications"
-               asp-action="ShortlistManagement"
-               class="sc-admin-applications-view-button">
+                <a asp-controller="VolunteerApplications"
+                       asp-action="ShortlistManagement"
+                       class="sc-admin-applications-view-button">
 
-                <i class="bi bi-person-check-fill"></i>
+                    <i class="bi bi-person-check-fill"></i>
 
-                Manage Shortlist
+                    <span>
+                        Manage Shortlist
+                    </span>
 
-            </a>
+                </a>
+
+
+                <a asp-controller="VolunteerInterview"
+                       asp-action="Interviews"
+                       class="sc-admin-applications-interviews-button">
+
+                    <i class="bi bi-camera-video-fill"></i>
+
+                    <span>
+                        Interviews
+                    </span>
+
+                </a>
+
+            </div>
 
         </div>
 

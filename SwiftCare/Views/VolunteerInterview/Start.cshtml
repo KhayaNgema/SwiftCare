@@ -5,7 +5,6 @@
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 }
 
-
 <div class="voice-interview-page">
 
     <div class="voice-interview-shell">
@@ -74,7 +73,78 @@
             </div>
 
 
-            <!-- Instructions -->
+            <!-- =================================================
+                 VIDEO RECORDING NOTICE
+                 ================================================== -->
+
+            <div class="voice-interview-video-notice">
+
+                <div class="voice-interview-video-notice-icon">
+                    <i class="bi bi-camera-video-fill"></i>
+                </div>
+
+                <div class="voice-interview-video-notice-content">
+
+                    <strong>
+                        This interview will be video recorded
+                    </strong>
+
+                    <span>
+                        Your camera will remain on while the
+                        interview is taking place. The recording
+                        is used to support the integrity and review
+                        of your SwiftCare interview.
+                    </span>
+
+                    <span>
+                        You must allow your browser to access your
+                        camera before the interview can begin.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PROCTORING NOTICE
+                 ================================================== -->
+            @if (Model.ProctoringEnabled)
+            {
+                <div class="voice-interview-proctoring-notice">
+
+                    <div class="voice-interview-proctoring-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+
+                    <div class="voice-interview-proctoring-content">
+
+                        <strong>
+                            Interview integrity monitoring
+                        </strong>
+
+                        <span>
+                            SwiftCare will monitor the interview
+                            session for events such as leaving the
+                            interview tab, changing browser focus,
+                            or exiting fullscreen mode.
+                        </span>
+
+                        <span>
+                            Suspicious activity may cause the
+                            interview to be automatically ended
+                            and submitted for administrative review.
+                        </span>
+
+                    </div>
+
+                </div>
+            }
+
+
+            <!-- =================================================
+                 INSTRUCTIONS
+                 ================================================== -->
 
             <h2 class="voice-interview-section-title">
                 Before you begin
@@ -129,18 +199,18 @@
                 <div class="voice-interview-instruction">
 
                     <div class="voice-interview-instruction-icon">
-                        📝
+                        🎥
                     </div>
 
                     <div>
 
                         <strong>
-                            Your answers are transcribed
+                            Keep your camera on
                         </strong>
 
                         <span>
-                            Your spoken answers will be converted
-                            into text and saved to your application.
+                            Your video will be recorded throughout
+                            the interview session.
                         </span>
 
                     </div>
@@ -172,7 +242,9 @@
             </div>
 
 
-            <!-- Details -->
+            <!-- =================================================
+                 DETAILS
+                 ================================================== -->
 
             <div class="voice-interview-details">
 
@@ -209,7 +281,7 @@
                     </span>
 
                     <span class="voice-interview-detail-value">
-                        Voice interview
+                        Voice + Video
                     </span>
 
                 </div>
@@ -217,7 +289,116 @@
             </div>
 
 
-            <!-- Action -->
+            <!-- =================================================
+                 CAMERA PERMISSION
+                 ================================================== -->
+
+            <div class="voice-interview-camera-section">
+
+                <div class="voice-interview-camera-header">
+
+                    <div>
+
+                        <strong>
+                            Camera permission required
+                        </strong>
+
+                        <span>
+                            Please allow your browser to use
+                            your camera before continuing.
+                        </span>
+
+                    </div>
+
+                    <span id="cameraPermissionStatus"
+                          class="voice-interview-camera-status pending">
+
+                        <i class="bi bi-camera-video"></i>
+
+                        Camera not checked
+
+                    </span>
+
+                </div>
+
+
+                <div class="voice-interview-camera-preview-wrapper">
+
+                    <video id="cameraPreview"
+                           class="voice-interview-camera-preview"
+                           autoplay
+                           muted
+                           playsinline>
+                    </video>
+
+                    <div id="cameraPreviewPlaceholder"
+                         class="voice-interview-camera-placeholder">
+
+                        <i class="bi bi-camera-video"></i>
+
+                        <span>
+                            Your camera preview will appear here
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button type="button"
+                        id="allowCameraButton"
+                        class="voice-interview-camera-button">
+
+                    <i class="bi bi-camera-video"></i>
+
+                    Allow Camera & Continue
+
+                </button>
+
+
+                <div id="cameraPermissionMessage"
+                     class="voice-interview-camera-message">
+
+                    You must allow camera access before
+                    the interview can begin.
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 AGREEMENT
+                 ================================================== -->
+
+            <div class="voice-interview-consent">
+
+                <label class="voice-interview-consent-label">
+
+                    <input type="checkbox"
+                           id="interviewConsent" />
+
+                    <span class="voice-interview-consent-check">
+                    </span>
+
+                    <span class="voice-interview-consent-text">
+
+                        I understand that this interview will be
+                        video recorded and that SwiftCare may monitor
+                        the interview session for interview integrity.
+                        I understand that I must remain on the
+                        interview page while completing the interview.
+
+                    </span>
+
+                </label>
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTION
+                 ================================================== -->
 
             <div class="voice-interview-action">
 
@@ -229,16 +410,18 @@
 
                     <br />
 
-                    Your interview answers will be associated
-                    with your SwiftCare volunteer application
-                    and reviewed as part of the selection process.
+                    Your interview answers and interview recording
+                    will be associated with your SwiftCare volunteer
+                    application and reviewed as part of the selection
+                    process.
 
                 </div>
 
 
                 <form asp-controller="VolunteerInterview"
                       asp-action="Begin"
-                      method="post">
+                      method="post"
+                      id="startInterviewForm">
 
                     @Html.AntiForgeryToken()
 
@@ -247,7 +430,9 @@
                            value="@Model.Token" />
 
                     <button type="submit"
-                            class="voice-interview-start-button">
+                            id="startInterviewButton"
+                            class="voice-interview-start-button"
+                            disabled>
 
                         @(Model.IsStarted
                             ? "Continue Interview"
@@ -268,3 +453,306 @@
     </div>
 
 </div>
+
+<!-- ================================================================
+     CAMERA PERMISSION
+     ================================================================ -->
+
+<script>
+
+    (() => {
+
+        "use strict";
+
+        const consent =
+            document.getElementById("interviewConsent");
+
+        const allowCameraButton =
+            document.getElementById("allowCameraButton");
+
+        const startInterviewButton =
+            document.getElementById("startInterviewButton");
+
+        const cameraPreview =
+            document.getElementById("cameraPreview");
+
+        const cameraPlaceholder =
+            document.getElementById("cameraPreviewPlaceholder");
+
+        const cameraStatus =
+            document.getElementById("cameraPermissionStatus");
+
+        const cameraMessage =
+            document.getElementById("cameraPermissionMessage");
+
+        const form =
+            document.getElementById("startInterviewForm");
+
+
+        let cameraStream =
+            null;
+
+        let cameraAllowed =
+            false;
+
+
+        function updateStartButton() {
+
+            startInterviewButton.disabled =
+                !cameraAllowed ||
+                !consent.checked;
+
+        }
+
+
+        function setCameraStatus(
+            text,
+            type
+        ) {
+
+            cameraStatus.className =
+                "voice-interview-camera-status " +
+                type;
+
+            cameraStatus.innerHTML =
+                type === "success"
+                    ? '<i class="bi bi-check-circle-fill"></i> ' + text
+                    : type === "error"
+                        ? '<i class="bi bi-exclamation-circle-fill"></i> ' + text
+                        : '<i class="bi bi-camera-video"></i> ' + text;
+        }
+
+
+        function stopPreviewStream() {
+
+            if (!cameraStream)
+                return;
+
+            cameraStream
+                .getTracks()
+                .forEach(track => {
+
+                    try {
+                        track.stop();
+                    }
+                    catch (_) {}
+
+                });
+
+            cameraStream =
+                null;
+        }
+
+
+        async function requestCameraPermission() {
+
+            if (
+                !navigator.mediaDevices ||
+                !navigator.mediaDevices.getUserMedia
+            ) {
+
+                setCameraStatus(
+                    "Camera unavailable",
+                    "error"
+                );
+
+                cameraMessage.textContent =
+                    "Your browser does not support camera access. " +
+                    "Please use a modern browser such as Chrome or Edge.";
+
+                return;
+            }
+
+
+            allowCameraButton.disabled =
+                true;
+
+            allowCameraButton.innerHTML =
+                '<i class="bi bi-camera-video"></i> Requesting camera...';
+
+
+            try {
+
+                stopPreviewStream();
+
+
+                cameraStream =
+                    await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: "user"
+                        },
+                        audio: false
+                    });
+
+
+                cameraPreview.srcObject =
+                    cameraStream;
+
+
+                cameraPreview.style.display =
+                    "block";
+
+                cameraPlaceholder.style.display =
+                    "none";
+
+
+                cameraAllowed =
+                    true;
+
+
+                setCameraStatus(
+                    "Camera ready",
+                    "success"
+                );
+
+
+                cameraMessage.textContent =
+                    "Camera access has been granted. " +
+                    "Please confirm the recording notice below " +
+                    "to continue.";
+
+
+                allowCameraButton.innerHTML =
+                    '<i class="bi bi-check-circle-fill"></i> Camera Allowed';
+
+
+                updateStartButton();
+
+            }
+            catch (error) {
+
+                console.error(
+                    "[SWIFTCARE CAMERA] Permission error:",
+                    error
+                );
+
+
+                cameraAllowed =
+                    false;
+
+
+                setCameraStatus(
+                    "Camera permission required",
+                    "error"
+                );
+
+
+                if (
+                    error &&
+                    error.name === "NotAllowedError"
+                ) {
+
+                    cameraMessage.textContent =
+                        "Camera access was denied. " +
+                        "Please click the camera icon in your " +
+                        "browser address bar, allow camera access, " +
+                        "and try again.";
+
+                }
+                else if (
+                    error &&
+                    error.name === "NotFoundError"
+                ) {
+
+                    cameraMessage.textContent =
+                        "No camera was found on this device. " +
+                        "A working camera is required to complete " +
+                        "the interview.";
+
+                }
+                else {
+
+                    cameraMessage.textContent =
+                        "We could not access your camera. " +
+                        "Please check your browser permissions and try again.";
+
+                }
+
+
+                allowCameraButton.innerHTML =
+                    '<i class="bi bi-camera-video"></i> Allow Camera & Continue';
+
+
+                updateStartButton();
+
+            }
+            finally {
+
+                allowCameraButton.disabled =
+                    false;
+
+            }
+
+        }
+
+
+        consent.addEventListener(
+            "change",
+            updateStartButton
+        );
+
+
+        allowCameraButton.addEventListener(
+            "click",
+            requestCameraPermission
+        );
+
+
+        /*
+         * Do not allow the form to submit unless the applicant
+         * has both granted camera access and acknowledged
+         * the video recording notice.
+         */
+
+        form.addEventListener(
+            "submit",
+            event => {
+
+                if (
+                    !cameraAllowed ||
+                    !consent.checked
+                ) {
+
+                    event.preventDefault();
+
+                    return;
+                }
+
+
+                /*
+                 * Stop the preview stream before navigating
+                 * to the actual interview page.
+                 */
+
+                stopPreviewStream();
+
+                startInterviewButton.disabled =
+                    true;
+
+                startInterviewButton.innerHTML =
+                    'Preparing Interview <i class="bi bi-hourglass-split"></i>';
+
+            }
+        );
+
+
+        /*
+         * If the applicant leaves the page before submitting,
+         * clean up the temporary preview stream.
+         */
+
+        window.addEventListener(
+            "beforeunload",
+            () => {
+
+                stopPreviewStream();
+
+            }
+        );
+
+
+        updateStartButton();
+
+    })();
+
+</script>

@@ -116,6 +116,10 @@ namespace SwiftCare.Controllers
 
                 return View("CleanerDashboard");
             }
+            else if (roles.Contains("Human Resources Manager"))
+            {
+                return RedirectToAction("Volunteers", "VolunteerOpportunities");
+            }
             else if (roles.Contains("Supervisor"))
             {
                 var supervisorId = _userManager.GetUserId(User);

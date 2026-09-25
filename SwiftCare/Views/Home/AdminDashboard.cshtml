@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Admin";
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
 }
@@ -17,49 +16,35 @@
             <div class="sc-header-left">
 
                 <div class="sc-header-badge">
-
                     <i class="bi bi-shield-check"></i>
-
                     Administrator Dashboard
-
                 </div>
 
                 <h1 class="sc-dashboard-title">
-
                     Welcome back, Administrator
-
                 </h1>
 
                 <p class="sc-dashboard-description">
-
                     Manage residents, staff, reports, support,
                     equipment and system security from one place.
-
                 </p>
 
             </div>
 
-
             <div class="sc-date-card">
 
                 <div class="sc-date-icon">
-
                     <i class="bi bi-calendar3"></i>
-
                 </div>
 
                 <div class="sc-date-content">
 
                     <span class="sc-date-label">
-
                         Today
-
                     </span>
 
                     <span class="sc-date-value">
-
                         @DateTime.Now.ToString("dddd, dd MMMM yyyy")
-
                     </span>
 
                 </div>
@@ -77,31 +62,23 @@
 
     <section class="sc-actions-section">
 
-
         <div class="sc-section-header">
 
             <div>
 
                 <div class="sc-section-label">
-
                     CONTROL CENTER
-
                 </div>
 
                 <h2 class="sc-section-title">
-
                     Quick Actions
-
                 </h2>
 
                 <p class="sc-section-description">
-
                     Select an area below to manage your SwiftCare system.
-
                 </p>
 
             </div>
-
 
             <div class="sc-section-status">
 
@@ -116,13 +93,18 @@
 
         <!-- =====================================================
              ACTION CARDS
+             3 CARDS PER ROW
              ===================================================== -->
 
         <div class="sc-action-grid">
 
-            <!-- VOLUNTEER OPPORTUNITIES -->
-            <a asp-controller="VolunteerOpportunities"
-                   asp-action="Volunteers"
+
+            <!-- =================================================
+                 STAFF & USERS
+                 ================================================= -->
+
+            <a asp-controller="Users"
+                   asp-action="Index"
                    class="sc-action-card">
 
                 <div class="sc-action-top">
@@ -138,12 +120,12 @@
                 <div class="sc-action-body">
 
                     <h3>
-                        Manage Volunteers
+                        Staff & Users
                     </h3>
 
                     <p>
-                        Create, manage and monitor volunteer opportunities,
-                        applications and available volunteering positions.
+                        Manage staff accounts, user profiles,
+                        roles and access across the SwiftCare system.
                     </p>
 
                 </div>
@@ -151,7 +133,7 @@
                 <div class="sc-action-footer">
 
                     <span>
-                        Volunteer Dashboard
+                        Manage Staff & Users
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -159,7 +141,12 @@
                 </div>
 
             </a>
-            <!-- STAFF & USERS -->
+
+
+            <!-- =================================================
+                 MY ORDERS
+                 ================================================= -->
+
             <a asp-controller="Orders"
                    asp-action="MyOrders"
                    class="sc-action-card">
@@ -167,40 +154,30 @@
                 <div class="sc-action-top">
 
                     <div class="sc-action-icon">
-
                         <i class="bi bi-box-seam-fill"></i>
-
                     </div>
 
                     <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
-
                 <div class="sc-action-body">
 
                     <h3>
-
                         My Orders
-
                     </h3>
 
                     <p>
-
                         View and manage your equipment orders,
                         delivery status and order history.
-
                     </p>
 
                 </div>
 
-
                 <div class="sc-action-footer">
 
                     <span>
-
                         View Orders
-
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -210,49 +187,41 @@
             </a>
 
 
-            <!-- RESIDENTS -->
+            <!-- =================================================
+                 RESIDENTS
+                 ================================================= -->
 
             <a asp-controller="Residents"
-               asp-action="Residents"
-               class="sc-action-card">
+                   asp-action="Residents"
+                   class="sc-action-card">
 
                 <div class="sc-action-top">
 
                     <div class="sc-action-icon">
-
                         <i class="bi bi-person-heart"></i>
-
                     </div>
 
                     <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
-
                 <div class="sc-action-body">
 
                     <h3>
-
                         Residents
-
                     </h3>
 
                     <p>
-
                         View resident profiles, information
                         and care-related records.
-
                     </p>
 
                 </div>
 
-
                 <div class="sc-action-footer">
 
                     <span>
-
                         View Residents
-
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -262,7 +231,10 @@
             </a>
 
 
-            <!-- SCHEDULED TRIPS -->
+            <!-- =================================================
+                 SCHEDULED TRIPS
+                 ================================================= -->
+
             <a asp-controller="TransportRequests"
                    asp-action="ScheduledTrips"
                    class="sc-action-card">
@@ -270,40 +242,30 @@
                 <div class="sc-action-top">
 
                     <div class="sc-action-icon">
-
                         <i class="bi bi-calendar-check-fill"></i>
-
                     </div>
 
                     <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
-
                 <div class="sc-action-body">
 
                     <h3>
-
                         Scheduled Trips
-
                     </h3>
 
                     <p>
-
                         View and manage upcoming resident
                         transport trips and scheduled journeys.
-
                     </p>
 
                 </div>
 
-
                 <div class="sc-action-footer">
 
                     <span>
-
                         View Scheduled Trips
-
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -313,49 +275,41 @@
             </a>
 
 
-            <!-- SUPPORT -->
+            <!-- =================================================
+                 SUPPORT
+                 ================================================= -->
 
             <a asp-controller="Queries"
-               asp-action="SupportQueries"
-               class="sc-action-card">
+                   asp-action="SupportQueries"
+                   class="sc-action-card">
 
                 <div class="sc-action-top">
 
                     <div class="sc-action-icon">
-
                         <i class="bi bi-life-preserver"></i>
-
                     </div>
 
                     <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
-
                 <div class="sc-action-body">
 
                     <h3>
-
                         Support
-
                     </h3>
 
                     <p>
-
                         Review support queries and assist
                         users with their requests.
-
                     </p>
 
                 </div>
 
-
                 <div class="sc-action-footer">
 
                     <span>
-
                         Manage Support
-
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -365,49 +319,41 @@
             </a>
 
 
-            <!-- EQUIPMENT -->
+            <!-- =================================================
+                 EQUIPMENT
+                 ================================================= -->
 
             <a asp-controller="Equipment"
-               asp-action="OurEquipment"
-               class="sc-action-card">
+                   asp-action="OurEquipment"
+                   class="sc-action-card">
 
                 <div class="sc-action-top">
 
                     <div class="sc-action-icon">
-
                         <i class="bi bi-box-seam-fill"></i>
-
                     </div>
 
                     <i class="bi bi-arrow-up-right sc-action-arrow"></i>
 
                 </div>
 
-
                 <div class="sc-action-body">
 
                     <h3>
-
                         Equipment
-
                     </h3>
 
                     <p>
-
                         Manage facility equipment and keep
                         track of operational resources.
-
                     </p>
 
                 </div>
 
-
                 <div class="sc-action-footer">
 
                     <span>
-
                         Manage Equipment
-
                     </span>
 
                     <i class="bi bi-arrow-right"></i>
@@ -415,59 +361,6 @@
                 </div>
 
             </a>
-
-
-            <!-- SECURITY -->
-
-            <a asp-controller="Users"
-               asp-action="PasswordAndSecurity"
-               class="sc-action-card">
-
-                <div class="sc-action-top">
-
-                    <div class="sc-action-icon">
-
-                        <i class="bi bi-shield-lock-fill"></i>
-
-                    </div>
-
-                    <i class="bi bi-arrow-up-right sc-action-arrow"></i>
-
-                </div>
-
-
-                <div class="sc-action-body">
-
-                    <h3>
-
-                        Security
-
-                    </h3>
-
-                    <p>
-
-                        Manage account security, passwords
-                        and access protection.
-
-                    </p>
-
-                </div>
-
-
-                <div class="sc-action-footer">
-
-                    <span>
-
-                        Security Settings
-
-                    </span>
-
-                    <i class="bi bi-arrow-right"></i>
-
-                </div>
-
-            </a>
-
 
         </div>
 
@@ -524,4 +417,3 @@
     </script>
 
 }
-

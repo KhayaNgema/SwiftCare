@@ -563,7 +563,172 @@
                             </li>
 
                         }
+                        else if (User.IsInRole("Human Resources Manager"))
+                            {
+                                <li class="scx-nav-item"
+                                    data-tooltip="Home">
+                                    <a class="scx-nav-link"
+                                           asp-controller="Home"
+                                           asp-action="Index">
+                                        <i class="bi bi-house-door-fill"></i>
+                                        <span>Home</span>
+                                    </a>
+                                </li>
 
+                                <li class="scx-sidebar-divider"></li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Volunteer Opportunities">
+                                    <a class="scx-nav-link"
+                                           asp-controller="VolunteerOpportunities"
+                                           asp-action="Volunteers">
+                                        <i class="bi bi-person-plus-fill"></i>
+                                        <span>Volunteer Opportunities</span>
+                                    </a>
+                                </li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Staff & Users">
+                                    <a class="scx-nav-link"
+                                           asp-controller="Users"
+                                           asp-action="Index">
+                                        <i class="bi bi-people-fill"></i>
+                                        <span>Staff & Users</span>
+                                    </a>
+                                </li>
+
+                                <li class="scx-sidebar-divider"></li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Volunteer Management">
+
+                                    <div class="scx-nav-parent"
+                                         data-submenu="scx-hr-volunteers-submenu">
+
+                                        <div class="scx-nav-link">
+                                            <i class="bi bi-person-heart"></i>
+                                            <span>Volunteer Management</span>
+                                        </div>
+
+                                        <div class="scx-nav-arrow">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </div>
+                                    </div>
+
+                                    <ul id="scx-hr-volunteers-submenu"
+                                        class="scx-submenu">
+
+                                        <li>
+                                            <a asp-controller="VolunteerOpportunities"
+                                                   asp-action="Volunteers">
+                                                Volunteer Opportunities
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a asp-controller="VolunteerOnboarding"
+                                                   asp-action="Index">
+                                                Volunteer Onboarding
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Reports & Analytics">
+
+                                    <div class="scx-nav-parent"
+                                         data-submenu="scx-hr-reports-submenu">
+
+                                        <div class="scx-nav-link">
+                                            <i class="bi bi-bar-chart-fill"></i>
+                                            <span>Reports & Analytics</span>
+                                        </div>
+
+                                        <div class="scx-nav-arrow">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </div>
+                                    </div>
+
+                                    <ul id="scx-hr-reports-submenu"
+                                        class="scx-submenu">
+
+                                        <li>
+                                            <a asp-controller="Reports"
+                                                   asp-action="Index">
+                                                Reports
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a asp-controller="Reports"
+                                                   asp-action="Feedback">
+                                                Feedback
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Security">
+
+                                    <div class="scx-nav-parent"
+                                         data-submenu="scx-hr-security-submenu">
+
+                                        <div class="scx-nav-link">
+                                            <i class="bi bi-shield-lock-fill"></i>
+                                            <span>Security</span>
+                                        </div>
+
+                                        <div class="scx-nav-arrow">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </div>
+                                    </div>
+
+                                    <ul id="scx-hr-security-submenu"
+                                        class="scx-submenu">
+
+                                        <li>
+                                            <a asp-controller="Users"
+                                                   asp-action="PasswordAndSecurity">
+                                                Account & Security
+                                            </a>
+                                        </li>
+
+                                        <li>
+                                            <a asp-controller="Home"
+                                                   asp-action="PrivacyPolicy">
+                                                Privacy Policy
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Support">
+                                    <a class="scx-nav-link"
+                                           asp-controller="Queries"
+                                           asp-action="SupportQueries">
+                                        <i class="bi bi-life-preserver"></i>
+                                        <span>Support</span>
+                                    </a>
+                                </li>
+
+                                <li class="scx-sidebar-divider"></li>
+
+                                <li class="scx-nav-item"
+                                    data-tooltip="Activity Logs">
+                                    <a class="scx-nav-link"
+                                           asp-controller="ActivityLogs"
+                                           asp-action="MyActivityLogs">
+                                        <i class="bi bi-clock-history"></i>
+                                        <span>Activity Logs</span>
+                                    </a>
+                                </li>
+                            }
 
                         @* =================================================
                            HEAD NURSE
@@ -1887,41 +2052,6 @@
             </div>
 
         </div>
-
-
-
-        
-
-        <!-- =====================================================
-             FOOTER
-             ===================================================== -->
-
-        <footer class="pages-footer py-4 scx-page-footer">
-
-            <div class="container-fluid">
-
-                <hr />
-
-                <div class="text-center">
-
-                    <p>
-
-                        &copy;
-                        @DateTime.Now.Year
-                        SwiftCare.
-
-                        <span>
-                            Compassionate care,
-                            organised management.
-                        </span>
-
-                    </p>
-
-                </div>
-
-            </div>
-
-        </footer>
 
     </div>
 

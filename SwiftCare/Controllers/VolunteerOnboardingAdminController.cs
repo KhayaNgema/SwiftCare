@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace SwiftCare.Controllers
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Human Resources Manager")]
     public class VolunteerOnboardingAdminController : Controller
     {
         private readonly ILogger<VolunteerOnboardingAdminController> _logger;

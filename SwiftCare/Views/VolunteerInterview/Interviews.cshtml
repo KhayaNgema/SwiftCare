@@ -1,0 +1,827 @@
+﻿@using System.Linq
+@using SwiftCare.Models
+@using SwiftCare.Helpers
+
+@model IEnumerable<SwiftCare.Models.VolunteerVoiceInterviewSession>
+
+@{
+    ViewData["Title"] = "Volunteer Interviews";
+    Layout = "~/Views/Shared/_PagesLayout.cshtml";
+
+    var interviews = Model?.ToList()
+        ?? new List<SwiftCare.Models.VolunteerVoiceInterviewSession>();
+
+    var totalInterviews = interviews.Count;
+
+    var completedCount = interviews.Count(x =>
+        x.IsCompleted);
+
+    var startedCount = interviews.Count(x =>
+        x.IsStarted && !x.IsCompleted);
+
+    var pendingCount = interviews.Count(x =>
+        !x.IsStarted && !x.IsCompleted);
+
+    var suspiciousCount = interviews.Count(x =>
+        x.SuspiciousActivityDetected);
+
+    var recordedCount = interviews.Count(x =>
+        !string.IsNullOrWhiteSpace(x.VideoFilePath));
+
+
+    string GetInitials(
+        VolunteerVoiceInterviewSession interview)
+    {
+        var applicant = interview?.VolunteerApplication?.Applicant;
+
+        if (applicant == null)
+            return "?";
+
+        var first =
+            applicant.FirstName?
+                .Trim()
+                .FirstOrDefault();
+
+        var last =
+            applicant.LastName?
+                .Trim()
+                .FirstOrDefault();
+
+        if (first.HasValue && last.HasValue)
+            return $"{first}{last}".ToUpper();
+
+        if (first.HasValue)
+            return first.Value.ToString().ToUpper();
+
+        if (last.HasValue)
+            return last.Value.ToString().ToUpper();
+
+        return "?";
+    }
+
+
+    string GetApplicantName(
+        VolunteerVoiceInterviewSession interview)
+    {
+        var applicant =
+            interview?.VolunteerApplication?.Applicant;
+
+        if (applicant == null)
+            return "Unknown Applicant";
+
+        var name =
+            $"{applicant.FirstName} {applicant.LastName}"
+                .Trim();
+
+        if (!string.IsNullOrWhiteSpace(name))
+            return name;
+
+        return applicant.Email
+            ?? "Unknown Applicant";
+    }
+
+
+    string GetStatusClass(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "status-neutral";
+
+        if (interview.SuspiciousActivityDetected)
+            return "status-rejected";
+
+        if (interview.IsCompleted)
+            return "status-completed";
+
+        if (interview.IsStarted)
+            return "status-ready";
+
+        return "status-pending";
+    }
+
+
+    string GetStatusIcon(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "bi-question-circle-fill";
+
+        if (interview.SuspiciousActivityDetected)
+            return "bi-exclamation-triangle-fill";
+
+        if (interview.IsCompleted)
+            return "bi-check2-circle";
+
+        if (interview.IsStarted)
+            return "bi-play-circle-fill";
+
+        return "bi-hourglass-split";
+    }
+
+
+    string GetStatusText(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "Unknown";
+
+        if (interview.SuspiciousActivityDetected &&
+            !interview.IsCompleted)
+        {
+            return "Suspicious";
+        }
+
+        if (interview.IsCompleted)
+            return "Completed";
+
+        if (interview.IsStarted)
+            return "In Progress";
+
+        return "Not Started";
+    }
+
+
+    string GetVideoText(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "Not Available";
+
+        if (!string.IsNullOrWhiteSpace(
+                interview.VideoFilePath))
+        {
+            return "Recorded";
+        }
+
+        if (interview.VideoStartedDate.HasValue &&
+            !interview.VideoCompletedDate.HasValue)
+        {
+            return "Recording";
+        }
+
+        return "Not Recorded";
+    }
+
+
+    string GetVideoIcon(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "bi-camera-video-off";
+
+        if (!string.IsNullOrWhiteSpace(
+                interview.VideoFilePath))
+        {
+            return "bi-camera-video-fill";
+        }
+
+        if (interview.VideoStartedDate.HasValue &&
+            !interview.VideoCompletedDate.HasValue)
+        {
+            return "bi-record-circle";
+        }
+
+        return "bi-camera-video-off";
+    }
+
+
+    string GetVideoClass(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "document-empty";
+
+        if (!string.IsNullOrWhiteSpace(
+                interview.VideoFilePath))
+        {
+            return "document-uploaded";
+        }
+
+        if (interview.VideoStartedDate.HasValue &&
+            !interview.VideoCompletedDate.HasValue)
+        {
+            return "document-verified";
+        }
+
+        return "document-empty";
+    }
+
+
+    string GetProctoringText(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview == null)
+            return "No Data";
+
+        if (interview.SuspiciousActivityDetected)
+        {
+            return interview.SuspiciousEventCount == 1
+                ? "1 Alert"
+                : $"{interview.SuspiciousEventCount} Alerts";
+        }
+
+        return "No Alerts";
+    }
+
+
+    string GetProctoringIcon(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview?.SuspiciousActivityDetected == true)
+            return "bi-shield-exclamation";
+
+        return "bi-shield-check";
+    }
+
+
+    string GetProctoringClass(
+        VolunteerVoiceInterviewSession interview)
+    {
+        if (interview?.SuspiciousActivityDetected == true)
+            return "document-rejected";
+
+        return "document-verified";
+    }
+}
+
+
+<div class="sc-admin-onboarding-page">
+
+    <div class="sc-admin-onboarding-container">
+
+
+        <!-- =====================================================
+             PAGE HEADER
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-header">
+
+            <div class="sc-admin-onboarding-heading">
+
+                <div class="sc-admin-onboarding-icon">
+                    <i class="bi bi-camera-video-fill"></i>
+                </div>
+
+                <div>
+
+                    <div class="sc-admin-onboarding-eyebrow">
+                        SwiftCare Volunteer Recruitment
+                    </div>
+
+                    <h1 class="sc-admin-onboarding-title">
+                        Volunteer Interviews
+                    </h1>
+
+                    <p class="sc-admin-onboarding-subtitle">
+                        View, monitor and review volunteer voice
+                        interviews, recordings and interview integrity.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="sc-admin-onboarding-actions">
+
+                <a asp-controller="VolunteerApplications"
+                   asp-action="Index"
+                   class="sc-admin-onboarding-back">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                    <span>
+                        Applications
+                    </span>
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             SUMMARY CARDS
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-summary">
+
+
+            <!-- TOTAL -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-camera-video-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Total Interviews
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @totalInterviews
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPLETED -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Completed
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @completedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- IN PROGRESS -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-play-circle-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            In Progress
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @startedCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Not Started
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @pendingCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SUSPICIOUS -->
+
+            <div class="sc-admin-onboarding-summary-card">
+
+                <div class="sc-onboarding-summary-content">
+
+                    <div class="sc-onboarding-summary-icon">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="sc-onboarding-summary-label">
+                            Integrity Alerts
+                        </p>
+
+                        <p class="sc-onboarding-summary-value">
+                            @suspiciousCount
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             INTERVIEWS TABLE
+             ===================================================== -->
+
+        <div class="sc-admin-onboarding-card">
+
+
+            <!-- TABLE HEADER -->
+
+            <div class="sc-admin-onboarding-card-header">
+
+                <div>
+
+                    <div class="sc-admin-onboarding-card-eyebrow">
+                        Volunteer Interview Management
+                    </div>
+
+                    <h2 class="sc-admin-onboarding-card-title">
+                        Interview Sessions
+                    </h2>
+
+                </div>
+
+
+                <div class="sc-admin-onboarding-count">
+
+                    <i class="bi bi-camera-video-fill"></i>
+
+                    <span>
+                        @totalInterviews Interviews
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            @if (interviews.Any())
+            {
+
+                <div class="sc-admin-onboarding-table-wrapper">
+
+                    <table class="sc-admin-onboarding-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Applicant
+                                </th>
+
+                                <th>
+                                    Reference
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Interview
+                                </th>
+
+                                <th>
+                                    Video
+                                </th>
+
+                                <th>
+                                    Integrity
+                                </th>
+
+                                <th>
+                                    Activity
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var interview in interviews
+                                .OrderByDescending(x => x.CreatedDate))
+                            {
+
+                                var application =
+                                    interview.VolunteerApplication;
+
+                                var applicant =
+                                    application?.Applicant;
+
+                                var applicantEmail =
+                                    applicant?.Email
+                                    ?? "No email available";
+
+
+                                <!-- =================================
+                                     INTERVIEW ROW
+                                     ================================= -->
+
+                                <tr>
+
+
+                                    <!-- =================================
+                                         APPLICANT
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-applicant">
+
+                                            <div class="sc-onboarding-avatar">
+
+                                                @GetInitials(interview)
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <p class="sc-onboarding-applicant-name">
+
+                                                    @GetApplicantName(
+                                                        interview)
+
+                                                </p>
+
+                                                <p class="sc-onboarding-applicant-email">
+
+                                                    @applicantEmail
+
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         APPLICATION REFERENCE
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-reference">
+
+                                            <span class="sc-onboarding-reference-icon">
+                                                #
+                                            </span>
+
+                                            <span>
+
+                                                @(application?.Reference
+                                                    ?? "No Reference")
+
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         STATUS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <span class="sc-onboarding-status @GetStatusClass(interview)">
+
+                                            <i class="bi @GetStatusIcon(interview)"></i>
+
+                                            @GetStatusText(interview)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         INTERVIEW DETAILS
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document document-uploaded">
+
+                                            <i class="bi bi-list-ol"></i>
+
+                                            <span>
+
+                                                Question
+                                                @interview.CurrentQuestionNumber
+
+                                            </span>
+
+                                        </div>
+
+                                        @if (interview.IsStarted)
+                                        {
+                                            <div class="sc-onboarding-date"
+                                                 style="margin-top:6px;">
+
+                                                <i class="bi bi-calendar3"></i>
+
+                                                <span>
+
+                                                    @(interview.StartedDate.HasValue
+                                                        ? interview.StartedDate.Value.ToString("dd MMM yyyy HH:mm")
+                                                        : "Started")
+
+                                                </span>
+
+                                            </div>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         VIDEO
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document @GetVideoClass(interview)">
+
+                                            <i class="bi @GetVideoIcon(interview)"></i>
+
+                                            @GetVideoText(interview)
+
+                                        </div>
+                                        @if (interview.VideoDurationSeconds > 0)
+                                        {
+                                            var minutes = interview.VideoDurationSeconds / 60;
+                                            var seconds = interview.VideoDurationSeconds % 60;
+
+                                            <div class="sc-onboarding-date"
+                                                 style="margin-top:6px;">
+
+                                                <i class="bi bi-clock"></i>
+
+                                                <span>
+                                                    @($"{minutes:D2}:{seconds:D2}")
+                                                </span>
+
+                                            </div>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         INTEGRITY
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-document @GetProctoringClass(interview)">
+
+                                            <i class="bi @GetProctoringIcon(interview)"></i>
+
+                                            @GetProctoringText(interview)
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         LAST ACTIVITY
+                                         ================================= -->
+
+                                    <td>
+
+                                        <div class="sc-onboarding-date">
+
+                                            <i class="bi bi-activity"></i>
+
+                                            <span>
+
+                                                @(interview.LastActivityDate.HasValue
+                                                    ? interview.LastActivityDate.Value.ToString("dd MMM yyyy HH:mm")
+                                                    : "No Activity")
+
+                                            </span>
+
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                            interview.LastActivityType))
+                                        {
+                                            <div class="sc-onboarding-reference"
+                                                 style="margin-top:6px;">
+
+                                                <span>
+                                                    @interview.LastActivityType
+                                                </span>
+
+                                            </div>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         ACTION
+                                         ================================= -->
+
+                                    <td>
+
+                                        <a asp-controller="VolunteerApplications"
+                                           asp-action="InterviewReview"
+                                           asp-route-applicationId="@interview.VolunteerApplicationId"
+                                           class="sc-onboarding-review-button">
+
+                                            <i class="bi bi-eye-fill"></i>
+
+                                            <span>
+                                                Review
+                                            </span>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+            else
+            {
+
+                <!-- =============================================
+                     EMPTY STATE
+                     ============================================= -->
+
+                <div class="sc-admin-onboarding-empty">
+
+                    <div class="sc-admin-onboarding-empty-icon">
+
+                        <i class="bi bi-camera-video-off"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No Interviews Available
+                    </h3>
+
+
+                    <p>
+                        There are currently no volunteer interview
+                        sessions available for review.
+                    </p>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>

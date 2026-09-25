@@ -1,8 +1,45 @@
 ﻿@page
 @model ConfirmEmailModel
+
 @{
-    ViewData["Title"] = "Confirm email";
+    ViewData["Title"] = "Confirm Email";
+
+    Layout = User.Identity?.IsAuthenticated == true
+        ? "~/Views/Shared/_PagesLayout.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>@ViewData["Title"]</h1>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="swiftcare-confirm-page">
+    <br />
+    <div class="swiftcare-confirm-card">
+
+        <!-- Icon -->
+        <div class="swiftcare-confirm-icon">
+            <i class="bi bi-envelope-check-fill"></i>
+        </div>
+
+        <!-- Heading -->
+        <h1 class="swiftcare-confirm-title">
+            Confirm Your Email
+        </h1>
+
+        <p class="swiftcare-confirm-subtitle">
+            Your email confirmation status is shown below.
+        </p>
+
+        <!-- Status -->
+        <div class="swiftcare-status-container">
+            <partial name="_StatusMessage" model="Model.StatusMessage" />
+        </div>
+
+        <!-- Footer -->
+        <div class="swiftcare-confirm-footer">
+            <i class="bi bi-shield-check"></i>
+            <span>
+                SwiftCare keeps your account secure.
+            </span>
+        </div>
+
+    </div>
+
+</div>

@@ -51,10 +51,14 @@ namespace SwiftCare.Services.VolunteerATS
           "type": "object",
           "properties": {
             "overallScore": {
-              "type": "number"
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             },
             "overallConfidence": {
-              "type": "number"
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             },
             "recommendation": {
               "type": "string"
@@ -83,10 +87,14 @@ namespace SwiftCare.Services.VolunteerATS
                     "type": "string"
                   },
                   "score": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
                   },
                   "confidence": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
                   },
                   "assessment": {
                     "type": "string"
@@ -121,10 +129,14 @@ namespace SwiftCare.Services.VolunteerATS
                     "type": "string"
                   },
                   "score": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
                   },
                   "confidence": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
                   },
                   "assessment": {
                     "type": "string"
@@ -210,10 +222,6 @@ namespace SwiftCare.Services.VolunteerATS
 
                 // ====================================================
                 // LOAD APPLICANT
-                //
-                // We deliberately use EF metadata instead of directly
-                // depending on a particular Applicant navigation
-                // property name.
                 // ====================================================
 
                 object? applicant = null;
@@ -501,7 +509,34 @@ namespace SwiftCare.Services.VolunteerATS
                     - Teamwork
                     - Reliability
 
-                    IMPORTANT:
+                    IMPORTANT SCORING RULE:
+
+                    EVERY SCORE IS A WHOLE-NUMBER PERCENTAGE FROM 0 TO 100.
+
+                    Examples:
+
+                    0 = 0%
+                    10 = 10%
+                    25 = 25%
+                    35 = 35%
+                    50 = 50%
+                    75 = 75%
+                    100 = 100%
+
+                    NEVER return scores using a 0-10 scale.
+
+                    Therefore:
+
+                    3.5 is NOT an acceptable final score.
+                    If the underlying assessment would be 35%, return 35.
+
+                    Do not divide percentages by 10.
+
+                    Do not convert 35 into 3.5.
+
+                    Skill scores must be 0-100.
+                    Competency scores must be 0-100.
+                    Confidence must be 0-100.
 
                     A keyword appearing in an answer does NOT automatically
                     demonstrate a competency.
@@ -510,8 +545,6 @@ namespace SwiftCare.Services.VolunteerATS
 
                     A candidate should receive stronger scores when the evidence
                     demonstrates the actual behaviour or skill.
-
-                    Score all scores from 0 to 100.
 
                     Confidence must represent confidence in the evidence,
                     not confidence that the candidate is a good person.
@@ -525,6 +558,15 @@ namespace SwiftCare.Services.VolunteerATS
 
                     Recommendations must be based only on the supplied
                     job-relevant evidence.
+
+                    IMPORTANT:
+
+                    The application will independently calculate the final
+                    overall score from the individual skill and competency
+                    scores.
+
+                    Therefore, provide sensible 0-100 scores for every
+                    individual skill and competency.
 
                     Return the requested result as JSON matching the supplied
                     JSON schema exactly.
@@ -709,11 +751,11 @@ namespace SwiftCare.Services.VolunteerATS
                                     4000),
 
                             InterviewScore =
-                                ClampScore(
+                                NormalizeScore(
                                     aiSkill.Score),
 
                             Confidence =
-                                ClampScore(
+                                NormalizeScore(
                                     aiSkill.Confidence),
 
                             Assessment =
@@ -848,11 +890,11 @@ namespace SwiftCare.Services.VolunteerATS
                                     500),
 
                             Score =
-                                ClampScore(
+                                NormalizeScore(
                                     aiCompetency.Score),
 
                             Confidence =
-                                ClampScore(
+                                NormalizeScore(
                                     aiCompetency.Confidence),
 
                             Assessment =
@@ -879,16 +921,130 @@ namespace SwiftCare.Services.VolunteerATS
                 }
 
                 // ====================================================
-                // FINAL SCORES
+                // FINAL SCORE CALCULATION
                 // ====================================================
 
-                var overallScore =
-                    ClampScore(
-                        aiResult.OverallScore);
+                /*
+                 * IMPORTANT:
+                 *
+                 * The AI's overallScore is NOT used.
+                 *
+                 * We calculate the final score directly from the
+                 * individual scores stored above.
+                 *
+                 * If skills exist:
+                 *
+                 *     Skill Average =
+                 *     Sum of skill scores / number of skills
+                 *
+                 * If competencies exist:
+                 *
+                 *     Competency Average =
+                 *     Sum of competency scores / number of competencies
+                 *
+                 * If both exist:
+                 *
+                 *     Overall =
+                 *     (Skill Average + Competency Average) / 2
+                 *
+                 * If only one exists, that category becomes the
+                 * overall score.
+                 *
+                 * Everything is 0-100.
+                 */
 
-                var overallConfidence =
-                    ClampScore(
-                        aiResult.OverallConfidence);
+                var skillScores =
+                    evaluation.SkillEvaluations
+                        .Select(x => NormalizeScore(x.InterviewScore))
+                        .ToList();
+
+                var competencyScores =
+                    evaluation.CompetencyEvaluations
+                        .Select(x => NormalizeScore(x.Score))
+                        .ToList();
+
+                decimal skillAverage = 0m;
+                decimal competencyAverage = 0m;
+
+                if (skillScores.Any())
+                {
+                    skillAverage =
+                        Math.Round(
+                            skillScores.Average(),
+                            0,
+                            MidpointRounding.AwayFromZero);
+                }
+
+                if (competencyScores.Any())
+                {
+                    competencyAverage =
+                        Math.Round(
+                            competencyScores.Average(),
+                            0,
+                            MidpointRounding.AwayFromZero);
+                }
+
+                decimal overallScore;
+
+                if (skillScores.Any() && competencyScores.Any())
+                {
+                    overallScore =
+                        Math.Round(
+                            (skillAverage + competencyAverage) / 2m,
+                            0,
+                            MidpointRounding.AwayFromZero);
+                }
+                else if (skillScores.Any())
+                {
+                    overallScore =
+                        skillAverage;
+                }
+                else if (competencyScores.Any())
+                {
+                    overallScore =
+                        competencyAverage;
+                }
+                else
+                {
+                    overallScore = 0m;
+                }
+
+                overallScore =
+                    NormalizeScore(
+                        overallScore);
+
+                // ====================================================
+                // FINAL CONFIDENCE
+                // ====================================================
+
+                var confidenceValues =
+                    evaluation.SkillEvaluations
+                        .Select(x => NormalizeScore(x.Confidence))
+                        .Concat(
+                            evaluation.CompetencyEvaluations
+                                .Select(x => NormalizeScore(x.Confidence)))
+                        .ToList();
+
+                decimal overallConfidence;
+
+                if (confidenceValues.Any())
+                {
+                    overallConfidence =
+                        Math.Round(
+                            confidenceValues.Average(),
+                            0,
+                            MidpointRounding.AwayFromZero);
+                }
+                else
+                {
+                    overallConfidence =
+                        NormalizeScore(
+                            aiResult.OverallConfidence);
+                }
+
+                overallConfidence =
+                    NormalizeScore(
+                        overallConfidence);
 
                 // ====================================================
                 // FINAL RECOMMENDATION
@@ -908,6 +1064,8 @@ namespace SwiftCare.Services.VolunteerATS
                         ? BuildFallbackExplanation(
                             overallScore,
                             overallConfidence,
+                            skillAverage,
+                            competencyAverage,
                             requiredSkills.Count,
                             skillsFoundInProfile,
                             skillsFoundInInterview)
@@ -994,8 +1152,15 @@ namespace SwiftCare.Services.VolunteerATS
 
                 _logger.LogInformation(
                     "[SWIFTCARE INTERVIEW AI] Evaluation completed. " +
-                    "Application={ApplicationId}, Score={Score}, Confidence={Confidence}, Recommendation={Recommendation}",
+                    "Application={ApplicationId}, " +
+                    "SkillAverage={SkillAverage}, " +
+                    "CompetencyAverage={CompetencyAverage}, " +
+                    "OverallScore={Score}, " +
+                    "Confidence={Confidence}, " +
+                    "Recommendation={Recommendation}",
                     volunteerApplicationId,
+                    skillAverage,
+                    competencyAverage,
                     overallScore,
                     overallConfidence,
                     recommendation);
@@ -1411,6 +1576,20 @@ namespace SwiftCare.Services.VolunteerATS
             builder.AppendLine();
 
             builder.AppendLine(
+                "IMPORTANT: Every score must be a whole-number percentage from 0 to 100.");
+
+            builder.AppendLine(
+                "For example, 35 means 35%, not 3.5%.");
+
+            builder.AppendLine(
+                "Never use a 0-10 scoring scale.");
+
+            builder.AppendLine(
+                "Never divide a score by 10.");
+
+            builder.AppendLine();
+
+            builder.AppendLine(
                 "Do not treat a keyword alone as proof of competence.");
 
             builder.AppendLine();
@@ -1439,9 +1618,8 @@ namespace SwiftCare.Services.VolunteerATS
             builder.AppendLine();
 
             builder.AppendLine(
-                "The overall score must represent the strength of " +
-                "job-relevant evidence available from the candidate's " +
-                "profile/application and interview.");
+                "The application will calculate the final overall score " +
+                "from the individual skill and competency scores.");
 
             builder.AppendLine();
 
@@ -1473,12 +1651,39 @@ namespace SwiftCare.Services.VolunteerATS
             VolunteerInterviewAiEvaluationResponse aiResult,
             List<VolunteerRequiredSkill> requiredSkills)
         {
+            /*
+             * IMPORTANT:
+             *
+             * We intentionally normalize scores here.
+             *
+             * Correct:
+             *
+             * 35   -> 35
+             * 72   -> 72
+             * 100  -> 100
+             *
+             * If the AI accidentally uses a 0-10 scale:
+             *
+             * 3.5  -> 35
+             * 7.2  -> 72
+             * 10   -> 100
+             *
+             * A value of 0-1 is treated as a fraction:
+             *
+             * 0.35 -> 35
+             * 0.72 -> 72
+             *
+             * This prevents the system from storing meaningless
+             * values such as 3.5 when the intended percentage
+             * is 35%.
+             */
+
             aiResult.OverallScore =
-                ClampScore(
+                NormalizeScore(
                     aiResult.OverallScore);
 
             aiResult.OverallConfidence =
-                ClampScore(
+                NormalizeScore(
                     aiResult.OverallConfidence);
 
             aiResult.Skills ??=
@@ -1490,11 +1695,11 @@ namespace SwiftCare.Services.VolunteerATS
             foreach (var skill in aiResult.Skills)
             {
                 skill.Score =
-                    ClampScore(
+                    NormalizeScore(
                         skill.Score);
 
                 skill.Confidence =
-                    ClampScore(
+                    NormalizeScore(
                         skill.Confidence);
 
                 skill.Skill =
@@ -1521,11 +1726,11 @@ namespace SwiftCare.Services.VolunteerATS
             foreach (var competency in aiResult.Competencies)
             {
                 competency.Score =
-                    ClampScore(
+                    NormalizeScore(
                         competency.Score);
 
                 competency.Confidence =
-                    ClampScore(
+                    NormalizeScore(
                         competency.Confidence);
 
                 competency.Name =
@@ -1570,6 +1775,54 @@ namespace SwiftCare.Services.VolunteerATS
         }
 
         // ============================================================
+        // SCORE NORMALIZATION
+        // ============================================================
+
+        private decimal NormalizeScore(
+            decimal value)
+        {
+            /*
+             * ALL APPLICATION SCORES ARE 0-100.
+             *
+             * 0.35 -> 35
+             * 0.50 -> 50
+             * 3.5  -> 35
+             * 5    -> 50
+             * 7.5  -> 75
+             * 10   -> 100
+             * 35   -> 35
+             * 72   -> 72
+             * 100  -> 100
+             *
+             * Values above 100 are capped at 100.
+             */
+
+            if (value < 0m)
+            {
+                value = 0m;
+            }
+
+            // Fractional score such as 0.35 = 35%
+            if (value > 0m && value <= 1m)
+            {
+                value *= 100m;
+            }
+            // AI accidentally returned a 0-10 score.
+            else if (value > 1m && value <= 10m)
+            {
+                value *= 10m;
+            }
+
+            return Math.Clamp(
+                Math.Round(
+                    value,
+                    0,
+                    MidpointRounding.AwayFromZero),
+                0m,
+                100m);
+        }
+
+        // ============================================================
         // RECOMMENDATION NORMALIZATION
         // ============================================================
 
@@ -1587,9 +1840,6 @@ namespace SwiftCare.Services.VolunteerATS
                     .Trim()
                     .ToLowerInvariant();
 
-            // IMPORTANT:
-            // Check negative recommendation BEFORE generic
-            // "recommend" matching.
             if (value.Contains("not") &&
                 value.Contains("recommend"))
             {
@@ -1661,6 +1911,8 @@ namespace SwiftCare.Services.VolunteerATS
         private string BuildFallbackExplanation(
             decimal overallScore,
             decimal confidence,
+            decimal skillAverage,
+            decimal competencyAverage,
             int requiredSkillCount,
             int skillsFoundInProfile,
             int skillsFoundInInterview)
@@ -1669,50 +1921,41 @@ namespace SwiftCare.Services.VolunteerATS
                 new StringBuilder();
 
             builder.Append(
-                $"The AI evaluation produced an overall score of " +
-                $"{overallScore:0.##}/100 with confidence of " +
-                $"{confidence:0.##}%. ");
+                $"The final interview score is {overallScore:0}/100 " +
+                $"with evaluation confidence of {confidence:0}%. ");
 
             if (requiredSkillCount > 0)
             {
                 builder.Append(
-                    $"The role contains {requiredSkillCount} required " +
-                    $"skill(s). ");
+                    $"The role contains {requiredSkillCount} required skill(s). ");
+
+                builder.Append(
+                    $"The calculated required-skill average is " +
+                    $"{skillAverage:0}/100. ");
 
                 builder.Append(
                     $"{skillsFoundInProfile} required skill(s) had " +
-                    $"supporting profile/application evidence and " +
+                    $"supporting profile/application evidence and ");
+
+                builder.Append(
                     $"{skillsFoundInInterview} had supporting interview " +
                     $"evidence. ");
             }
-            else
+
+            if (skillAverage > 0m)
             {
                 builder.Append(
-                    "No specific required skills were configured for " +
-                    "the opportunity. ");
+                    $"The behavioural competency average is " +
+                    $"{competencyAverage:0}/100. ");
             }
 
             builder.Append(
-                "The final recommendation should be considered together " +
-                "with the evidence and administrator review.");
+                "The final score is calculated directly from the " +
+                "individual evaluation scores and should be considered " +
+                "together with the supporting evidence and administrator review.");
 
             return builder
                 .ToString();
-        }
-
-        // ============================================================
-        // SCORE CLAMP
-        // ============================================================
-
-        private decimal ClampScore(
-            decimal value)
-        {
-            return Math.Clamp(
-                Math.Round(
-                    value,
-                    2),
-                0m,
-                100m);
         }
 
         // ============================================================

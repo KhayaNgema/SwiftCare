@@ -1,25 +1,142 @@
 ﻿@model ErrorViewModel
+
 @{
     ViewData["Title"] = "Error";
+
+var hasMessage =
+    !string.IsNullOrWhiteSpace(Model?.Message);
+
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        Layout = "~/Views/Shared/_PagesLayout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+            <div class="error-page-card">
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+                <!-- =====================================================
+                 ERROR HEADER
+                 ===================================================== -->
+
+                <div class="error-page-header text-center">
+
+                    <div class="error-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+
+                    <h1>
+                        Something went wrong
+                    </h1>
+
+                    <p>
+                        An unexpected error occurred while processing your request.
+                    </p>
+
+                </div>
+
+
+                <!-- =====================================================
+                 ERROR BODY
+                 ===================================================== -->
+
+                <div class="error-page-body">
+
+                    <!-- REQUEST ID -->
+                    @if (Model?.ShowRequestId == true)
+                    {
+                        <div class="request-id-container">
+
+                            <div class="request-id-icon">
+                                <i class="bi bi-fingerprint"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="request-id-label">
+                                    Request ID
+                                </span>
+
+                                <code class="request-id-value">
+                                    @Model.RequestId
+                                </code>
+
+                            </div>
+
+                        </div>
+                    }
+
+
+                    <!-- ACTUAL ERROR MESSAGE -->
+
+                    <div class="error-message">
+
+                        <i class="bi bi-info-circle-fill"></i>
+
+                        <div>
+
+                            @if (hasMessage)
+                            {
+                                <strong>
+                                    @Model.Message
+                                </strong>
+                            }
+                            else
+                            {
+                                <strong>
+                                    We're sorry about that.
+                                </strong>
+
+                                <p>
+                                    The request could not be completed at this time.
+                                    Please try again or return to the previous page.
+                                </p>
+                            }
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTION BUTTONS -->
+
+                    <div class="error-actions">
+
+                        <a asp-controller="Home"
+                               asp-action="Index"
+                               class="btn btn-swiftcare">
+
+                            <i class="bi bi-house-door-fill me-2"></i>
+
+                            Return Home
+
+                        </a>
+
+
+                        <button type="button"
+                                class="btn btn-outline-swiftcare"
+                                onclick="window.history.back()">
+
+                            <i class="bi bi-arrow-left me-2"></i>
+
+                            Go Back
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>

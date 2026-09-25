@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models;
@@ -286,14 +287,16 @@ namespace SwiftCare.Controllers
                 });
             }
         }
+
         [HttpGet]
         public async Task<IActionResult> InterviewReview(int applicationId)
         {
             // ============================================================
-            // 1. LOAD APPLICATION + APPLICANT + OPPORTUNITY + REQUIRED SKILLS
+            // 1. LOAD APPLICATION + APPLICANT + OPPORTUNITY
             // ============================================================
 
             var application = await _context.VolunteerApplications
+                .AsNoTracking()
                 .Include(x => x.Applicant)
                 .Include(x => x.VolunteerOpportunity)
                     .ThenInclude(x => x.RequiredSkills)
@@ -340,8 +343,8 @@ namespace SwiftCare.Controllers
                     application.ApplicantId ?? string.Empty,
 
                 ApplicantName =
-                    $"{application.Applicant?.FirstName} {application.Applicant?.LastName}"
-                        .Trim(),
+                    $"{application.Applicant?.FirstName} " +
+                    $"{application.Applicant?.LastName}",
 
                 ApplicantEmail =
                     application.Applicant?.Email ?? string.Empty,
@@ -359,32 +362,23 @@ namespace SwiftCare.Controllers
                     application.VolunteerOpportunity?.Title ?? string.Empty
             };
 
+            model.ApplicantName = model.ApplicantName.Trim();
+
 
             // ============================================================
             // 3. LOAD ATS APPLICATION EVALUATION
-            //
-            // THIS IS THE DATA THAT POWERS:
-            //
-            // ATS SCORE
-            // ELIGIBILITY
-            // EVALUATION DATE
-            // EVALUATION VERSION
             // ============================================================
 
-            var atsEvaluation =
-                await _context.VolunteerApplicationEvaluations
-                    .Where(x =>
-                        x.VolunteerApplicationId == applicationId)
-                    .OrderByDescending(x => x.EvaluatedDate)
-                    .FirstOrDefaultAsync();
-
+            var atsEvaluation = await _context
+                .VolunteerApplicationEvaluations
+                .AsNoTracking()
+                .Where(x =>
+                    x.VolunteerApplicationId == applicationId)
+                .OrderByDescending(x => x.EvaluatedDate)
+                .FirstOrDefaultAsync();
 
             if (atsEvaluation != null)
             {
-                // --------------------------------------------------------
-                // ATS EVALUATION EXISTS
-                // --------------------------------------------------------
-
                 model.HasEvaluation = true;
 
                 model.OverallScore =
@@ -397,15 +391,10 @@ namespace SwiftCare.Controllers
                     atsEvaluation.EvaluatedDate;
 
                 model.EvaluationVersion =
-                    atsEvaluation.EvaluationVersion
-                    ?? string.Empty;
+                    atsEvaluation.EvaluationVersion ?? string.Empty;
             }
             else
             {
-                // --------------------------------------------------------
-                // NO ATS EVALUATION YET
-                // --------------------------------------------------------
-
                 model.HasEvaluation = false;
 
                 model.OverallScore = 0m;
@@ -419,27 +408,21 @@ namespace SwiftCare.Controllers
 
 
             // ============================================================
-            // 4. LOAD INTERVIEW EVALUATION
+            // 4. LOAD AI INTERVIEW EVALUATION
             // ============================================================
 
-            var interviewEvaluation =
-                await _context.VolunteerInterviewEvaluations
-
-                    .Include(x => x.SkillEvaluations)
-
-                    .Include(x => x.CompetencyEvaluations)
-
-                    .Where(x =>
-                        x.VolunteerApplicationId ==
-                        applicationId)
-
-                    .FirstOrDefaultAsync();
-
+            var interviewEvaluation = await _context
+                .VolunteerInterviewEvaluations
+                .AsNoTracking()
+                .Include(x => x.SkillEvaluations)
+                .Include(x => x.CompetencyEvaluations)
+                .FirstOrDefaultAsync(x =>
+                    x.VolunteerApplicationId == applicationId);
 
             if (interviewEvaluation != null)
             {
                 // ========================================================
-                // INTERVIEW SUMMARY
+                // INTERVIEW EVALUATION SUMMARY
                 // ========================================================
 
                 model.OverallInterviewScore =
@@ -470,9 +453,7 @@ namespace SwiftCare.Controllers
 
                 model.RequiredSkills =
                     interviewEvaluation.SkillEvaluations
-
                         .OrderBy(x => x.Skill)
-
                         .Select(x =>
                             new VolunteerInterviewRequiredSkillViewModel
                             {
@@ -509,20 +490,16 @@ namespace SwiftCare.Controllers
                                 Reasoning =
                                     x.Reasoning ?? string.Empty
                             })
-
                         .ToList();
 
 
                 // ========================================================
-                // COMPETENCIES
+                // PERSONAL COMPETENCIES
                 // ========================================================
 
                 model.InterviewCompetencies =
-                    interviewEvaluation
-                        .CompetencyEvaluations
-
+                    interviewEvaluation.CompetencyEvaluations
                         .OrderBy(x => x.Name)
-
                         .Select(x =>
                             new VolunteerInterviewCompetencyViewModel
                             {
@@ -550,7 +527,6 @@ namespace SwiftCare.Controllers
                                 Demonstrated =
                                     x.Demonstrated
                             })
-
                         .ToList();
 
 
@@ -562,36 +538,30 @@ namespace SwiftCare.Controllers
                     model.RequiredSkills.Count;
 
                 model.RequiredSkillsFoundInCv =
-                    model.RequiredSkills.Count(
-                        x => x.FoundInCv);
+                    model.RequiredSkills.Count(x => x.FoundInCv);
 
                 model.RequiredSkillsFoundInInterview =
-                    model.RequiredSkills.Count(
-                        x => x.FoundInInterview);
+                    model.RequiredSkills.Count(x => x.FoundInInterview);
 
                 model.RequiredSkillsOverallScore =
                     model.RequiredSkills.Any()
-                        ? model.RequiredSkills
-                            .Average(x => x.InterviewScore)
+                        ? model.RequiredSkills.Average(
+                            x => x.InterviewScore)
                         : 0m;
             }
             else
             {
                 // ========================================================
-                // NO INTERVIEW EVALUATION YET
+                // NO INTERVIEW EVALUATION
                 // ========================================================
 
-                model.InterviewRecommendation =
-                    "Not Evaluated";
+                model.InterviewRecommendation = "Not Evaluated";
 
-                model.InterviewEvaluationStatus =
-                    "Not Evaluated";
+                model.InterviewEvaluationStatus = "Not Evaluated";
 
-                model.OverallInterviewScore =
-                    0m;
+                model.OverallInterviewScore = 0m;
 
-                model.OverallInterviewConfidence =
-                    0m;
+                model.OverallInterviewConfidence = 0m;
 
 
                 // ========================================================
@@ -601,7 +571,6 @@ namespace SwiftCare.Controllers
                 model.RequiredSkills =
                     application.VolunteerOpportunity?
                         .RequiredSkills?
-
                         .Select(requiredSkill =>
                             new VolunteerInterviewRequiredSkillViewModel
                             {
@@ -609,47 +578,35 @@ namespace SwiftCare.Controllers
                                     requiredSkill.VolunteerRequiredSkillId,
 
                                 Skill =
-                                    requiredSkill.Skill
-                                    ?? string.Empty,
+                                    requiredSkill.Skill ?? string.Empty,
 
-                                FoundInCv =
-                                    false,
+                                FoundInCv = false,
 
-                                FoundInInterview =
-                                    false,
+                                FoundInInterview = false,
 
-                                InterviewScore =
-                                    0m,
+                                InterviewScore = 0m,
 
-                                Confidence =
-                                    0m,
+                                Confidence = 0m,
 
-                                Assessment =
-                                    "Not Evaluated",
+                                Assessment = "Not Evaluated",
 
-                                CvEvidence =
-                                    string.Empty,
+                                CvEvidence = string.Empty,
 
-                                InterviewEvidence =
-                                    string.Empty,
+                                InterviewEvidence = string.Empty,
 
-                                Evidence =
-                                    string.Empty,
+                                Evidence = string.Empty,
 
-                                Reasoning =
-                                    string.Empty
+                                Reasoning = string.Empty
                             })
-
                         .ToList()
                     ?? new List<VolunteerInterviewRequiredSkillViewModel>();
-
 
                 model.RequiredSkillCount =
                     model.RequiredSkills.Count;
 
 
                 // ========================================================
-                // INTERVIEW COMPETENCY PLACEHOLDERS
+                // PERSONAL COMPETENCY PLACEHOLDERS
                 // ========================================================
 
                 model.InterviewCompetencies =
@@ -662,8 +619,7 @@ namespace SwiftCare.Controllers
                     Description =
                         "Ability to communicate clearly, appropriately and effectively.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 },
 
                 new()
@@ -673,8 +629,7 @@ namespace SwiftCare.Controllers
                     Description =
                         "Ability to understand and respond appropriately to another person's feelings and needs.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 },
 
                 new()
@@ -684,8 +639,7 @@ namespace SwiftCare.Controllers
                     Description =
                         "Ability to listen carefully, understand what is being said and respond appropriately.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 },
 
                 new()
@@ -695,8 +649,7 @@ namespace SwiftCare.Controllers
                     Description =
                         "Ability to identify problems, think through situations and provide practical responses.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 },
 
                 new()
@@ -706,8 +659,7 @@ namespace SwiftCare.Controllers
                     Description =
                         "Ability to cooperate with others, contribute positively and work toward shared goals.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 },
 
                 new()
@@ -717,22 +669,39 @@ namespace SwiftCare.Controllers
                     Description =
                         "Evidence of responsibility, dependability, consistency and commitment.",
 
-                    Assessment =
-                        "Not Evaluated"
+                    Assessment = "Not Evaluated"
                 }
                     };
             }
 
 
             // ============================================================
-            // 5. LOAD VOICE INTERVIEW SESSION
+            // 5. LOAD ALL INTERVIEW SESSIONS
+            //
+            // The latest session supplies the interview status and
+            // proctoring events.
+            //
+            // A recording may belong to an earlier session.
             // ============================================================
 
-            var interviewSession =
-                await _context.VolunteerVoiceInterviewSessions
-                    .FirstOrDefaultAsync(x =>
-                        x.VolunteerApplicationId == applicationId);
+            var interviewSessions = await _context
+                .VolunteerVoiceInterviewSessions
+                .AsNoTracking()
+                .Include(x => x.ProctoringEvents)
+                .Where(x =>
+                    x.VolunteerApplicationId == applicationId)
+                .OrderByDescending(x => x.CreatedDate)
+                .ThenByDescending(x =>
+                    x.VolunteerVoiceInterviewSessionId)
+                .ToListAsync();
 
+            var interviewSession =
+                interviewSessions.FirstOrDefault();
+
+
+            // ============================================================
+            // 6. INTERVIEW SESSION + PROCTORING
+            // ============================================================
 
             if (interviewSession != null)
             {
@@ -751,8 +720,99 @@ namespace SwiftCare.Controllers
                     interviewSession.CompletedDate;
 
                 model.InterviewStatus =
-                    interviewSession.Status
-                    ?? "Not Started";
+                    interviewSession.Status ?? "Not Started";
+
+
+                // ========================================================
+                // SUSPICIOUS ACTIVITY
+                // ========================================================
+
+                model.SuspiciousActivityDetected =
+                    interviewSession.SuspiciousActivityDetected;
+
+                model.SuspiciousActivityDate =
+                    interviewSession.SuspiciousActivityDate;
+
+                model.LastProctoringEventType =
+                    interviewSession.LastProctoringEventType
+                    ?? string.Empty;
+
+                model.SuspiciousEventCount =
+                    interviewSession.SuspiciousEventCount;
+
+                model.TabSwitchCount =
+                    interviewSession.TabSwitchCount;
+
+                model.WindowBlurCount =
+                    interviewSession.WindowBlurCount;
+
+                model.FullScreenExitCount =
+                    interviewSession.FullScreenExitCount;
+
+                model.PageLeaveCount =
+                    interviewSession.PageLeaveCount;
+
+                model.CameraStoppedCount =
+                    interviewSession.CameraStoppedCount;
+
+                model.TotalUnfocusedSeconds =
+                    interviewSession.TotalUnfocusedSeconds;
+
+                model.IncompleteReason =
+                    interviewSession.IncompleteReason
+                    ?? string.Empty;
+
+
+                // ========================================================
+                // LAST ACTIVITY
+                // ========================================================
+
+                model.LastActivityDate =
+                    interviewSession.LastActivityDate;
+
+                model.LastActivityType =
+                    interviewSession.LastActivityType
+                    ?? string.Empty;
+
+
+                // ========================================================
+                // PROCTORING EVENT LOG
+                // ========================================================
+
+                model.ProctoringEvents =
+                    interviewSession.ProctoringEvents
+                        .OrderByDescending(x => x.EventDate)
+                        .Select(x =>
+                            new VolunteerInterviewProctoringEventViewModel
+                            {
+                                Id =
+                                    x.VolunteerInterviewProctoringEventId,
+
+                                EventType =
+                                    x.EventType ?? string.Empty,
+
+                                Description =
+                                    x.Description ?? string.Empty,
+
+                                QuestionNumber =
+                                    x.QuestionNumber,
+
+                                EventDate =
+                                    x.EventDate,
+
+                                PageVisibilityState =
+                                    x.PageVisibilityState ?? string.Empty,
+
+                                PageHidden =
+                                    x.PageHidden,
+
+                                UserAgent =
+                                    x.UserAgent ?? string.Empty,
+
+                                UnfocusedSeconds =
+                                    x.UnfocusedSeconds
+                            })
+                        .ToList();
             }
             else
             {
@@ -762,32 +822,295 @@ namespace SwiftCare.Controllers
 
                 model.InterviewCompleted = false;
 
-                model.InterviewStatus =
-                    "Not Started";
+                model.InterviewStatus = "Not Started";
+
+                model.SuspiciousActivityDetected = false;
+
+                model.SuspiciousEventCount = 0;
+
+                model.TabSwitchCount = 0;
+
+                model.WindowBlurCount = 0;
+
+                model.FullScreenExitCount = 0;
+
+                model.PageLeaveCount = 0;
+
+                model.CameraStoppedCount = 0;
+
+                model.TotalUnfocusedSeconds = 0;
+
+                model.ProctoringEvents =
+                    new List<VolunteerInterviewProctoringEventViewModel>();
             }
 
 
+
+// ============================================================
+// 7. FIND THE INTERVIEW VIDEO
+//
+// Video information is stored directly on
+// VolunteerVoiceInterviewSession:
+//
+// - VideoFilePath
+// - VideoMimeType
+// - VideoStartedDate
+// - VideoCompletedDate
+// - VideoDurationSeconds
+//
+// The newest session with an existing recording is used.
+// ============================================================
+
+model.HasInterviewVideo = false;
+            model.VideoUrl = string.Empty;
+            model.VideoMimeType = string.Empty;
+            model.VideoDurationSeconds = 0;
+            model.VideoStartedDate = null;
+            model.VideoCompletedDate = null;
+            model.VolunteerVoiceInterviewSessionId = null;
+
+
             // ============================================================
-            // 6. LOAD INTERVIEW ANSWERS / TRANSCRIPT
+            // UPLOADS DIRECTORY
             // ============================================================
 
-            var answers =
-                await _context.VolunteerApplicationAnswers
+            var uploadsDirectory = Path.GetFullPath(
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    "UploadedFiles"));
 
-                    .Include(x => x.VolunteerQuestion)
+            Console.WriteLine();
+            Console.WriteLine("============================================================");
+            Console.WriteLine("🎥 INTERVIEW REVIEW - VIDEO SEARCH");
+            Console.WriteLine("============================================================");
+            Console.WriteLine($"Application ID     : {applicationId}");
+            Console.WriteLine($"Uploads Directory  : {uploadsDirectory}");
+            Console.WriteLine($"Sessions Found     : {interviewSessions.Count}");
+            Console.WriteLine("============================================================");
 
-                    .Where(x =>
-                        x.VolunteerApplicationId ==
-                        applicationId)
 
-                    .OrderBy(x =>
-                        x.VolunteerQuestion!.DisplayOrder)
+            // ============================================================
+            // CHECK ALL SESSIONS
+            // NEWEST FIRST
+            // ============================================================
 
-                    .ToListAsync();
+            foreach (var session in interviewSessions)
+            {
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------");
+                Console.WriteLine(
+                    $"Checking Session: {session.VolunteerVoiceInterviewSessionId}");
+
+                Console.WriteLine(
+                    $"VideoFilePath: [{session.VideoFilePath}]");
+
+                Console.WriteLine(
+                    $"VideoMimeType: [{session.VideoMimeType}]");
+
+                Console.WriteLine(
+                    $"VideoDurationSeconds: {session.VideoDurationSeconds}");
+
+                Console.WriteLine(
+                    $"VideoStartedDate: {session.VideoStartedDate}");
+
+
+                // ========================================================
+                // NO VIDEO PATH
+                // ========================================================
+
+                if (string.IsNullOrWhiteSpace(session.VideoFilePath))
+                {
+                    Console.WriteLine("❌ VideoFilePath is empty.");
+                    continue;
+                }
+
+
+                // ========================================================
+                // NORMALIZE DATABASE PATH
+                // ========================================================
+
+                var normalizedPath = session.VideoFilePath
+                    .Replace('\\', '/')
+                    .Trim();
+
+                Console.WriteLine(
+                    $"Normalized Path: [{normalizedPath}]");
+
+
+                // ========================================================
+                // GET ONLY FILE NAME
+                //
+                // Your database may contain:
+                //
+                // UploadedFiles\abc.webm
+                //
+                // or:
+                //
+                // abc.webm
+                //
+                // We only use the file name because UploadedFiles is
+                // the physical storage directory.
+                // ========================================================
+
+                var fileName = Path.GetFileName(normalizedPath);
+
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    Console.WriteLine("❌ Could not extract file name.");
+                    continue;
+                }
+
+                Console.WriteLine(
+                    $"Extracted File Name: [{fileName}]");
+
+
+                // ========================================================
+                // BUILD PHYSICAL PATH
+                // ========================================================
+
+                var fullFilePath = Path.GetFullPath(
+                    Path.Combine(
+                        uploadsDirectory,
+                        fileName));
+
+                Console.WriteLine(
+                    $"Physical File Path: [{fullFilePath}]");
+
+
+                // ========================================================
+                // CHECK FILE
+                // ========================================================
+
+                if (!System.IO.File.Exists(fullFilePath))
+                {
+                    Console.WriteLine("❌ FILE DOES NOT EXIST.");
+
+                    continue;
+                }
+
+                Console.WriteLine("✅ FILE EXISTS.");
+
+
+                // ========================================================
+                // DETERMINE MIME TYPE
+                //
+                // Prefer the MIME type stored in the database.
+                // If it isn't available, fall back to the extension.
+                // ========================================================
+
+                var extension = Path.GetExtension(fullFilePath)
+                    .ToLowerInvariant();
+
+                var mimeType = session.VideoMimeType;
+
+                if (string.IsNullOrWhiteSpace(mimeType))
+                {
+                    mimeType = extension switch
+                    {
+                        ".webm" => "video/webm",
+                        ".mp4" => "video/mp4",
+                        ".ogg" => "video/ogg",
+                        ".ogv" => "video/ogg",
+                        _ => string.Empty
+                    };
+                }
+
+
+                if (string.IsNullOrWhiteSpace(mimeType))
+                {
+                    Console.WriteLine(
+                        $"❌ Unsupported video format: [{extension}]");
+
+                    continue;
+                }
+
+
+                // ========================================================
+                // RECORDING FOUND
+                // ========================================================
+
+                model.HasInterviewVideo = true;
+
+                model.VolunteerVoiceInterviewSessionId =
+                    session.VolunteerVoiceInterviewSessionId;
+
+                model.VideoMimeType =
+                    mimeType;
+
+                model.VideoDurationSeconds =
+                    session.VideoDurationSeconds;
+
+                model.VideoStartedDate =
+                    session.VideoStartedDate;
+
+                model.VideoCompletedDate =
+                    session.VideoCompletedDate;
+
+
+                // ========================================================
+                // IMPORTANT
+                //
+                // The browser does NOT receive the physical file path.
+                //
+                // It receives the URL of our InterviewRecording action.
+                // ========================================================
+
+                model.VideoUrl = Url.Action(
+                    nameof(InterviewRecording),
+                    new
+                    {
+                        sessionId =
+                            session.VolunteerVoiceInterviewSessionId
+                    }) ?? string.Empty;
+
+
+                Console.WriteLine();
+                Console.WriteLine("🎉 INTERVIEW VIDEO FOUND");
+                Console.WriteLine(
+                    $"Session ID       : {session.VolunteerVoiceInterviewSessionId}");
+                Console.WriteLine(
+                    $"Physical File    : [{fullFilePath}]");
+                Console.WriteLine(
+                    $"Mime Type        : [{model.VideoMimeType}]");
+                Console.WriteLine(
+                    $"Video URL        : [{model.VideoUrl}]");
+                Console.WriteLine(
+                    $"Duration         : {model.VideoDurationSeconds}s");
+                Console.WriteLine("============================================================");
+
+                break;
+            }
+
+
+            if (!model.HasInterviewVideo)
+            {
+                Console.WriteLine();
+                Console.WriteLine("❌ NO INTERVIEW VIDEO FOUND");
+                Console.WriteLine(
+                    $"Application ID: {applicationId}");
+                Console.WriteLine("============================================================");
+            }
+
+
+
+
+            // ============================================================
+            // 8. LOAD INTERVIEW ANSWERS / TRANSCRIPT
+            // ============================================================
+
+            var answers = await _context
+                .VolunteerApplicationAnswers
+                .AsNoTracking()
+                .Include(x => x.VolunteerQuestion)
+                .Where(x =>
+                    x.VolunteerApplicationId == applicationId)
+                .OrderBy(x =>
+                    x.VolunteerQuestion!.DisplayOrder)
+                .ToListAsync();
 
 
             var questionNumber = 1;
-
 
             foreach (var answer in answers)
             {
@@ -805,8 +1128,7 @@ namespace SwiftCare.Controllers
                             ?? string.Empty,
 
                         Answer =
-                            answer.Answer
-                            ?? string.Empty
+                            answer.Answer ?? string.Empty
                     });
 
                 questionNumber++;
@@ -814,22 +1136,18 @@ namespace SwiftCare.Controllers
 
 
             // ============================================================
-            // 7. INTERVIEW COUNTS
+            // 9. INTERVIEW COUNTS
             // ============================================================
 
             model.InterviewAnsweredCount =
                 model.Transcript.Count;
-
-
-            // If the session exists, use its current question count
-            // where possible. Otherwise fall back to the transcript count.
 
             model.InterviewQuestionCount =
                 model.Transcript.Count;
 
 
             // ============================================================
-            // 8. DECISION AVAILABILITY
+            // 10. DECISION AVAILABILITY
             // ============================================================
 
             model.CanMakeDecision =
@@ -837,12 +1155,11 @@ namespace SwiftCare.Controllers
 
 
             // ============================================================
-            // 9. RETURN REVIEW PAGE
+            // 11. RETURN REVIEW PAGE
             // ============================================================
 
             return View(model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RunInterviewEvaluation(
@@ -1900,5 +2217,416 @@ namespace SwiftCare.Controllers
                 });
         }
 
+        // ============================================================
+        // STREAM INTERVIEW VIDEO RECORDING
+        // ============================================================
+
+        [HttpGet("/VolunteerInterview/InterviewRecording")]
+        public async Task<IActionResult> InterviewRecording(
+            int sessionId,
+            CancellationToken cancellationToken)
+        {
+            // ============================================================
+            // 1. FIND SESSION
+            // ============================================================
+
+            var session =
+                await _context.VolunteerVoiceInterviewSessions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerVoiceInterviewSessionId == sessionId,
+                        cancellationToken);
+
+            if (session == null)
+            {
+                return NotFound(
+                    "Interview session not found.");
+            }
+
+
+            // ============================================================
+            // 2. CHECK VIDEO PATH
+            // ============================================================
+
+            if (string.IsNullOrWhiteSpace(
+                session.VideoFilePath))
+            {
+                return NotFound(
+                    "No video recording is available for this interview.");
+            }
+
+
+            // ============================================================
+            // 3. GET APPLICATION ROOT
+            // ============================================================
+
+            var applicationRoot =
+                Directory.GetCurrentDirectory();
+
+            var webRootPath =
+                Path.Combine(
+                    applicationRoot,
+                    "wwwroot");
+
+            var uploadedFilesPath =
+                Path.Combine(
+                    webRootPath,
+                    "UploadedFiles");
+
+
+            // ============================================================
+            // 4. NORMALIZE DATABASE PATH
+            // ============================================================
+
+            var storedPath =
+                session.VideoFilePath
+                    .Trim()
+                    .Replace('\\', '/')
+                    .TrimStart('/');
+
+
+            // ============================================================
+            // 5. GET JUST THE FILE NAME
+            //
+            // This handles:
+            //
+            // VolunteerInterview_14_xxx.webm
+            //
+            // UploadedFiles/VolunteerInterview_14_xxx.webm
+            //
+            // UploadedFiles/InterviewRecordings/
+            // VolunteerInterview_14_xxx.webm
+            // ============================================================
+
+            var fileName =
+                Path.GetFileName(storedPath);
+
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest(
+                    "Invalid interview recording path.");
+            }
+
+
+            // ============================================================
+            // 6. POSSIBLE FILE LOCATIONS
+            //
+            // We try several valid locations because the exact value
+            // returned by SaveFileAsync() may vary.
+            // ============================================================
+
+            var possiblePaths =
+                new List<string>();
+
+
+            // ------------------------------------------------------------
+            // A. Treat database value as relative to wwwroot
+            //
+            // Example:
+            // UploadedFiles/file.webm
+            // ------------------------------------------------------------
+
+            possiblePaths.Add(
+                Path.GetFullPath(
+                    Path.Combine(
+                        webRootPath,
+                        storedPath)));
+
+
+            // ------------------------------------------------------------
+            // B. Treat database value as relative to UploadedFiles
+            //
+            // Example:
+            // file.webm
+            // ------------------------------------------------------------
+
+            possiblePaths.Add(
+                Path.GetFullPath(
+                    Path.Combine(
+                        uploadedFilesPath,
+                        storedPath)));
+
+
+            // ------------------------------------------------------------
+            // C. Look directly inside wwwroot/UploadedFiles
+            //
+            // Uses only the filename.
+            // ------------------------------------------------------------
+
+            possiblePaths.Add(
+                Path.GetFullPath(
+                    Path.Combine(
+                        uploadedFilesPath,
+                        fileName)));
+
+
+            // ------------------------------------------------------------
+            // D. Look inside common InterviewRecordings folder
+            // ------------------------------------------------------------
+
+            possiblePaths.Add(
+                Path.GetFullPath(
+                    Path.Combine(
+                        uploadedFilesPath,
+                        "InterviewRecordings",
+                        fileName)));
+
+
+            // ------------------------------------------------------------
+            // E. If the database contains "wwwroot/..."
+            // remove that prefix and try again.
+            // ------------------------------------------------------------
+
+            if (storedPath.StartsWith(
+                "wwwroot/",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                var withoutWebRoot =
+                    storedPath.Substring(
+                        "wwwroot/".Length);
+
+                possiblePaths.Add(
+                    Path.GetFullPath(
+                        Path.Combine(
+                            webRootPath,
+                            withoutWebRoot)));
+            }
+
+
+            // ------------------------------------------------------------
+            // F. If database contains "UploadedFiles/..."
+            // try that path directly under wwwroot.
+            // ------------------------------------------------------------
+
+            if (storedPath.StartsWith(
+                "UploadedFiles/",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                var withoutUploadedFiles =
+                    storedPath.Substring(
+                        "UploadedFiles/".Length);
+
+                possiblePaths.Add(
+                    Path.GetFullPath(
+                        Path.Combine(
+                            uploadedFilesPath,
+                            withoutUploadedFiles)));
+            }
+
+
+            // ============================================================
+            // 7. REMOVE DUPLICATES
+            // ============================================================
+
+            possiblePaths =
+                possiblePaths
+                    .Distinct(
+                        StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+
+            // ============================================================
+            // 8. SECURITY ROOT
+            // ============================================================
+
+            var normalizedWebRoot =
+                Path.GetFullPath(
+                    webRootPath)
+                    .TrimEnd(
+                        Path.DirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+
+
+            // ============================================================
+            // 9. FIND THE ACTUAL FILE
+            // ============================================================
+
+            string? fullFilePath = null;
+
+            foreach (var possiblePath in possiblePaths)
+            {
+                // --------------------------------------------------------
+                // Security check
+                // --------------------------------------------------------
+
+                if (!possiblePath.StartsWith(
+                    normalizedWebRoot,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+
+                // --------------------------------------------------------
+                // Does the file actually exist?
+                // --------------------------------------------------------
+
+                if (System.IO.File.Exists(
+                    possiblePath))
+                {
+                    fullFilePath =
+                        possiblePath;
+
+                    break;
+                }
+            }
+
+
+            // ============================================================
+            // 10. FILE NOT FOUND
+            // ============================================================
+
+            if (string.IsNullOrWhiteSpace(
+                fullFilePath))
+            {
+                Console.WriteLine(
+                    "============================================================");
+
+                Console.WriteLine(
+                    "[SWIFTCARE VIDEO] RECORDING NOT FOUND");
+
+                Console.WriteLine(
+                    $"Session ID       : {sessionId}");
+
+                Console.WriteLine(
+                    $"Database Path    : {session.VideoFilePath}");
+
+                Console.WriteLine(
+                    $"Extracted Name   : {fileName}");
+
+                Console.WriteLine(
+                    "Possible paths:");
+
+                foreach (var path in possiblePaths)
+                {
+                    Console.WriteLine(
+                        $"  -> {path}");
+                }
+
+                Console.WriteLine(
+                    "============================================================");
+
+                return NotFound(
+                    "The interview recording could not be found on the server.");
+            }
+
+            // ============================================================
+            // 11. DETERMINE HTTP CONTENT TYPE
+            // ============================================================
+            //
+            // IMPORTANT:
+            // session.VideoMimeType may contain:
+            //
+            // video/webm;codecs=vp9,opus
+            //
+            // That is useful browser metadata, but PhysicalFile()
+            // expects a valid HTTP media type here.
+            //
+            // Therefore we strip the codec information and return:
+            //
+            // video/webm
+            //
+            // ============================================================
+
+            var extension =
+                Path.GetExtension(
+                    fullFilePath)
+                    .ToLowerInvariant();
+
+            string? contentType;
+
+            switch (extension)
+            {
+                case ".webm":
+                    contentType = "video/webm";
+                    break;
+
+                case ".mp4":
+                    contentType = "video/mp4";
+                    break;
+
+                case ".ogg":
+                    contentType = "video/ogg";
+                    break;
+
+                case ".ogv":
+                    contentType = "video/ogg";
+                    break;
+
+                default:
+                    contentType = null;
+                    break;
+            }
+
+
+            if (string.IsNullOrWhiteSpace(contentType))
+            {
+                return BadRequest(
+                    $"Unsupported interview video format: {extension}");
+            }
+
+            // ============================================================
+            // 12. VALIDATE CONTENT TYPE
+            // ============================================================
+
+            if (string.IsNullOrWhiteSpace(
+                contentType))
+            {
+                return BadRequest(
+                    $"Unsupported interview video format: {extension}");
+            }
+
+
+            // ============================================================
+            // 13. RESPONSE HEADERS
+            // ============================================================
+
+            Response.Headers.CacheControl =
+                "private, no-store";
+
+            Response.Headers.XContentTypeOptions =
+                "nosniff";
+
+
+            // ============================================================
+            // 14. DEBUG LOG
+            // ============================================================
+
+            Console.WriteLine(
+                "============================================================");
+
+            Console.WriteLine(
+                "[SWIFTCARE VIDEO] STREAMING RECORDING");
+
+            Console.WriteLine(
+                $"Session ID       : {sessionId}");
+
+            Console.WriteLine(
+                $"Database Path    : {session.VideoFilePath}");
+
+            Console.WriteLine(
+                $"Actual File Path : {fullFilePath}");
+
+            Console.WriteLine(
+                $"MIME Type        : {contentType}");
+
+            Console.WriteLine(
+                $"File Size        : {new FileInfo(fullFilePath).Length:N0} bytes");
+
+            Console.WriteLine(
+                "============================================================");
+
+
+            // ============================================================
+            // 15. STREAM VIDEO
+            // ============================================================
+
+            return PhysicalFile(
+                fullFilePath,
+                contentType,
+                enableRangeProcessing: true);
+        }
     }
 }

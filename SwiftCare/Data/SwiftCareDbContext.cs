@@ -884,9 +884,12 @@ namespace SwiftCare.Data
             });
 
         }
+        
 
         public DbSet<Supervisor> Supervisors { get; set; }
         public DbSet<VolunteerRoster> VolunteerRosters { get; set; }
+
+        public DbSet<VolunteerInterviewProctoringEvent> VolunteerInterviewProctoringEvents { get; set; }
         public DbSet<DiditWebhookLog> DiditWebhookLogs
         {
             get; set;

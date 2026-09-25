@@ -15,7 +15,7 @@ namespace SwiftCare.Hubs
     {
         private readonly SwiftCareDbContext _context;
 
-        public VolunteerInterviewHub(SwiftCareDbContext context)
+    public VolunteerInterviewHub(SwiftCareDbContext context)
         {
             _context = context;
         }
@@ -61,6 +61,35 @@ namespace SwiftCare.Hubs
                 sessionToken);
 
             // ========================================================
+            // SUSPICIOUS SESSION
+            //
+            // IMPORTANT:
+            // A refresh/reconnect must NOT restart an interview that
+            // has already been terminated for suspicious activity.
+            // ========================================================
+
+            if (
+                session.Status == "Suspicious" ||
+                session.SuspiciousActivityDetected)
+            {
+                await Clients.Caller.SendAsync(
+                    "InterviewSuspicious",
+                    new
+                    {
+                        message =
+                            "This interview has been ended and submitted for administrative review.",
+
+                        suspiciousEventCount =
+                            session.SuspiciousEventCount,
+
+                        suspiciousActivityDate =
+                            session.SuspiciousActivityDate
+                    });
+
+                return;
+            }
+
+            // ========================================================
             // ALREADY COMPLETED
             // ========================================================
 
@@ -75,6 +104,12 @@ namespace SwiftCare.Hubs
 
             // ========================================================
             // START SESSION
+            //
+            // This only happens for a genuinely new session.
+            //
+            // IMPORTANT:
+            // We NEVER reset CurrentQuestionNumber for an existing
+            // started session.
             // ========================================================
 
             if (!session.IsStarted)
@@ -93,6 +128,10 @@ namespace SwiftCare.Hubs
 
             // ========================================================
             // SEND COMPLETE CURRENT INTERVIEW STATE
+            //
+            // This reconstructs the interview from the database.
+            // Therefore refreshing the browser does NOT start a new
+            // interview.
             // ========================================================
 
             await SendInterviewStateAsync(sessionToken);
@@ -101,7 +140,6 @@ namespace SwiftCare.Hubs
         // ============================================================
         // SUBMIT ANSWER
         //
-        // IMPORTANT:
         // The browser does NOT send questionId.
         //
         // The server determines the current question from:
@@ -166,6 +204,18 @@ namespace SwiftCare.Hubs
             {
                 throw new HubException(
                     "The interview session has not started.");
+            }
+
+            // ========================================================
+            // DO NOT ALLOW SUSPICIOUS SESSION TO CONTINUE
+            // ========================================================
+
+            if (
+                session.Status == "Suspicious" ||
+                session.SuspiciousActivityDetected)
+            {
+                throw new HubException(
+                    "This interview has been ended and submitted for administrative review.");
             }
 
             if (session.IsCompleted)
@@ -318,8 +368,13 @@ namespace SwiftCare.Hubs
             if (session == null)
                 return;
 
-            if (session.IsCompleted)
+            if (
+                session.IsCompleted ||
+                session.Status == "Suspicious" ||
+                session.SuspiciousActivityDetected)
+            {
                 return;
+            }
 
             var application =
                 session.VolunteerApplication;
@@ -440,6 +495,35 @@ namespace SwiftCare.Hubs
             if (session == null)
                 return;
 
+            // ========================================================
+            // SUSPICIOUS SESSION
+            // ========================================================
+
+            if (
+                session.Status == "Suspicious" ||
+                session.SuspiciousActivityDetected)
+            {
+                await Clients.Caller.SendAsync(
+                    "InterviewSuspicious",
+                    new
+                    {
+                        message =
+                            "This interview has been ended and submitted for administrative review.",
+
+                        suspiciousEventCount =
+                            session.SuspiciousEventCount,
+
+                        suspiciousActivityDate =
+                            session.SuspiciousActivityDate
+                    });
+
+                return;
+            }
+
+            // ========================================================
+            // COMPLETED SESSION
+            // ========================================================
+
             if (session.IsCompleted)
             {
                 await Clients.Caller.SendAsync(
@@ -479,6 +563,10 @@ namespace SwiftCare.Hubs
 
             // ========================================================
             // NORMALIZE CURRENT QUESTION
+            //
+            // IMPORTANT:
+            // We do NOT reset this to 1 unless the database contains
+            // an invalid value.
             // ========================================================
 
             if (session.CurrentQuestionNumber <= 0)
@@ -533,9 +621,10 @@ namespace SwiftCare.Hubs
                 var answer =
                     answers.FirstOrDefault(x =>
                         x.VolunteerQuestionId ==
-                            question.VolunteerQuestionId);
+                        question.VolunteerQuestionId);
 
-                if (answer == null ||
+                if (
+                    answer == null ||
                     string.IsNullOrWhiteSpace(answer.Answer))
                 {
                     continue;
@@ -544,7 +633,8 @@ namespace SwiftCare.Hubs
                 history.Add(
                     new
                     {
-                        questionNumber = i + 1,
+                        questionNumber =
+                            i + 1,
 
                         questionId =
                             question.VolunteerQuestionId,
@@ -568,7 +658,7 @@ namespace SwiftCare.Hubs
             var currentAnswer =
                 answers.FirstOrDefault(x =>
                     x.VolunteerQuestionId ==
-                        currentQuestion.VolunteerQuestionId);
+                    currentQuestion.VolunteerQuestionId);
 
             // ========================================================
             // SEND STATE TO CALLER ONLY
@@ -614,6 +704,14 @@ namespace SwiftCare.Hubs
         private async Task CompleteSessionAsync(
             VolunteerVoiceInterviewSession session)
         {
+            // Never overwrite a suspicious session as Completed.
+            if (
+                session.Status == "Suspicious" ||
+                session.SuspiciousActivityDetected)
+            {
+                return;
+            }
+
             session.IsCompleted = true;
             session.CompletedDate = DateTime.Now;
             session.Status = "Completed";
@@ -689,10 +787,11 @@ namespace SwiftCare.Hubs
                         // CATEGORY MATCH
                         // ------------------------------------------------
 
-                        if (opportunity.Category.HasValue &&
+                        if (
+                            opportunity.Category.HasValue &&
                             question.Category.HasValue &&
                             opportunity.Category.Value ==
-                                question.Category.Value)
+                            question.Category.Value)
                         {
                             relevance += 100;
                         }
@@ -701,10 +800,11 @@ namespace SwiftCare.Hubs
                         // AREA MATCH
                         // ------------------------------------------------
 
-                        if (opportunity.Area.HasValue &&
+                        if (
+                            opportunity.Area.HasValue &&
                             question.Area.HasValue &&
                             opportunity.Area.Value ==
-                                question.Area.Value)
+                            question.Area.Value)
                         {
                             relevance += 100;
                         }
@@ -713,10 +813,11 @@ namespace SwiftCare.Hubs
                         // CATEGORY MATCH WITHOUT AREA
                         // ------------------------------------------------
 
-                        if (opportunity.Category.HasValue &&
+                        if (
+                            opportunity.Category.HasValue &&
                             question.Category.HasValue &&
                             opportunity.Category.Value ==
-                                question.Category.Value &&
+                            question.Category.Value &&
                             !question.Area.HasValue)
                         {
                             relevance += 25;
@@ -815,4 +916,5 @@ namespace SwiftCare.Hubs
                 : fullName;
         }
     }
+
 }

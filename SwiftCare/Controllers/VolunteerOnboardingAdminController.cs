@@ -196,7 +196,7 @@ namespace SwiftCare.Controllers
         // ============================================================
         // APPROVE VOLUNTEER CONTRACT
         // ============================================================
-
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveContract(

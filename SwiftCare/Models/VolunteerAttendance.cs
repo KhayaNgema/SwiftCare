@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SwiftCare.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -86,6 +87,30 @@ namespace SwiftCare.Models
 
         [StringLength(500)]
         public string? VerificationReference { get; set; }
+
+
+        // ============================================================
+        // CHECK-IN LOCATION
+        // ============================================================
+
+        /// <summary>
+        /// Latitude captured from the volunteer's device
+        /// at the time of face-authenticated check-in.
+        /// </summary>
+        public double? CheckInLatitude { get; set; }
+
+
+        /// <summary>
+        /// Longitude captured from the volunteer's device
+        /// at the time of face-authenticated check-in.
+        /// </summary>
+        public double? CheckInLongitude { get; set; }
+
+
+        /// <summary>
+        /// GPS accuracy reported by the device in metres.
+        /// </summary>
+        public double? CheckInLocationAccuracy { get; set; }
 
 
         // ============================================================

@@ -1095,6 +1095,15 @@ namespace SwiftCare.Data.Migrations
                     b.Property<DateTime>("AttendanceDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<double?>("CheckInLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLocationAccuracy")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLongitude")
+                        .HasColumnType("float");
+
                     b.Property<DateTime?>("CheckInTime")
                         .HasColumnType("datetime2");
 

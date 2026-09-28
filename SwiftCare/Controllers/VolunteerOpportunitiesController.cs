@@ -15,6 +15,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Twilio.Http;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -145,14 +146,11 @@ namespace SwiftCare.Controllers
 
             return View(opportunity);
         }
-        // =========================================================
-        // NEW OPPORTUNITY - GET
-        // =========================================================
 
         // =========================================================
         // NEW OPPORTUNITY - GET
         // =========================================================
-
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
         public IActionResult NewOpportunity()
         {
@@ -165,7 +163,7 @@ namespace SwiftCare.Controllers
         // =========================================================
         // NEW OPPORTUNITY - POST
         // =========================================================
-
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewOpportunity(

@@ -7,7 +7,7 @@
     Layout = "~/Views/Shared/_PagesLayout.cshtml";
     ViewData["Title"] = "Volunteer Profile";
 
-var todaysStatus =
+    var todaysStatus =
         ViewBag.TodaysStatus?.ToString()
         ?? "No Shift Today";
 
@@ -111,13 +111,18 @@ var todaysStatus =
     }
 
     TimeZoneInfo attendanceTimeZone;
+
     try
     {
-        attendanceTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Africa/Johannesburg");
+        attendanceTimeZone =
+            TimeZoneInfo.FindSystemTimeZoneById(
+                "Africa/Johannesburg");
     }
     catch (TimeZoneNotFoundException)
     {
-        attendanceTimeZone = TimeZoneInfo.FindSystemTimeZoneById("South Africa Standard Time");
+        attendanceTimeZone =
+            TimeZoneInfo.FindSystemTimeZoneById(
+                "South Africa Standard Time");
     }
 
     var calendarWeeks = new[]
@@ -152,9 +157,11 @@ var todaysStatus =
     <!-- =========================================================
          PAGE HEADER
          ========================================================= -->
+
     <section class="vp-page-header">
 
         <div>
+
             <span class="vp-eyebrow">
                 VOLUNTEER MANAGEMENT
             </span>
@@ -166,6 +173,7 @@ var todaysStatus =
             <p>
                 Manage volunteer information, weekly schedules and assigned tasks.
             </p>
+
         </div>
 
         <div class="vp-page-header-actions">
@@ -183,6 +191,7 @@ var todaysStatus =
     <!-- =========================================================
          AJAX MESSAGE
          ========================================================= -->
+
     <div id="vpAjaxMessage"
          class="vp-ajax-message"
          role="alert">
@@ -192,6 +201,7 @@ var todaysStatus =
     <!-- =========================================================
          PROFILE
          ========================================================= -->
+
     <section class="vp-profile-card">
 
         <div class="vp-profile-main">
@@ -312,6 +322,7 @@ var todaysStatus =
     <!-- =========================================================
          STATISTICS
          ========================================================= -->
+
     <section class="vp-stat-grid">
 
         <div class="vp-stat-card">
@@ -403,6 +414,7 @@ var todaysStatus =
     <!-- =========================================================
          CALENDAR
          ========================================================= -->
+
     <section class="vp-calendar-section">
 
         <div class="vp-section-card vp-calendar-card">
@@ -450,9 +462,6 @@ var todaysStatus =
             </div>
 
 
-            <!-- =================================================
-                 CALENDAR
-                 ================================================= -->
             <div class="vp-calendar-wrapper">
 
                 @foreach (var calendarWeek in calendarWeeks)
@@ -470,9 +479,6 @@ var todaysStatus =
                     <div class="vp-calendar-week"
                          data-calendar-week="@calendarWeek.Start.ToString("yyyy-MM-dd")">
 
-                        <!-- =====================================
-                             WEEK HEADER
-                             ===================================== -->
                         <div class="vp-calendar-week-header">
 
                             <div>
@@ -569,9 +575,6 @@ var todaysStatus =
                         </div>
 
 
-                        <!-- =====================================
-                             DAYS
-                             ===================================== -->
                         <div class="vp-calendar-grid">
 
                             @for (var dayOffset = 0; dayOffset < 7; dayOffset++)
@@ -626,9 +629,6 @@ var todaysStatus =
                                 <div class="@dayClasses"
                                      data-calendar-date="@calendarDate.ToString("yyyy-MM-dd")">
 
-                                    <!-- =================================
-                                         DAY HEADER
-                                         ================================= -->
                                     <div class="vp-calendar-day-header">
 
                                         <div>
@@ -655,25 +655,21 @@ var todaysStatus =
 
                                     </div>
 
-                                    <!-- =================================
-     DAY BODY
-     ================================= -->
+
                                     <div class="vp-calendar-day-body">
 
-                                        <!-- =================================
-         SHIFT
-         ================================= -->
                                         @if (hasShifts)
                                         {
                                             foreach (var shift in dayShifts)
                                             {
                                                 var isDayOff =
                                                     shift.Status.GetDisplayName()
-                                                        .Equals("Day Off", StringComparison.OrdinalIgnoreCase);
+                                                        .Equals(
+                                                            "Day Off",
+                                                            StringComparison.OrdinalIgnoreCase);
 
                                                 if (isDayOff)
                                                 {
-                                                    <!-- DAY OFF -->
                                                     <div class="vp-calendar-shift vp-calendar-shift-day-off">
 
                                                         <div class="vp-calendar-shift-label">
@@ -690,12 +686,12 @@ var todaysStatus =
                                                 }
                                                 else
                                                 {
-                                                    <!-- SCHEDULED SHIFT -->
                                                     <div class="vp-calendar-shift vp-calendar-shift-scheduled">
 
                                                         <div class="vp-calendar-shift-label">
 
                                                             <i class="bi bi-clock"></i>
+
                                                         </div>
 
                                                         <div class="vp-calendar-shift-time">
@@ -712,7 +708,6 @@ var todaysStatus =
                                         }
                                         else
                                         {
-                                            <!-- NO SHIFT -->
                                             <div class="vp-calendar-shift vp-calendar-shift-none">
 
                                                 <i class="bi bi-calendar-x"></i>
@@ -725,9 +720,6 @@ var todaysStatus =
                                         }
 
 
-                                        <!-- =================================
-         TASKS
-         ================================= -->
                                         @if (hasTasks)
                                         {
                                             foreach (var assignment in dayAssignments)
@@ -790,9 +782,6 @@ var todaysStatus =
                         </div>
 
 
-                        <!-- =====================================
-                             WEEK EMPTY / STATUS
-                             ===================================== -->
                         @if (calendarWeek.Roster == null)
                         {
                             <div class="vp-calendar-week-empty">
@@ -842,18 +831,27 @@ var todaysStatus =
         </div>
 
     </section>
+
     <br />
 
+
     <!-- =========================================================
-     VOLUNTEER ATTENDANCE — CURRENT WEEK
-     ========================================================= -->
+         VOLUNTEER ATTENDANCE — CURRENT WEEK
+         ========================================================= -->
+
     <section class="vp-attendance-section vp-library-card vp-library-card-full">
 
         <div class="vp-library-header">
-            <div>
-                <span class="vp-section-kicker">THIS WEEK</span>
 
-                <h3>Volunteer Attendance</h3>
+            <div>
+
+                <span class="vp-section-kicker">
+                    THIS WEEK
+                </span>
+
+                <h3>
+                    Volunteer Attendance
+                </h3>
 
                 <p>
                     Attendance for the current roster week,
@@ -861,12 +859,15 @@ var todaysStatus =
                     -
                     @Model.CurrentWeekEnd.ToString("dd MMM yyyy").
                 </p>
+
             </div>
 
             <div class="vp-library-count">
                 @Model.Attendances.Count
             </div>
+
         </div>
+
 
         @if (Model.Attendances.Any())
         {
@@ -879,6 +880,7 @@ var todaysStatus =
                         <table class="vp-attendance-table">
 
                             <thead>
+
                                 <tr>
                                     <th>Date</th>
                                     <th>Shift</th>
@@ -889,62 +891,78 @@ var todaysStatus =
                                     <th>Status</th>
                                     <th>Face</th>
                                     <th>Liveness</th>
-                                    <th>Notes</th>
+                                    <th>Location</th>
                                 </tr>
+
                             </thead>
+
 
                             <tbody>
 
                                 @foreach (var attendance in Model.Attendances)
                                 {
-                                    var rosterShift = attendance.VolunteerRosterShift;
+                                    var rosterShift =
+                                        attendance.VolunteerRosterShift;
 
                                     var statusName =
                                         attendance.Status.GetDisplayName();
 
                                     var attendanceStatusClass =
-                                        attendance.Status == VolunteerAttendanceStatus.Late
+                                        attendance.Status ==
+                                            VolunteerAttendanceStatus.Late
                                             ? "vp-attendance-status-late"
-                                            : attendance.Status == VolunteerAttendanceStatus.Absent
+                                            : attendance.Status ==
+                                                VolunteerAttendanceStatus.Absent
                                                 ? "vp-attendance-status-absent"
-                                                : attendance.Status == VolunteerAttendanceStatus.CheckedOut
+                                                : attendance.Status ==
+                                                    VolunteerAttendanceStatus.CheckedOut
                                                     ? "vp-attendance-status-checkedout"
                                                     : "";
 
+                                    var hasCheckInLocation =
+                                        attendance.CheckInLatitude.HasValue &&
+                                        attendance.CheckInLongitude.HasValue;
                                     <tr>
 
                                         <!-- =====================================================
-                                         DATE
-                                         ===================================================== -->
+                                             DATE
+                                             ===================================================== -->
+
                                         <td>
+
                                             <span class="vp-attendance-date">
-                                                @(
-                                                    rosterShift != null
-                                                        ? rosterShift.ShiftDate.ToString("dd MMM yyyy")
-                                                        : attendance.AttendanceDate.ToString("dd MMM yyyy")
-                                                )
+
+                                                @(rosterShift != null
+                                                    ? rosterShift.ShiftDate.ToString("dd MMM yyyy")
+                                                    : attendance.AttendanceDate.ToString("dd MMM yyyy"))
+
                                             </span>
 
                                             <span class="vp-attendance-day">
-                                                @(
-                                                    rosterShift != null
-                                                        ? rosterShift.ShiftDate.ToString("dddd")
-                                                        : attendance.AttendanceDate.ToString("dddd")
-                                                )
+
+                                                @(rosterShift != null
+                                                    ? rosterShift.ShiftDate.ToString("dddd")
+                                                    : attendance.AttendanceDate.ToString("dddd"))
+
                                             </span>
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         SHIFT
-                                         ===================================================== -->
+                                             SHIFT
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (rosterShift != null)
                                             {
                                                 <span class="vp-attendance-shift-time">
+
                                                     @rosterShift.StartTime.ToString(@"hh\:mm")
                                                     -
                                                     @rosterShift.EndTime.ToString(@"hh\:mm")
+
                                                 </span>
                                             }
                                             else
@@ -953,13 +971,16 @@ var todaysStatus =
                                                     Shift unavailable
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         CHECK IN
-                                         ===================================================== -->
+                                             CHECK IN
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.CheckInTime.HasValue)
                                             {
                                                 var checkIn =
@@ -983,13 +1004,16 @@ var todaysStatus =
                                                     Not checked in
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         CHECK OUT
-                                         ===================================================== -->
+                                             CHECK OUT
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.CheckOutTime.HasValue)
                                             {
                                                 var checkOut =
@@ -1013,13 +1037,16 @@ var todaysStatus =
                                                     Not checked out
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         LATE
-                                         ===================================================== -->
+                                             LATE
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.LateMinutes > 0)
                                             {
                                                 <span class="vp-attendance-status vp-attendance-status-late">
@@ -1029,17 +1056,23 @@ var todaysStatus =
                                             else
                                             {
                                                 <span class="vp-attendance-verified">
+
                                                     <i class="bi bi-check-circle-fill"></i>
+
                                                     On time
+
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         EARLY DEPARTURE
-                                         ===================================================== -->
+                                             EARLY DEPARTURE
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.EarlyDepartureMinutes > 0)
                                             {
                                                 <span class="vp-attendance-status vp-attendance-status-late">
@@ -1049,32 +1082,44 @@ var todaysStatus =
                                             else
                                             {
                                                 <span class="vp-attendance-verified">
+
                                                     <i class="bi bi-check-circle-fill"></i>
+
                                                     None
+
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         STATUS
-                                         ===================================================== -->
+                                             STATUS
+                                             ===================================================== -->
+
                                         <td>
+
                                             <span class="vp-attendance-status @attendanceStatusClass">
                                                 @statusName
                                             </span>
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         FACE VERIFICATION
-                                         ===================================================== -->
+                                             FACE VERIFICATION
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.FaceVerified)
                                             {
                                                 <span class="vp-attendance-verified">
+
                                                     <i class="bi bi-check-circle-fill"></i>
+
                                                     Verified
+
                                                 </span>
                                             }
                                             else
@@ -1083,18 +1128,24 @@ var todaysStatus =
                                                     Not verified
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         LIVENESS
-                                         ===================================================== -->
+                                             LIVENESS
+                                             ===================================================== -->
+
                                         <td>
+
                                             @if (attendance.LivenessVerified)
                                             {
                                                 <span class="vp-attendance-verified">
+
                                                     <i class="bi bi-check-circle-fill"></i>
+
                                                     Verified
+
                                                 </span>
                                             }
                                             else
@@ -1103,25 +1154,54 @@ var todaysStatus =
                                                     Not verified
                                                 </span>
                                             }
+
                                         </td>
 
 
                                         <!-- =====================================================
-                                         NOTES
-                                         ===================================================== -->
+                                             CHECK-IN LOCATION
+                                             ===================================================== -->
+
                                         <td>
-                                            @if (!string.IsNullOrWhiteSpace(attendance.Notes))
+
+                                            @if (hasCheckInLocation)
                                             {
-                                                @attendance.Notes
+                                                <button type="button"
+                                                        class="vp-attendance-location-button js-open-attendance-location"
+                                                        title="View check-in location"
+                                                        aria-label="View check-in location"
+                                                        data-location-lat="@attendance.CheckInLatitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-location-lng="@attendance.CheckInLongitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-location-accuracy="@(attendance.CheckInLocationAccuracy.HasValue
+                                                                                                                                                                        ? attendance.CheckInLocationAccuracy.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                                                                                                                                                                    : "")"
+                                                        data-location-date="@(rosterShift != null
+                                                                                                                                                                        ? rosterShift.ShiftDate.ToString("dd MMM yyyy")
+                                                                                                                                                                        : attendance.AttendanceDate.ToString("dd MMM yyyy"))"
+                                                        data-location-time="@(attendance.CheckInTime.HasValue
+                                                                                                                                                                        ? TimeZoneInfo.ConvertTimeFromUtc(
+                                                                                                                                                                            DateTime.SpecifyKind(
+                                                                                                                                                                                attendance.CheckInTime.Value,
+                                                                                                                                                                                DateTimeKind.Utc),
+                                                                                                                                                                            attendanceTimeZone).ToString("HH:mm")
+                                                                                                                                                                    : "—")">
+
+                                                    <i class="bi bi-geo-alt-fill"></i>
+
+                                                    <span>
+                                                        View
+                                                    </span>
+
+                                                </button>
                                             }
                                             else
                                             {
                                                 <span class="vp-attendance-not-verified">
-                                                    —
+                                                    Not recorded
                                                 </span>
                                             }
-                                        </td>
 
+                                        </td>
                                     </tr>
                                 }
 
@@ -1141,7 +1221,9 @@ var todaysStatus =
 
                 <i class="bi bi-calendar-check"></i>
 
-                <h4>No attendance this week</h4>
+                <h4>
+                    No attendance this week
+                </h4>
 
                 <p>
                     No attendance has been recorded for this volunteer
@@ -1159,9 +1241,11 @@ var todaysStatus =
 
     </section>
 
+
     <!-- =========================================================
          TASK LIBRARY
          ========================================================= -->
+
     <section class="vp-library-card vp-library-card-full">
 
         <div class="vp-library-header">
@@ -1312,6 +1396,7 @@ var todaysStatus =
 <!-- =============================================================
      ASSIGN TASK MODAL
      ============================================================= -->
+
 <div id="vpAssignModal"
      class="vp-modal"
      aria-hidden="true">
@@ -1472,6 +1557,7 @@ var todaysStatus =
 <!-- =============================================================
      TASK DETAILS MODAL
      ============================================================= -->
+
 <div id="vpTaskDetailsModal"
      class="vp-modal"
      aria-hidden="true">
@@ -1578,7 +1664,6 @@ var todaysStatus =
             </div>
 
 
-            <!-- Actual task timestamps: shown according to task status. -->
             <div class="vp-task-details-grid"
                  id="vpTaskActualTimes"
                  hidden
@@ -1588,26 +1673,49 @@ var todaysStatus =
                      id="vpTaskStartedBox"
                      hidden
                      style="display: none;">
-                    <span>Started Date &amp; Time</span>
-                    <strong id="vpTaskStartedDateTime">—</strong>
+
+                    <span>
+                        Started Date &amp; Time
+                    </span>
+
+                    <strong id="vpTaskStartedDateTime">
+                        —
+                    </strong>
+
                 </div>
+
 
                 <div class="vp-task-detail-box"
                      id="vpTaskCompletedBox"
                      hidden
                      style="display: none;">
-                    <span>Completed Date &amp; Time</span>
-                    <strong id="vpTaskCompletedDateTime">—</strong>
+
+                    <span>
+                        Completed Date &amp; Time
+                    </span>
+
+                    <strong id="vpTaskCompletedDateTime">
+                        —
+                    </strong>
+
                 </div>
 
             </div>
+
 
             <div class="vp-task-details-description"
                  id="vpTaskCompletionNotesBox"
                  hidden
                  style="display: none;">
-                <span>Completion Notes</span>
-                <p id="vpTaskCompletionNotes">—</p>
+
+                <span>
+                    Completion Notes
+                </span>
+
+                <p id="vpTaskCompletionNotes">
+                    —
+                </p>
+
             </div>
 
 
@@ -1658,7 +1766,126 @@ var todaysStatus =
 </div>
 
 
+<!-- =============================================================
+     ATTENDANCE LOCATION MODAL
+     ============================================================= -->
+
+<div id="vpAttendanceLocationModal"
+     class="vp-attendance-location-modal"
+     aria-hidden="true">
+
+    <div class="vp-attendance-location-backdrop js-close-attendance-location"></div>
+
+    <div class="vp-attendance-location-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="vpAttendanceLocationTitle">
+
+        <div class="vp-attendance-location-header">
+
+            <div>
+
+                <span class="vp-attendance-location-kicker">
+                    ATTENDANCE AUDIT
+                </span>
+
+                <h2 id="vpAttendanceLocationTitle">
+                    Check-In Location
+                </h2>
+
+            </div>
+
+
+            <button type="button"
+                    class="vp-attendance-location-close js-close-attendance-location"
+                    aria-label="Close">
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="vp-attendance-location-meta">
+
+            <div class="vp-attendance-location-meta-item">
+
+                <i class="bi bi-calendar3"></i>
+
+                <div>
+
+                    <span>
+                        Date
+                    </span>
+
+                    <strong id="vpAttendanceLocationDate">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="vp-attendance-location-meta-item">
+
+                <i class="bi bi-clock"></i>
+
+                <div>
+
+                    <span>
+                        Check In
+                    </span>
+
+                    <strong id="vpAttendanceLocationTime">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="vp-attendance-location-meta-item">
+
+                <i class="bi bi-bullseye"></i>
+
+                <div>
+
+                    <span>
+                        GPS Accuracy
+                    </span>
+
+                    <strong id="vpAttendanceLocationAccuracy">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="vp-attendance-location-map-wrapper">
+
+            <div id="vpAttendanceLocationMap"
+                 class="vp-attendance-location-map"
+                 style="min-height:420px;">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
 <script>
+
     document.addEventListener("DOMContentLoaded", function () {
 
         /* =========================================================
@@ -1748,6 +1975,113 @@ var todaysStatus =
 
         const rosterName =
             document.getElementById("vpRosterName");
+
+
+        /* =========================================================
+           ATTENDANCE LOCATION ELEMENTS
+           ========================================================= */
+
+        const attendanceLocationModal =
+            document.getElementById(
+                "vpAttendanceLocationModal"
+            );
+
+        const attendanceLocationMapElement =
+            document.getElementById(
+                "vpAttendanceLocationMap"
+            );
+
+        const attendanceLocationDate =
+            document.getElementById(
+                "vpAttendanceLocationDate"
+            );
+
+        const attendanceLocationTime =
+            document.getElementById(
+                "vpAttendanceLocationTime"
+            );
+
+        const attendanceLocationAccuracy =
+            document.getElementById(
+                "vpAttendanceLocationAccuracy"
+            );
+
+        let attendanceLocationMap = null;
+
+        let attendanceLocationMarker = null;
+
+        let attendanceLocationCircle = null;
+
+        const googleMapsApiKey = "AIzaSyC5UwWSFRByobxfW9E4OCFT9uAReOm9WsM";
+        let googleMapsPromise = null;
+        let attendanceLocationRequest = 0;
+
+        // A custom volunteer-shaped map pin; no image file is required.
+        const volunteerMarkerSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="76" height="94" viewBox="0 0 76 94">
+              <defs>
+                <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#124116" flood-opacity="0.32"/>
+                </filter>
+              </defs>
+              <g filter="url(#shadow)">
+                <path d="M38 3C18.7 3 3 18.7 3 38c0 25 35 51 35 51s35-26 35-51C73 18.7 57.3 3 38 3Z"
+                      fill="#1B5E20" stroke="#FFFFFF" stroke-width="4"/>
+                <circle cx="38" cy="36" r="25" fill="#F0FDF4"/>
+                <circle cx="38" cy="29" r="8" fill="#2E7D32"/>
+                <path d="M22 52c0-9 7-15 16-15s16 6 16 15v1H22Z" fill="#2E7D32"/>
+                <path d="M31 40l7 9 7-9" fill="none" stroke="#8BC34A" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="38" cy="68" r="4" fill="#8BC34A"/>
+              </g>
+            </svg>`;
+
+        function loadGoogleMaps() {
+            if (window.google && window.google.maps && window.google.maps.Map) {
+                return Promise.resolve();
+            }
+
+            if (googleMapsPromise) {
+                return googleMapsPromise;
+            }
+
+            if (!googleMapsApiKey || googleMapsApiKey === "YOUR_GOOGLE_MAPS_API_KEY") {
+                return Promise.reject(new Error("Add your Google Maps API key first."));
+            }
+
+            googleMapsPromise = new Promise(function (resolve, reject) {
+                const callbackName = "swiftCareGoogleMapsReady";
+                let script = null;
+                const timeoutId = window.setTimeout(function () {
+                    delete window[callbackName];
+                    if (script) script.remove();
+                    reject(new Error("Google Maps loading timed out."));
+                }, 20000);
+
+                window[callbackName] = function () {
+                    window.clearTimeout(timeoutId);
+                    delete window[callbackName];
+                    resolve();
+                };
+
+                script = document.createElement("script");
+                script.async = true;
+                script.src = "https://maps.googleapis.com/maps/api/js?key=" +
+                    encodeURIComponent(googleMapsApiKey) +
+                    "&callback=" + callbackName + "&loading=async";
+                script.onerror = function () {
+                    window.clearTimeout(timeoutId);
+                    delete window[callbackName];
+                    script.remove();
+                    reject(new Error("Google Maps could not be loaded."));
+                };
+                document.head.appendChild(script);
+            }).catch(function (error) {
+                googleMapsPromise = null;
+                throw error;
+            });
+
+            return googleMapsPromise;
+        }
 
 
         const currentWeekStart =
@@ -1846,6 +2180,287 @@ var todaysStatus =
 
 
         /* =========================================================
+           ATTENDANCE LOCATION MODAL
+           ========================================================= */
+
+        function openAttendanceLocationModal(button) {
+
+            if (!attendanceLocationModal ||
+                !attendanceLocationMapElement ||
+                !button) {
+
+                return;
+            }
+
+            const latitude =
+                parseFloat(
+                    button.dataset.locationLat
+                );
+
+            const longitude =
+                parseFloat(
+                    button.dataset.locationLng
+                );
+
+            const accuracy =
+                button.dataset.locationAccuracy || "";
+
+            const date =
+                button.dataset.locationDate || "—";
+
+            const time =
+                button.dataset.locationTime || "—";
+
+
+            if (!Number.isFinite(latitude) ||
+                !Number.isFinite(longitude)) {
+
+                showMessage(
+                    "The attendance location could not be loaded.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            if (attendanceLocationDate) {
+                attendanceLocationDate.textContent =
+                    date;
+            }
+
+
+            if (attendanceLocationTime) {
+                attendanceLocationTime.textContent =
+                    time;
+            }
+
+
+            if (attendanceLocationAccuracy) {
+
+                attendanceLocationAccuracy.textContent =
+                    accuracy
+                        ? `${accuracy} m`
+                        : "Not recorded";
+            }
+
+
+            attendanceLocationModal.classList.add(
+                "vp-attendance-location-visible"
+            );
+
+            attendanceLocationModal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+            document.body.classList.add(
+                "vp-modal-body-lock"
+            );
+
+
+            /*
+             * Give the browser time to calculate the modal/map
+             * dimensions before Google Maps renders.
+             */
+
+            const requestId = ++attendanceLocationRequest;
+
+            window.setTimeout(function () {
+
+                initializeAttendanceMap(
+                    latitude,
+                    longitude,
+                    accuracy,
+                    requestId
+                );
+
+            }, 80);
+        }
+
+
+        function closeAttendanceLocationModal() {
+
+            ++attendanceLocationRequest;
+
+            if (!attendanceLocationModal) {
+                return;
+            }
+
+            attendanceLocationModal.classList.remove(
+                "vp-attendance-location-visible"
+            );
+
+            attendanceLocationModal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            if (!document.querySelector(
+                ".vp-modal-visible"
+            ) &&
+                !document.querySelector(
+                    ".vp-attendance-location-visible"
+                )) {
+
+                document.body.classList.remove(
+                    "vp-modal-body-lock"
+                );
+            }
+        }
+
+
+        /* =========================================================
+           INITIALIZE GOOGLE MAPS + CUSTOM VOLUNTEER ICON
+           ========================================================= */
+
+        async function initializeAttendanceMap(latitude, longitude, accuracy, requestId) {
+            if (!attendanceLocationMapElement || !attendanceLocationModal) return;
+
+            try {
+                await loadGoogleMaps();
+
+                // Avoid drawing a stale location after closing or switching records.
+                if (requestId !== attendanceLocationRequest ||
+                    !attendanceLocationModal.classList.contains("vp-attendance-location-visible")) {
+                    return;
+                }
+
+                const position = { lat: latitude, lng: longitude };
+
+                if (!attendanceLocationMap) {
+                    attendanceLocationMap = new google.maps.Map(
+                        attendanceLocationMapElement,
+                        {
+                            center: position,
+                            zoom: 14,
+                            mapTypeId: "roadmap",
+                            mapTypeControl: true,
+                            fullscreenControl: true,
+                            streetViewControl: false,
+                            zoomControl: true,
+                            clickableIcons: false
+                        }
+                    );
+                }
+
+                if (attendanceLocationMarker) {
+                    attendanceLocationMarker.setMap(null);
+                    attendanceLocationMarker = null;
+                }
+
+                if (attendanceLocationCircle) {
+                    attendanceLocationCircle.setMap(null);
+                    attendanceLocationCircle = null;
+                }
+
+                attendanceLocationMap.setCenter(position);
+                attendanceLocationMap.setZoom(14);
+
+                const volunteerMarkerIcon = {
+                    url: "data:image/svg+xml;charset=UTF-8," +
+                        encodeURIComponent(volunteerMarkerSvg),
+                    scaledSize: new google.maps.Size(62, 77),
+                    anchor: new google.maps.Point(31, 73)
+                };
+
+                attendanceLocationMarker = new google.maps.Marker({
+                    map: attendanceLocationMap,
+                    position: position,
+                    title: "Volunteer Check-In Location",
+                    icon: volunteerMarkerIcon,
+                    animation: google.maps.Animation.DROP,
+                    zIndex: 10
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: '<div style="font-family:Arial,sans-serif;padding:5px 3px">' +
+                        '<strong style="color:#1B5E20">Volunteer Check-In</strong><br>' +
+                        '<span style="font-size:12px">Verified attendance location</span></div>'
+                });
+
+                attendanceLocationMarker.addListener("click", function () {
+                    infoWindow.open({
+                        map: attendanceLocationMap,
+                        anchor: attendanceLocationMarker
+                    });
+                });
+
+                const numericAccuracy = Number.parseFloat(accuracy);
+                if (Number.isFinite(numericAccuracy) && numericAccuracy > 0) {
+                    attendanceLocationCircle = new google.maps.Circle({
+                        map: attendanceLocationMap,
+                        center: position,
+                        radius: numericAccuracy,
+                        strokeColor: "#2E7D32",
+                        strokeOpacity: 0.85,
+                        strokeWeight: 2,
+                        fillColor: "#8BC34A",
+                        fillOpacity: 0.17,
+                        clickable: false
+                    });
+                }
+
+                // Google Maps calculates its size after the modal becomes visible.
+                window.setTimeout(function () {
+                    if (requestId === attendanceLocationRequest && attendanceLocationMap) {
+                        attendanceLocationMap.setCenter(position);
+                    }
+                }, 100);
+            } catch (error) {
+                console.error("Attendance Google Maps error:", error.message);
+                showMessage(error.message || "Unable to load the attendance map.", "error");
+            }
+        }
+
+
+        /* =========================================================
+           LOCATION BUTTONS
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                ".js-open-attendance-location"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        openAttendanceLocationModal(
+                            button
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /* =========================================================
+           CLOSE LOCATION MODAL
+           ========================================================= */
+
+        document
+            .querySelectorAll(
+                ".js-close-attendance-location"
+            )
+            .forEach(function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeAttendanceLocationModal();
+
+                    }
+                );
+
+            });
+
+
+        /* =========================================================
            DATE
            ========================================================= */
 
@@ -1882,17 +2497,16 @@ var todaysStatus =
 
         /* =========================================================
            ACTUAL TASK TIMESTAMP
-           ISO timestamps with an offset or Z are displayed in the
-           browser's local time. Timestamps without an offset retain
-           their supplied local clock time.
            ========================================================= */
 
         function formatTaskDateTime(value) {
+
             if (!value || !String(value).trim()) {
                 return "Not recorded";
             }
 
             const date = new Date(value);
+
             if (Number.isNaN(date.getTime())) {
                 return String(value);
             }
@@ -1906,13 +2520,22 @@ var todaysStatus =
             });
         }
 
-        function setTaskDetailVisibility(element, visible) {
+
+        function setTaskDetailVisibility(
+            element,
+            visible
+        ) {
+
             if (!element) {
                 return;
             }
 
             element.hidden = !visible;
-            element.style.display = visible ? "" : "none";
+
+            element.style.display =
+                visible
+                    ? ""
+                    : "none";
         }
 
 
@@ -2435,11 +3058,6 @@ var todaysStatus =
                     .then(readJsonResponse)
                     .then(function (result) {
 
-                        console.log(
-                            "ASSIGN TASK RESPONSE:",
-                            result
-                        );
-
                         if (
                             !result ||
                             result.success !== true
@@ -2554,11 +3172,6 @@ var todaysStatus =
                 );
                 return;
             }
-
-            console.log(
-                "ADDING NEW TASK TO CALENDAR:",
-                result
-            );
 
             const dateValue =
                 String(
@@ -2719,13 +3332,19 @@ var todaysStatus =
                 status;
 
             task.dataset.taskStartedDate =
-                result.startedDate || result.StartedDate || "";
+                result.startedDate ||
+                result.StartedDate ||
+                "";
 
             task.dataset.taskCompletedDate =
-                result.completedDate || result.CompletedDate || "";
+                result.completedDate ||
+                result.CompletedDate ||
+                "";
 
             task.dataset.taskCompletionNotes =
-                result.completionNotes || result.CompletionNotes || "";
+                result.completionNotes ||
+                result.CompletionNotes ||
+                "";
 
             task.dataset.taskStart =
                 start;
@@ -2808,17 +3427,6 @@ var todaysStatus =
                     ".vp-calendar-week"
                 )
             );
-
-            console.log(
-                "TASK ADDED TO CALENDAR WITHOUT PAGE RELOAD:",
-                {
-                    volunteerTaskId,
-                    dateValue,
-                    start,
-                    end,
-                    title
-                }
-            );
         }
 
 
@@ -2836,11 +3444,6 @@ var todaysStatus =
                 "click",
                 function () {
 
-                    console.log(
-                        "CALENDAR TASK CLICKED",
-                        button
-                    );
-
                     const volunteerTaskId =
                         button.getAttribute(
                             "data-volunteer-task-id"
@@ -2856,11 +3459,6 @@ var todaysStatus =
                         !volunteerTaskId ||
                         volunteerTaskId === "0"
                     ) {
-
-                        console.error(
-                            "VolunteerTaskId is missing.",
-                            button.outerHTML
-                        );
 
                         showMessage(
                             "Unable to identify this task.",
@@ -2953,41 +3551,86 @@ var todaysStatus =
                     }
 
                     const status = (
-                        button.getAttribute("data-task-status") || ""
-                    ).trim().toLowerCase().replace(/\s+/g, "");
+                        button.getAttribute(
+                            "data-task-status"
+                        ) ||
+                        ""
+                    )
+                        .trim()
+                        .toLowerCase()
+                        .replace(/\s+/g, "");
 
-                    const isCompleted = status === "completed";
-                    const showStarted = isCompleted || status === "inprogress";
+                    const isCompleted =
+                        status === "completed";
 
-                    const startedDate = button.getAttribute(
-                        "data-task-started-date"
-                    );
-                    const completedDate = button.getAttribute(
-                        "data-task-completed-date"
-                    );
-                    const completionNotes = button.getAttribute(
-                        "data-task-completion-notes"
+                    const showStarted =
+                        isCompleted ||
+                        status === "inprogress";
+
+                    const startedDate =
+                        button.getAttribute(
+                            "data-task-started-date"
+                        );
+
+                    const completedDate =
+                        button.getAttribute(
+                            "data-task-completed-date"
+                        );
+
+                    const completionNotes =
+                        button.getAttribute(
+                            "data-task-completion-notes"
+                        );
+
+                    setTaskDetailVisibility(
+                        taskActualTimes,
+                        showStarted
                     );
 
-                    setTaskDetailVisibility(taskActualTimes, showStarted);
-                    setTaskDetailVisibility(taskStartedBox, showStarted);
-                    setTaskDetailVisibility(taskCompletedBox, isCompleted);
-                    setTaskDetailVisibility(taskCompletionNotesBox, isCompleted);
+                    setTaskDetailVisibility(
+                        taskStartedBox,
+                        showStarted
+                    );
+
+                    setTaskDetailVisibility(
+                        taskCompletedBox,
+                        isCompleted
+                    );
+
+                    setTaskDetailVisibility(
+                        taskCompletionNotesBox,
+                        isCompleted
+                    );
 
                     if (taskStartedDateTime) {
+
                         taskStartedDateTime.textContent =
-                            showStarted ? formatTaskDateTime(startedDate) : "—";
+                            showStarted
+                                ? formatTaskDateTime(
+                                    startedDate
+                                )
+                                : "—";
                     }
 
                     if (taskCompletedDateTime) {
+
                         taskCompletedDateTime.textContent =
-                            isCompleted ? formatTaskDateTime(completedDate) : "—";
+                            isCompleted
+                                ? formatTaskDateTime(
+                                    completedDate
+                                )
+                                : "—";
                     }
 
                     if (taskCompletionNotes) {
-                        taskCompletionNotes.textContent = isCompleted
-                            ? (completionNotes?.trim() || "No completion notes provided.")
-                            : "—";
+
+                        taskCompletionNotes.textContent =
+                            isCompleted
+                                ? (
+                                    completionNotes?.trim() ||
+                                    "No completion notes provided."
+                                )
+                                : "—";
                     }
 
                     openModal(
@@ -3114,11 +3757,6 @@ var todaysStatus =
                         modal.dataset.taskDate ||
                         "";
 
-                    console.log(
-                        "REMOVE VolunteerTaskId:",
-                        volunteerTaskId
-                    );
-
                     if (!volunteerTaskId) {
 
                         showMessage(
@@ -3205,11 +3843,6 @@ var todaysStatus =
                                 response
                             );
 
-                        console.log(
-                            "REMOVE RESPONSE:",
-                            result
-                        );
-
                         if (
                             !result ||
                             result.success !== true
@@ -3276,7 +3909,8 @@ var todaysStatus =
                                     );
 
                                 if (
-                                    remainingTasks.length === 0
+                                    remainingTasks.length ===
+                                    0
                                 ) {
 
                                     dayElement.classList.remove(
@@ -3451,6 +4085,8 @@ var todaysStatus =
                 closeModal(
                     rosterModal
                 );
+
+                closeAttendanceLocationModal();
             }
         );
 
@@ -3479,6 +4115,13 @@ var todaysStatus =
         );
 
         console.log(
+            "Attendance location buttons:",
+            document.querySelectorAll(
+                ".js-open-attendance-location"
+            ).length
+        );
+
+        console.log(
             "Calendar tasks:",
             document.querySelectorAll(
                 '[data-calendar-task="true"]'
@@ -3496,4 +4139,5 @@ var todaysStatus =
         );
 
     });
+
 </script>

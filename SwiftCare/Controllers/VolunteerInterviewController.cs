@@ -46,6 +46,7 @@ namespace SwiftCare.Controllers
             _fileUploadService = fileUploadService;
         }
 
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
         public async Task<IActionResult> Interviews()
         {
@@ -1369,7 +1370,7 @@ namespace SwiftCare.Controllers
                     "Interview integrity threshold reached.";
 
                 session.LastActivityType =
-                    "SuspiciousActivityThresholdReached";
+                    "Suspicious Activity Threshold Reached";
             }
 
 

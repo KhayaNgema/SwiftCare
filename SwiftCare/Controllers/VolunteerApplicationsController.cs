@@ -95,6 +95,8 @@ namespace SwiftCare.Controllers
 
             return View(viewModel);
         }
+
+        [Authorize(Roles = "Supervisor")]
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ShortlistManagement()
@@ -113,6 +115,7 @@ namespace SwiftCare.Controllers
             return View(applications);
         }
 
+        [Authorize(Roles = "Applicant")]
         [HttpGet]
         public async Task<IActionResult> TrackApplication()
         {
@@ -132,7 +135,7 @@ namespace SwiftCare.Controllers
             return View(applications);
         }
 
-
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
         public async Task<IActionResult> VolunteerApplications()
         {
@@ -144,6 +147,8 @@ namespace SwiftCare.Controllers
 
             return View(applications);
         }
+
+
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetShortlistingPipelineStatus(int opportunityId)
@@ -179,7 +184,7 @@ namespace SwiftCare.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "Human Resources Manager")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RunShortlistingPipeline(int opportunityId)
         {
@@ -288,6 +293,8 @@ namespace SwiftCare.Controllers
             }
         }
 
+
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
         public async Task<IActionResult> InterviewReview(int applicationId)
         {
@@ -1160,6 +1167,8 @@ model.HasInterviewVideo = false;
 
             return View(model);
         }
+
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RunInterviewEvaluation(
@@ -1270,6 +1279,7 @@ model.HasInterviewVideo = false;
                     });
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1760,6 +1770,7 @@ model.HasInterviewVideo = false;
                 new { applicationId });
         }
 
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ShortlistCandidate(int applicationId)

@@ -91,7 +91,7 @@ namespace SwiftCare.Controllers
         // OFFER
         // ============================================================
 
-        [AllowAnonymous]
+        [Authorize(Roles = "Applicant")]
         [HttpGet]
         [Route("VolunteerOnboarding/Offer")]
         public async Task<IActionResult> Offer(
@@ -181,7 +181,7 @@ namespace SwiftCare.Controllers
         // ACCEPT OFFER
         // ============================================================
 
-        [AllowAnonymous]
+        [Authorize(Roles = "Applicant")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AcceptOffer(
@@ -246,7 +246,7 @@ namespace SwiftCare.Controllers
         // ============================================================
         // POLICIES
         // ============================================================
-
+        [Authorize(Roles = "Applicant")]
         [HttpGet]
         public async Task<IActionResult> Policies(
             CancellationToken cancellationToken = default)

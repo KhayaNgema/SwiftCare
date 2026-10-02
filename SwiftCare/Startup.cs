@@ -31,6 +31,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
+using QuestPDF.Infrastructure;
 
 public class Startup
 {
@@ -61,6 +62,7 @@ public class Startup
             throw new InvalidOperationException(
                 "DefaultConnection is missing.");
         }
+        QuestPDF.Settings.License = LicenseType.Community;
 
 
         // ============================================================

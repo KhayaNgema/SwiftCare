@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
@@ -14,15 +13,9 @@ namespace SwiftCare.Controllers.Api.Webhooks
     public class DiditWebhookController : ControllerBase
     {
         private readonly SwiftCareDbContext _context;
-
-        private readonly IDiditWebhookSignatureValidator
-            _signatureValidator;
-
-        private readonly IDiditWebhookService
-            _webhookService;
-
-        private readonly ILogger<DiditWebhookController>
-            _logger;
+        private readonly IDiditWebhookSignatureValidator _signatureValidator;
+        private readonly IDiditWebhookService _webhookService;
+        private readonly ILogger<DiditWebhookController> _logger;
 
         private static readonly JsonSerializerOptions JsonOptions =
             new()
@@ -42,12 +35,26 @@ namespace SwiftCare.Controllers.Api.Webhooks
             _logger = logger;
         }
 
+        // ============================================================
+        // GET - DIDIT REACHABILITY TEST
+        // ============================================================
+
         [HttpGet]
         [IgnoreAntiforgeryToken]
         public IActionResult Get()
         {
             _logger.LogInformation(
-                "Didit webhook GET endpoint reached.");
+                "==================================================");
+
+            _logger.LogInformation(
+                "DIDIT WEBHOOK GET ENDPOINT REACHED.");
+
+            _logger.LogInformation(
+                "URL: {Url}",
+                $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}");
+
+            _logger.LogInformation(
+                "==================================================");
 
             return Ok(new
             {
@@ -58,60 +65,185 @@ namespace SwiftCare.Controllers.Api.Webhooks
             });
         }
 
+        // ============================================================
+        // POST - ACTUAL DIDIT WEBHOOK
+        // ============================================================
+
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Receive()
         {
-            _logger.LogInformation(
-                "================================================");
+            _logger.LogCritical(
+                "############################################################");
 
-            _logger.LogInformation(
-                "DIDIT WEBHOOK REQUEST RECEIVED.");
+            _logger.LogCritical(
+                "🔥 DIDIT POST WEBHOOK RECEIVED 🔥");
 
-            _logger.LogInformation(
+            _logger.LogCritical(
                 "Request URL: {Url}",
-                $"{Request.Scheme}://{Request.Host}{Request.Path}");
+                $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}");
 
-            _logger.LogInformation(
+            _logger.LogCritical(
                 "Remote IP: {RemoteIp}",
                 HttpContext.Connection.RemoteIpAddress);
 
-            _logger.LogInformation(
-                "================================================");
+            _logger.LogCritical(
+                "Content-Type: {ContentType}",
+                Request.ContentType);
+
+            _logger.LogCritical(
+                "Content-Length: {ContentLength}",
+                Request.ContentLength);
+
+            _logger.LogCritical(
+                "############################################################");
+
+            // ========================================================
+            // ENABLE REQUEST BODY BUFFERING
+            // ========================================================
 
             Request.EnableBuffering();
 
             string rawBody;
 
-            using (
-                var reader =
-                    new StreamReader(
-                        Request.Body,
-                        Encoding.UTF8,
-                        detectEncodingFromByteOrderMarks: false,
-                        leaveOpen: true))
+            try
             {
-                rawBody =
-                    await reader.ReadToEndAsync();
+                using var reader = new StreamReader(
+                    Request.Body,
+                    Encoding.UTF8,
+                    detectEncodingFromByteOrderMarks: false,
+                    leaveOpen: true);
+
+                rawBody = await reader.ReadToEndAsync();
+
+                Request.Body.Position = 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "DIDIT WEBHOOK: Failed to read request body.");
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Could not read webhook body."
+                });
             }
 
-            Request.Body.Position = 0;
-
-            _logger.LogInformation(
-                "Didit webhook raw body received. Length={Length}.",
+            _logger.LogCritical(
+                "DIDIT POST BODY RECEIVED. Length={Length}",
                 rawBody?.Length ?? 0);
 
-            _logger.LogInformation(
-                "Didit webhook raw body: {RawBody}",
-                rawBody);
+            if (string.IsNullOrWhiteSpace(rawBody))
+            {
+                _logger.LogError(
+                    "DIDIT WEBHOOK BODY IS EMPTY.");
 
-            // ---------------------------------------------------------
-            // HEADERS
-            // ---------------------------------------------------------
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Webhook body is empty."
+                });
+            }
+
+            // ========================================================
+            // DESERIALIZE PAYLOAD
+            // ========================================================
+
+            DiditWebhookEnvelope? envelope;
+
+            try
+            {
+                envelope =
+                    JsonSerializer.Deserialize<DiditWebhookEnvelope>(
+                        rawBody,
+                        JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "DIDIT WEBHOOK JSON DESERIALIZATION FAILED.");
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Invalid JSON payload."
+                });
+            }
+
+            if (envelope == null)
+            {
+                _logger.LogError(
+                    "DIDIT WEBHOOK DESERIALIZED TO NULL.");
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Webhook payload is empty."
+                });
+            }
+
+            _logger.LogCritical(
+                "DIDIT PAYLOAD PARSED. " +
+                "EventId={EventId}, " +
+                "WebhookType={WebhookType}, " +
+                "SessionId={SessionId}, " +
+                "VendorData={VendorData}, " +
+                "Status={Status}",
+                envelope.EventId,
+                envelope.WebhookType,
+                envelope.SessionId,
+                envelope.VendorData,
+                envelope.Status);
+
+            // ========================================================
+            // TIMESTAMP
+            // ========================================================
 
             var timestampHeader =
                 Request.Headers["X-Timestamp"]
                     .FirstOrDefault();
+
+            if (!long.TryParse(
+                    timestampHeader,
+                    out var timestamp))
+            {
+                _logger.LogWarning(
+                    "DIDIT WEBHOOK REJECTED: " +
+                    "X-Timestamp is missing or invalid. " +
+                    "Value={Timestamp}",
+                    timestampHeader);
+
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid webhook timestamp."
+                });
+            }
+
+            if (!_signatureValidator.IsTimestampValid(timestamp))
+            {
+                _logger.LogWarning(
+                    "DIDIT WEBHOOK REJECTED: " +
+                    "Timestamp outside allowed window. " +
+                    "Timestamp={Timestamp}",
+                    timestamp);
+
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Webhook timestamp expired."
+                });
+            }
+
+            _logger.LogInformation(
+                "DIDIT TIMESTAMP VALIDATED.");
+
+            // ========================================================
+            // SIGNATURE HEADERS
+            // ========================================================
 
             var signatureV2 =
                 Request.Headers["X-Signature-V2"]
@@ -126,110 +258,28 @@ namespace SwiftCare.Controllers.Api.Webhooks
                     .FirstOrDefault();
 
             _logger.LogInformation(
-                "Didit webhook headers. " +
-                "X-Timestamp={Timestamp}, " +
+                "DIDIT SIGNATURE HEADERS. " +
                 "HasV2={HasV2}, " +
                 "HasSignature={HasSignature}, " +
-                "HasSimpleSignature={HasSimpleSignature}.",
-                timestampHeader,
+                "HasSimpleSignature={HasSimpleSignature}",
                 !string.IsNullOrWhiteSpace(signatureV2),
                 !string.IsNullOrWhiteSpace(signature),
                 !string.IsNullOrWhiteSpace(signatureSimple));
 
-            // ---------------------------------------------------------
-            // PARSE PAYLOAD FIRST FOR DIAGNOSTICS
-            // ---------------------------------------------------------
-
-            DiditWebhookEnvelope? envelope = null;
-
-            try
-            {
-                envelope =
-                    JsonSerializer.Deserialize<DiditWebhookEnvelope>(
-                        rawBody,
-                        JsonOptions);
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Could not deserialize Didit webhook payload.");
-
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Invalid JSON payload."
-                });
-            }
-
-            if (envelope == null)
-            {
-                _logger.LogWarning(
-                    "Didit webhook payload deserialized to null.");
-
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Empty webhook payload."
-                });
-            }
-
-            _logger.LogInformation(
-                "Didit webhook envelope. " +
-                "EventId={EventId}, " +
-                "WebhookType={WebhookType}, " +
-                "SessionId={SessionId}, " +
-                "VendorData={VendorData}, " +
-                "Status={Status}.",
-                envelope.EventId,
-                envelope.WebhookType,
-                envelope.SessionId,
-                envelope.VendorData,
-                envelope.Status);
-
-            // ---------------------------------------------------------
-            // TIMESTAMP
-            // ---------------------------------------------------------
-
-            if (!long.TryParse(
-                    timestampHeader,
-                    out var timestamp))
-            {
-                _logger.LogWarning(
-                    "Didit webhook rejected: X-Timestamp is missing or invalid.");
-
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Invalid webhook timestamp."
-                });
-            }
-
-            if (!_signatureValidator
-                    .IsTimestampValid(timestamp))
-            {
-                _logger.LogWarning(
-                    "Didit webhook rejected: timestamp outside allowed window. " +
-                    "Timestamp={Timestamp}.",
-                    timestamp);
-
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Webhook timestamp expired."
-                });
-            }
-
-            // ---------------------------------------------------------
-            // SIGNATURE
-            // ---------------------------------------------------------
+            // ========================================================
+            // SIGNATURE VALIDATION
+            // ========================================================
 
             var signatureValid = false;
+
+            // --------------------------------------------------------
+            // V2 SIGNATURE
+            // --------------------------------------------------------
 
             if (!string.IsNullOrWhiteSpace(signatureV2))
             {
                 _logger.LogInformation(
-                    "Attempting Didit V2 signature validation.");
+                    "Trying Didit V2 signature.");
 
                 signatureValid =
                     _signatureValidator.VerifyV2(
@@ -237,15 +287,19 @@ namespace SwiftCare.Controllers.Api.Webhooks
                         signatureV2);
 
                 _logger.LogInformation(
-                    "Didit V2 signature validation result: {Valid}.",
+                    "Didit V2 signature result: {Valid}",
                     signatureValid);
             }
+
+            // --------------------------------------------------------
+            // RAW BODY SIGNATURE
+            // --------------------------------------------------------
 
             if (!signatureValid &&
                 !string.IsNullOrWhiteSpace(signature))
             {
                 _logger.LogInformation(
-                    "Attempting Didit raw-body signature validation.");
+                    "Trying Didit raw-body signature.");
 
                 signatureValid =
                     _signatureValidator.VerifyRawBody(
@@ -253,16 +307,19 @@ namespace SwiftCare.Controllers.Api.Webhooks
                         signature);
 
                 _logger.LogInformation(
-                    "Didit raw-body signature validation result: {Valid}.",
+                    "Didit raw-body signature result: {Valid}",
                     signatureValid);
             }
 
+            // --------------------------------------------------------
+            // SIMPLE SIGNATURE
+            // --------------------------------------------------------
+
             if (!signatureValid &&
-                !string.IsNullOrWhiteSpace(
-                    signatureSimple))
+                !string.IsNullOrWhiteSpace(signatureSimple))
             {
                 _logger.LogInformation(
-                    "Attempting Didit simple signature validation.");
+                    "Trying Didit simple signature.");
 
                 signatureValid =
                     _signatureValidator.VerifySimple(
@@ -273,15 +330,15 @@ namespace SwiftCare.Controllers.Api.Webhooks
                         signatureSimple);
 
                 _logger.LogInformation(
-                    "Didit simple signature validation result: {Valid}.",
+                    "Didit simple signature result: {Valid}",
                     signatureValid);
             }
 
             if (!signatureValid)
             {
-                _logger.LogWarning(
-                    "Didit webhook signature validation FAILED. " +
-                    "EventId={EventId}, SessionId={SessionId}.",
+                _logger.LogError(
+                    "DIDIT WEBHOOK SIGNATURE VALIDATION FAILED. " +
+                    "EventId={EventId}, SessionId={SessionId}",
                     envelope.EventId,
                     envelope.SessionId);
 
@@ -292,18 +349,23 @@ namespace SwiftCare.Controllers.Api.Webhooks
                 });
             }
 
-            _logger.LogInformation(
-                "Didit webhook signature VALIDATED successfully.");
+            _logger.LogCritical(
+                "############################################################");
 
-            // ---------------------------------------------------------
+            _logger.LogCritical(
+                "🔥 DIDIT SIGNATURE VALIDATED 🔥");
+
+            _logger.LogCritical(
+                "############################################################");
+
+            // ========================================================
             // EVENT ID
-            // ---------------------------------------------------------
+            // ========================================================
 
-            if (string.IsNullOrWhiteSpace(
-                    envelope.EventId))
+            if (string.IsNullOrWhiteSpace(envelope.EventId))
             {
-                _logger.LogWarning(
-                    "Didit webhook rejected because EventId is missing.");
+                _logger.LogError(
+                    "DIDIT WEBHOOK REJECTED: EventId missing.");
 
                 return BadRequest(new
                 {
@@ -312,143 +374,210 @@ namespace SwiftCare.Controllers.Api.Webhooks
                 });
             }
 
-            // ---------------------------------------------------------
-            // IDEMPOTENCY
-            // ---------------------------------------------------------
+            // ========================================================
+            // CHECK DUPLICATE WEBHOOK
+            // ========================================================
 
-            var existing =
+            var existingWebhook =
                 await _context.DiditWebhookLogs
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
-                        x => x.EventId ==
-                             envelope.EventId);
+                        x => x.EventId == envelope.EventId);
 
-            if (existing != null)
+            if (existingWebhook != null)
             {
-                _logger.LogInformation(
-                    "Didit webhook EventId {EventId} already exists as log {WebhookLogId}. Returning OK.",
+                _logger.LogWarning(
+                    "DIDIT WEBHOOK ALREADY EXISTS. " +
+                    "EventId={EventId}, " +
+                    "WebhookLogId={WebhookLogId}, " +
+                    "Processed={Processed}, " +
+                    "ProcessingFailed={ProcessingFailed}",
                     envelope.EventId,
-                    existing.Id);
+                    existingWebhook.Id,
+                    existingWebhook.Processed,
+                    existingWebhook.ProcessingFailed);
 
                 return Ok(new
                 {
                     success = true,
                     duplicate = true,
-                    webhookLogId = existing.Id
+                    received = true,
+                    processed = existingWebhook.Processed,
+                    webhookLogId = existingWebhook.Id
                 });
             }
 
-            // ---------------------------------------------------------
+            // ========================================================
             // CREATE WEBHOOK LOG
-            // ---------------------------------------------------------
+            // ========================================================
 
             var webhookLog =
                 new DiditWebhookLog
                 {
-                    EventId =
-                        envelope.EventId,
+                    EventId = envelope.EventId,
 
-                    WebhookType =
-                        envelope.WebhookType,
+                    WebhookType = envelope.WebhookType,
 
-                    SessionId =
-                        envelope.SessionId,
+                    SessionId = envelope.SessionId,
 
-                    VendorData =
-                        envelope.VendorData,
+                    VendorData = envelope.VendorData,
 
-                    Status =
-                        envelope.Status,
+                    Status = envelope.Status,
 
-                    Environment =
-                        envelope.Environment,
+                    Environment = envelope.Environment,
 
-                    Timestamp =
-                        timestamp,
+                    Timestamp = timestamp,
 
-                    ReceivedDate =
-                        DateTime.Now,
+                    ReceivedDate = DateTime.Now,
 
-                    SignatureVerified =
-                        true,
+                    SignatureVerified = true,
 
-                    Processed =
-                        false,
+                    Processed = false,
 
-                    ProcessingFailed =
-                        false,
+                    ProcessingFailed = false,
 
-                    RawBody =
-                        rawBody
+                    RawBody = rawBody
                 };
 
-            _context.DiditWebhookLogs.Add(
-                webhookLog);
+            _context.DiditWebhookLogs.Add(webhookLog);
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation(
-                "Didit webhook log CREATED. " +
-                "WebhookLogId={WebhookLogId}, " +
-                "EventId={EventId}.",
-                webhookLog.Id,
+            _logger.LogCritical(
+                "############################################################");
+
+            _logger.LogCritical(
+                "🔥 DIDIT WEBHOOK LOG CREATED 🔥");
+
+            _logger.LogCritical(
+                "WebhookLogId={WebhookLogId}",
+                webhookLog.Id);
+
+            _logger.LogCritical(
+                "EventId={EventId}",
                 webhookLog.EventId);
 
-            // ---------------------------------------------------------
-            // PROCESS WEBHOOK
-            // ---------------------------------------------------------
+            _logger.LogCritical(
+                "Status={Status}",
+                webhookLog.Status);
+
+            _logger.LogCritical(
+                "############################################################");
+
+            // ========================================================
+            // CALL SERVICE
+            // ========================================================
 
             try
             {
-                /*
-                 * For now we process synchronously.
-                 *
-                 * This is intentional during development so we can
-                 * immediately see failures in the request/log output.
-                 */
+                _logger.LogCritical(
+                    "############################################################");
+
+                _logger.LogCritical(
+                    "🔥🔥🔥 CALLING DIDIT WEBHOOK SERVICE 🔥🔥🔥");
+
+                _logger.LogCritical(
+                    "Calling _webhookService.ProcessWebhookAsync");
+
+                _logger.LogCritical(
+                    "WebhookLogId={WebhookLogId}",
+                    webhookLog.Id);
+
+                _logger.LogCritical(
+                    "SessionId={SessionId}",
+                    webhookLog.SessionId);
+
+                _logger.LogCritical(
+                    "Status={Status}",
+                    webhookLog.Status);
+
+                _logger.LogCritical(
+                    "############################################################");
 
                 await _webhookService.ProcessWebhookAsync(
                     webhookLog.Id,
-                    HttpContext.RequestAborted);
+                    CancellationToken.None);
 
-                _logger.LogInformation(
-                    "Didit webhook {WebhookLogId} processed successfully.",
-                    webhookLog.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Didit webhook {WebhookLogId} processing failed.",
+                _logger.LogCritical(
+                    "############################################################");
+
+                _logger.LogCritical(
+                    "🔥🔥🔥 DIDIT WEBHOOK SERVICE FINISHED 🔥🔥🔥");
+
+                _logger.LogCritical(
+                    "WebhookLogId={WebhookLogId}",
                     webhookLog.Id);
 
-                /*
-                 * We already have the webhook stored, so return 200.
-                 *
-                 * Didit should not endlessly retry a webhook simply
-                 * because our internal processing failed.
-                 */
+                _logger.LogCritical(
+                    "############################################################");
 
                 return Ok(new
                 {
                     success = true,
                     received = true,
-                    processed = false,
+                    processed = true,
                     webhookLogId = webhookLog.Id
                 });
             }
-
-            // ---------------------------------------------------------
-            // RETURN
-            // ---------------------------------------------------------
-
-            return Ok(new
+            catch (Exception ex)
             {
-                success = true,
-                received = true,
-                processed = true,
-                webhookLogId = webhookLog.Id
-            });
+                _logger.LogCritical(
+                    ex,
+                    "############################################################");
+
+                _logger.LogCritical(
+                    "🔥🔥🔥 DIDIT WEBHOOK SERVICE FAILED 🔥🔥🔥");
+
+                _logger.LogCritical(
+                    "WebhookLogId={WebhookLogId}",
+                    webhookLog.Id);
+
+                _logger.LogCritical(
+                    "EventId={EventId}",
+                    webhookLog.EventId);
+
+                _logger.LogCritical(
+                    "SessionId={SessionId}",
+                    webhookLog.SessionId);
+
+                _logger.LogCritical(
+                    "Status={Status}",
+                    webhookLog.Status);
+
+                _logger.LogCritical(
+                    "############################################################");
+
+                // Mark webhook as failed.
+                try
+                {
+                    webhookLog.Processed = false;
+                    webhookLog.ProcessingFailed = true;
+
+                    await _context.SaveChangesAsync(
+                        CancellationToken.None);
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.LogError(
+                        dbEx,
+                        "Failed to mark Didit webhook as ProcessingFailed. " +
+                        "WebhookLogId={WebhookLogId}",
+                        webhookLog.Id);
+                }
+
+                // Return 500 while debugging.
+                // This makes the failure visible.
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        success = false,
+                        received = true,
+                        processed = false,
+                        webhookLogId = webhookLog.Id,
+                        message = "Webhook service processing failed."
+                    });
+            }
         }
     }
 }

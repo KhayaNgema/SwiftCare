@@ -3,9 +3,15 @@
 <head>
     <meta charset="utf-8">
 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>SwiftCare Volunteer Service Agreement</title>
 
     <style>
+
+        /* =========================================================
+           SWIFTCARE DESIGN SYSTEM
+           ========================================================= */
 
         :root {
             --forest-green: #1B5E20;
@@ -20,7 +26,6 @@
             --dark-text: #263238;
             --muted-green: #607D63;
             --white: #FFFFFF;
-            --page-size: A4;
             --page-margin-top: 42px;
             --page-margin-right: 42px;
             --page-margin-bottom: 45px;
@@ -41,15 +46,79 @@
 
 
         /* =========================================================
-           DOCUMENT
+           PRINT / PDF CONFIGURATION
            ========================================================= */
 
+        @page {
+            size: A4;
+            margin: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+        }
+
+        html {
+            width: 100%;
+            background: var(--white);
+        }
+
         body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
             font-family: Arial, Helvetica, sans-serif;
-            color: #263238;
-            background: #FFFFFF;
-            font-size: 9.5px;
-            line-height: 1.45;
+            color: var(--dark-text);
+            background: var(--white);
+            font-size: var(--body-font-size);
+            line-height: var(--line-height);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+
+        /* =========================================================
+           PAGE BREAK CONTROL
+           ========================================================= */
+
+        section {
+            display: block;
+            margin-bottom: var(--section-spacing);
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        section-title {
+            display: block;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+
+        field {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        list {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        signatures {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        signature {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        footer {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
 
@@ -59,39 +128,75 @@
 
         company-brand {
             display: block;
+            position: relative;
+            padding-bottom: 13px;
+            margin-bottom: 14px;
+            border-bottom: 2px solid var(--lime-green);
         }
 
         company-logo {
             display: block;
-            color: #1B5E20;
+            width: 30px;
+            height: 30px;
+            margin-bottom: 5px;
+            color: var(--forest-green);
         }
+
+            company-logo svg {
+                display: block;
+                width: 30px;
+                height: 30px;
+            }
 
         company-name {
             display: block;
-            color: #1B5E20;
+            color: var(--forest-green);
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 2px;
         }
 
         company-tagline {
             display: block;
-            color: #607D63;
+            color: var(--muted-green);
             font-size: 7.5px;
+            line-height: 1.3;
         }
 
 
         /* =========================================================
-           METADATA
+           CONTRACT METADATA
            ========================================================= */
 
         contract-metadata {
             display: block;
+            margin-bottom: 18px;
+            padding: 9px 11px;
+            background: var(--soft-green);
+            border: 1px solid var(--border-green);
+            border-left: 4px solid var(--lime-green);
+            border-radius: var(--border-radius);
         }
 
         contract-reference,
         contract-version,
         organisation {
             display: block;
+        }
+
+        contract-reference {
+            color: var(--forest-green);
+            font-size: 8px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        contract-version,
+        organisation {
+            color: var(--muted-green);
+            font-size: 7.5px;
+            line-height: 1.35;
         }
 
 
@@ -101,40 +206,44 @@
 
         document-header {
             display: block;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-green);
         }
 
         document-title {
             display: block;
-            color: #1B5E20;
-            font-size: 22px;
-            font-weight: bold;
+            color: var(--forest-green);
+            font-size: var(--title-font-size);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 4px;
         }
 
         document-subtitle {
             display: block;
-            color: #607D63;
+            color: var(--muted-green);
             font-size: 9px;
+            line-height: 1.35;
         }
 
 
         /* =========================================================
-           SECTIONS
+           SECTION TITLE
            ========================================================= */
-
-        section {
-            display: block;
-            margin-bottom: 18px;
-        }
 
         section-title {
             display: block;
-            color: #1B5E20;
-            background: #F0FDF4;
-            font-size: 12px;
-            font-weight: bold;
-            border-bottom: 1px solid #D5E7D6;
+            color: var(--forest-green);
+            background: var(--soft-lime-green);
+            font-size: var(--section-title-font-size);
+            font-weight: 700;
+            line-height: 1.25;
+            border: 1px solid var(--border-green);
+            border-bottom: 2px solid var(--lime-green);
+            border-radius: var(--border-radius);
             padding: 7px 9px;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
 
 
@@ -144,14 +253,14 @@
 
         paragraph {
             display: block;
-            color: #263238;
-            font-size: 9.5px;
-            line-height: 1.45;
-            margin-bottom: 8px;
+            color: var(--dark-text);
+            font-size: var(--body-font-size);
+            line-height: var(--line-height);
+            margin-bottom: var(--paragraph-spacing);
         }
 
             paragraph.muted {
-                color: #607D63;
+                color: var(--muted-green);
             }
 
 
@@ -161,47 +270,74 @@
 
         field {
             display: block;
-            border: 1px solid #D5E7D6;
-            border-radius: 5px;
-            background: #F7FBF7;
-            margin-bottom: 6px;
+            border: var(--border-width) solid var(--border-green);
+            border-radius: var(--border-radius);
+            background: var(--soft-green);
+            margin-bottom: var(--field-spacing);
             padding: 6px 9px;
         }
 
         field-label {
             display: block;
-            color: #1B5E20;
-            font-size: 8px;
-            font-weight: bold;
+            color: var(--forest-green);
+            font-size: var(--field-label-font-size);
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 2px;
         }
 
         field-value {
             display: block;
-            color: #263238;
-            font-size: 9px;
+            color: var(--dark-text);
+            font-size: var(--field-value-font-size);
+            line-height: 1.35;
+            word-break: break-word;
         }
 
 
         /* =========================================================
-           LISTS
+           LIST CONTAINER
            ========================================================= */
 
         list {
             display: block;
-            background: #F7FBF7;
-            border-left: 3px solid #8BC34A;
+            background: var(--soft-green);
+            border: 1px solid var(--border-green);
+            border-left: 4px solid var(--lime-green);
+            border-radius: var(--border-radius);
             margin-top: 7px;
             margin-bottom: 8px;
-            padding: 8px 10px;
+            padding: 8px 11px;
         }
+
+
+        /* =========================================================
+           CUSTOM LIST ITEMS
+           ========================================================= */
 
         item {
             display: block;
-            color: #263238;
-            font-size: 9.5px;
-            line-height: 1.45;
+            position: relative;
+            color: var(--dark-text);
+            font-size: var(--body-font-size);
+            line-height: var(--line-height);
             margin-bottom: 5px;
+            padding-left: 13px;
         }
+
+            item:last-child {
+                margin-bottom: 0;
+            }
+
+            item::before {
+                content: "•";
+                position: absolute;
+                left: 0;
+                top: 0;
+                color: var(--lime-green);
+                font-size: 11px;
+                font-weight: 700;
+            }
 
 
         /* =========================================================
@@ -209,34 +345,45 @@
            ========================================================= */
 
         signatures {
-            display: block;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 20px;
             margin-top: 22px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         signature {
             display: block;
-            border-top: 1px solid #D5E7D6;
-            margin-top: 18px;
-            padding-top: 8px;
+            border: 1px solid var(--border-green);
+            border-top: 3px solid var(--lime-green);
+            border-radius: var(--border-radius);
+            background: var(--soft-green);
+            padding: 10px;
+            min-height: 95px;
         }
 
         signature-name {
             display: block;
-            color: #263238;
+            color: var(--dark-text);
             font-size: 9px;
-            font-weight: bold;
+            font-weight: 700;
+            margin-bottom: 2px;
         }
 
         signature-party {
             display: block;
-            color: #607D63;
+            color: var(--muted-green);
             font-size: 8px;
+            margin-bottom: 20px;
         }
 
         signature-date {
             display: block;
-            color: #263238;
+            color: var(--dark-text);
             font-size: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-green);
         }
 
 
@@ -246,10 +393,13 @@
 
         footer {
             display: block;
-            color: #607D63;
-            font-size: 7.5px;
-            border-top: 1px solid #D5E7D6;
+            color: var(--muted-green);
+            font-size: var(--footer-font-size);
+            line-height: 1.35;
+            border-top: 1px solid var(--border-green);
             padding-top: 6px;
+            margin-top: 20px;
+            text-align: center;
         }
 
 
@@ -258,19 +408,52 @@
            ========================================================= */
 
         .muted {
-            color: #607D63;
+            color: var(--muted-green);
         }
 
         .accent {
-            color: #8BC34A;
+            color: var(--lime-green);
         }
 
         .forest {
-            color: #1B5E20;
+            color: var(--forest-green);
         }
 
         .dark {
-            color: #263238;
+            color: var(--dark-text);
+        }
+
+
+        /* =========================================================
+           RESPONSIVE FALLBACK
+           ========================================================= */
+
+        @media print {
+
+            body {
+                background: var(--white);
+            }
+
+            company-brand,
+            contract-metadata,
+            document-header,
+            section,
+            signatures,
+            footer {
+                width: 100%;
+            }
+
+            section-title {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            field,
+            list,
+            signature {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
@@ -285,7 +468,25 @@
     <company-brand>
 
         <company-logo>
-            <i class="bi bi-heart-pulse"></i>
+
+            <!-- Self-contained SwiftCare heart icon.
+                 No Bootstrap Icons dependency required. -->
+
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="#1B5E20"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+
+                <path d="M8 12h2l1-2 2 4 1-2h2" />
+
+            </svg>
+
         </company-logo>
 
         <company-name>
@@ -306,14 +507,17 @@
     <contract-metadata>
 
         <contract-reference>
+            Contract Reference:
             {{ContractReference}}
         </contract-reference>
 
         <contract-version>
+            Version:
             {{ContractVersion}}
         </contract-version>
 
         <organisation>
+            Organisation:
             {{OrganisationName}}
         </organisation>
 
@@ -331,7 +535,8 @@
         </document-title>
 
         <document-subtitle>
-            Contract Reference: {{ContractReference}}
+            Contract Reference:
+            {{ContractReference}}
         </document-subtitle>
 
     </document-header>
@@ -353,18 +558,39 @@
         </paragraph>
 
         <field>
-            <field-label>Volunteer</field-label>
-            <field-value>{{VolunteerName}}</field-value>
+
+            <field-label>
+                Volunteer
+            </field-label>
+
+            <field-value>
+                {{VolunteerName}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Email</field-label>
-            <field-value>{{VolunteerEmail}}</field-value>
+
+            <field-label>
+                Email
+            </field-label>
+
+            <field-value>
+                {{VolunteerEmail}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Contract Reference</field-label>
-            <field-value>{{ContractReference}}</field-value>
+
+            <field-label>
+                Contract Reference
+            </field-label>
+
+            <field-value>
+                {{ContractReference}}
+            </field-value>
+
         </field>
 
     </section>
@@ -381,23 +607,51 @@
         </section-title>
 
         <field>
-            <field-label>Position</field-label>
-            <field-value>{{PositionTitle}}</field-value>
+
+            <field-label>
+                Position
+            </field-label>
+
+            <field-value>
+                {{PositionTitle}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Category</field-label>
-            <field-value>{{Category}}</field-value>
+
+            <field-label>
+                Category
+            </field-label>
+
+            <field-value>
+                {{Category}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Area</field-label>
-            <field-value>{{Area}}</field-value>
+
+            <field-label>
+                Area
+            </field-label>
+
+            <field-value>
+                {{Area}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Location</field-label>
-            <field-value>{{CityName}}, {{Province}}</field-value>
+
+            <field-label>
+                Location
+            </field-label>
+
+            <field-value>
+                {{CityName}}, {{Province}}
+            </field-value>
+
         </field>
 
         <paragraph>
@@ -418,28 +672,63 @@
         </section-title>
 
         <field>
-            <field-label>Start Date</field-label>
-            <field-value>{{StartDate}}</field-value>
+
+            <field-label>
+                Start Date
+            </field-label>
+
+            <field-value>
+                {{StartDate}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>End Date</field-label>
-            <field-value>{{EndDate}}</field-value>
+
+            <field-label>
+                End Date
+            </field-label>
+
+            <field-value>
+                {{EndDate}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Start Time</field-label>
-            <field-value>{{StartTime}}</field-value>
+
+            <field-label>
+                Start Time
+            </field-label>
+
+            <field-value>
+                {{StartTime}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>End Time</field-label>
-            <field-value>{{EndTime}}</field-value>
+
+            <field-label>
+                End Time
+            </field-label>
+
+            <field-value>
+                {{EndTime}}
+            </field-value>
+
         </field>
 
         <field>
-            <field-label>Minimum Age</field-label>
-            <field-value>{{MinimumAge}}</field-value>
+
+            <field-label>
+                Minimum Age
+            </field-label>
+
+            <field-value>
+                {{MinimumAge}}
+            </field-value>
+
         </field>
 
     </section>
@@ -718,7 +1007,8 @@
                 </signature-party>
 
                 <signature-date>
-                    Date: ______________________________
+                    Date:
+                    ______________________________
                 </signature-date>
 
             </signature>
@@ -735,7 +1025,8 @@
                 </signature-party>
 
                 <signature-date>
-                    Date: ______________________________
+                    Date:
+                    ______________________________
                 </signature-date>
 
             </signature>
@@ -751,8 +1042,10 @@
 
     <footer>
 
-        SwiftCare Volunteer Contract |
-        {{ContractReference}} |
+        SwiftCare Volunteer Contract
+        |
+        {{ContractReference}}
+        |
         Version {{ContractVersion}}
 
     </footer>

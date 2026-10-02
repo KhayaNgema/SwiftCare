@@ -344,10 +344,9 @@
 
                             </div>
 
-
                             @if (onboardingByApplication.TryGetValue(
-         application.VolunteerApplicationId,
-         out var applicationOnboardingId))
+                                application.VolunteerApplicationId,
+                                out var applicationOnboardingId))
                             {
                                 <div class="sc-track-onboarding-action">
 
@@ -356,30 +355,18 @@
                                            asp-route-id="@applicationOnboardingId"
                                            class="sc-track-onboarding-button">
 
-                                        <span class="sc-track-onboarding-button-icon">
-
-                                            <i class="bi bi-person-vcard-fill"></i>
-
-                                        </span>
-
                                         <span class="sc-track-onboarding-button-content">
-
-                                            <strong>
-                                                Continue Onboarding
-                                            </strong>
-
-                                            <small>
-                                                Continue your volunteer onboarding process
-                                            </small>
-
+                                            <strong>Onboarding</strong>
                                         </span>
 
-                                        <i class="bi bi-arrow-right sc-track-onboarding-arrow"></i>
+                                        <i class="bi bi-chevron-right sc-track-onboarding-arrow"></i>
 
                                     </a>
 
                                 </div>
                             }
+
+
 
                         </div>
 

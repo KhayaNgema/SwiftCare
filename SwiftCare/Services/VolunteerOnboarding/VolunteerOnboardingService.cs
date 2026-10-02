@@ -3056,10 +3056,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
         // SYNC DOCUMENT REQUIREMENTS
         // ============================================================
 
-        private async Task SyncDocumentRequirementsAsync(
+        public async Task SyncDocumentRequirementsAsync(
             int volunteerOnboardingId,
-            string? adminId,
-            CancellationToken cancellationToken)
+            string? adminId = null,
+            CancellationToken cancellationToken = default)
         {
             var requirements =
                 await _context.VolunteerOnboardingRequirements
@@ -3099,6 +3099,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             if (identityRequirement != null)
             {
+                // ----------------------------------------------------
+                // Find the latest identity document
+                // ----------------------------------------------------
+
                 var latestIdentityDocuments =
                     latestDocuments
                         .Where(x =>
@@ -3113,6 +3117,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
                             x.Status ==
                             VolunteerOnboardingDocumentStatus.Approved);
 
+                // ----------------------------------------------------
+                // Find the latest identity verification
+                // ----------------------------------------------------
+
                 var identityVerification =
                     await _context.VolunteerIdentityVerifications
                         .AsNoTracking()
@@ -3126,18 +3134,32 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         .FirstOrDefaultAsync(
                             cancellationToken);
 
+                // ----------------------------------------------------
+                // DIDIT verification must be fully successful
+                // ----------------------------------------------------
+
                 var diditVerified =
                     identityVerification != null &&
                     identityVerification.Status ==
-                    VolunteerIdentityVerificationStatus.Verified &&
+                        VolunteerIdentityVerificationStatus.Verified &&
                     identityVerification.DocumentVerified &&
                     identityVerification.LivenessVerified &&
-                    identityVerification.FaceMatchVerified;
+                    identityVerification.FaceMatchVerified &&
+                    identityVerification.FaceIdentityEnrolled;
 
                 Console.WriteLine(
                     $"[SyncDocumentRequirements] " +
                     $"IdentityDocumentApproved={identityDocumentApproved}, " +
+                    $"DiditStatus={identityVerification?.Status}, " +
+                    $"DocumentVerified={identityVerification?.DocumentVerified}, " +
+                    $"LivenessVerified={identityVerification?.LivenessVerified}, " +
+                    $"FaceMatchVerified={identityVerification?.FaceMatchVerified}, " +
+                    $"FaceIdentityEnrolled={identityVerification?.FaceIdentityEnrolled}, " +
                     $"DiditFullyVerified={diditVerified}");
+
+                // ----------------------------------------------------
+                // COMPLETE IDENTITY VERIFICATION REQUIREMENT
+                // ----------------------------------------------------
 
                 if (identityDocumentApproved &&
                     diditVerified)
@@ -3145,11 +3167,19 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     MarkRequirementCompleted(
                         identityRequirement,
                         adminId);
+
+                    Console.WriteLine(
+                        "[SyncDocumentRequirements] " +
+                        "Identity Verification requirement COMPLETED.");
                 }
                 else
                 {
                     MarkRequirementIncomplete(
                         identityRequirement);
+
+                    Console.WriteLine(
+                        "[SyncDocumentRequirements] " +
+                        "Identity Verification requirement INCOMPLETE.");
                 }
             }
 
@@ -3245,7 +3275,6 @@ namespace SwiftCare.Services.VolunteerOnboarding
             Console.WriteLine(
                 "[SyncDocumentRequirements] Contract requirement left unchanged.");
         }
-
         // ============================================================
         // GET REQUIREMENT
         // ============================================================

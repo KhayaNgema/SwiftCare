@@ -548,6 +548,12 @@ public class Startup
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
             });
+
+        services.Configure<FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit =
+                500L * 1024L * 1024L;
+        });
     }
 
 

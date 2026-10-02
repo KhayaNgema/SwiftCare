@@ -37,13 +37,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            /*
-             * We intentionally use the historical snapshots stored on the
-             * VolunteerContract.
-             *
-             * This means that if the opportunity is changed later, the
-             * already-generated contract does NOT change.
-             */
+            // ============================================================
+            // LOAD APPLICANT
+            // ============================================================
 
             var applicant =
                 await _context.Applicants
@@ -53,23 +49,30 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         cancellationToken);
 
             var volunteerEmail =
-                applicant?.Email ??
-                contract.VolunteerApplication?.Applicant?.Email ??
-                string.Empty;
+                applicant?.Email
+                ?? contract.VolunteerApplication?.Applicant?.Email
+                ?? string.Empty;
 
             var volunteerName =
                 BuildApplicantName(
                     applicant,
                     contract.VolunteerApplication?.Applicant);
 
+            // ============================================================
+            // DOCUMENT
+            // ============================================================
+
             var document =
                 new VolunteerContractDocument
                 {
                     OrganisationName = "SwiftCare",
+
                     ContractReference =
                         contract.ContractReference,
+
                     ContractVersion =
                         contract.ContractVersion,
+
                     Styles =
                         BuildStyles()
                 };
@@ -106,7 +109,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         new VolunteerContractField
                         {
                             Label = "Contract Reference",
-                            Value = contract.ContractReference
+                            Value =
+                                contract.ContractReference
                         }
                     }
                 });
@@ -125,33 +129,41 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         new VolunteerContractField
                         {
                             Label = "Position",
-                            Value = contract.PositionTitle
+                            Value =
+                                CleanText(
+                                    contract.PositionTitle)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "Category",
-                            Value = FormatEnum(contract.Category)
+                            Value =
+                                FormatEnum(
+                                    contract.Category)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "Area",
-                            Value = FormatEnum(contract.Area)
+                            Value =
+                                FormatEnum(
+                                    contract.Area)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "Location",
-                            Value = BuildLocation(
-                                contract.CityName,
-                                contract.Province)
+                            Value =
+                                BuildLocation(
+                                    contract.CityName,
+                                    contract.Province)
                         }
                     },
 
                     Paragraphs =
                     {
-                        CleanText(contract.RoleDescription)
+                        CleanText(
+                            contract.RoleDescription)
                     }
                 });
 
@@ -169,33 +181,42 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         new VolunteerContractField
                         {
                             Label = "Start Date",
-                            Value = FormatDate(contract.StartDate)
+                            Value =
+                                FormatDate(
+                                    contract.StartDate)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "End Date",
-                            Value = FormatDate(contract.EndDate)
+                            Value =
+                                FormatDate(
+                                    contract.EndDate)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "Start Time",
-                            Value = FormatTime(contract.StartTime)
+                            Value =
+                                FormatTime(
+                                    contract.StartTime)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "End Time",
-                            Value = FormatTime(contract.EndTime)
+                            Value =
+                                FormatTime(
+                                    contract.EndTime)
                         },
 
                         new VolunteerContractField
                         {
                             Label = "Minimum Age",
-                            Value = contract.MinimumAge.HasValue
-                                ? $"{contract.MinimumAge.Value} years"
-                                : string.Empty
+                            Value =
+                                contract.MinimumAge.HasValue
+                                    ? $"{contract.MinimumAge.Value} years"
+                                    : string.Empty
                         }
                     }
                 });
@@ -207,7 +228,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "4. PURPOSE OF THE VOLUNTEER ROLE",
+                    Title =
+                        "4. PURPOSE OF THE VOLUNTEER ROLE",
 
                     Paragraphs =
                     {
@@ -240,7 +262,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "5. VOLUNTEER RESPONSIBILITIES",
+                    Title =
+                        "5. VOLUNTEER RESPONSIBILITIES",
 
                     Paragraphs =
                     {
@@ -250,7 +273,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         "designated SwiftCare supervisor."
                     },
 
-                    Bullets = responsibilities
+                    Bullets =
+                        responsibilities
                 });
 
             // ============================================================
@@ -275,7 +299,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "6. ROLE REQUIREMENTS",
+                    Title =
+                        "6. ROLE REQUIREMENTS",
 
                     Paragraphs =
                     {
@@ -283,7 +308,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
                         "applicable to the approved volunteer opportunity."
                     },
 
-                    Bullets = requirements
+                    Bullets =
+                        requirements
                 });
 
             // ============================================================
@@ -308,9 +334,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "7. REQUIRED SKILLS",
+                    Title =
+                        "7. REQUIRED SKILLS",
 
-                    Bullets = requiredSkills
+                    Bullets =
+                        requiredSkills
                 });
 
             // ============================================================
@@ -415,9 +443,11 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "13. ADDITIONAL ROLE CONDITIONS",
+                    Title =
+                        "13. ADDITIONAL ROLE CONDITIONS",
 
-                    Bullets = new List<string>()
+                    Bullets =
+                        new List<string>()
                 });
 
             // ============================================================
@@ -448,7 +478,8 @@ namespace SwiftCare.Services.VolunteerOnboarding
             document.Sections.Add(
                 new VolunteerContractSection
                 {
-                    Title = "15. VOLUNTEER DECLARATION",
+                    Title =
+                        "15. VOLUNTEER DECLARATION",
 
                     Paragraphs =
                     {
@@ -508,9 +539,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return document;
         }
 
-        // ================================================================
+        // ============================================================
         // SNAPSHOT PARSER
-        // ================================================================
+        // ============================================================
 
         private static List<string> ParseSnapshot(
             string? snapshot)
@@ -543,19 +574,22 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
+                // Remove bullet symbols.
                 line =
                     Regex.Replace(
                         line,
-                        @"^[\-\*\•\▪\◦\·\d]+[\.\):\-]?\s*",
+                        @"^[\-\*\•\▪\◦\·]\s*",
                         string.Empty);
 
+                // Remove numbered bullets.
                 line =
                     Regex.Replace(
                         line,
-                        @"^\s*[\[\(]?\s*\d+\s*[\]\)]?\s*",
+                        @"^\s*\d+[\.\):\-]\s*",
                         string.Empty);
 
-                line = CleanText(line);
+                line =
+                    CleanText(line);
 
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
@@ -573,9 +607,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             return result;
         }
 
-        // ================================================================
+        // ============================================================
         // STYLES
-        // ================================================================
+        // ============================================================
 
         private static VolunteerContractStyles BuildStyles()
         {
@@ -607,9 +641,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
             };
         }
 
-        // ================================================================
+        // ============================================================
         // APPLICANT NAME
-        // ================================================================
+        // ============================================================
 
         private static string BuildApplicantName(
             Applicant? applicant,
@@ -622,10 +656,12 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 return "Applicant";
 
             var firstName =
-                source.FirstName?.Trim() ?? string.Empty;
+                source.FirstName?.Trim()
+                ?? string.Empty;
 
             var lastName =
-                source.LastName?.Trim() ?? string.Empty;
+                source.LastName?.Trim()
+                ?? string.Empty;
 
             var name =
                 $"{firstName} {lastName}".Trim();
@@ -635,9 +671,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 : name;
         }
 
-        // ================================================================
+        // ============================================================
         // LOCATION
-        // ================================================================
+        // ============================================================
 
         private static string BuildLocation(
             string? city,
@@ -649,15 +685,18 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     city?.Trim(),
                     province?.Trim()
                 }
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(
+                    x => !string.IsNullOrWhiteSpace(x))
                 .ToArray();
 
-            return string.Join(", ", parts);
+            return parts.Length == 0
+                ? string.Empty
+                : string.Join(", ", parts);
         }
 
-        // ================================================================
+        // ============================================================
         // DATE
-        // ================================================================
+        // ============================================================
 
         private static string FormatDate(
             DateTime? date)
@@ -669,9 +708,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 : string.Empty;
         }
 
-        // ================================================================
+        // ============================================================
         // TIME
-        // ================================================================
+        // ============================================================
 
         private static string FormatTime(
             TimeSpan? time)
@@ -686,9 +725,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                     CultureInfo.InvariantCulture);
         }
 
-        // ================================================================
+        // ============================================================
         // ENUM
-        // ================================================================
+        // ============================================================
 
         private static string FormatEnum<T>(
             T? value)
@@ -706,9 +745,9 @@ namespace SwiftCare.Services.VolunteerOnboarding
                 " ");
         }
 
-        // ================================================================
+        // ============================================================
         // CLEAN TEXT
-        // ================================================================
+        // ============================================================
 
         private static string CleanText(
             string? value)

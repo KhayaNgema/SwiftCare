@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
+using SwiftCare.Services.VolunteerOnboarding;
 
 namespace SwiftCare.Services.IdentityVerification
 {
@@ -10,15 +11,18 @@ namespace SwiftCare.Services.IdentityVerification
         private readonly SwiftCareDbContext _context;
         private readonly IDiditService _diditService;
         private readonly ILogger<VolunteerIdentityVerificationService> _logger;
+        private readonly IVolunteerOnboardingService _volunteerOnboardingService;
 
         public VolunteerIdentityVerificationService(
             SwiftCareDbContext context,
+            IVolunteerOnboardingService volunteerOnboardingService,
             IDiditService diditService,
             ILogger<VolunteerIdentityVerificationService> logger)
         {
             _context = context;
             _diditService = diditService;
             _logger = logger;
+            _volunteerOnboardingService = volunteerOnboardingService;
         }
 
         // =============================================================
@@ -393,6 +397,10 @@ namespace SwiftCare.Services.IdentityVerification
         // PROCESS DIDIT RESULT
         // =============================================================
 
+        // =============================================================
+        // PROCESS DIDIT RESULT
+        // =============================================================
+
         public async Task ProcessDiditResultAsync(
             int verificationId,
             DiditVerificationResult result,
@@ -419,6 +427,10 @@ namespace SwiftCare.Services.IdentityVerification
                     $"Identity verification {verificationId} was not found.");
             }
 
+            // =========================================================
+            // UPDATE DIDIT IDENTIFIERS
+            // =========================================================
+
             if (!string.IsNullOrWhiteSpace(
                     result.SessionId))
             {
@@ -440,6 +452,10 @@ namespace SwiftCare.Services.IdentityVerification
                     result.PersonId;
             }
 
+            // =========================================================
+            // UPDATE VERIFICATION FLAGS
+            // =========================================================
+
             verification.DocumentVerified =
                 result.DocumentVerified;
 
@@ -452,6 +468,10 @@ namespace SwiftCare.Services.IdentityVerification
             verification.FailureReason =
                 result.FailureReason;
 
+            // =========================================================
+            // UPDATE STATUS
+            // =========================================================
+
             switch (result.Status)
             {
                 case "Approved":
@@ -460,18 +480,7 @@ namespace SwiftCare.Services.IdentityVerification
                         VolunteerIdentityVerificationStatus.Verified;
 
                     verification.VerifiedDate =
-                        DateTime.UtcNow;
-
-                    /*
-                     * IMPORTANT:
-                     *
-                     * FaceIdentityEnrolled means that the successful
-                     * Didit workflow completed with the Face Search
-                     * module enabled.
-                     *
-                     * The actual biometric template is maintained
-                     * by Didit, not by SwiftCare.
-                     */
+                        DateTime.Now;
 
                     verification.FaceIdentityEnrolled =
                         verification.DocumentVerified &&
@@ -577,8 +586,45 @@ namespace SwiftCare.Services.IdentityVerification
             verification.ModifiedDate =
                 DateTime.Now;
 
+            // =========================================================
+            // SAVE DIDIT RESULT FIRST
+            // =========================================================
+
             await _context.SaveChangesAsync(
                 cancellationToken);
+
+            // =========================================================
+            // SYNC ONBOARDING REQUIREMENTS
+            //
+            // This allows SyncDocumentRequirementsAsync() to evaluate:
+            //
+            // 1. Identity document approved by admin
+            // 2. Didit status = Verified
+            // 3. DocumentVerified = true
+            // 4. LivenessVerified = true
+            // 5. FaceMatchVerified = true
+            // 6. FaceIdentityEnrolled = true
+            //
+            // Only when ALL required conditions are true will the
+            // IdentityVerification requirement be marked completed.
+            // =========================================================
+
+            await _volunteerOnboardingService
+                .SyncDocumentRequirementsAsync(
+                    verification.VolunteerOnboardingId,
+                    null,
+                    cancellationToken);
+
+            // =========================================================
+            // SAVE REQUIREMENT UPDATE
+            // =========================================================
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            // =========================================================
+            // LOG
+            // =========================================================
 
             _logger.LogInformation(
                 "Identity verification {VerificationId} updated. " +
@@ -586,7 +632,8 @@ namespace SwiftCare.Services.IdentityVerification
                 "Document={Document}, " +
                 "Liveness={Liveness}, " +
                 "FaceMatch={FaceMatch}, " +
-                "DiditFaceSearchEnrollment={Enrolled}.",
+                "DiditFaceSearchEnrollment={Enrolled}. " +
+                "Onboarding requirements synchronized.",
                 verification.Id,
                 verification.Status,
                 verification.DocumentVerified,

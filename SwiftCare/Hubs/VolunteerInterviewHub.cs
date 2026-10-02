@@ -15,7 +15,8 @@ namespace SwiftCare.Hubs
     {
         private readonly SwiftCareDbContext _context;
 
-    public VolunteerInterviewHub(SwiftCareDbContext context)
+        public VolunteerInterviewHub(
+            SwiftCareDbContext context)
         {
             _context = context;
         }
@@ -24,33 +25,58 @@ namespace SwiftCare.Hubs
         // JOIN INTERVIEW
         // ============================================================
 
-        public async Task JoinInterview(string sessionToken)
+        public async Task JoinInterview(
+            string sessionToken)
         {
             if (string.IsNullOrWhiteSpace(sessionToken))
-                throw new HubException("Invalid interview session.");
+            {
+                throw new HubException(
+                    "Invalid interview session.");
+            }
 
-            var session = await LoadSessionAsync(sessionToken);
+
+            var session =
+                await LoadSessionAsync(
+                    sessionToken);
+
 
             if (session == null)
-                throw new HubException("Interview session not found.");
+            {
+                throw new HubException(
+                    "Interview session not found.");
+            }
 
-            var application = session.VolunteerApplication;
+
+            var application =
+                session.VolunteerApplication;
+
 
             if (application == null)
-                throw new HubException("Volunteer application not found.");
+            {
+                throw new HubException(
+                    "Volunteer application not found.");
+            }
+
 
             if (application.VolunteerOpportunity == null)
-                throw new HubException("Volunteer opportunity not found.");
+            {
+                throw new HubException(
+                    "Volunteer opportunity not found.");
+            }
+
 
             // ========================================================
             // SECURITY CHECK
             // ========================================================
 
-            if (application.Status != VolunteerApplicationStatus.Shortlisted)
+            if (
+                application.Status !=
+                VolunteerApplicationStatus.Shortlisted)
             {
                 throw new HubException(
                     "This interview is not available because the application is not shortlisted.");
             }
+
 
             // ========================================================
             // ADD CONNECTION TO SECURE SESSION GROUP
@@ -60,12 +86,9 @@ namespace SwiftCare.Hubs
                 Context.ConnectionId,
                 sessionToken);
 
+
             // ========================================================
             // SUSPICIOUS SESSION
-            //
-            // IMPORTANT:
-            // A refresh/reconnect must NOT restart an interview that
-            // has already been terminated for suspicious activity.
             // ========================================================
 
             if (
@@ -89,8 +112,12 @@ namespace SwiftCare.Hubs
                 return;
             }
 
+
             // ========================================================
             // ALREADY COMPLETED
+            //
+            // This means the Complete() controller action has already
+            // finalized the interview.
             // ========================================================
 
             if (session.IsCompleted)
@@ -102,65 +129,97 @@ namespace SwiftCare.Hubs
                 return;
             }
 
+
             // ========================================================
             // START SESSION
             //
-            // This only happens for a genuinely new session.
-            //
-            // IMPORTANT:
-            // We NEVER reset CurrentQuestionNumber for an existing
-            // started session.
+            // Only starts a genuinely new session.
             // ========================================================
 
             if (!session.IsStarted)
             {
                 session.IsStarted = true;
-                session.StartedDate = DateTime.Now;
-                session.Status = "InProgress";
+
+                session.StartedDate =
+                    DateTime.Now;
+
+                session.Status =
+                    "InProgress";
+
 
                 if (session.CurrentQuestionNumber <= 0)
                 {
                     session.CurrentQuestionNumber = 1;
                 }
 
+
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewStarted";
+
+
                 await _context.SaveChangesAsync();
             }
 
+
             // ========================================================
-            // SEND COMPLETE CURRENT INTERVIEW STATE
-            //
-            // This reconstructs the interview from the database.
-            // Therefore refreshing the browser does NOT start a new
-            // interview.
+            // SEND CURRENT INTERVIEW STATE
             // ========================================================
 
-            await SendInterviewStateAsync(sessionToken);
+            await SendInterviewStateAsync(
+                sessionToken);
         }
+
 
         // ============================================================
         // SUBMIT ANSWER
         //
-        // The browser does NOT send questionId.
+        // IMPORTANT:
         //
-        // The server determines the current question from:
+        // The final answer DOES NOT complete the interview.
         //
-        // session.CurrentQuestionNumber
+        // The final answer only completes the QUESTION portion.
         //
-        // This prevents the browser from submitting an answer against
-        // another question.
+        // The browser then:
+        //
+        // 1. Stops recording
+        // 2. Uploads video while the session is still InProgress
+        // 3. Calls the existing Complete() action
+        //
+        // Complete() is the ONLY step that marks the session Completed.
         // ============================================================
 
         public async Task SubmitAnswer(
             string sessionToken,
             string answer)
         {
+            // ========================================================
+            // VALIDATE TOKEN
+            // ========================================================
+
             if (string.IsNullOrWhiteSpace(sessionToken))
-                throw new HubException("Invalid interview session.");
+            {
+                throw new HubException(
+                    "Invalid interview session.");
+            }
+
+
+            // ========================================================
+            // VALIDATE ANSWER
+            // ========================================================
 
             if (string.IsNullOrWhiteSpace(answer))
-                throw new HubException("Please provide an answer.");
+            {
+                throw new HubException(
+                    "Please provide an answer.");
+            }
 
-            answer = answer.Trim();
+
+            answer =
+                answer.Trim();
+
 
             // ========================================================
             // MAX ANSWER LENGTH
@@ -168,37 +227,67 @@ namespace SwiftCare.Hubs
 
             if (answer.Length > 3000)
             {
-                answer = answer.Substring(0, 3000);
+                answer =
+                    answer.Substring(
+                        0,
+                        3000);
             }
+
 
             // ========================================================
             // LOAD SESSION
             // ========================================================
 
-            var session = await LoadSessionAsync(sessionToken);
+            var session =
+                await LoadSessionAsync(
+                    sessionToken);
+
 
             if (session == null)
-                throw new HubException("Interview session not found.");
+            {
+                throw new HubException(
+                    "Interview session not found.");
+            }
 
-            var application = session.VolunteerApplication;
+
+            var application =
+                session.VolunteerApplication;
+
 
             if (application == null)
-                throw new HubException("Volunteer application not found.");
+            {
+                throw new HubException(
+                    "Volunteer application not found.");
+            }
 
-            var opportunity = application.VolunteerOpportunity;
+
+            var opportunity =
+                application.VolunteerOpportunity;
+
 
             if (opportunity == null)
-                throw new HubException("Volunteer opportunity not found.");
+            {
+                throw new HubException(
+                    "Volunteer opportunity not found.");
+            }
+
 
             // ========================================================
             // SECURITY
             // ========================================================
 
-            if (application.Status != VolunteerApplicationStatus.Shortlisted)
+            if (
+                application.Status !=
+                VolunteerApplicationStatus.Shortlisted)
             {
                 throw new HubException(
                     "This interview is no longer available.");
             }
+
+
+            // ========================================================
+            // SESSION MUST HAVE STARTED
+            // ========================================================
 
             if (!session.IsStarted)
             {
@@ -206,8 +295,9 @@ namespace SwiftCare.Hubs
                     "The interview session has not started.");
             }
 
+
             // ========================================================
-            // DO NOT ALLOW SUSPICIOUS SESSION TO CONTINUE
+            // SUSPICIOUS SESSION
             // ========================================================
 
             if (
@@ -218,11 +308,17 @@ namespace SwiftCare.Hubs
                     "This interview has been ended and submitted for administrative review.");
             }
 
+
+            // ========================================================
+            // ALREADY COMPLETED
+            // ========================================================
+
             if (session.IsCompleted)
             {
                 throw new HubException(
                     "This interview has already been completed.");
             }
+
 
             // ========================================================
             // GET STABLE QUESTION SET
@@ -233,14 +329,16 @@ namespace SwiftCare.Hubs
                     opportunity,
                     session.SessionToken);
 
+
             if (questions.Count == 0)
             {
                 throw new HubException(
                     "No interview questions are available.");
             }
 
+
             // ========================================================
-            // VALIDATE CURRENT QUESTION
+            // NORMALIZE QUESTION NUMBER
             // ========================================================
 
             if (session.CurrentQuestionNumber <= 0)
@@ -248,19 +346,45 @@ namespace SwiftCare.Hubs
                 session.CurrentQuestionNumber = 1;
             }
 
-            if (session.CurrentQuestionNumber > questions.Count)
+
+            // ========================================================
+            // CURRENT QUESTION OUTSIDE RANGE
+            //
+            // Do NOT mark the session Completed here.
+            // The video still needs to be uploaded.
+            // ========================================================
+
+            if (
+                session.CurrentQuestionNumber >
+                questions.Count)
             {
-                await CompleteSessionAsync(session);
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
+
+                await _context.SaveChangesAsync();
+
 
                 await Clients.Caller.SendAsync(
-                    "InterviewCompleted",
-                    "Thank you. Your interview has been completed successfully.");
+                    "InterviewQuestionsFinished",
+                    "Thank you. Your interview questions have been completed. Saving your interview recording now.");
+
 
                 return;
             }
 
+
+            // ========================================================
+            // GET CURRENT QUESTION
+            // ========================================================
+
             var currentQuestion =
-                questions[session.CurrentQuestionNumber - 1];
+                questions[
+                    session.CurrentQuestionNumber - 1];
+
 
             // ========================================================
             // SAVE / UPDATE ANSWER
@@ -271,8 +395,10 @@ namespace SwiftCare.Hubs
                     .FirstOrDefaultAsync(x =>
                         x.VolunteerApplicationId ==
                             session.VolunteerApplicationId &&
+
                         x.VolunteerQuestionId ==
                             currentQuestion.VolunteerQuestionId);
+
 
             if (existingAnswer == null)
             {
@@ -285,19 +411,23 @@ namespace SwiftCare.Hubs
                         VolunteerQuestionId =
                             currentQuestion.VolunteerQuestionId,
 
-                        Answer = answer
+                        Answer =
+                            answer
                     };
+
 
                 _context.VolunteerApplicationAnswers.Add(
                     existingAnswer);
             }
             else
             {
-                existingAnswer.Answer = answer;
+                existingAnswer.Answer =
+                    answer;
             }
 
+
             // ========================================================
-            // SEND APPLICANT MESSAGE TO CHAT
+            // SEND APPLICANT MESSAGE
             // ========================================================
 
             await Clients.Group(sessionToken)
@@ -311,34 +441,68 @@ namespace SwiftCare.Hubs
                         questionId =
                             currentQuestion.VolunteerQuestionId,
 
-                        answer = answer
+                        answer =
+                            answer
                     });
 
+
             // ========================================================
-            // LAST QUESTION?
+            // CHECK LAST QUESTION
             // ========================================================
 
             bool isLastQuestion =
-                session.CurrentQuestionNumber >= questions.Count;
+                session.CurrentQuestionNumber >=
+                questions.Count;
+
+
+            // ========================================================
+            // LAST QUESTION
+            // ========================================================
 
             if (isLastQuestion)
             {
+                // ----------------------------------------------------
+                // IMPORTANT:
+                //
+                // DO NOT DO THIS HERE:
+                //
+                // session.IsCompleted = true;
+                // session.CompletedDate = DateTime.Now;
+                // session.Status = "Completed";
+                //
+                // The video has NOT been uploaded yet.
+                // ----------------------------------------------------
+
                 session.CurrentQuestionNumber =
                     questions.Count;
 
-                session.IsCompleted = true;
-                session.CompletedDate = DateTime.Now;
-                session.Status = "Completed";
+
+                session.LastActivityDate =
+                    DateTime.Now;
+
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
 
                 await _context.SaveChangesAsync();
 
+
+                // ----------------------------------------------------
+                // TELL BROWSER THAT QUESTIONS ARE FINISHED.
+                // IMPORTANT: this is NOT InterviewCompleted. The recording
+                // must be uploaded before Complete() is called.
+                // ----------------------------------------------------
+
                 await Clients.Group(sessionToken)
                     .SendAsync(
-                        "InterviewCompleted",
-                        "Thank you. Your interview has been completed successfully.");
+                        "InterviewQuestionsFinished",
+                        "Thank you. Your interview questions have been completed. Saving your interview recording now.");
+
 
                 return;
             }
+
 
             // ========================================================
             // MOVE TO NEXT QUESTION
@@ -346,14 +510,26 @@ namespace SwiftCare.Hubs
 
             session.CurrentQuestionNumber++;
 
+
+            session.LastActivityDate =
+                DateTime.Now;
+
+
+            session.LastActivityType =
+                "QuestionAnswered";
+
+
             await _context.SaveChangesAsync();
 
+
             // ========================================================
-            // SEND NEXT BOT QUESTION
+            // SEND NEXT QUESTION
             // ========================================================
 
-            await SendCurrentQuestionAsync(sessionToken);
+            await SendCurrentQuestionAsync(
+                sessionToken);
         }
+
 
         // ============================================================
         // SEND CURRENT QUESTION
@@ -363,10 +539,19 @@ namespace SwiftCare.Hubs
             string sessionToken)
         {
             var session =
-                await LoadSessionAsync(sessionToken);
+                await LoadSessionAsync(
+                    sessionToken);
+
 
             if (session == null)
+            {
                 return;
+            }
+
+
+            // ========================================================
+            // DO NOT CONTINUE COMPLETED/SUSPICIOUS INTERVIEW
+            // ========================================================
 
             if (
                 session.IsCompleted ||
@@ -376,34 +561,61 @@ namespace SwiftCare.Hubs
                 return;
             }
 
+
             var application =
                 session.VolunteerApplication;
 
+
             if (application == null)
+            {
                 return;
+            }
+
 
             var opportunity =
                 application.VolunteerOpportunity;
 
+
             if (opportunity == null)
+            {
                 return;
+            }
+
+
+            // ========================================================
+            // GET QUESTIONS
+            // ========================================================
 
             var questions =
                 await GetInterviewQuestionsAsync(
                     opportunity,
                     session.SessionToken);
 
+
+            // ========================================================
+            // NO QUESTIONS
+            // ========================================================
+
             if (questions.Count == 0)
             {
-                await CompleteSessionAsync(session);
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
+
+                await _context.SaveChangesAsync();
+
 
                 await Clients.Group(sessionToken)
                     .SendAsync(
-                        "InterviewCompleted",
-                        "There are no interview questions available.");
+                        "InterviewQuestionsFinished",
+                        "There are no interview questions available. Saving your interview recording now.");
 
                 return;
             }
+
 
             // ========================================================
             // NORMALIZE QUESTION NUMBER
@@ -416,24 +628,45 @@ namespace SwiftCare.Hubs
                 await _context.SaveChangesAsync();
             }
 
-            if (session.CurrentQuestionNumber > questions.Count)
+
+            // ========================================================
+            // QUESTIONS FINISHED
+            // ========================================================
+
+            if (
+                session.CurrentQuestionNumber >
+                questions.Count)
             {
-                await CompleteSessionAsync(session);
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
+
+                await _context.SaveChangesAsync();
+
 
                 await Clients.Group(sessionToken)
                     .SendAsync(
-                        "InterviewCompleted",
-                        "Thank you. Your interview has been completed.");
+                        "InterviewQuestionsFinished",
+                        "Thank you. Your interview questions have been completed. Saving your interview recording now.");
 
                 return;
             }
+
+
+            // ========================================================
+            // CURRENT QUESTION
+            // ========================================================
 
             var question =
                 questions[
                     session.CurrentQuestionNumber - 1];
 
+
             // ========================================================
-            // CHECK IF QUESTION ALREADY HAS AN ANSWER
+            // CHECK EXISTING ANSWER
             // ========================================================
 
             var existingAnswer =
@@ -441,8 +674,10 @@ namespace SwiftCare.Hubs
                     .FirstOrDefaultAsync(x =>
                         x.VolunteerApplicationId ==
                             session.VolunteerApplicationId &&
+
                         x.VolunteerQuestionId ==
                             question.VolunteerQuestionId);
+
 
             // ========================================================
             // SEND QUESTION
@@ -474,6 +709,7 @@ namespace SwiftCare.Hubs
                     });
         }
 
+
         // ============================================================
         // SEND COMPLETE INTERVIEW STATE
         //
@@ -481,19 +717,24 @@ namespace SwiftCare.Hubs
         //
         // 1. User first opens interview
         // 2. Browser reconnects
-        // 3. User refreshes the page
+        // 3. User refreshes page
         //
-        // This reconstructs the chat from database answers.
+        // This reconstructs the interview from database answers.
         // ============================================================
 
         private async Task SendInterviewStateAsync(
             string sessionToken)
         {
             var session =
-                await LoadSessionAsync(sessionToken);
+                await LoadSessionAsync(
+                    sessionToken);
+
 
             if (session == null)
+            {
                 return;
+            }
+
 
             // ========================================================
             // SUSPICIOUS SESSION
@@ -520,8 +761,11 @@ namespace SwiftCare.Hubs
                 return;
             }
 
+
             // ========================================================
-            // COMPLETED SESSION
+            // FULLY COMPLETED SESSION
+            //
+            // This only happens AFTER Complete() has run.
             // ========================================================
 
             if (session.IsCompleted)
@@ -533,40 +777,63 @@ namespace SwiftCare.Hubs
                 return;
             }
 
+
             var application =
                 session.VolunteerApplication;
 
+
             if (application == null)
+            {
                 return;
+            }
+
 
             var opportunity =
                 application.VolunteerOpportunity;
 
+
             if (opportunity == null)
+            {
                 return;
+            }
+
+
+            // ========================================================
+            // GET QUESTIONS
+            // ========================================================
 
             var questions =
                 await GetInterviewQuestionsAsync(
                     opportunity,
                     session.SessionToken);
 
+
+            // ========================================================
+            // NO QUESTIONS
+            // ========================================================
+
             if (questions.Count == 0)
             {
-                await CompleteSessionAsync(session);
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
+
+                await _context.SaveChangesAsync();
+
 
                 await Clients.Caller.SendAsync(
-                    "InterviewCompleted",
-                    "There are no interview questions available.");
+                    "InterviewQuestionsFinished",
+                    "There are no interview questions available. Saving your interview recording now.");
 
                 return;
             }
 
+
             // ========================================================
             // NORMALIZE CURRENT QUESTION
-            //
-            // IMPORTANT:
-            // We do NOT reset this to 1 unless the database contains
-            // an invalid value.
             // ========================================================
 
             if (session.CurrentQuestionNumber <= 0)
@@ -576,16 +843,32 @@ namespace SwiftCare.Hubs
                 await _context.SaveChangesAsync();
             }
 
-            if (session.CurrentQuestionNumber > questions.Count)
+
+            // ========================================================
+            // QUESTIONS FINISHED
+            // ========================================================
+
+            if (
+                session.CurrentQuestionNumber >
+                questions.Count)
             {
-                await CompleteSessionAsync(session);
+                session.LastActivityDate =
+                    DateTime.Now;
+
+                session.LastActivityType =
+                    "InterviewQuestionsCompleted";
+
+
+                await _context.SaveChangesAsync();
+
 
                 await Clients.Caller.SendAsync(
-                    "InterviewCompleted",
-                    "Thank you. Your interview has been completed.");
+                    "InterviewQuestionsFinished",
+                    "Thank you. Your interview questions have been completed. Saving your interview recording now.");
 
                 return;
             }
+
 
             // ========================================================
             // LOAD ANSWERS
@@ -593,18 +876,23 @@ namespace SwiftCare.Hubs
 
             var questionIds =
                 questions
-                    .Select(x => x.VolunteerQuestionId)
+                    .Select(x =>
+                        x.VolunteerQuestionId)
                     .ToList();
+
 
             var answers =
                 await _context.VolunteerApplicationAnswers
-                    .Include(x => x.VolunteerQuestion)
+                    .Include(x =>
+                        x.VolunteerQuestion)
                     .Where(x =>
                         x.VolunteerApplicationId ==
                             session.VolunteerApplicationId &&
+
                         questionIds.Contains(
                             x.VolunteerQuestionId))
                     .ToListAsync();
+
 
             // ========================================================
             // BUILD CHAT HISTORY
@@ -613,22 +901,30 @@ namespace SwiftCare.Hubs
             var history =
                 new List<object>();
 
-            for (int i = 0; i < questions.Count; i++)
+
+            for (
+                int i = 0;
+                i < questions.Count;
+                i++)
             {
                 var question =
                     questions[i];
+
 
                 var answer =
                     answers.FirstOrDefault(x =>
                         x.VolunteerQuestionId ==
                         question.VolunteerQuestionId);
 
+
                 if (
                     answer == null ||
-                    string.IsNullOrWhiteSpace(answer.Answer))
+                    string.IsNullOrWhiteSpace(
+                        answer.Answer))
                 {
                     continue;
                 }
+
 
                 history.Add(
                     new
@@ -647,6 +943,7 @@ namespace SwiftCare.Hubs
                     });
             }
 
+
             // ========================================================
             // CURRENT QUESTION
             // ========================================================
@@ -655,13 +952,15 @@ namespace SwiftCare.Hubs
                 questions[
                     session.CurrentQuestionNumber - 1];
 
+
             var currentAnswer =
                 answers.FirstOrDefault(x =>
                     x.VolunteerQuestionId ==
                     currentQuestion.VolunteerQuestionId);
 
+
             // ========================================================
-            // SEND STATE TO CALLER ONLY
+            // SEND STATE TO CALLER
             // ========================================================
 
             await Clients.Caller.SendAsync(
@@ -669,7 +968,8 @@ namespace SwiftCare.Hubs
                 new
                 {
                     applicantName =
-                        GetApplicantName(application),
+                        GetApplicantName(
+                            application),
 
                     opportunityTitle =
                         opportunity.Title,
@@ -693,31 +993,11 @@ namespace SwiftCare.Hubs
                         session.CurrentQuestionNumber ==
                         questions.Count,
 
-                    history = history
+                    history =
+                        history
                 });
         }
 
-        // ============================================================
-        // COMPLETE SESSION
-        // ============================================================
-
-        private async Task CompleteSessionAsync(
-            VolunteerVoiceInterviewSession session)
-        {
-            // Never overwrite a suspicious session as Completed.
-            if (
-                session.Status == "Suspicious" ||
-                session.SuspiciousActivityDetected)
-            {
-                return;
-            }
-
-            session.IsCompleted = true;
-            session.CompletedDate = DateTime.Now;
-            session.Status = "Completed";
-
-            await _context.SaveChangesAsync();
-        }
 
         // ============================================================
         // LOAD SESSION
@@ -743,17 +1023,17 @@ namespace SwiftCare.Hubs
                         x!.Applicant)
 
                 .FirstOrDefaultAsync(x =>
-                    x.SessionToken == sessionToken);
+                    x.SessionToken ==
+                    sessionToken);
         }
+
 
         // ============================================================
         // QUESTION SELECTION
         //
         // Questions are selected directly from VolunteerQuestions.
         //
-        // We DO NOT use VolunteerOpportunityQuestions here because
-        // application questions were removed from the opportunity
-        // creation/application flow.
+        // We do NOT use VolunteerOpportunityQuestions.
         // ============================================================
 
         private async Task<List<VolunteerQuestion>>
@@ -763,15 +1043,20 @@ namespace SwiftCare.Hubs
         {
             var allQuestions =
                 await _context.VolunteerQuestions
-                    .Where(x => x.IsActive)
-                    .OrderBy(x => x.DisplayOrder)
-                    .ThenBy(x => x.VolunteerQuestionId)
+                    .Where(x =>
+                        x.IsActive)
+                    .OrderBy(x =>
+                        x.DisplayOrder)
+                    .ThenBy(x =>
+                        x.VolunteerQuestionId)
                     .ToListAsync();
+
 
             if (!allQuestions.Any())
             {
                 return new List<VolunteerQuestion>();
             }
+
 
             // ========================================================
             // RANK QUESTIONS
@@ -782,6 +1067,7 @@ namespace SwiftCare.Hubs
                     .Select(question =>
                     {
                         int relevance = 0;
+
 
                         // ------------------------------------------------
                         // CATEGORY MATCH
@@ -796,6 +1082,7 @@ namespace SwiftCare.Hubs
                             relevance += 100;
                         }
 
+
                         // ------------------------------------------------
                         // AREA MATCH
                         // ------------------------------------------------
@@ -808,6 +1095,7 @@ namespace SwiftCare.Hubs
                         {
                             relevance += 100;
                         }
+
 
                         // ------------------------------------------------
                         // CATEGORY MATCH WITHOUT AREA
@@ -823,49 +1111,77 @@ namespace SwiftCare.Hubs
                             relevance += 25;
                         }
 
+
                         return new
                         {
-                            Question = question,
-                            Relevance = relevance
+                            Question =
+                                question,
+
+                            Relevance =
+                                relevance
                         };
                     })
 
-                    // Only relevant questions
-                    .Where(x => x.Relevance > 0)
 
-                    .OrderByDescending(x => x.Relevance)
+                    // ====================================================
+                    // ONLY RELEVANT QUESTIONS
+                    // ====================================================
+
+                    .Where(x =>
+                        x.Relevance > 0)
+
+
+                    // ====================================================
+                    // SORT BY RELEVANCE
+                    // ====================================================
+
+                    .OrderByDescending(x =>
+                        x.Relevance)
+
 
                     .ThenBy(x =>
                         x.Question.DisplayOrder)
 
+
                     .ThenBy(x =>
                         x.Question.VolunteerQuestionId)
 
+
+                    // ====================================================
+                    // MAXIMUM 7 QUESTIONS
+                    // ====================================================
+
                     .Take(7)
 
-                    .Select(x => x.Question)
+
+                    .Select(x =>
+                        x.Question)
+
 
                     .ToList();
+
 
             // ========================================================
             // STABLE RANDOMIZATION
             //
             // Same token = same question order.
-            //
-            // Refreshing/reconnecting therefore does not change
-            // the interview questions.
             // ========================================================
 
             var seed =
-                CreateStableRandomSeed(sessionToken);
+                CreateStableRandomSeed(
+                    sessionToken);
+
 
             var random =
                 new Random(seed);
 
+
             return rankedQuestions
-                .OrderBy(_ => random.Next())
+                .OrderBy(_ =>
+                    random.Next())
                 .ToList();
         }
+
 
         // ============================================================
         // STABLE RANDOM SEED
@@ -877,15 +1193,19 @@ namespace SwiftCare.Hubs
             using var sha =
                 SHA256.Create();
 
+
             var bytes =
                 sha.ComputeHash(
                     Encoding.UTF8.GetBytes(
-                        sessionToken ?? string.Empty));
+                        sessionToken ??
+                        string.Empty));
+
 
             return BitConverter.ToInt32(
                 bytes,
                 0);
         }
+
 
         // ============================================================
         // APPLICANT NAME
@@ -899,22 +1219,26 @@ namespace SwiftCare.Hubs
                 return "Applicant";
             }
 
+
             var firstName =
                 application.Applicant.FirstName?
                     .Trim();
+
 
             var lastName =
                 application.Applicant.LastName?
                     .Trim();
 
+
             var fullName =
                 $"{firstName} {lastName}"
                     .Trim();
 
-            return string.IsNullOrWhiteSpace(fullName)
+
+            return string.IsNullOrWhiteSpace(
+                fullName)
                 ? "Applicant"
                 : fullName;
         }
     }
-
 }

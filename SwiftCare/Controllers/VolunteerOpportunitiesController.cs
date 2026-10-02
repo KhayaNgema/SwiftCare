@@ -86,6 +86,7 @@ namespace SwiftCare.Controllers
             return View();
         }
 
+        [Authorize(Roles="Human Resources Manager")]
         [HttpGet]
         public async Task<IActionResult> VolunteerOpportunities()
         {
@@ -106,6 +107,7 @@ namespace SwiftCare.Controllers
             return View();
         }
 
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
         public async Task<IActionResult> OpportunityDetails(int opportunityId)
         {

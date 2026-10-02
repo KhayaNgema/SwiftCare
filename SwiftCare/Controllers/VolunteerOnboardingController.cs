@@ -646,239 +646,207 @@ namespace SwiftCare.Controllers
             return View(onboarding);
         }
 
-        // ============================================================
-        // DOWNLOAD GENERATED CONTRACT
-        // ============================================================
-
         [HttpGet]
         public async Task<IActionResult> DownloadContract(
-            int id,
-            CancellationToken cancellationToken = default)
+     int id,
+     CancellationToken cancellationToken)
         {
-            Console.WriteLine("============================================================");
-            Console.WriteLine("DOWNLOAD CONTRACT ACTION STARTED");
-            Console.WriteLine($"Received route id: {id}");
-            Console.WriteLine($"Request URL: {Request.Path}");
-            Console.WriteLine($"Request Method: {Request.Method}");
-            Console.WriteLine("============================================================");
-
-            // ------------------------------------------------------------
-            // CONVERT ROUTE ID
-            // ------------------------------------------------------------
-
-            var onboardingId = id;
-
-            Console.WriteLine(
-                $"[1] OnboardingId after route binding: {onboardingId}");
-
-            // ------------------------------------------------------------
-            // AUTHENTICATED USER
-            // ------------------------------------------------------------
-
-            var userId = _userManager.GetUserId(User);
-
-            Console.WriteLine(
-                $"[2] Authenticated UserId: {userId}");
-
-            if (string.IsNullOrWhiteSpace(userId))
+            try
             {
-                Console.WriteLine(
-                    "[ERROR] No authenticated user was found.");
+                _logger.LogInformation(
+                    "============================================================");
 
-                return Challenge();
-            }
+                _logger.LogInformation(
+                    "DOWNLOAD CONTRACT STARTED. OnboardingId={OnboardingId}",
+                    id);
 
-            // ------------------------------------------------------------
-            // VALIDATE ONBOARDING ID
-            // ------------------------------------------------------------
+                // ============================================================
+                // VALIDATE ID
+                // ============================================================
 
-            if (onboardingId <= 0)
-            {
-                Console.WriteLine(
-                    $"[ERROR] Invalid onboarding ID: {onboardingId}");
+                if (id <= 0)
+                {
+                    _logger.LogWarning(
+                        "Invalid onboarding ID.");
 
-                return BadRequest();
-            }
+                    return NotFound();
+                }
 
-            Console.WriteLine(
-                $"[3] Onboarding ID is valid: {onboardingId}");
+                // ============================================================
+                // CURRENT USER
+                // ============================================================
 
-            // ------------------------------------------------------------
-            // VERIFY ONBOARDING
-            // ------------------------------------------------------------
+                var userId =
+                    _userManager.GetUserId(User);
 
-            Console.WriteLine(
-                "[4] Looking for onboarding belonging to current user...");
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    _logger.LogWarning(
+                        "No authenticated user found.");
 
-            var onboarding =
-                await _context.VolunteerOnboardings
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        x =>
-                            x.VolunteerOnboardingId == onboardingId &&
-                            x.ApplicantId == userId,
-                        cancellationToken);
+                    return Unauthorized();
+                }
 
-            if (onboarding == null)
-            {
-                Console.WriteLine(
-                    "[ERROR] Onboarding was NOT found.");
+                // ============================================================
+                // FIND ONBOARDING
+                // ============================================================
 
-                Console.WriteLine(
-                    $"[ERROR] OnboardingId: {onboardingId}");
+                var onboarding =
+                    await _context.VolunteerOnboardings
+                        .FirstOrDefaultAsync(
+                            x =>
+                                x.VolunteerOnboardingId == id &&
+                                x.ApplicantId == userId,
+                            cancellationToken);
 
-                Console.WriteLine(
-                    $"[ERROR] Applicant/UserId: {userId}");
+                if (onboarding == null)
+                {
+                    _logger.LogWarning(
+                        "Onboarding not found or does not belong to user.");
 
-                return NotFound();
-            }
+                    return NotFound();
+                }
 
-            Console.WriteLine(
-                "[5] Onboarding FOUND.");
+                // ============================================================
+                // FIND CONTRACT
+                // ============================================================
 
-            Console.WriteLine(
-                $"[5] VolunteerOnboardingId: " +
-                $"{onboarding.VolunteerOnboardingId}");
+                var contract =
+                    await _contractService
+                        .GetContractByOnboardingAsync(
+                            onboarding.VolunteerOnboardingId,
+                            cancellationToken);
 
-            Console.WriteLine(
-                $"[5] ApplicantId: {onboarding.ApplicantId}");
+                if (contract == null)
+                {
+                    _logger.LogWarning(
+                        "Contract not found.");
 
-            // ------------------------------------------------------------
-            // GET CONTRACT
-            // ------------------------------------------------------------
+                    return NotFound();
+                }
 
-            Console.WriteLine(
-                "[6] Looking for generated contract...");
+                _logger.LogInformation(
+                    "Contract found. ContractReference={ContractReference}",
+                    contract.ContractReference);
 
-            var contract =
-                await _contractService
-                    .GetContractByOnboardingAsync(
-                        onboardingId,
-                        cancellationToken);
+                _logger.LogInformation(
+                    "GeneratedFileName={GeneratedFileName}",
+                    contract.GeneratedFileName);
 
-            if (contract == null)
-            {
-                Console.WriteLine(
-                    "[ERROR] CONTRACT IS NULL.");
-
-                Console.WriteLine(
-                    $"[ERROR] No contract found for OnboardingId: " +
-                    $"{onboardingId}");
-
-                return NotFound();
-            }
-
-            Console.WriteLine(
-                "[7] Contract FOUND.");
-
-            Console.WriteLine(
-                $"[7] ContractReference: " +
-                $"{contract.ContractReference}");
-
-            Console.WriteLine(
-                $"[7] GeneratedFileName: " +
-                $"{contract.GeneratedFileName}");
-
-            Console.WriteLine(
-                $"[7] GeneratedFilePath: " +
-                $"{contract.GeneratedFilePath}");
-
-            // ------------------------------------------------------------
-            // CHECK GENERATED FILE PATH
-            // ------------------------------------------------------------
-
-            if (string.IsNullOrWhiteSpace(
-                contract.GeneratedFilePath))
-            {
-                Console.WriteLine(
-                    "[ERROR] GeneratedFilePath IS EMPTY.");
-
-                return NotFound();
-            }
-
-            Console.WriteLine(
-                "[8] GeneratedFilePath exists.");
-
-            // ------------------------------------------------------------
-            // RESOLVE SAFE PHYSICAL PATH
-            // ------------------------------------------------------------
-
-            Console.WriteLine(
-                "[9] Resolving physical file path...");
-
-            var fullPath =
-                GetSafeWebRootFilePath(
+                _logger.LogInformation(
+                    "GeneratedFilePath={GeneratedFilePath}",
                     contract.GeneratedFilePath);
 
-            if (fullPath == null)
-            {
-                Console.WriteLine(
-                    "[ERROR] GetSafeWebRootFilePath returned NULL.");
+                // ============================================================
+                // CHECK BLOB PATH
+                // ============================================================
 
-                Console.WriteLine(
-                    $"[ERROR] Relative path was: " +
-                    $"{contract.GeneratedFilePath}");
+                if (string.IsNullOrWhiteSpace(
+                    contract.GeneratedFilePath))
+                {
+                    _logger.LogWarning(
+                        "Contract has no GeneratedFilePath.");
 
-                return NotFound();
+                    return NotFound();
+                }
+
+                // ============================================================
+                // CHECK AZURE BLOB
+                // ============================================================
+
+                _logger.LogInformation(
+                    "Checking Azure Blob Storage.");
+
+                var blobExists =
+                    await _fileUploadService
+                        .FileExistsAsync(
+                            contract.GeneratedFilePath,
+                            cancellationToken);
+
+                _logger.LogInformation(
+                    "Azure Blob exists: {BlobExists}. Path={BlobPath}",
+                    blobExists,
+                    contract.GeneratedFilePath);
+
+                if (!blobExists)
+                {
+                    _logger.LogError(
+                        "CONTRACT BLOB DOES NOT EXIST IN AZURE. Path={BlobPath}",
+                        contract.GeneratedFilePath);
+
+                    return NotFound();
+                }
+
+                // ============================================================
+                // DOWNLOAD FROM AZURE BLOB
+                // ============================================================
+
+                _logger.LogInformation(
+                    "Downloading contract from Azure Blob Storage.");
+
+                var fileResult =
+                    await _fileUploadService
+                        .DownloadFileAsync(
+                            contract.GeneratedFilePath,
+                            cancellationToken);
+
+                if (fileResult == null)
+                {
+                    _logger.LogError(
+                        "Azure Blob download returned null.");
+
+                    return NotFound();
+                }
+
+                if (fileResult.Content == null ||
+                    fileResult.Content.Length == 0)
+                {
+                    _logger.LogError(
+                        "Azure Blob returned an empty file.");
+
+                    return NotFound();
+                }
+
+                // ============================================================
+                // FILE NAME
+                // ============================================================
+
+                var fileName =
+                    string.IsNullOrWhiteSpace(
+                        contract.GeneratedFileName)
+                        ? fileResult.FileName
+                        : contract.GeneratedFileName;
+
+                // ============================================================
+                // RETURN PDF
+                // ============================================================
+
+                _logger.LogInformation(
+                    "Contract downloaded successfully from Azure Blob. " +
+                    "FileName={FileName}, Size={Size} bytes",
+                    fileName,
+                    fileResult.Content.Length);
+
+                _logger.LogInformation(
+                    "============================================================");
+
+                return File(
+                    fileResult.Content,
+                    fileResult.ContentType,
+                    fileName);
             }
-
-            Console.WriteLine(
-                "[10] Physical path resolved.");
-
-            Console.WriteLine(
-                $"[10] Full physical path: {fullPath}");
-
-            // ------------------------------------------------------------
-            // CHECK FILE EXISTS
-            // ------------------------------------------------------------
-
-            Console.WriteLine(
-                "[11] Checking whether PDF exists on disk...");
-
-            bool fileExists =
-                System.IO.File.Exists(fullPath);
-
-            Console.WriteLine(
-                $"[11] File exists: {fileExists}");
-
-            if (!fileExists)
+            catch (Exception ex)
             {
-                Console.WriteLine(
-                    "[ERROR] PDF DOES NOT EXIST ON DISK.");
+                _logger.LogError(
+                    ex,
+                    "ERROR downloading volunteer contract. " +
+                    "OnboardingId={OnboardingId}",
+                    id);
 
-                Console.WriteLine(
-                    $"[ERROR] Expected file: {fullPath}");
-
-                return NotFound();
+                return StatusCode(
+                    500,
+                    "An error occurred while downloading the contract.");
             }
-
-            // ------------------------------------------------------------
-            // DOWNLOAD FILE NAME
-            // ------------------------------------------------------------
-
-            var fileName =
-                string.IsNullOrWhiteSpace(
-                    contract.GeneratedFileName)
-                    ? $"{contract.ContractReference}.pdf"
-                    : contract.GeneratedFileName;
-
-            Console.WriteLine(
-                $"[12] Download file name: {fileName}");
-
-            // ------------------------------------------------------------
-            // FINAL DOWNLOAD
-            // ------------------------------------------------------------
-
-            Console.WriteLine(
-                "[13] RETURNING PDF FILE TO BROWSER.");
-
-            Console.WriteLine(
-                "============================================================");
-
-            return PhysicalFile(
-                fullPath,
-                "application/pdf",
-                fileName);
         }
         // ============================================================
         // UPLOAD SIGNED CONTRACT

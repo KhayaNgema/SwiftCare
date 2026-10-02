@@ -1689,7 +1689,7 @@ namespace SwiftCare.Controllers
                         supervisorId,
 
                     CreatedDate =
-                        DateTime.UtcNow
+                        DateTime.Now
                 };
 
             _context.VolunteerTaskAssignments.Add(
@@ -1987,7 +1987,7 @@ namespace SwiftCare.Controllers
                 taskDate;
 
             assignment.CreatedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             assignment.ModifiedDate =
                 null;
@@ -2015,7 +2015,7 @@ namespace SwiftCare.Controllers
                 assignment);
 
             roster.ModifiedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             await _context.SaveChangesAsync(
                 cancellationToken);
@@ -2246,7 +2246,7 @@ namespace SwiftCare.Controllers
                     VolunteerTaskAssignmentStatus.Assigned;
 
                 assignment.ModifiedDate =
-                    DateTime.UtcNow;
+                    DateTime.Now;
             }
 
             // --------------------------------------------------------
@@ -2257,7 +2257,7 @@ namespace SwiftCare.Controllers
                 VolunteerRosterStatus.Published;
 
             roster.ModifiedDate =
-                DateTime.UtcNow;
+                DateTime.Now;
 
             await _context.SaveChangesAsync(
                 cancellationToken);

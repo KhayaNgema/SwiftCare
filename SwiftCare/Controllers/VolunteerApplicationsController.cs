@@ -13,6 +13,8 @@ using SwiftCare.Services.VolunteerOnboarding;
 using SwiftCare.ViewModels;
 using SwiftCare.ViewModels.Volunteer;
 using System.Security.Cryptography;
+using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 
 namespace SwiftCare.Controllers
 {
@@ -96,9 +98,8 @@ namespace SwiftCare.Controllers
             return View(viewModel);
         }
 
-        [Authorize(Roles = "Supervisor")]
+        [Authorize(Roles = "Human Resources Manager")]
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> ShortlistManagement()
         {
             var applications = await _context.VolunteerApplications
@@ -115,7 +116,10 @@ namespace SwiftCare.Controllers
             return View(applications);
         }
 
-        [Authorize(Roles = "Applicant")]
+        // ============================================================
+        // TRACK APPLICATIONS
+        // ============================================================
+
         [HttpGet]
         public async Task<IActionResult> TrackApplication()
         {
@@ -126,11 +130,55 @@ namespace SwiftCare.Controllers
                 return Challenge();
             }
 
+            // ========================================================
+            // GET APPLICANT'S APPLICATIONS
+            // ========================================================
+
             var applications = await _context.VolunteerApplications
                 .Include(x => x.VolunteerOpportunity)
                 .Where(x => x.ApplicantId == user.Id)
                 .OrderByDescending(x => x.AppliedDate)
                 .ToListAsync();
+
+            // ========================================================
+            // GET ONBOARDING FOR EACH APPLICATION
+            // ========================================================
+
+            var applicationIds = applications
+                .Select(x => x.VolunteerApplicationId)
+                .ToList();
+
+            var onboardingRecords = await _context
+                .Set<VolunteerOnboarding>()
+                .Where(x =>
+                    applicationIds.Contains(x.VolunteerApplicationId))
+                .Select(x => new
+                {
+                    x.VolunteerApplicationId,
+                    x.VolunteerOnboardingId
+                })
+                .ToListAsync();
+
+            // ========================================================
+            // CREATE APPLICATION -> ONBOARDING LOOKUP
+            // ========================================================
+
+            var onboardingByApplication =
+                onboardingRecords
+                    .GroupBy(x => x.VolunteerApplicationId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g
+                            .OrderByDescending(x => x.VolunteerOnboardingId)
+                            .Select(x => x.VolunteerOnboardingId)
+                            .First());
+
+            // ========================================================
+            // PASS LOOKUP TO VIEW
+            // ========================================================
+
+            ViewBag.OnboardingByApplication =
+                onboardingByApplication;
 
             return View(applications);
         }
@@ -369,7 +417,8 @@ namespace SwiftCare.Controllers
                     application.VolunteerOpportunity?.Title ?? string.Empty
             };
 
-            model.ApplicantName = model.ApplicantName.Trim();
+            model.ApplicantName =
+                model.ApplicantName.Trim();
 
 
             // ============================================================
@@ -381,7 +430,8 @@ namespace SwiftCare.Controllers
                 .AsNoTracking()
                 .Where(x =>
                     x.VolunteerApplicationId == applicationId)
-                .OrderByDescending(x => x.EvaluatedDate)
+                .OrderByDescending(x =>
+                    x.EvaluatedDate)
                 .FirstOrDefaultAsync();
 
             if (atsEvaluation != null)
@@ -398,7 +448,8 @@ namespace SwiftCare.Controllers
                     atsEvaluation.EvaluatedDate;
 
                 model.EvaluationVersion =
-                    atsEvaluation.EvaluationVersion ?? string.Empty;
+                    atsEvaluation.EvaluationVersion ??
+                    string.Empty;
             }
             else
             {
@@ -410,7 +461,8 @@ namespace SwiftCare.Controllers
 
                 model.EvaluatedDate = null;
 
-                model.EvaluationVersion = string.Empty;
+                model.EvaluationVersion =
+                    string.Empty;
             }
 
 
@@ -439,19 +491,19 @@ namespace SwiftCare.Controllers
                     interviewEvaluation.OverallInterviewConfidence;
 
                 model.InterviewRecommendation =
-                    interviewEvaluation.Recommendation
-                    ?? "Not Evaluated";
+                    interviewEvaluation.Recommendation ??
+                    "Not Evaluated";
 
                 model.InterviewEvaluationStatus =
-                    interviewEvaluation.EvaluationStatus
-                    ?? "Not Evaluated";
+                    interviewEvaluation.EvaluationStatus ??
+                    "Not Evaluated";
 
                 model.InterviewEvaluatedDate =
                     interviewEvaluation.EvaluatedDate;
 
                 model.InterviewEvaluationVersion =
-                    interviewEvaluation.EvaluationVersion
-                    ?? string.Empty;
+                    interviewEvaluation.EvaluationVersion ??
+                    string.Empty;
 
 
                 // ========================================================
@@ -489,7 +541,8 @@ namespace SwiftCare.Controllers
                                     x.Confidence,
 
                                 Assessment =
-                                    x.Assessment ?? "Not Evaluated",
+                                    x.Assessment ??
+                                    "Not Evaluated",
 
                                 Evidence =
                                     x.Evidence ?? string.Empty,
@@ -523,7 +576,8 @@ namespace SwiftCare.Controllers
                                     x.Confidence,
 
                                 Assessment =
-                                    x.Assessment ?? "Not Evaluated",
+                                    x.Assessment ??
+                                    "Not Evaluated",
 
                                 Evidence =
                                     x.Evidence ?? string.Empty,
@@ -545,10 +599,12 @@ namespace SwiftCare.Controllers
                     model.RequiredSkills.Count;
 
                 model.RequiredSkillsFoundInCv =
-                    model.RequiredSkills.Count(x => x.FoundInCv);
+                    model.RequiredSkills.Count(x =>
+                        x.FoundInCv);
 
                 model.RequiredSkillsFoundInInterview =
-                    model.RequiredSkills.Count(x => x.FoundInInterview);
+                    model.RequiredSkills.Count(x =>
+                        x.FoundInInterview);
 
                 model.RequiredSkillsOverallScore =
                     model.RequiredSkills.Any()
@@ -562,13 +618,17 @@ namespace SwiftCare.Controllers
                 // NO INTERVIEW EVALUATION
                 // ========================================================
 
-                model.InterviewRecommendation = "Not Evaluated";
+                model.InterviewRecommendation =
+                    "Not Evaluated";
 
-                model.InterviewEvaluationStatus = "Not Evaluated";
+                model.InterviewEvaluationStatus =
+                    "Not Evaluated";
 
-                model.OverallInterviewScore = 0m;
+                model.OverallInterviewScore =
+                    0m;
 
-                model.OverallInterviewConfidence = 0m;
+                model.OverallInterviewConfidence =
+                    0m;
 
 
                 // ========================================================
@@ -585,25 +645,35 @@ namespace SwiftCare.Controllers
                                     requiredSkill.VolunteerRequiredSkillId,
 
                                 Skill =
-                                    requiredSkill.Skill ?? string.Empty,
+                                    requiredSkill.Skill ??
+                                    string.Empty,
 
-                                FoundInCv = false,
+                                FoundInCv =
+                                    false,
 
-                                FoundInInterview = false,
+                                FoundInInterview =
+                                    false,
 
-                                InterviewScore = 0m,
+                                InterviewScore =
+                                    0m,
 
-                                Confidence = 0m,
+                                Confidence =
+                                    0m,
 
-                                Assessment = "Not Evaluated",
+                                Assessment =
+                                    "Not Evaluated",
 
-                                CvEvidence = string.Empty,
+                                CvEvidence =
+                                    string.Empty,
 
-                                InterviewEvidence = string.Empty,
+                                InterviewEvidence =
+                                    string.Empty,
 
-                                Evidence = string.Empty,
+                                Evidence =
+                                    string.Empty,
 
-                                Reasoning = string.Empty
+                                Reasoning =
+                                    string.Empty
                             })
                         .ToList()
                     ?? new List<VolunteerInterviewRequiredSkillViewModel>();
@@ -621,62 +691,74 @@ namespace SwiftCare.Controllers
                     {
                 new()
                 {
-                    Name = "Communication",
+                    Name =
+                        "Communication",
 
                     Description =
                         "Ability to communicate clearly, appropriately and effectively.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 },
 
                 new()
                 {
-                    Name = "Empathy",
+                    Name =
+                        "Empathy",
 
                     Description =
                         "Ability to understand and respond appropriately to another person's feelings and needs.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 },
 
                 new()
                 {
-                    Name = "Active Listening",
+                    Name =
+                        "Active Listening",
 
                     Description =
                         "Ability to listen carefully, understand what is being said and respond appropriately.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 },
 
                 new()
                 {
-                    Name = "Problem Solving",
+                    Name =
+                        "Problem Solving",
 
                     Description =
                         "Ability to identify problems, think through situations and provide practical responses.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 },
 
                 new()
                 {
-                    Name = "Teamwork",
+                    Name =
+                        "Teamwork",
 
                     Description =
                         "Ability to cooperate with others, contribute positively and work toward shared goals.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 },
 
                 new()
                 {
-                    Name = "Reliability",
+                    Name =
+                        "Reliability",
 
                     Description =
                         "Evidence of responsibility, dependability, consistency and commitment.",
 
-                    Assessment = "Not Evaluated"
+                    Assessment =
+                        "Not Evaluated"
                 }
                     };
             }
@@ -697,7 +779,8 @@ namespace SwiftCare.Controllers
                 .Include(x => x.ProctoringEvents)
                 .Where(x =>
                     x.VolunteerApplicationId == applicationId)
-                .OrderByDescending(x => x.CreatedDate)
+                .OrderByDescending(x =>
+                    x.CreatedDate)
                 .ThenByDescending(x =>
                     x.VolunteerVoiceInterviewSessionId)
                 .ToListAsync();
@@ -712,7 +795,8 @@ namespace SwiftCare.Controllers
 
             if (interviewSession != null)
             {
-                model.HasInterviewSession = true;
+                model.HasInterviewSession =
+                    true;
 
                 model.InterviewStarted =
                     interviewSession.IsStarted;
@@ -727,7 +811,8 @@ namespace SwiftCare.Controllers
                     interviewSession.CompletedDate;
 
                 model.InterviewStatus =
-                    interviewSession.Status ?? "Not Started";
+                    interviewSession.Status ??
+                    "Not Started";
 
 
                 // ========================================================
@@ -741,8 +826,8 @@ namespace SwiftCare.Controllers
                     interviewSession.SuspiciousActivityDate;
 
                 model.LastProctoringEventType =
-                    interviewSession.LastProctoringEventType
-                    ?? string.Empty;
+                    interviewSession.LastProctoringEventType ??
+                    string.Empty;
 
                 model.SuspiciousEventCount =
                     interviewSession.SuspiciousEventCount;
@@ -766,8 +851,8 @@ namespace SwiftCare.Controllers
                     interviewSession.TotalUnfocusedSeconds;
 
                 model.IncompleteReason =
-                    interviewSession.IncompleteReason
-                    ?? string.Empty;
+                    interviewSession.IncompleteReason ??
+                    string.Empty;
 
 
                 // ========================================================
@@ -778,8 +863,8 @@ namespace SwiftCare.Controllers
                     interviewSession.LastActivityDate;
 
                 model.LastActivityType =
-                    interviewSession.LastActivityType
-                    ?? string.Empty;
+                    interviewSession.LastActivityType ??
+                    string.Empty;
 
 
                 // ========================================================
@@ -788,7 +873,8 @@ namespace SwiftCare.Controllers
 
                 model.ProctoringEvents =
                     interviewSession.ProctoringEvents
-                        .OrderByDescending(x => x.EventDate)
+                        .OrderByDescending(x =>
+                            x.EventDate)
                         .Select(x =>
                             new VolunteerInterviewProctoringEventViewModel
                             {
@@ -796,10 +882,12 @@ namespace SwiftCare.Controllers
                                     x.VolunteerInterviewProctoringEventId,
 
                                 EventType =
-                                    x.EventType ?? string.Empty,
+                                    x.EventType ??
+                                    string.Empty,
 
                                 Description =
-                                    x.Description ?? string.Empty,
+                                    x.Description ??
+                                    string.Empty,
 
                                 QuestionNumber =
                                     x.QuestionNumber,
@@ -808,13 +896,15 @@ namespace SwiftCare.Controllers
                                     x.EventDate,
 
                                 PageVisibilityState =
-                                    x.PageVisibilityState ?? string.Empty,
+                                    x.PageVisibilityState ??
+                                    string.Empty,
 
                                 PageHidden =
                                     x.PageHidden,
 
                                 UserAgent =
-                                    x.UserAgent ?? string.Empty,
+                                    x.UserAgent ??
+                                    string.Empty,
 
                                 UnfocusedSeconds =
                                     x.UnfocusedSeconds
@@ -823,52 +913,66 @@ namespace SwiftCare.Controllers
             }
             else
             {
-                model.HasInterviewSession = false;
+                model.HasInterviewSession =
+                    false;
 
-                model.InterviewStarted = false;
+                model.InterviewStarted =
+                    false;
 
-                model.InterviewCompleted = false;
+                model.InterviewCompleted =
+                    false;
 
-                model.InterviewStatus = "Not Started";
+                model.InterviewStatus =
+                    "Not Started";
 
-                model.SuspiciousActivityDetected = false;
+                model.SuspiciousActivityDetected =
+                    false;
 
-                model.SuspiciousEventCount = 0;
+                model.SuspiciousEventCount =
+                    0;
 
-                model.TabSwitchCount = 0;
+                model.TabSwitchCount =
+                    0;
 
-                model.WindowBlurCount = 0;
+                model.WindowBlurCount =
+                    0;
 
-                model.FullScreenExitCount = 0;
+                model.FullScreenExitCount =
+                    0;
 
-                model.PageLeaveCount = 0;
+                model.PageLeaveCount =
+                    0;
 
-                model.CameraStoppedCount = 0;
+                model.CameraStoppedCount =
+                    0;
 
-                model.TotalUnfocusedSeconds = 0;
+                model.TotalUnfocusedSeconds =
+                    0;
 
                 model.ProctoringEvents =
                     new List<VolunteerInterviewProctoringEventViewModel>();
             }
 
 
-
-// ============================================================
-// 7. FIND THE INTERVIEW VIDEO
-//
-// Video information is stored directly on
-// VolunteerVoiceInterviewSession:
-//
-// - VideoFilePath
-// - VideoMimeType
-// - VideoStartedDate
-// - VideoCompletedDate
-// - VideoDurationSeconds
-//
-// The newest session with an existing recording is used.
-// ============================================================
-
-model.HasInterviewVideo = false;
+            // ============================================================
+            // 7. FIND THE INTERVIEW VIDEO
+            //
+            // IMPORTANT:
+            //
+            // The interview video is stored in Blob Storage.
+            //
+            // DO NOT:
+            // - Build a wwwroot/UploadedFiles path
+            // - Call System.IO.File.Exists()
+            // - Read the video from the local server filesystem
+            // - Use the physical server path
+            //
+            // VideoFilePath contains the storage location returned by
+            // the file/blob upload service.
+            //
+            // The newest session with a stored recording is used.
+            // ============================================================
+            model.HasInterviewVideo = false;
             model.VideoUrl = string.Empty;
             model.VideoMimeType = string.Empty;
             model.VideoDurationSeconds = 0;
@@ -876,230 +980,189 @@ model.HasInterviewVideo = false;
             model.VideoCompletedDate = null;
             model.VolunteerVoiceInterviewSessionId = null;
 
+            var blobConnectionString =
+                _configuration["AzureBlobStorage:ConnectionString"];
 
-            // ============================================================
-            // UPLOADS DIRECTORY
-            // ============================================================
+            var blobContainerName =
+                _configuration["AzureBlobStorage:ContainerName"];
 
-            var uploadsDirectory = Path.GetFullPath(
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot",
-                    "UploadedFiles"));
-
-            Console.WriteLine();
-            Console.WriteLine("============================================================");
-            Console.WriteLine("🎥 INTERVIEW REVIEW - VIDEO SEARCH");
-            Console.WriteLine("============================================================");
-            Console.WriteLine($"Application ID     : {applicationId}");
-            Console.WriteLine($"Uploads Directory  : {uploadsDirectory}");
-            Console.WriteLine($"Sessions Found     : {interviewSessions.Count}");
-            Console.WriteLine("============================================================");
-
-
-            // ============================================================
-            // CHECK ALL SESSIONS
-            // NEWEST FIRST
-            // ============================================================
-
-            foreach (var session in interviewSessions)
+            if (!string.IsNullOrWhiteSpace(blobConnectionString) &&
+                !string.IsNullOrWhiteSpace(blobContainerName))
             {
-                Console.WriteLine();
-                Console.WriteLine("--------------------------------------------");
-                Console.WriteLine(
-                    $"Checking Session: {session.VolunteerVoiceInterviewSessionId}");
-
-                Console.WriteLine(
-                    $"VideoFilePath: [{session.VideoFilePath}]");
-
-                Console.WriteLine(
-                    $"VideoMimeType: [{session.VideoMimeType}]");
-
-                Console.WriteLine(
-                    $"VideoDurationSeconds: {session.VideoDurationSeconds}");
-
-                Console.WriteLine(
-                    $"VideoStartedDate: {session.VideoStartedDate}");
-
-
-                // ========================================================
-                // NO VIDEO PATH
-                // ========================================================
-
-                if (string.IsNullOrWhiteSpace(session.VideoFilePath))
+                try
                 {
-                    Console.WriteLine("❌ VideoFilePath is empty.");
-                    continue;
-                }
-
-
-                // ========================================================
-                // NORMALIZE DATABASE PATH
-                // ========================================================
-
-                var normalizedPath = session.VideoFilePath
-                    .Replace('\\', '/')
-                    .Trim();
-
-                Console.WriteLine(
-                    $"Normalized Path: [{normalizedPath}]");
-
-
-                // ========================================================
-                // GET ONLY FILE NAME
-                //
-                // Your database may contain:
-                //
-                // UploadedFiles\abc.webm
-                //
-                // or:
-                //
-                // abc.webm
-                //
-                // We only use the file name because UploadedFiles is
-                // the physical storage directory.
-                // ========================================================
-
-                var fileName = Path.GetFileName(normalizedPath);
-
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    Console.WriteLine("❌ Could not extract file name.");
-                    continue;
-                }
-
-                Console.WriteLine(
-                    $"Extracted File Name: [{fileName}]");
-
-
-                // ========================================================
-                // BUILD PHYSICAL PATH
-                // ========================================================
-
-                var fullFilePath = Path.GetFullPath(
-                    Path.Combine(
-                        uploadsDirectory,
-                        fileName));
-
-                Console.WriteLine(
-                    $"Physical File Path: [{fullFilePath}]");
-
-
-                // ========================================================
-                // CHECK FILE
-                // ========================================================
-
-                if (!System.IO.File.Exists(fullFilePath))
-                {
-                    Console.WriteLine("❌ FILE DOES NOT EXIST.");
-
-                    continue;
-                }
-
-                Console.WriteLine("✅ FILE EXISTS.");
-
-
-                // ========================================================
-                // DETERMINE MIME TYPE
-                //
-                // Prefer the MIME type stored in the database.
-                // If it isn't available, fall back to the extension.
-                // ========================================================
-
-                var extension = Path.GetExtension(fullFilePath)
-                    .ToLowerInvariant();
-
-                var mimeType = session.VideoMimeType;
-
-                if (string.IsNullOrWhiteSpace(mimeType))
-                {
-                    mimeType = extension switch
+                    foreach (var session in interviewSessions)
                     {
-                        ".webm" => "video/webm",
-                        ".mp4" => "video/mp4",
-                        ".ogg" => "video/ogg",
-                        ".ogv" => "video/ogg",
-                        _ => string.Empty
-                    };
+                        if (string.IsNullOrWhiteSpace(session.VideoFilePath))
+                            continue;
+
+                        var blobPath = session.VideoFilePath.Trim();
+
+                        // ----------------------------------------------------
+                        // If VideoFilePath accidentally contains the container
+                        // name, remove it.
+                        // Example:
+                        // contracts/VolunteerInterviews/file.webm
+                        // becomes:
+                        // VolunteerInterviews/file.webm
+                        // ----------------------------------------------------
+
+                        var containerPrefix =
+                            blobContainerName.TrimEnd('/') + "/";
+
+                        if (blobPath.StartsWith(
+                                containerPrefix,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            blobPath = blobPath.Substring(
+                                containerPrefix.Length);
+                        }
+
+                        // ----------------------------------------------------
+                        // If the stored value is already a full Azure URL,
+                        // extract the blob path from it.
+                        // ----------------------------------------------------
+
+                        if (Uri.TryCreate(
+                                blobPath,
+                                UriKind.Absolute,
+                                out var existingUri))
+                        {
+                            var containerSegment =
+                                "/" +
+                                blobContainerName.Trim('/') +
+                                "/";
+
+                            var absolutePath =
+                                existingUri.AbsolutePath;
+
+                            var containerIndex =
+                                absolutePath.IndexOf(
+                                    containerSegment,
+                                    StringComparison.OrdinalIgnoreCase);
+
+                            if (containerIndex >= 0)
+                            {
+                                blobPath =
+                                    absolutePath.Substring(
+                                        containerIndex +
+                                        containerSegment.Length)
+                                    .TrimStart('/');
+                            }
+                        }
+
+                        // ----------------------------------------------------
+                        // Create Azure Blob client from your existing
+                        // connection string.
+                        // ----------------------------------------------------
+
+                        var blobServiceClient =
+                            new BlobServiceClient(
+                                blobConnectionString);
+
+                        var containerClient =
+                            blobServiceClient.GetBlobContainerClient(
+                                blobContainerName);
+
+                        var blobClient =
+                            containerClient.GetBlobClient(blobPath);
+
+                        // ----------------------------------------------------
+                        // Make sure the blob actually exists.
+                        // ----------------------------------------------------
+
+                        if (!await blobClient.ExistsAsync())
+                        {
+                            continue;
+                        }
+
+                        // ----------------------------------------------------
+                        // Generate a temporary READ SAS URL.
+                        // ----------------------------------------------------
+
+                        var sasBuilder = new BlobSasBuilder
+                        {
+                            BlobContainerName =
+                                blobContainerName,
+
+                            BlobName =
+                                blobPath,
+
+                            Resource = "b",
+
+                            ExpiresOn =
+                                DateTimeOffset.UtcNow.AddHours(2)
+                        };
+
+                        sasBuilder.SetPermissions(
+                            BlobSasPermissions.Read);
+
+                        var sasUri =
+                            blobClient.GenerateSasUri(
+                                sasBuilder);
+
+                        // ----------------------------------------------------
+                        // Determine MIME type.
+                        // ----------------------------------------------------
+
+                        var mimeType =
+                            session.VideoMimeType;
+
+                        if (string.IsNullOrWhiteSpace(mimeType))
+                        {
+                            var extension =
+                                Path.GetExtension(blobPath)
+                                    .ToLowerInvariant();
+
+                            mimeType = extension switch
+                            {
+                                ".webm" => "video/webm",
+                                ".mp4" => "video/mp4",
+                                ".ogg" => "video/ogg",
+                                ".ogv" => "video/ogg",
+                                _ => "video/webm"
+                            };
+                        }
+
+                        // ----------------------------------------------------
+                        // Populate view model.
+                        // ----------------------------------------------------
+
+                        model.HasInterviewVideo = true;
+
+                        model.VolunteerVoiceInterviewSessionId =
+                            session.VolunteerVoiceInterviewSessionId;
+
+                        model.VideoUrl =
+                            sasUri.ToString();
+
+                        model.VideoMimeType =
+                            mimeType;
+
+                        model.VideoDurationSeconds =
+                            session.VideoDurationSeconds;
+
+                        model.VideoStartedDate =
+                            session.VideoStartedDate;
+
+                        model.VideoCompletedDate =
+                            session.VideoCompletedDate;
+
+                        break;
+                    }
                 }
-
-
-                if (string.IsNullOrWhiteSpace(mimeType))
+                catch (Exception ex)
                 {
+                    // Don't break the entire Interview Review page
+                    // if Azure video generation fails.
+
                     Console.WriteLine(
-                        $"❌ Unsupported video format: [{extension}]");
+                        $"Interview video Blob URL generation failed: {ex.Message}");
 
-                    continue;
+                    model.HasInterviewVideo = false;
+                    model.VideoUrl = string.Empty;
                 }
-
-
-                // ========================================================
-                // RECORDING FOUND
-                // ========================================================
-
-                model.HasInterviewVideo = true;
-
-                model.VolunteerVoiceInterviewSessionId =
-                    session.VolunteerVoiceInterviewSessionId;
-
-                model.VideoMimeType =
-                    mimeType;
-
-                model.VideoDurationSeconds =
-                    session.VideoDurationSeconds;
-
-                model.VideoStartedDate =
-                    session.VideoStartedDate;
-
-                model.VideoCompletedDate =
-                    session.VideoCompletedDate;
-
-
-                // ========================================================
-                // IMPORTANT
-                //
-                // The browser does NOT receive the physical file path.
-                //
-                // It receives the URL of our InterviewRecording action.
-                // ========================================================
-
-                model.VideoUrl = Url.Action(
-                    nameof(InterviewRecording),
-                    new
-                    {
-                        sessionId =
-                            session.VolunteerVoiceInterviewSessionId
-                    }) ?? string.Empty;
-
-
-                Console.WriteLine();
-                Console.WriteLine("🎉 INTERVIEW VIDEO FOUND");
-                Console.WriteLine(
-                    $"Session ID       : {session.VolunteerVoiceInterviewSessionId}");
-                Console.WriteLine(
-                    $"Physical File    : [{fullFilePath}]");
-                Console.WriteLine(
-                    $"Mime Type        : [{model.VideoMimeType}]");
-                Console.WriteLine(
-                    $"Video URL        : [{model.VideoUrl}]");
-                Console.WriteLine(
-                    $"Duration         : {model.VideoDurationSeconds}s");
-                Console.WriteLine("============================================================");
-
-                break;
             }
-
-
-            if (!model.HasInterviewVideo)
-            {
-                Console.WriteLine();
-                Console.WriteLine("❌ NO INTERVIEW VIDEO FOUND");
-                Console.WriteLine(
-                    $"Application ID: {applicationId}");
-                Console.WriteLine("============================================================");
-            }
-
-
 
 
             // ============================================================
@@ -1115,7 +1178,6 @@ model.HasInterviewVideo = false;
                 .OrderBy(x =>
                     x.VolunteerQuestion!.DisplayOrder)
                 .ToListAsync();
-
 
             var questionNumber = 1;
 
@@ -1135,7 +1197,8 @@ model.HasInterviewVideo = false;
                             ?? string.Empty,
 
                         Answer =
-                            answer.Answer ?? string.Empty
+                            answer.Answer ??
+                            string.Empty
                     });
 
                 questionNumber++;
@@ -1167,7 +1230,6 @@ model.HasInterviewVideo = false;
 
             return View(model);
         }
-
         [Authorize(Roles = "Human Resources Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1809,7 +1871,7 @@ model.HasInterviewVideo = false;
                     "VolunteerApplications",
                     new
                     {
-                        applicationId = applicationId
+                        id = applicationId
                     });
             }
 
@@ -1829,7 +1891,7 @@ model.HasInterviewVideo = false;
                     "VolunteerApplications",
                     new
                     {
-                        applicationId = applicationId
+                        id = applicationId
                     });
             }
 
@@ -1924,7 +1986,7 @@ model.HasInterviewVideo = false;
                     "VolunteerApplications",
                     new
                     {
-                        applicationId = applicationId
+                        id = applicationId
                     });
             }
 
@@ -2220,12 +2282,9 @@ model.HasInterviewVideo = false;
             // ============================================================
 
             return RedirectToAction(
-                "ApplicationDetails",
-                "VolunteerApplications",
-                new
-                {
-                    id = applicationId
-                });
+                nameof(ApplicationDetails),
+                new { id = applicationId }
+            );
         }
 
         // ============================================================

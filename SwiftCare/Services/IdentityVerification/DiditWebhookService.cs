@@ -1,10 +1,8 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services.VolunteerContracts;
-using System.Diagnostics.Contracts;
-using System.Runtime.Intrinsics.Arm;
+using SwiftCare.Services.VolunteerOnboarding;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -15,6 +13,7 @@ namespace SwiftCare.Services.IdentityVerification
         private readonly SwiftCareDbContext _context;
         private readonly ILogger<DiditWebhookService> _logger;
         private readonly IVolunteerContractService _volunteerContractService;
+        private readonly IVolunteerOnboardingService _volunteerOnboardingService;
 
         private static readonly JsonSerializerOptions JsonOptions =
             new()
@@ -25,20 +24,22 @@ namespace SwiftCare.Services.IdentityVerification
         public DiditWebhookService(
             SwiftCareDbContext context,
             ILogger<DiditWebhookService> logger,
-            IVolunteerContractService volunteerContractService)
+            IVolunteerContractService volunteerContractService,
+            IVolunteerOnboardingService volunteerOnboardingService)
         {
             _context = context;
             _logger = logger;
             _volunteerContractService = volunteerContractService;
+            _volunteerOnboardingService = volunteerOnboardingService;
         }
 
-// ================================================================
-// PROCESS DIDIT WEBHOOK
-// ================================================================
+        // ================================================================
+        // PROCESS DIDIT WEBHOOK
+        // ================================================================
 
-public async Task ProcessWebhookAsync(
-    int webhookLogId,
-    CancellationToken cancellationToken = default)
+        public async Task ProcessWebhookAsync(
+            int webhookLogId,
+            CancellationToken cancellationToken = default)
         {
             _logger.LogInformation(
                 "========== DIDIT WEBHOOK PROCESSING STARTED ==========");
@@ -73,12 +74,11 @@ public async Task ProcessWebhookAsync(
 
             try
             {
-                // ============================================================
+                // ========================================================
                 // RAW BODY
-                // ============================================================
+                // ========================================================
 
-                if (string.IsNullOrWhiteSpace(
-                        webhook.RawBody))
+                if (string.IsNullOrWhiteSpace(webhook.RawBody))
                 {
                     throw new InvalidOperationException(
                         "Didit webhook RawBody is empty.");
@@ -88,10 +88,9 @@ public async Task ProcessWebhookAsync(
                     "Raw Didit webhook body: {RawBody}",
                     webhook.RawBody);
 
-
-                // ============================================================
+                // ========================================================
                 // DESERIALIZE
-                // ============================================================
+                // ========================================================
 
                 var envelope =
                     JsonSerializer.Deserialize<DiditWebhookEnvelope>(
@@ -117,10 +116,9 @@ public async Task ProcessWebhookAsync(
                     envelope.VendorData,
                     envelope.Status);
 
-
-                // ============================================================
+                // ========================================================
                 // PROCESS EVENT
-                // ============================================================
+                // ========================================================
 
                 switch (envelope.WebhookType)
                 {
@@ -134,7 +132,6 @@ public async Task ProcessWebhookAsync(
 
                         break;
 
-
                     case "user.status.updated":
 
                         await ProcessUserStatusEventAsync(
@@ -143,7 +140,6 @@ public async Task ProcessWebhookAsync(
 
                         break;
 
-
                     case "user.data.updated":
 
                         await ProcessUserDataEventAsync(
@@ -151,7 +147,6 @@ public async Task ProcessWebhookAsync(
                             cancellationToken);
 
                         break;
-
 
                     case "business.status.updated":
 
@@ -163,7 +158,6 @@ public async Task ProcessWebhookAsync(
 
                         break;
 
-
                     case "activity.created":
 
                         await ProcessActivityEventAsync(
@@ -171,7 +165,6 @@ public async Task ProcessWebhookAsync(
                             cancellationToken);
 
                         break;
-
 
                     case "transaction.created":
 
@@ -182,7 +175,6 @@ public async Task ProcessWebhookAsync(
                             cancellationToken);
 
                         break;
-
 
                     default:
 
@@ -195,26 +187,17 @@ public async Task ProcessWebhookAsync(
                         break;
                 }
 
-
-                // ============================================================
+                // ========================================================
                 // MARK WEBHOOK AS PROCESSED
-                // ============================================================
+                // ========================================================
 
-                webhook.Processed =
-                    true;
-
-                webhook.ProcessingFailed =
-                    false;
-
-                webhook.ProcessedDate =
-                    DateTime.Now;
-
-                webhook.ProcessingError =
-                    null;
+                webhook.Processed = true;
+                webhook.ProcessingFailed = false;
+                webhook.ProcessedDate = DateTime.Now;
+                webhook.ProcessingError = null;
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
-
 
                 _logger.LogInformation(
                     "Didit webhook log {WebhookLogId} processed successfully.",
@@ -234,11 +217,8 @@ public async Task ProcessWebhookAsync(
             }
             catch (Exception ex)
             {
-                webhook.ProcessingFailed =
-                    true;
-
-                webhook.Processed =
-                    false;
+                webhook.ProcessingFailed = true;
+                webhook.Processed = false;
 
                 webhook.ProcessingError =
                     ex.Message.Length > 4000
@@ -257,7 +237,6 @@ public async Task ProcessWebhookAsync(
             }
         }
 
-
         // ================================================================
         // PROCESS SESSION EVENT
         // ================================================================
@@ -275,13 +254,11 @@ public async Task ProcessWebhookAsync(
                 envelope.Status,
                 envelope.VendorData);
 
-
             // ============================================================
             // VENDOR DATA
             // ============================================================
 
-            if (string.IsNullOrWhiteSpace(
-                    envelope.VendorData))
+            if (string.IsNullOrWhiteSpace(envelope.VendorData))
             {
                 _logger.LogWarning(
                     "Didit session webhook {EventId} has no vendor_data.",
@@ -289,7 +266,6 @@ public async Task ProcessWebhookAsync(
 
                 return;
             }
-
 
             // ============================================================
             // RESOLVE VERIFICATION ID
@@ -314,7 +290,6 @@ public async Task ProcessWebhookAsync(
                 envelope.VendorData,
                 verificationId.Value);
 
-
             // ============================================================
             // LOAD VERIFICATION
             // ============================================================
@@ -323,9 +298,7 @@ public async Task ProcessWebhookAsync(
                 await _context
                     .VolunteerIdentityVerifications
                     .FirstOrDefaultAsync(
-                        x =>
-                            x.Id ==
-                            verificationId.Value,
+                        x => x.Id == verificationId.Value,
                         cancellationToken);
 
             if (verification == null)
@@ -345,14 +318,13 @@ public async Task ProcessWebhookAsync(
                 verification.Status,
                 verification.ProviderSessionId);
 
-
             // ============================================================
             // IGNORE LATE IN-PROGRESS EVENT
             // ============================================================
 
             if (
                 verification.Status ==
-                VolunteerIdentityVerificationStatus.Verified &&
+                    VolunteerIdentityVerificationStatus.Verified &&
                 string.Equals(
                     envelope.Status,
                     "In Progress",
@@ -366,7 +338,6 @@ public async Task ProcessWebhookAsync(
                 return;
             }
 
-
             // ============================================================
             // SESSION ID
             // ============================================================
@@ -377,7 +348,6 @@ public async Task ProcessWebhookAsync(
                 verification.ProviderSessionId =
                     envelope.SessionId;
             }
-
 
             // ============================================================
             // HANDLE DIDIT STATUS
@@ -398,21 +368,27 @@ public async Task ProcessWebhookAsync(
                     verification.Status =
                         VolunteerIdentityVerificationStatus.Verified;
 
-                    verification.DocumentVerified =
-                        true;
+                    verification.DocumentVerified = true;
 
                     verification.VerifiedDate =
-                        DateTime.UtcNow;
+                        DateTime.Now;
 
-                    verification.FailureReason =
-                        null;
+                    verification.FailureReason = null;
 
                     verification.ModifiedDate =
                         DateTime.Now;
 
+                    // ====================================================
+                    // READ ACTUAL DIDIT DECISION DATA
+                    // ====================================================
+
                     ApplyDecisionData(
                         verification,
                         envelope.Decision);
+
+                    // ====================================================
+                    // SAVE VERIFICATION FIRST
+                    // ====================================================
 
                     await _context.SaveChangesAsync(
                         cancellationToken);
@@ -429,6 +405,67 @@ public async Task ProcessWebhookAsync(
                         verification.FaceMatchVerified,
                         verification.FaceIdentityEnrolled);
 
+                    // ====================================================
+                    // AUTOMATIC IDENTITY REQUIREMENT COMPLETION
+                    // ====================================================
+
+                    var diditFullyVerified =
+                        verification.Status ==
+                            VolunteerIdentityVerificationStatus.Verified &&
+                        verification.DocumentVerified &&
+                        verification.LivenessVerified &&
+                        verification.FaceMatchVerified &&
+                        verification.FaceIdentityEnrolled;
+
+                    if (diditFullyVerified)
+                    {
+                        _logger.LogInformation(
+                            "DIDIT FULL VERIFICATION CONDITIONS MET. " +
+                            "Automatically completing IdentityVerification " +
+                            "requirement for OnboardingId={OnboardingId}.",
+                            verification.VolunteerOnboardingId);
+
+                        await CompleteIdentityVerificationRequirementAsync(
+                            verification.VolunteerOnboardingId,
+                            cancellationToken);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "DIDIT APPROVED but IdentityVerification requirement " +
+                            "will NOT be completed because not all verification " +
+                            "conditions are satisfied. " +
+                            "OnboardingId={OnboardingId}, " +
+                            "Document={DocumentVerified}, " +
+                            "Liveness={LivenessVerified}, " +
+                            "FaceMatch={FaceMatchVerified}, " +
+                            "FaceEnrollment={FaceIdentityEnrolled}.",
+                            verification.VolunteerOnboardingId,
+                            verification.DocumentVerified,
+                            verification.LivenessVerified,
+                            verification.FaceMatchVerified,
+                            verification.FaceIdentityEnrolled);
+                    }
+
+                    // ====================================================
+                    // SYNC OTHER ONBOARDING REQUIREMENTS
+                    // ====================================================
+
+                    await _volunteerOnboardingService
+                        .SyncDocumentRequirementsAsync(
+                            verification.VolunteerOnboardingId,
+                            null,
+                            cancellationToken);
+
+                    _logger.LogInformation(
+                        "Onboarding requirements synchronized after " +
+                        "Didit verification {VerificationId}.",
+                        verification.Id);
+
+                    // ====================================================
+                    // GENERATE CONTRACT
+                    // ====================================================
+
                     await TryGenerateVolunteerContractAsync(
                         verification,
                         cancellationToken);
@@ -444,17 +481,13 @@ public async Task ProcessWebhookAsync(
                     verification.Status =
                         VolunteerIdentityVerificationStatus.Rejected;
 
-                    verification.DocumentVerified =
-                        false;
+                    verification.DocumentVerified = false;
 
-                    verification.FaceMatchVerified =
-                        false;
+                    verification.FaceMatchVerified = false;
 
-                    verification.LivenessVerified =
-                        false;
+                    verification.LivenessVerified = false;
 
-                    verification.FaceIdentityEnrolled =
-                        false;
+                    verification.FaceIdentityEnrolled = false;
 
                     verification.FailureReason =
                         ExtractDecisionWarning(
@@ -470,7 +503,6 @@ public async Task ProcessWebhookAsync(
                         verification.FailureReason);
 
                     break;
-
 
                 // ========================================================
                 // IN REVIEW
@@ -494,7 +526,6 @@ public async Task ProcessWebhookAsync(
 
                     break;
 
-
                 // ========================================================
                 // IN PROGRESS
                 // ========================================================
@@ -513,7 +544,6 @@ public async Task ProcessWebhookAsync(
 
                     break;
 
-
                 // ========================================================
                 // RESUBMITTED
                 // ========================================================
@@ -523,23 +553,18 @@ public async Task ProcessWebhookAsync(
                     verification.Status =
                         VolunteerIdentityVerificationStatus.AwaitingUser;
 
-                    verification.DocumentVerified =
-                        false;
+                    verification.DocumentVerified = false;
 
-                    verification.LivenessVerified =
-                        false;
+                    verification.LivenessVerified = false;
 
-                    verification.FaceMatchVerified =
-                        false;
+                    verification.FaceMatchVerified = false;
 
-                    verification.FaceIdentityEnrolled =
-                        false;
+                    verification.FaceIdentityEnrolled = false;
 
                     verification.ModifiedDate =
                         DateTime.Now;
 
                     break;
-
 
                 // ========================================================
                 // ABANDONED
@@ -554,7 +579,6 @@ public async Task ProcessWebhookAsync(
                         DateTime.Now;
 
                     break;
-
 
                 // ========================================================
                 // EXPIRED
@@ -571,7 +595,6 @@ public async Task ProcessWebhookAsync(
                         DateTime.Now;
 
                     break;
-
 
                 // ========================================================
                 // UNKNOWN
@@ -591,31 +614,122 @@ public async Task ProcessWebhookAsync(
                     break;
             }
 
-
             // ============================================================
             // SAVE STATUS CHANGES
-            //
-            // For Approved this is technically already saved above,
-            // but keeping this here handles all other statuses.
             // ============================================================
 
             await _context.SaveChangesAsync(
                 cancellationToken);
-
 
             _logger.LogInformation(
                 "VolunteerIdentityVerification {VerificationId} saved. " +
                 "New status={Status}, " +
                 "DocumentVerified={DocumentVerified}, " +
                 "LivenessVerified={LivenessVerified}, " +
-                "FaceMatchVerified={FaceMatchVerified}.",
+                "FaceMatchVerified={FaceMatchVerified}, " +
+                "FaceIdentityEnrolled={FaceIdentityEnrolled}.",
                 verification.Id,
                 verification.Status,
                 verification.DocumentVerified,
                 verification.LivenessVerified,
-                verification.FaceMatchVerified);
+                verification.FaceMatchVerified,
+                verification.FaceIdentityEnrolled);
         }
 
+        // ================================================================
+        // AUTOMATICALLY COMPLETE IDENTITY VERIFICATION REQUIREMENT
+        // ================================================================
+
+        private async Task CompleteIdentityVerificationRequirementAsync(
+            int volunteerOnboardingId,
+            CancellationToken cancellationToken)
+        {
+            _logger.LogInformation(
+                "Checking IdentityVerification requirement for " +
+                "OnboardingId={OnboardingId}.",
+                volunteerOnboardingId);
+
+            var identityRequirement =
+                await _context.VolunteerOnboardingRequirements
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.VolunteerOnboardingId ==
+                                volunteerOnboardingId &&
+                            x.RequirementType ==
+                                VolunteerOnboardingRequirementType.IdentityVerification,
+                        cancellationToken);
+
+            if (identityRequirement == null)
+            {
+                _logger.LogWarning(
+                    "IdentityVerification requirement was not found for " +
+                    "OnboardingId={OnboardingId}.",
+                    volunteerOnboardingId);
+
+                return;
+            }
+
+            // Already completed.
+            if (identityRequirement.IsCompleted)
+            {
+                _logger.LogInformation(
+                    "IdentityVerification requirement is already completed. " +
+                    "RequirementId={RequirementId}, " +
+                    "OnboardingId={OnboardingId}.",
+                    identityRequirement.VolunteerOnboardingRequirementId,
+                    volunteerOnboardingId);
+
+                return;
+            }
+
+            // ============================================================
+            // COMPLETE REQUIREMENT
+            // ============================================================
+
+            var now = DateTime.Now;
+
+            identityRequirement.IsCompleted = true;
+
+            identityRequirement.CompletedDate = now;
+
+            // This completion comes from Didit automatically,
+            // not from a specific admin.
+            identityRequirement.CompletedByAdminId = null;
+
+            identityRequirement.ModifiedDate = now;
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            _logger.LogInformation(
+                "============================================================");
+
+            _logger.LogInformation(
+                "IDENTITY VERIFICATION REQUIREMENT COMPLETED AUTOMATICALLY.");
+
+            _logger.LogInformation(
+                "RequirementId={RequirementId}",
+                identityRequirement.VolunteerOnboardingRequirementId);
+
+            _logger.LogInformation(
+                "OnboardingId={OnboardingId}",
+                volunteerOnboardingId);
+
+            _logger.LogInformation(
+                "RequirementType={RequirementType}",
+                identityRequirement.RequirementType);
+
+            _logger.LogInformation(
+                "IsCompleted={IsCompleted}",
+                identityRequirement.IsCompleted);
+
+            _logger.LogInformation(
+                "CompletedDate={CompletedDate}",
+                identityRequirement.CompletedDate);
+
+            _logger.LogInformation(
+                "============================================================");
+        }
 
         // ================================================================
         // TRY GENERATE VOLUNTEER CONTRACT
@@ -629,7 +743,8 @@ public async Task ProcessWebhookAsync(
             // DIDIT MUST BE VERIFIED
             // ============================================================
 
-            if (verification.Status !=
+            if (
+                verification.Status !=
                 VolunteerIdentityVerificationStatus.Verified)
             {
                 _logger.LogInformation(
@@ -640,7 +755,6 @@ public async Task ProcessWebhookAsync(
 
                 return;
             }
-
 
             // ============================================================
             // LOAD ONBOARDING
@@ -665,24 +779,8 @@ public async Task ProcessWebhookAsync(
                 return;
             }
 
-
             // ============================================================
-            // IMPORTANT
-            //
-            // DO NOT CHECK VolunteerContracts HERE.
-            //
-            // CreateAndGenerateContractAsync() already handles:
-            //
-            // - no existing contract
-            //      -> creates and generates it
-            //
-            // - existing generated contract
-            //      -> reuses it
-            //
-            // - existing contract with missing GeneratedFilePath
-            //      -> regenerates the PDF
-            //
-            // This method should simply delegate to that service.
+            // GENERATE CONTRACT
             // ============================================================
 
             _logger.LogInformation(
@@ -693,7 +791,6 @@ public async Task ProcessWebhookAsync(
                 onboarding.VolunteerOnboardingId,
                 verification.Id);
 
-
             try
             {
                 var contract =
@@ -701,7 +798,6 @@ public async Task ProcessWebhookAsync(
                         .CreateAndGenerateContractAsync(
                             onboarding.VolunteerOnboardingId,
                             cancellationToken);
-
 
                 // ========================================================
                 // VERIFY RESULT
@@ -717,7 +813,6 @@ public async Task ProcessWebhookAsync(
 
                     return;
                 }
-
 
                 _logger.LogInformation(
                     "CONTRACT GENERATION COMPLETED: " +
@@ -748,13 +843,17 @@ public async Task ProcessWebhookAsync(
             }
         }
 
+        // ================================================================
+        // APPLY DIDIT DECISION DATA
+        // ================================================================
+
         private static void ApplyDecisionData(
-     VolunteerIdentityVerification verification,
-     JsonElement? decision)
+            VolunteerIdentityVerification verification,
+            JsonElement? decision)
         {
-            if (!decision.HasValue ||
-                decision.Value.ValueKind !=
-                JsonValueKind.Object)
+            if (
+                !decision.HasValue ||
+                decision.Value.ValueKind != JsonValueKind.Object)
             {
                 return;
             }
@@ -762,9 +861,9 @@ public async Task ProcessWebhookAsync(
             var decisionValue =
                 decision.Value;
 
-            // ================================================================
+            // ============================================================
             // DOCUMENT VERIFICATION
-            // ================================================================
+            // ============================================================
 
             if (
                 decisionValue.TryGetProperty(
@@ -786,15 +885,14 @@ public async Task ProcessWebhookAsync(
                             "Approved",
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        verification.DocumentVerified =
-                            true;
+                        verification.DocumentVerified = true;
                     }
                 }
             }
 
-            // ================================================================
+            // ============================================================
             // LIVENESS
-            // ================================================================
+            // ============================================================
 
             if (
                 decisionValue.TryGetProperty(
@@ -816,15 +914,14 @@ public async Task ProcessWebhookAsync(
                             "Approved",
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        verification.LivenessVerified =
-                            true;
+                        verification.LivenessVerified = true;
                     }
                 }
             }
 
-            // ================================================================
+            // ============================================================
             // FACE MATCH 1:1
-            // ================================================================
+            // ============================================================
 
             if (
                 decisionValue.TryGetProperty(
@@ -846,26 +943,14 @@ public async Task ProcessWebhookAsync(
                             "Approved",
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        verification.FaceMatchVerified =
-                            true;
+                        verification.FaceMatchVerified = true;
                     }
                 }
             }
 
-            // ================================================================
+            // ============================================================
             // FACE SEARCH 1:N
-            // ================================================================
-            //
-            // This is the important part.
-            //
-            // The onboarding workflow must have Face Search 1:N enabled.
-            //
-            // Didit can return a face_search report containing matches against
-            // its biometric population.
-            //
-            // We record that the Didit biometric step completed successfully.
-            //
-            // ================================================================
+            // ============================================================
 
             if (
                 decisionValue.TryGetProperty(
@@ -874,8 +959,7 @@ public async Task ProcessWebhookAsync(
                 faceSearch.ValueKind ==
                     JsonValueKind.Object)
             {
-                var faceSearchApproved =
-                    false;
+                var faceSearchApproved = false;
 
                 if (
                     faceSearch.TryGetProperty(
@@ -891,20 +975,13 @@ public async Task ProcessWebhookAsync(
 
                 if (faceSearchApproved)
                 {
-                    verification.FaceIdentityEnrolled =
-                        true;
+                    verification.FaceIdentityEnrolled = true;
                 }
             }
 
-            // ================================================================
+            // ============================================================
             // FALLBACK ENROLLMENT CONFIRMATION
-            // ================================================================
-            //
-            // If Didit doesn't return a face_search block but the workflow
-            // itself successfully completed document verification + liveness
-            // + face match, retain the existing SwiftCare behavior.
-            //
-            // ================================================================
+            // ============================================================
 
             if (
                 !verification.FaceIdentityEnrolled &&
@@ -912,16 +989,20 @@ public async Task ProcessWebhookAsync(
                 verification.LivenessVerified &&
                 verification.FaceMatchVerified)
             {
-                verification.FaceIdentityEnrolled =
-                    true;
+                verification.FaceIdentityEnrolled = true;
             }
         }
+
+        // ================================================================
+        // EXTRACT DECISION WARNING
+        // ================================================================
+
         private static string? ExtractDecisionWarning(
             JsonElement? decision)
         {
-            if (!decision.HasValue ||
-                decision.Value.ValueKind !=
-                JsonValueKind.Object)
+            if (
+                !decision.HasValue ||
+                decision.Value.ValueKind != JsonValueKind.Object)
             {
                 return null;
             }
@@ -958,6 +1039,10 @@ public async Task ProcessWebhookAsync(
                     "; ",
                     values);
         }
+
+        // ================================================================
+        // OTHER WEBHOOK EVENTS
+        // ================================================================
 
         private Task ProcessUserStatusEventAsync(
             DiditWebhookEnvelope envelope,
@@ -1017,13 +1102,18 @@ public async Task ProcessWebhookAsync(
             return Task.CompletedTask;
         }
 
+        // ================================================================
+        // EXTRACT SWIFTCARE VERIFICATION ID
+        // ================================================================
+
         private static int? ExtractVerificationId(
             string vendorData)
         {
             const string prefix =
                 "SWIFTCARE-ID-";
 
-            if (!vendorData.StartsWith(
+            if (
+                !vendorData.StartsWith(
                     prefix,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -1036,10 +1126,14 @@ public async Task ProcessWebhookAsync(
             return int.TryParse(
                 value,
                 out var id)
-                ? id
-                : null;
+                    ? id
+                    : null;
         }
     }
+
+    // ================================================================
+    // DIDIT WEBHOOK ENVELOPE
+    // ================================================================
 
     public class DiditWebhookEnvelope
     {

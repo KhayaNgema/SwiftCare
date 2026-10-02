@@ -1,4 +1,5 @@
 ﻿@using SwiftCare.Models
+
 @model IEnumerable<VolunteerApplication>
 
 @{
@@ -7,19 +8,36 @@
 
     var applications = Model?.ToList()
         ?? new List<VolunteerApplication>();
+
+    var onboardingByApplication =
+    ViewBag.OnboardingByApplication
+    as Dictionary<int, int>
+    ?? new Dictionary<int, int>();
 }
 
 <div class="sc-track-page">
 
+    <!-- ============================================================
+         BACKGROUND
+         ============================================================ -->
+
     <div class="sc-track-background">
+
         <div class="sc-track-glow sc-track-glow-one"></div>
+
         <div class="sc-track-glow sc-track-glow-two"></div>
+
         <div class="sc-track-pattern"></div>
+
     </div>
+
 
     <div class="sc-track-container">
 
-        <!-- HEADER -->
+        <!-- ============================================================
+             HEADER
+             ============================================================ -->
+
         <div class="sc-track-header">
 
             <div class="sc-track-header-left">
@@ -46,6 +64,7 @@
 
             </div>
 
+
             <a asp-controller="VolunteerOpportunities"
                    asp-action="Index"
                    class="sc-track-browse-button">
@@ -61,9 +80,11 @@
         </div>
 
 
+        <!-- ============================================================
+             EMPTY STATE
+             ============================================================ -->
         @if (!applications.Any())
         {
-            <!-- EMPTY STATE -->
             <div class="sc-track-empty">
 
                 <div class="sc-track-empty-icon">
@@ -104,10 +125,14 @@
         }
         else
         {
-            <!-- APPLICATION LIST -->
+            <!-- ========================================================
+                 APPLICATION HEADER
+                 ======================================================== -->
+
             <div class="sc-track-section-header">
 
                 <div>
+
                     <span class="sc-track-section-eyebrow">
                         MY APPLICATIONS
                     </span>
@@ -115,15 +140,25 @@
                     <h2>
                         Your Volunteer Applications
                     </h2>
+
                 </div>
 
                 <span class="sc-track-application-count">
+
                     @applications.Count
-                    @(applications.Count == 1 ? "Application" : "Applications")
+
+                    @(applications.Count == 1
+                        ? "Application"
+                        : "Applications")
+
                 </span>
 
             </div>
 
+
+            <!-- ========================================================
+                 APPLICATIONS
+                 ======================================================== -->
 
             <div class="sc-track-applications">
 
@@ -144,6 +179,7 @@
                             _ => "sc-track-status-default"
                         };
 
+
                     var statusIcon =
                         application.Status switch
                         {
@@ -158,6 +194,7 @@
 
                             _ => "bi-info-circle-fill"
                         };
+
 
                     var statusText =
                         application.Status switch
@@ -174,15 +211,21 @@
                             _ => application.Status.ToString()
                         };
 
+
                     <div class="sc-track-application-card">
 
-                        <!-- TOP -->
+                        <!-- =================================================
+                             TOP
+                             ================================================= -->
+
                         <div class="sc-track-card-top">
 
                             <div class="sc-track-application-main">
 
                                 <div class="sc-track-application-icon">
+
                                     <i class="bi bi-heart-pulse-fill"></i>
+
                                 </div>
 
                                 <div class="sc-track-application-info">
@@ -200,6 +243,7 @@
 
                             </div>
 
+
                             <div class="sc-track-status @statusClass">
 
                                 <i class="bi @statusIcon"></i>
@@ -213,14 +257,22 @@
                         </div>
 
 
-                        <!-- DIVIDER -->
+                        <!-- =================================================
+                             DIVIDER
+                             ================================================= -->
+
                         <div class="sc-track-divider"></div>
 
 
-                        <!-- BOTTOM -->
+                        <!-- =================================================
+                             BOTTOM
+                             ================================================= -->
+
                         <div class="sc-track-card-bottom">
 
                             <div class="sc-track-application-details">
+
+                                <!-- REFERENCE -->
 
                                 <div class="sc-track-detail-item">
 
@@ -229,6 +281,7 @@
                                     </div>
 
                                     <div>
+
                                         <span>
                                             REFERENCE
                                         </span>
@@ -236,10 +289,13 @@
                                         <strong>
                                             @application.Reference
                                         </strong>
+
                                     </div>
 
                                 </div>
 
+
+                                <!-- APPLIED DATE -->
 
                                 <div class="sc-track-detail-item">
 
@@ -248,6 +304,7 @@
                                     </div>
 
                                     <div>
+
                                         <span>
                                             APPLIED ON
                                         </span>
@@ -255,11 +312,13 @@
                                         <strong>
                                             @application.AppliedDate.ToString("dd MMM yyyy")
                                         </strong>
+
                                     </div>
 
                                 </div>
 
 
+                                <!-- LOCATION -->
                                 @if (application.VolunteerOpportunity != null)
                                 {
                                     <div class="sc-track-detail-item">
@@ -269,6 +328,7 @@
                                         </div>
 
                                         <div>
+
                                             <span>
                                                 LOCATION
                                             </span>
@@ -276,12 +336,50 @@
                                             <strong>
                                                 @application.VolunteerOpportunity.CityName
                                             </strong>
+
                                         </div>
 
                                     </div>
                                 }
 
                             </div>
+
+
+                            @if (onboardingByApplication.TryGetValue(
+         application.VolunteerApplicationId,
+         out var applicationOnboardingId))
+                            {
+                                <div class="sc-track-onboarding-action">
+
+                                    <a asp-controller="VolunteerOnboarding"
+                                           asp-action="Index"
+                                           asp-route-id="@applicationOnboardingId"
+                                           class="sc-track-onboarding-button">
+
+                                        <span class="sc-track-onboarding-button-icon">
+
+                                            <i class="bi bi-person-vcard-fill"></i>
+
+                                        </span>
+
+                                        <span class="sc-track-onboarding-button-content">
+
+                                            <strong>
+                                                Continue Onboarding
+                                            </strong>
+
+                                            <small>
+                                                Continue your volunteer onboarding process
+                                            </small>
+
+                                        </span>
+
+                                        <i class="bi bi-arrow-right sc-track-onboarding-arrow"></i>
+
+                                    </a>
+
+                                </div>
+                            }
 
                         </div>
 

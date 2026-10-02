@@ -104,6 +104,12 @@ namespace SwiftCare.Services.VolunteerOnboarding
         // REQUIREMENTS
         // ============================================================
 
+        Task
+            SyncDocumentRequirementsAsync(
+                int volunteerOnboardingId,
+                string? adminId = null,
+                CancellationToken cancellationToken = default);
+
         Task<bool>
             CompleteRequirementAsync(
                 int volunteerOnboardingId,

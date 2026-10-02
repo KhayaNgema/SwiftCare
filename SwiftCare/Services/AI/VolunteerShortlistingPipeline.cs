@@ -2,6 +2,7 @@
 using SwiftCare.Data;
 using SwiftCare.Models;
 using SwiftCare.Models.VolunteerCV;
+using SwiftCare.Services;
 using SwiftCare.Services.VolunteerATS.CV;
 
 namespace SwiftCare.Services.VolunteerATS
@@ -39,7 +40,12 @@ namespace SwiftCare.Services.VolunteerATS
         private readonly VolunteerRankingEngine _rankingEngine;
         private readonly VolunteerATSAuditService _auditService;
         private readonly IVolunteerCVProcessingEngine _cvProcessingEngine;
-        private readonly IWebHostEnvironment _environment;
+
+        // ============================================================
+        // AZURE BLOB STORAGE
+        // ============================================================
+
+        private readonly FileUploadService _fileUploadService;
 
 
         public VolunteerShortlistingPipeline(
@@ -50,7 +56,7 @@ namespace SwiftCare.Services.VolunteerATS
             VolunteerRankingEngine rankingEngine,
             VolunteerATSAuditService auditService,
             IVolunteerCVProcessingEngine cvProcessingEngine,
-            IWebHostEnvironment environment)
+            FileUploadService fileUploadService)
         {
             _context = context;
             _eligibilityEngine = eligibilityEngine;
@@ -59,7 +65,9 @@ namespace SwiftCare.Services.VolunteerATS
             _rankingEngine = rankingEngine;
             _auditService = auditService;
             _cvProcessingEngine = cvProcessingEngine;
-            _environment = environment;
+
+            // Azure Blob Storage service.
+            _fileUploadService = fileUploadService;
         }
 
 
@@ -95,7 +103,7 @@ namespace SwiftCare.Services.VolunteerATS
                 LogSeparator();
                 Log("ATS PIPELINE STARTED");
                 Log($"Opportunity ID: {opportunityId}");
-                Log($"Web Root Path: {_environment.WebRootPath}");
+                Log("CV STORAGE: AZURE BLOB STORAGE");
                 LogSeparator();
 
 
@@ -138,7 +146,7 @@ namespace SwiftCare.Services.VolunteerATS
                         $"Application found | " +
                         $"ID={app.VolunteerApplicationId} | " +
                         $"ApplicantID={app.ApplicantId} | " +
-                        $"CV={app.CVFilePath ?? "NULL"}");
+                        $"CV Blob Path={app.CVFilePath ?? "NULL"}");
                 }
 
 
@@ -167,7 +175,7 @@ namespace SwiftCare.Services.VolunteerATS
                             $"{application.Applicant?.LastName}");
 
                         Log(
-                            $"CV Path: {application.CVFilePath}");
+                            $"CV Blob Path: {application.CVFilePath}");
 
                         Log(
                             $"CV File Name: {application.CVFileName}");
@@ -199,7 +207,7 @@ namespace SwiftCare.Services.VolunteerATS
                         // STEP 3 - CV PROCESSING
                         // =================================================
 
-                        Log("STEP 3: Checking CV availability.");
+                        Log("STEP 3: Checking CV availability in Azure Blob Storage.");
 
                         ParsedCv? parsedCv = null;
 
@@ -225,8 +233,7 @@ namespace SwiftCare.Services.VolunteerATS
                         else
                         {
                             Log(
-                                "CV exists. Starting CV processing engine...");
-
+                                "CV blob path exists. Starting CV processing engine...");
 
                             parsedCv =
                                 await ProcessCvAsync(
@@ -707,7 +714,7 @@ namespace SwiftCare.Services.VolunteerATS
                             $"Applicant ID: {application.ApplicantId}");
 
                         Log(
-                            $"CV File: {application.CVFilePath}");
+                            $"CV Blob Path: {application.CVFilePath}");
 
                         Log(
                             $"Exception Type: " +
@@ -887,7 +894,7 @@ namespace SwiftCare.Services.VolunteerATS
 
 
         // ============================================================
-        // CV PROCESSING
+        // CV PROCESSING FROM AZURE BLOB STORAGE
         // ============================================================
 
         private async Task<ParsedCv?> ProcessCvAsync(
@@ -905,18 +912,22 @@ namespace SwiftCare.Services.VolunteerATS
                     $"{application.VolunteerApplicationId}");
 
                 Log(
-                    $"CVFilePath: " +
+                    $"CV Blob Path: " +
                     $"{application.CVFilePath}");
 
                 Log(
-                    $"CVFileName: " +
+                    $"CV File Name: " +
                     $"{application.CVFileName}");
 
+
+                // ====================================================
+                // VALIDATE BLOB PATH
+                // ====================================================
 
                 if (string.IsNullOrWhiteSpace(
                     application.CVFilePath))
                 {
-                    Log("CV PATH IS EMPTY.");
+                    Log("CV BLOB PATH IS EMPTY.");
 
                     result.CVsFailed++;
 
@@ -924,38 +935,36 @@ namespace SwiftCare.Services.VolunteerATS
                 }
 
 
-                // ====================================================
-                // BUILD FULL FILE PATH
-                // ====================================================
-
-                var relativePath =
+                var blobPath =
                     application.CVFilePath
-                        .TrimStart('/', '\\');
-
-
-                var fullPath =
-                    Path.Combine(
-                        _environment.WebRootPath,
-                        relativePath);
+                        .Trim()
+                        .Replace("\\", "/")
+                        .Trim('/');
 
 
                 Log(
-                    $"WebRootPath: " +
-                    $"{_environment.WebRootPath}");
+                    $"AZURE BLOB PATH: {blobPath}");
+
+
+                // ====================================================
+                // CHECK BLOB EXISTS
+                // ====================================================
 
                 Log(
-                    $"Relative Path: " +
-                    $"{relativePath}");
+                    "CHECKING CV EXISTS IN AZURE BLOB STORAGE...");
+
+
+                var blobExists =
+                    await _fileUploadService
+                        .FileExistsAsync(
+                            blobPath);
+
 
                 Log(
-                    $"FULL PATH: {fullPath}");
-
-                Log(
-                    $"FILE EXISTS: " +
-                    $"{File.Exists(fullPath)}");
+                    $"AZURE BLOB EXISTS: {blobExists}");
 
 
-                if (!File.Exists(fullPath))
+                if (!blobExists)
                 {
                     result.CVsFailed++;
 
@@ -963,24 +972,121 @@ namespace SwiftCare.Services.VolunteerATS
                     await _auditService.LogAsync(
                         application.VolunteerApplicationId,
                         "CV Processing Failed",
-                        $"The uploaded CV file could not be found. Expected path: {fullPath}",
+                        $"The uploaded CV blob could not be found in Azure Blob Storage. Blob path: {blobPath}",
                         "SwiftCare ATS");
 
+
+                    Log(
+                        "CV BLOB NOT FOUND IN AZURE STORAGE.");
 
                     return null;
                 }
 
 
+                // ====================================================
+                // DOWNLOAD CV FROM AZURE BLOB STORAGE
+                // ====================================================
+
+                LogSeparator();
+
+                Log(
+                    "DOWNLOADING CV FROM AZURE BLOB STORAGE...");
+
+
+                var download =
+                    await _fileUploadService
+                        .DownloadFileAsync(
+                            blobPath);
+
+
+                if (download == null)
+                {
+                    result.CVsFailed++;
+
+
+                    await _auditService.LogAsync(
+                        application.VolunteerApplicationId,
+                        "CV Processing Failed",
+                        $"Azure Blob Storage returned no file for blob path: {blobPath}",
+                        "SwiftCare ATS");
+
+
+                    Log(
+                        "AZURE BLOB DOWNLOAD RETURNED NULL.");
+
+                    return null;
+                }
+
+
+                if (download.Content == null ||
+                    download.Content.Length == 0)
+                {
+                    result.CVsFailed++;
+
+
+                    await _auditService.LogAsync(
+                        application.VolunteerApplicationId,
+                        "CV Processing Failed",
+                        $"The CV blob was found but contained no data. Blob path: {blobPath}",
+                        "SwiftCare ATS");
+
+
+                    Log(
+                        "AZURE BLOB DOWNLOAD CONTAINED ZERO BYTES.");
+
+                    return null;
+                }
+
+
+                Log(
+                    $"AZURE BLOB DOWNLOAD SUCCESSFUL.");
+
+                Log(
+                    $"Blob Path: {download.BlobPath}");
+
+                Log(
+                    $"Downloaded File Name: {download.FileName}");
+
+                Log(
+                    $"Downloaded Content Type: {download.ContentType}");
+
+                Log(
+                    $"Downloaded Size: {download.Content.Length} bytes");
+
+
+                // ====================================================
+                // DETERMINE FILE NAME
+                // ====================================================
+
                 var fileName =
                     !string.IsNullOrWhiteSpace(
                         application.CVFileName)
                         ? application.CVFileName
-                        : Path.GetFileName(fullPath);
+                        : download.FileName;
 
+
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    fileName =
+                        Path.GetFileName(blobPath);
+                }
+
+
+                Log(
+                    $"CV PROCESSING FILE NAME: {fileName}");
+
+
+                // ====================================================
+                // DETERMINE EXTENSION
+                // ====================================================
 
                 var extension =
                     Path.GetExtension(fileName)
                         .ToLowerInvariant();
+
+
+                Log(
+                    $"CV FILE EXTENSION: {extension}");
 
 
                 if (extension != ".pdf" &&
@@ -996,28 +1102,62 @@ namespace SwiftCare.Services.VolunteerATS
                         "SwiftCare ATS");
 
 
+                    Log(
+                        $"UNSUPPORTED CV FILE TYPE: {extension}");
+
                     return null;
                 }
 
 
+                // ====================================================
+                // CREATE MEMORY STREAM FROM BLOB CONTENT
+                // ====================================================
+
+                Log(
+                    "CREATING MEMORY STREAM FROM AZURE BLOB CONTENT...");
+
+
                 await using var cvStream =
-                    File.OpenRead(fullPath);
+                    new MemoryStream(
+                        download.Content,
+                        writable: false);
 
 
                 if (cvStream.Length == 0)
                 {
                     result.CVsFailed++;
 
+                    Log(
+                        "CV MEMORY STREAM IS EMPTY.");
+
                     return null;
                 }
+
+
+                Log(
+                    $"CV STREAM READY. Size={cvStream.Length} bytes");
 
 
                 // ====================================================
                 // PROCESS CV
                 // ====================================================
 
+                LogSeparator();
+
                 Log(
                     "CALLING IVolunteerCVProcessingEngine.ProcessAsync...");
+
+                Log(
+                    $"Source: Azure Blob Storage");
+
+                Log(
+                    $"Blob Path: {blobPath}");
+
+                Log(
+                    $"File Name: {fileName}");
+
+                Log(
+                    $"Stream Length: {cvStream.Length}");
 
 
                 var extractedCv =
@@ -1052,11 +1192,9 @@ namespace SwiftCare.Services.VolunteerATS
                     $"Extracted ParsedCv ID: " +
                     $"{extractedCv.ParsedCvId}");
 
-
                 Log(
                     $"ExtractionSuccessful: " +
                     $"{extractedCv.ExtractionSuccessful}");
-
 
                 Log(
                     $"RawText Length: " +
@@ -1161,7 +1299,6 @@ namespace SwiftCare.Services.VolunteerATS
             {
                 result.CVsFailed++;
 
-
                 LogSeparator();
 
                 Log(
@@ -1172,7 +1309,7 @@ namespace SwiftCare.Services.VolunteerATS
                     $"{application.VolunteerApplicationId}");
 
                 Log(
-                    $"CV File: " +
+                    $"CV Blob Path: " +
                     $"{application.CVFilePath}");
 
                 Log(
@@ -2114,3 +2251,4 @@ namespace SwiftCare.Services.VolunteerATS
         }
     }
 }
+

@@ -81,7 +81,7 @@ namespace SwiftCare.Controllers
         // ============================================================
         // START INTERVIEW LANDING PAGE
         // ============================================================
-
+        
         [HttpGet]
         public async Task<IActionResult> Start(string token)
         {
@@ -766,6 +766,7 @@ namespace SwiftCare.Controllers
         }
 
 
+
         // ============================================================
         // LEGACY SAVE ANSWER ENDPOINT
         // ============================================================
@@ -980,86 +981,106 @@ namespace SwiftCare.Controllers
         }
 
 
-        // ============================================================
-        // COMPLETE INTERVIEW
-        // ============================================================
+      // ============================================================
+// COMPLETE INTERVIEW
+// ============================================================
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Complete(
-            string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-                return BadRequest(
-                    "Invalid interview link.");
-
-
-            var session =
-                await _context.VolunteerVoiceInterviewSessions
-                    .Include(x => x.VolunteerApplication)
-                    .FirstOrDefaultAsync(x =>
-                        x.SessionToken == token);
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Complete(
+    string token)
+{
+    if (string.IsNullOrWhiteSpace(token))
+        return BadRequest(
+            "Invalid interview link.");
 
 
-            if (session == null)
-                return NotFound(
-                    "Interview session not found.");
+    var session =
+        await _context.VolunteerVoiceInterviewSessions
+            .Include(x => x.VolunteerApplication)
+            .FirstOrDefaultAsync(x =>
+                x.SessionToken == token);
 
 
-            var application =
-                session.VolunteerApplication;
+    if (session == null)
+        return NotFound(
+            "Interview session not found.");
 
 
-            if (application == null)
-                return NotFound(
-                    "Application not found.");
+    var application =
+        session.VolunteerApplication;
 
 
-            if (application.Status !=
-                VolunteerApplicationStatus.Shortlisted)
-            {
-                return Forbid();
-            }
+    if (application == null)
+        return NotFound(
+            "Application not found.");
 
 
-            if (
-                session.Status == "Suspicious" ||
-                session.SuspiciousActivityDetected)
-            {
-                return BadRequest(
-                    "This interview has been ended and submitted for administrative review.");
-            }
+    if (application.Status !=
+        VolunteerApplicationStatus.Shortlisted)
+    {
+        return Forbid();
+    }
 
 
-            if (!session.IsStarted)
-                return BadRequest(
-                    "Interview has not started.");
+    if (
+        session.Status == "Suspicious" ||
+        session.SuspiciousActivityDetected)
+    {
+        return BadRequest(
+            "This interview has been ended and submitted for administrative review.");
+    }
 
 
-            if (!session.IsCompleted)
-            {
-                session.IsCompleted = true;
-
-                session.CompletedDate =
-                    DateTime.Now;
-
-                session.Status =
-                    "Completed";
-
-                session.LastActivityDate =
-                    DateTime.Now;
-
-                session.LastActivityType =
-                    "InterviewCompleted";
-
-                await _context.SaveChangesAsync();
-            }
+    if (!session.IsStarted)
+        return BadRequest(
+            "Interview has not started.");
 
 
-            return RedirectToAction(
-                nameof(Completed),
-                new { token });
-        }
+    // ============================================================
+    // VIDEO MUST BE SAVED BEFORE INTERVIEW CAN BE COMPLETED
+    // ============================================================
+
+    if (string.IsNullOrWhiteSpace(
+        session.VideoFilePath))
+    {
+        return BadRequest(
+            "Interview video has not been uploaded yet.");
+    }
+
+
+    // ============================================================
+    // COMPLETE INTERVIEW
+    // ============================================================
+
+    if (!session.IsCompleted)
+    {
+        session.IsCompleted = true;
+
+        session.CompletedDate =
+            DateTime.Now;
+
+        session.Status =
+            "Completed";
+
+        session.LastActivityDate =
+            DateTime.Now;
+
+        session.LastActivityType =
+            "InterviewCompleted";
+
+        await _context.SaveChangesAsync();
+    }
+
+
+    // ============================================================
+    // REDIRECT TO COMPLETED PAGE
+    // ============================================================
+
+    return RedirectToAction(
+        nameof(Completed),
+        new { token });
+}
 
 
         // ============================================================
@@ -1885,22 +1906,29 @@ namespace SwiftCare.Controllers
         }
 
 
-        // ============================================================
-        // UPLOAD INTERVIEW VIDEO
-        // ============================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadInterviewVideo(
-            [FromForm] string token,
-            [FromForm] IFormFile? video,
-            [FromForm] int durationSeconds = 0)
-            {
+        [FromForm] string token,
+        [FromForm] IFormFile? video,
+        [FromForm] int durationSeconds = 0)
+        {
             try
             {
                 // ============================================================
                 // 1. VALIDATE TOKEN
                 // ============================================================
+
+                Console.WriteLine(
+                    "============================================================");
+
+                Console.WriteLine(
+                    "[SWIFTCARE VIDEO] UploadInterviewVideo reached.");
+
+                Console.WriteLine(
+                    $"[SWIFTCARE VIDEO] Received token: '{token}'");
+
 
                 if (string.IsNullOrWhiteSpace(token))
                 {
@@ -1935,8 +1963,12 @@ namespace SwiftCare.Controllers
                         .FirstOrDefaultAsync(x =>
                             x.SessionToken == token);
 
+
                 if (session == null)
                 {
+                    Console.WriteLine(
+                        "[SWIFTCARE VIDEO] Session not found for token.");
+
                     return NotFound(new
                     {
                         success = false,
@@ -1945,8 +1977,13 @@ namespace SwiftCare.Controllers
                 }
 
 
+                Console.WriteLine(
+                    "[SWIFTCARE VIDEO] Session found: " +
+                    $"{session.VolunteerVoiceInterviewSessionId}");
+
+
                 // ============================================================
-                // 4. MAKE SURE INTERVIEW STARTED
+                // 4. CHECK INTERVIEW STARTED
                 // ============================================================
 
                 if (!session.IsStarted)
@@ -1958,13 +1995,20 @@ namespace SwiftCare.Controllers
                     });
                 }
 
+                // The normal completion flow uploads the recording while
+                // the session is still InProgress. /Complete is called only
+                // after this method returns success.
+                Console.WriteLine(
+                    $"[SWIFTCARE VIDEO] Session status before upload: '{session.Status}', " +
+                    $"IsCompleted: {session.IsCompleted}");
 
                 // ============================================================
-                // 5. MAXIMUM VIDEO SIZE
+                // 5. VALIDATE VIDEO SIZE
                 // ============================================================
 
                 const long maximumVideoSize =
-                    250L * 1024L * 1024L;
+                    500L * 1024L * 1024L;
+
 
                 if (video.Length > maximumVideoSize)
                 {
@@ -1977,31 +2021,40 @@ namespace SwiftCare.Controllers
 
 
                 // ============================================================
-                // 6. DETERMINE FILE EXTENSION
+                // 6. DETERMINE EXTENSION
                 // ============================================================
 
                 var originalFileName =
-                    Path.GetFileName(video.FileName);
+                    Path.GetFileName(
+                        video.FileName
+                    );
+
 
                 var extension =
-                    Path.GetExtension(originalFileName);
+                    Path.GetExtension(
+                        originalFileName
+                    );
+
 
                 if (string.IsNullOrWhiteSpace(extension))
                 {
                     extension = ".webm";
                 }
 
+
                 extension =
                     extension.ToLowerInvariant();
 
-                // Only allow expected video formats
-                var allowedExtensions = new[]
-                {
-            ".webm",
-            ".mp4",
-            ".ogg",
-            ".ogv"
-        };
+
+                var allowedExtensions =
+                    new[]
+                    {
+                ".webm",
+                ".mp4",
+                ".ogg",
+                ".ogv"
+                    };
+
 
                 if (!allowedExtensions.Contains(extension))
                 {
@@ -2010,7 +2063,7 @@ namespace SwiftCare.Controllers
 
 
                 // ============================================================
-                // 7. CREATE SAFE FILE NAME
+                // 7. SAFE FILE NAME
                 // ============================================================
 
                 var safeFileName =
@@ -2021,13 +2074,16 @@ namespace SwiftCare.Controllers
 
 
                 // ============================================================
-                // 8. COPY VIDEO INTO MEMORY
+                // 8. COPY VIDEO
                 // ============================================================
 
                 await using var memoryStream =
                     new MemoryStream();
 
-                await video.CopyToAsync(memoryStream);
+
+                await video.CopyToAsync(
+                    memoryStream
+                );
 
 
                 // ============================================================
@@ -2037,41 +2093,47 @@ namespace SwiftCare.Controllers
                 var savedPath =
                     await _fileUploadService.SaveFileAsync(
                         memoryStream.ToArray(),
-                        safeFileName);
+                        safeFileName
+                    );
 
-
-                // ============================================================
-                // 10. VALIDATE SAVED PATH
-                // ============================================================
 
                 if (string.IsNullOrWhiteSpace(savedPath))
                 {
                     Console.WriteLine(
-                        "[SWIFTCARE VIDEO] ERROR: " +
-                        "SaveFileAsync returned an empty path.");
+                        "[SWIFTCARE VIDEO] SaveFileAsync returned empty path."
+                    );
 
-                    return StatusCode(500, new
-                    {
-                        success = false,
-                        message = "The interview video could not be saved."
-                    });
+                    return StatusCode(
+                        500,
+                        new
+                        {
+                            success = false,
+                            message =
+                                "The interview video could not be saved."
+                        }
+                    );
                 }
 
 
                 // ============================================================
-                // 11. UPDATE SESSION VIDEO INFORMATION
+                // 10. UPDATE SESSION
                 // ============================================================
 
                 session.VideoFilePath =
                     savedPath;
+
 
                 session.VideoMimeType =
                     string.IsNullOrWhiteSpace(video.ContentType)
                         ? "video/webm"
                         : video.ContentType;
 
+
                 session.VideoDurationSeconds =
-                    Math.Max(0, durationSeconds);
+                    Math.Max(
+                        0,
+                        durationSeconds
+                    );
 
 
                 if (!session.VideoStartedDate.HasValue)
@@ -2085,22 +2147,24 @@ namespace SwiftCare.Controllers
                 session.VideoCompletedDate =
                     DateTime.Now;
 
+
                 session.LastActivityDate =
                     DateTime.Now;
+
 
                 session.LastActivityType =
                     "VideoUploaded";
 
 
                 // ============================================================
-                // 12. SAVE DATABASE CHANGES
+                // 11. SAVE DATABASE
                 // ============================================================
 
                 await _context.SaveChangesAsync();
 
 
                 // ============================================================
-                // 13. DEBUG LOGGING
+                // 12. SUCCESS LOG
                 // ============================================================
 
                 Console.WriteLine(
@@ -2110,47 +2174,37 @@ namespace SwiftCare.Controllers
                     "[SWIFTCARE VIDEO] VIDEO UPLOAD SUCCESS");
 
                 Console.WriteLine(
-                    $"Session ID       : " +
+                    $"Session ID      : " +
                     $"{session.VolunteerVoiceInterviewSessionId}");
 
                 Console.WriteLine(
-                    $"File name        : " +
-                    $"{safeFileName}");
+                    $"File name       : {safeFileName}");
 
                 Console.WriteLine(
-                    $"Saved path       : " +
-                    $"{savedPath}");
+                    $"Saved path      : {savedPath}");
 
                 Console.WriteLine(
-                    $"MIME type        : " +
-                    $"{session.VideoMimeType}");
+                    $"MIME type       : {session.VideoMimeType}");
 
                 Console.WriteLine(
-                    $"Duration         : " +
-                    $"{session.VideoDurationSeconds}");
-
-                Console.WriteLine(
-                    $"Video completed  : " +
-                    $"{session.VideoCompletedDate}");
+                    $"Duration        : {session.VideoDurationSeconds}");
 
                 Console.WriteLine(
                     "============================================================");
 
 
-                // ============================================================
-                // 14. RETURN SUCCESS
-                // ============================================================
+                return Json(
+                    new
+                    {
+                        success = true,
 
-                return Json(new
-                {
-                    success = true,
+                        videoPath =
+                            savedPath,
 
-                    videoPath =
-                        savedPath,
-
-                    durationSeconds =
-                        session.VideoDurationSeconds
-                });
+                        durationSeconds =
+                            session.VideoDurationSeconds
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -2166,12 +2220,17 @@ namespace SwiftCare.Controllers
                 Console.WriteLine(
                     "============================================================");
 
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message =
-                        "An error occurred while saving the interview video."
-                });
+
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        success = false,
+
+                        message =
+                            "An error occurred while saving the interview video."
+                    }
+                );
             }
         }
     }

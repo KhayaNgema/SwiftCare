@@ -68360,3 +68360,161 @@ body.vp-modal-body-lock {
     }
 }
 
+/* ============================================================
+   ADMIN CONTRACT ACTIONS
+   ============================================================ */
+.verification-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 10px 0;
+    flex-wrap: wrap;
+}
+
+
+/* ============================================================
+   BASE BUTTON
+   ============================================================ */
+
+.contract-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+}
+
+
+    /* ============================================================
+   ICON
+   ============================================================ */
+
+    .contract-action-btn i {
+        font-size: 14px;
+        line-height: 1;
+    }
+
+
+/* ============================================================
+   APPROVE
+   ============================================================ */
+
+.contract-approve {
+    color: #FFFFFF;
+    background: #1B5E20;
+    border: 1px solid #1B5E20;
+    box-shadow: 0 2px 5px rgba(27, 94, 32, 0.15);
+}
+
+    .contract-approve:hover {
+        color: #FFFFFF;
+        background: #124116;
+        border-color: #124116;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(27, 94, 32, 0.20);
+    }
+
+    .contract-approve:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(27, 94, 32, 0.15);
+    }
+
+
+/* ============================================================
+   REQUEST CORRECTION
+   ============================================================ */
+
+.contract-correction {
+    color: #5D4037;
+    background: #FFF8E1;
+    border: 1px solid #D9A441;
+}
+
+    .contract-correction:hover {
+        color: #4E342E;
+        background: #FFF3CD;
+        border-color: #C8942F;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(217, 164, 65, 0.16);
+    }
+
+    .contract-correction:active {
+        transform: translateY(0);
+    }
+
+
+/* ============================================================
+   REJECT
+   ============================================================ */
+
+.contract-reject {
+    color: #B42318;
+    background: #FFF5F5;
+    border: 1px solid #E7A6A1;
+}
+
+    .contract-reject:hover {
+        color: #FFFFFF;
+        background: #B42318;
+        border-color: #B42318;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(180, 35, 24, 0.18);
+    }
+
+    .contract-reject:active {
+        transform: translateY(0);
+    }
+
+
+/* ============================================================
+   FOCUS ACCESSIBILITY
+   ============================================================ */
+
+.contract-action-btn:focus-visible {
+    outline: 3px solid rgba(139, 195, 74, 0.35);
+    outline-offset: 2px;
+}
+
+
+/* ============================================================
+   DISABLED
+   ============================================================ */
+
+.contract-action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 576px) {
+
+    .verification-actions {
+        gap: 8px;
+    }
+
+    .contract-action-btn {
+        min-height: 36px;
+        padding: 7px 11px;
+        font-size: 12px;
+    }
+
+        .contract-action-btn i {
+            font-size: 13px;
+        }
+}
+

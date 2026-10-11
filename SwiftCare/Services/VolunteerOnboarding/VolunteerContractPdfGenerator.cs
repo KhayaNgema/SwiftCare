@@ -380,11 +380,127 @@ namespace SwiftCare.Services.VolunteerOnboarding
             _logger.LogInformation(
                 "[CONTRACT PDF] Starting Playwright.");
 
+            // ========================================================
+            // PLAYWRIGHT BUNDLED BROWSER PATH
+            // ========================================================
+            //
+            // The project contains:
+            //
+            // PlaywrightBrowsers\
+            //     chromium-1243\
+            //         chrome-win\
+            //             chrome.exe
+            //
+            // The published application will contain the same folder
+            // under the application ContentRootPath.
+            //
+            // IMPORTANT:
+            // Point PLAYWRIGHT_BROWSERS_PATH at the CACHE ROOT,
+            // NOT directly at chromium-1243 or chrome-win.
+            //
+            // ========================================================
+
+            var browserPath =
+                Path.Combine(
+                    _environment.ContentRootPath,
+                    "PlaywrightBrowsers");
+
+            Environment.SetEnvironmentVariable(
+                "PLAYWRIGHT_BROWSERS_PATH",
+                browserPath);
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Playwright browser path: {BrowserPath}",
+                browserPath);
+
+            var browserDirectoryExists =
+                Directory.Exists(browserPath);
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Playwright browser directory exists: {Exists}",
+                browserDirectoryExists);
+
+            if (!browserDirectoryExists)
+            {
+                throw new DirectoryNotFoundException(
+                    $"Playwright browser directory was not found: {browserPath}");
+            }
+
+            // ========================================================
+            // FIND CHROMIUM DIRECTORY
+            // ========================================================
+
+            var chromiumDirectories =
+                Directory.GetDirectories(
+                    browserPath,
+                    "chromium-*",
+                    SearchOption.TopDirectoryOnly);
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Chromium cache directories found: {Count}",
+                chromiumDirectories.Length);
+
+            if (chromiumDirectories.Length == 0)
+            {
+                throw new DirectoryNotFoundException(
+                    $"No Chromium browser installation was found inside: {browserPath}");
+            }
+
+            foreach (var chromiumDirectory in chromiumDirectories)
+            {
+                _logger.LogInformation(
+                    "[CONTRACT PDF] Chromium cache directory: {ChromiumDirectory}",
+                    chromiumDirectory);
+            }
+
+            // ========================================================
+            // FIND CHROME EXECUTABLE
+            // ========================================================
+
+            var chromeExecutable =
+                Directory.GetFiles(
+                    browserPath,
+                    "chrome.exe",
+                    SearchOption.AllDirectories)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(chromeExecutable))
+            {
+                _logger.LogError(
+                    "[CONTRACT PDF] chrome.exe was NOT found inside {BrowserPath}",
+                    browserPath);
+
+                throw new FileNotFoundException(
+                    $"Playwright Chromium executable chrome.exe was not found inside {browserPath}.");
+            }
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Chromium executable found: {ChromeExecutable}",
+                chromeExecutable);
+
+            var chromeFileInfo =
+                new FileInfo(chromeExecutable);
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Chromium executable size: {Size} bytes",
+                chromeFileInfo.Length);
+
+            // ========================================================
+            // CREATE PLAYWRIGHT
+            // ========================================================
+
             using var playwright =
                 await Playwright.CreateAsync();
 
             _logger.LogInformation(
-                "[CONTRACT PDF] Launching Chromium.");
+                "[CONTRACT PDF] Playwright created successfully.");
+
+            // ========================================================
+            // LAUNCH CHROMIUM
+            // ========================================================
+
+            _logger.LogInformation(
+                "[CONTRACT PDF] Launching bundled Chromium.");
 
             await using var browser =
                 await playwright.Chromium.LaunchAsync(
@@ -395,6 +511,10 @@ namespace SwiftCare.Services.VolunteerOnboarding
 
             _logger.LogInformation(
                 "[CONTRACT PDF] Chromium launched successfully.");
+
+            // ========================================================
+            // CREATE PAGE
+            // ========================================================
 
             var page =
                 await browser.NewPageAsync(

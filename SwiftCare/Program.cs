@@ -1,67 +1,57 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
-using System.Security.Cryptography;
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        GenerateAndDisplayAesKeys();
-
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .WriteTo.Console()
             .WriteTo.File(
                 "Logs/myapp-.txt",
-                rollingInterval: RollingInterval.Day)
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14)
             .CreateLogger();
 
         try
         {
-            Console.WriteLine("============================================================");
-            Console.WriteLine("[SWIFTCARE PROGRAM] Building host...");
-            Console.WriteLine("============================================================");
+            Log.Information("============================================================");
+            Log.Information("[SWIFTCARE PROGRAM] Application starting...");
+            Log.Information("[SWIFTCARE PROGRAM] Environment: {Environment}",
+                Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            Log.Information("[SWIFTCARE PROGRAM] Current directory: {CurrentDirectory}",
+                Environment.CurrentDirectory);
+            Log.Information("[SWIFTCARE PROGRAM] Base directory: {BaseDirectory}",
+                AppContext.BaseDirectory);
+            Log.Information("============================================================");
 
             var host = CreateHostBuilder(args).Build();
 
-            Console.WriteLine("============================================================");
-            Console.WriteLine("[SWIFTCARE PROGRAM] Host built successfully.");
-            Console.WriteLine("[SWIFTCARE PROGRAM] Starting host...");
-            Console.WriteLine("============================================================");
+            Log.Information("============================================================");
+            Log.Information("[SWIFTCARE PROGRAM] Host built successfully.");
+            Log.Information("[SWIFTCARE PROGRAM] Starting host...");
+            Log.Information("============================================================");
 
             host.Run();
 
-            Console.WriteLine("============================================================");
-            Console.WriteLine("[SWIFTCARE PROGRAM] Host stopped.");
-            Console.WriteLine("============================================================");
+            Log.Information("============================================================");
+            Log.Information("[SWIFTCARE PROGRAM] Host stopped.");
+            Log.Information("============================================================");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("============================================================");
-            Console.WriteLine("[SWIFTCARE PROGRAM] HOST STARTUP FAILED");
-            Console.WriteLine("============================================================");
-
-            Console.WriteLine(
-                $"Exception Type: {ex.GetType().FullName}");
-
-            Console.WriteLine(
-                $"Exception Message: {ex.Message}");
-
-            Console.WriteLine(
-                "------------------------------------------------------------");
-
-            Console.WriteLine(
-                $"FULL EXCEPTION:");
-
-            Console.WriteLine(ex.ToString());
-
-            Console.WriteLine("============================================================");
-
             Log.Fatal(
                 ex,
-                "Host terminated unexpectedly");
+                "[SWIFTCARE PROGRAM] HOST STARTUP FAILED");
+
+            Console.WriteLine(
+                "[SWIFTCARE PROGRAM] HOST STARTUP FAILED");
+
+            Console.WriteLine(ex);
+
+            throw;
         }
         finally
         {
@@ -75,44 +65,5 @@ public class Program
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.UseStartup<Startup>();
-
-
-                //webBuilder.ConfigureKestrel(options =>
-                //{
-                //    options.ListenAnyIP(7102, listenOptions =>
-                //    {
-                //        listenOptions.UseHttps(
-                //            "C:\\Users\\User\\Downloads\\Knssoftware.com\\knssoftware.pfx",
-                //            "Khaya@12"); 
-                //    });
-                //});
-
-
-                //webBuilder.ConfigureKestrel(options =>
-                //{
-                //    options.ListenAnyIP(7102, listenOptions =>
-                //    {
-                //        listenOptions.UseHttps(
-                //            @"C:\Certs\knssoftware.pfx", 
-                //            "Khaya@12");
-                //    });
-                //});
             });
-
-    private static void GenerateAndDisplayAesKeys()
-    {
-        using (Aes aes = Aes.Create())
-        {
-            aes.GenerateKey();
-            aes.GenerateIV();
-
-            string keyBase64 = Convert.ToBase64String(aes.Key);
-            string ivBase64 = Convert.ToBase64String(aes.IV);
-
-            System.IO.File.WriteAllText("aes-keys.txt", $"AES Key (Base64): {keyBase64}\nAES IV (Base64): {ivBase64}");
-
-            Console.WriteLine("AES Key (Base64): " + keyBase64);
-            Console.WriteLine("AES IV (Base64): " + ivBase64);
-        }
-    }
 }

@@ -5,10 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using SwiftCare.Data;
 using SwiftCare.Models.VolunteerOnboarding;
 using SwiftCare.Services.IdentityVerification;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SwiftCare.Controllers.Api.Webhooks
 {
     [ApiController]
+    [AllowAnonymous]
     [Route("api/webhooks/didit")]
     public class DiditWebhookController : ControllerBase
     {

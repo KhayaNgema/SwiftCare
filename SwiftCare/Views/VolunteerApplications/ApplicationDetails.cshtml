@@ -1,6 +1,7 @@
 ﻿@using SwiftCare.Models
 @using System
 @using System.Linq
+@inject IConfiguration Configuration
 @model SwiftCare.ViewModels.Volunteer.ApplicationDetailsViewModel
 
 @{
@@ -9,6 +10,9 @@
 
     var application = Model.Application;
     var evaluation = Model.Evaluation;
+
+    var storageAccountUrl = Configuration["AzureBlobStorage:BlobUrl"];
+    var containerName = Configuration["AzureBlobStorage:ContainerName"];
 
     /*
      * ============================================================

@@ -1,5 +1,5 @@
 ﻿@model SwiftCare.Models.VolunteerOnboarding.VolunteerOnboarding
-
+@inject IConfiguration Configuration
 @using SwiftCare.Models.VolunteerOnboarding
 
 @{
@@ -213,6 +213,9 @@
     var contractPending =
         onboardingStatus == VolunteerOnboardingStatus.ContractPending &&
         !contractComplete;
+
+         var storageAccountUrl = Configuration["AzureBlobStorage:BlobUrl"];
+         var containerName = Configuration["AzureBlobStorage:ContainerName"];
 }
 
 
@@ -1389,10 +1392,9 @@
                                 <div class="document-actions">
 
 
-                                    @if (!string.IsNullOrWhiteSpace(
-                                        document.FilePath))
+                                    @if (!string.IsNullOrWhiteSpace(document.FilePath))
                                     {
-                                        <a href="@Url.Content("~/" + document.FilePath)"
+                                        <a href="@storageAccountUrl/@containerName/@document.FilePath.TrimStart('/')"
                                                target="_blank"
                                                class="btn-outline-swift">
 
@@ -2199,11 +2201,9 @@
 
 
                                 <div class="document-actions">
-
                                     @if (contractGenerated)
                                     {
-                                        <a href="@Url.Content(
-                                                                                                                   "~/" + contract.GeneratedFilePath)"
+                                        <a href="@storageAccountUrl/@containerName/@contract.GeneratedFilePath?.TrimStart('/')"
                                                target="_blank"
                                                class="btn-outline-swift">
 
@@ -2213,7 +2213,6 @@
 
                                         </a>
                                     }
-
                                 </div>
 
                             </div>
@@ -2298,8 +2297,7 @@
 
                                     <div class="document-actions">
 
-                                        <a href="@Url.Content(
-                                                                                                                   "~/" + contract.SignedFilePath)"
+                                        <a href="@storageAccountUrl/@containerName/@contract.SignedFilePath?.TrimStart('/')"
                                                target="_blank"
                                                class="btn-outline-swift">
 
@@ -2341,54 +2339,47 @@
                     }
 
 
-                    <!-- =====================================================
-                 ADMIN CONTRACT ACTIONS
-                 ===================================================== -->
                     @if (contractSigned &&
-                                     !contractApproved &&
-                                     !contractRejected)
+                        !contractApproved &&
+                        !contractRejected)
                     {
-                        <div class="verification-actions mt-4">
-
+                        <div class="verification-actions">
 
                             <!-- APPROVE -->
-
                             <button type="button"
-                                    class="btn-swift"
+                                    class="contract-action-btn contract-approve"
                                     data-bs-toggle="modal"
                                     data-bs-target="#approveContractModal">
 
                                 <i class="bi bi-check-circle"></i>
 
-                                Approve Contract
+                                <span>Approve Contract</span>
 
                             </button>
 
 
                             <!-- CORRECTION -->
-
                             <button type="button"
-                                    class="btn btn-outline-warning rounded-3 fw-bold"
+                                    class="contract-action-btn contract-correction"
                                     data-bs-toggle="modal"
                                     data-bs-target="#contractCorrectionModal">
 
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                <i class="bi bi-arrow-counterclockwise"></i>
 
-                                Request Correction
+                                <span>Request Correction</span>
 
                             </button>
 
 
                             <!-- REJECT -->
-
                             <button type="button"
-                                    class="btn btn-outline-danger rounded-3 fw-bold"
+                                    class="contract-action-btn contract-reject"
                                     data-bs-toggle="modal"
                                     data-bs-target="#rejectContractModal">
 
-                                <i class="bi bi-x-circle me-1"></i>
+                                <i class="bi bi-x-circle"></i>
 
-                                Reject Contract
+                                <span>Reject Contract</span>
 
                             </button>
 

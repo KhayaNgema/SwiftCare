@@ -1,7 +1,7 @@
 ﻿@using SwiftCare.Models
 @using System.Reflection
 @using System.ComponentModel.DataAnnotations
-
+@inject IConfiguration Configuration
 @model IEnumerable<VolunteerOpportunity>
 
 @{
@@ -10,6 +10,9 @@
 
     var opportunities = Model?.ToList()
         ?? new List<VolunteerOpportunity>();
+
+    var storageAccountUrl = Configuration["AzureBlobStorage:BlobUrl"];
+    var containerName = Configuration["AzureBlobStorage:ContainerName"];
 
     string GetDisplayName<T>(T? value) where T : struct, Enum
     {
@@ -84,7 +87,6 @@
             _ => "bi-stars"
         };
     }
-
     string GetPosterPath(string? posterPath)
     {
         if (string.IsNullOrWhiteSpace(posterPath))
@@ -97,13 +99,7 @@
             return posterPath;
         }
 
-        if (!posterPath.StartsWith("/"))
-        {
-            posterPath =
-                "/" + posterPath.TrimStart('~', '/');
-        }
-
-        return posterPath;
+        return $"{storageAccountUrl}/{containerName}/{posterPath.TrimStart('~', '/')}";
     }
 }
 
